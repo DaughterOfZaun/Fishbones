@@ -18,6 +18,7 @@
     "@libp2p/pubsub-peer-discovery": "^11.0.1",
     "@libp2p/tcp": "^10.1.10",
     "libp2p": "^2.8.5",
+    "protons": "^7.6.0",
     "torrent-discovery": "^11.0.16",
     "webtorrent": "^2.6.3"
   }

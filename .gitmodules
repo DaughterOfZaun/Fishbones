@@ -1,3 +1,0 @@
-[submodule "js-libp2p-pubsub-peer-discovery"]
-	path = js-libp2p-pubsub-peer-discovery
-	url = https://github.com/libp2p/js-libp2p-pubsub-peer-discovery
