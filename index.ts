@@ -3,9 +3,11 @@ import { noise } from '@chainsafe/libp2p-noise'
 import { yamux } from '@chainsafe/libp2p-yamux'
 import { tcp } from '@libp2p/tcp'
 import { createLibp2p } from 'libp2p'
-import { discovery } from './discovery'
+import { torrentPeerDiscovery } from './torrent-discovery'
+import { pubsubPeerDiscovery } from './pubsub-discovery'
 import { hash } from 'uint8-util'
-import { promises as fs } from 'fs'
+import { getAnnounceAddrs } from './trackers'
+import { select } from '@inquirer/prompts';
 
 const port = 5118
 const node = await createLibp2p({
@@ -17,7 +19,8 @@ const node = await createLibp2p({
     connectionEncrypters: [ noise() ],
     //peerDiscovery: [],
     services: {
-        discovery: discovery({
+        pubsub: gossipsub(),
+        torrentPeerDiscovery: torrentPeerDiscovery({
             infoHash: (await hash(`jinx/launcher/${0}`, 'hex', 'sha-1')) as string,
             port: port,
             announce: await getAnnounceAddrs(),
@@ -26,35 +29,23 @@ const node = await createLibp2p({
             tracker: true,
             lsd: true,
         }),
-        pubsub: gossipsub()
+        pubsubPeerDiscovery: pubsubPeerDiscovery({
+            interval: 10000,
+            listenOnly: true,
+        }),
     }
 })
 
-const trackerListsURLS = [
-    'https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt',
-    'https://ngosang.github.io/trackerslist/trackers_best.txt',
-    'https://cdn.jsdelivr.net/gh/ngosang/trackerslist@master/trackers_best.txt',
-]
+switch(await select<'host'|'join'|'exit'>({
+    message: `What do you want to do?`,
+    choices: [
+        { value: 'host', name: 'Host Game', },
+        { value: 'join', name: 'Join Game', },
+        { value: 'exit', name: 'Exit', },
+    ],
+})){
+    case 'host': break;
+    case 'join': break;
 
-async function getAnnounceAddrs(){
-    let list: string
-    try {
-        list = await fs.readFile('trackers.txt', 'utf-8')
-    } catch(e) {
-        console.log(e)
-        for(let url of trackerListsURLS){
-            try {
-                list = await (await fetch(url)).text()
-                try {
-                    /*await*/ fs.writeFile('trackers.txt', list, 'utf-8')
-                } catch(e) {
-                    console.log(e)
-                }
-            } catch(e) {
-                console.log(e)
-                continue
-            }
-        }
-    }
-    return (list ||= '').split('\n').filter(l => !!l)
+    case 'exit': break;
 }

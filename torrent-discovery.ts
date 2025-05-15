@@ -30,7 +30,7 @@ interface DiscoveryComponents {
     events: TypedEventTarget<Libp2pEvents>
 }
 
-export function discovery(init: DiscoveryInit): (components: DiscoveryComponents) => DiscoveryClass {
+export function torrentPeerDiscovery(init: DiscoveryInit): (components: DiscoveryComponents) => DiscoveryClass {
     return (components: DiscoveryComponents) => new DiscoveryClass(init, components)
 }
 
