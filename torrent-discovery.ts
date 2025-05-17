@@ -94,13 +94,17 @@ class DiscoveryClass extends TypedEventEmitter<PeerDiscoveryEvents> implements P
 
     private drain(){
         let cm = this.components.connectionManager
-        while(this.queue.length && cm.getConnections().length >= cm.getMaxConnections()){
+        while(
+            this.queue.length
+            && cm.getConnections().length < cm.getMaxConnections()
+            && cm.getDialQueue().length < 500 //TODO: Unhardcode
+        ){
             const ipport = this.queue.shift()
             let [ip, port]: [string, number] = addrToIPPort(ipport)
             let peerAddr = ipPortToMultiaddr(ip, port)
             //let peerId = peerIdFromMultihash(identity.digest(text2arr(peer)))
             cm.openConnection(peerAddr)
-            //.then(connection => this.safeDispatchEvent('peer', { detail: connection.remotePeer }))
+            .then(connection => this.safeDispatchEvent('peer', { detail: connection.remotePeer }))
             .catch(err => this.log.error('could not dial discovered peer', err)) //TODO: Log addr
         }
     }

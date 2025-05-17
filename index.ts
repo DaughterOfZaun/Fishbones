@@ -7,9 +7,26 @@ import { torrentPeerDiscovery } from './torrent-discovery'
 import { pubsubPeerDiscovery } from './pubsub-discovery'
 import { hash } from 'uint8-util'
 import { getAnnounceAddrs } from './trackers'
-import { select } from '@inquirer/prompts';
+import { identify, identifyPush } from '@libp2p/identify'
+import { ping } from '@libp2p/ping'
 
 const port = 5118
+const portDHT = port - 1
+
+const _torrentPeerDiscovery = torrentPeerDiscovery({
+    infoHash: (await hash(`jinx/launcher/${0}`, 'hex', 'sha-1')) as string,
+    port: port,
+    announce: await getAnnounceAddrs(),
+    dht: true,
+    dhtPort: portDHT,
+    tracker: true,
+    lsd: true,
+})
+const _pubsubPeerDiscovery = pubsubPeerDiscovery({
+    enableBroadcast: false,
+    interval: 10000,
+})
+
 const node = await createLibp2p({
     addresses: {
         listen: [ `/ip4/0.0.0.0/tcp/${port}` ]
@@ -17,35 +34,14 @@ const node = await createLibp2p({
     transports: [ tcp() ],
     streamMuxers: [ yamux() ],
     connectionEncrypters: [ noise() ],
-    //peerDiscovery: [],
+    peerDiscovery: [
+        _pubsubPeerDiscovery,
+        _torrentPeerDiscovery,
+    ],
     services: {
+        ping: ping(),
         pubsub: gossipsub(),
-        torrentPeerDiscovery: torrentPeerDiscovery({
-            infoHash: (await hash(`jinx/launcher/${0}`, 'hex', 'sha-1')) as string,
-            port: port,
-            announce: await getAnnounceAddrs(),
-            dht: true,
-            dhtPort: 5117,
-            tracker: true,
-            lsd: true,
-        }),
-        pubsubPeerDiscovery: pubsubPeerDiscovery({
-            interval: 10000,
-            listenOnly: true,
-        }),
+        identify: identify(),
+        identifyPush: identifyPush(),
     }
 })
-
-switch(await select<'host'|'join'|'exit'>({
-    message: `What do you want to do?`,
-    choices: [
-        { value: 'host', name: 'Host Game', },
-        { value: 'join', name: 'Join Game', },
-        { value: 'exit', name: 'Exit', },
-    ],
-})){
-    case 'host': break;
-    case 'join': break;
-
-    case 'exit': break;
-}
