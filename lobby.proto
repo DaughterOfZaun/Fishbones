@@ -1,0 +1,27 @@
+syntax = "proto3"; 
+
+message LobbyMessage {
+    optional JoinRequest join_request = 1;
+    optional LeaveRequest leave_request = 2;
+    repeated JoinNotification join_notification = 3;
+    repeated JoinNotification leave_notification = 4;
+}
+
+message JoinRequest {
+    optional int32 team = 1;
+}
+
+message LeaveRequest {}
+
+message JoinNotification {
+    Peer peer = 1;
+    int32 team = 2;
+}
+
+message LeaveNotification {
+    Peer peer = 1;
+}
+
+message Peer {
+    string name = 1;
+}

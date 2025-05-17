@@ -14,8 +14,8 @@ import select, { Separator } from './dynamic-select'
 import { map2str, maps, mode2str, modes } from './constants'
 import { input } from '@inquirer/prompts'
 import { Peer as PBPeer } from './peer'
-import { fillGameCreationForm } from './ui'
 import colors from 'yoctocolors'
+import { type Game, LocalGame } from './game'
 
 const port = 5118
 const portDHT = port - 1
@@ -55,6 +55,8 @@ const pspd = node.services.pubsubPeerDiscovery
 
 const name = node.peerId.toString().slice(-8)
 
+/*await*/ main()
+async function main(){
 while(true){
     const defaultItems = [
         { value: ['host'], name: 'Create a custom game lobby' },
@@ -93,47 +95,30 @@ while(true){
         break
     }
     if(action == 'host'){
-
-        let opts = await fillGameCreationForm()
-    
-        let data: PBPeer.AdditionalData = {
-            name,
-            serverSettings: {
-                name: 'Server',
-                maps: 0,
-                modes: 0,
-                tickRate: 0,
-                champions: []
-            },
-            gameInfos: [
-                {
-                    name: opts.name,
-                    map: opts.map,
-                    mode: opts.mode,
-                    players: 1,
-                    playersMax: opts.players,
-                    features: 0,
-                    passwordProtected: !!opts.password
-                }
-            ],
-        }
-        
-        pspd.setData(data)
-        while(true){
-            let [action, ...args] = await select({
-                message: 'Waiting for players...',
-                choices: [
-                    { value: ['switch-team'], name: `Join ` },
-                    new Separator(),
-                    { value: ['noop'], name: `[${node.peerId.toString().slice(-8)}] ${name}` },
-                    new Separator(),
-                    { value: ['exit'], name: 'Exit' },
-                ]
-            })
-            if(action == 'exit'){
-                break
-            }
-        }
+        let game = await LocalGame.create(node)
+        game.join()
+        pspd.setData(game.getData())
+        await lobby(game)
         pspd.setData(null)
-    }    
+        game.leave()
+    }
+}
+}
+
+async function lobby(game: Game){
+    while(true){
+        let [action, ...args] = await select({
+            message: 'Waiting for players...',
+            choices: [
+                //TODO: { value: ['switch-team'], name: `Switch team` },
+                //new Separator(),
+                { value: ['noop'], name: `[${node.peerId.toString().slice(-8)}] ${name}` },
+                new Separator(),
+                { value: ['exit'], name: 'Exit' },
+            ]
+        })
+        if(action == 'exit'){
+            break
+        }
+    }
 }
