@@ -5,7 +5,8 @@ message Peer {
     repeated bytes addrs = 2;
     optional AdditionalData data = 3;
     message AdditionalData {
-        ServerSettings serverSettings = 1;
+        string name = 1;
+        ServerSettings serverSettings = 2;
         message ServerSettings {
             string name = 1;
             fixed32 maps = 2;
@@ -13,13 +14,15 @@ message Peer {
             uint32 tickRate = 4;
             repeated fixed32 champions = 5;
         }
-        repeated GameInfo gameInfos = 2;
+        repeated GameInfo gameInfos = 3;
         message GameInfo {
             string name = 1;
             uint32 map = 2;
             uint32 mode = 3;
             uint32 players = 5;
-            fixed32 features = 6;
+            uint32 players_max = 6;
+            fixed32 features = 7;
+            bool passwordProtected = 8;
         }
     }
 }

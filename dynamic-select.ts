@@ -62,14 +62,10 @@ import {
     
     type SelectConfig<
         Value,
-        ChoicesObject =
-            | ReadonlyArray<string | Separator>
-            | ReadonlyArray<Choice<Value> | Separator>,
+        ChoicesObject = ReadonlyArray<string | Choice<Value> | Separator>,
     > = {
         message: string;
-        choices: ChoicesObject extends ReadonlyArray<string | Separator>
-            ? ChoicesObject
-            : ReadonlyArray<Choice<Value> | Separator>;
+        choices: ChoicesObject;
         pageSize?: number;
         loop?: boolean;
         default?: unknown;
@@ -78,6 +74,7 @@ import {
             pager: string;
         };
         theme?: PartialDeep<Theme<SelectTheme>>;
+        cb?: (setItems: (choices: ChoicesObject) => void) => void | (() => void)
     };
     
     function isSelectable<Value>(
@@ -87,7 +84,7 @@ import {
     }
     
     function normalizeChoices<Value>(
-        choices: ReadonlyArray<string | Separator> | ReadonlyArray<Choice<Value> | Separator>,
+        choices: ReadonlyArray<string | Choice<Value> | Separator>,
     ): Array<NormalizedChoice<Value> | Separator> {
         return choices.map((choice) => {
             if (Separator.isSeparator(choice)) return choice;
@@ -125,8 +122,10 @@ import {
             const [status, setStatus] = useState<Status>('idle');
             const prefix = usePrefix({ status, theme });
             const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
-    
-            const items = useMemo(() => normalizeChoices(config.choices), [config.choices]);
+            
+            //const items = useMemo(() => normalizeChoices(config.choices), [config.choices]);
+            const [items, setItems] = useState(() => normalizeChoices(config.choices))
+            config.cb && useEffect(() => config.cb!((choices: any) => setItems(normalizeChoices(choices))), [])
     
             const bounds = useMemo(() => {
                 const first = items.findIndex(isSelectable);

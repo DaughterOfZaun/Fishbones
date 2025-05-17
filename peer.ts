@@ -16,6 +16,7 @@ export interface Peer {
 
 export namespace Peer {
   export interface AdditionalData {
+    name: string
     serverSettings?: Peer.AdditionalData.ServerSettings
     gameInfos: Peer.AdditionalData.GameInfo[]
   }
@@ -136,7 +137,9 @@ export namespace Peer {
       map: number
       mode: number
       players: number
+      playersMax: number
       features: number
+      passwordProtected: boolean
     }
 
     export namespace GameInfo {
@@ -169,9 +172,19 @@ export namespace Peer {
               w.uint32(obj.players)
             }
 
+            if ((obj.playersMax != null && obj.playersMax !== 0)) {
+              w.uint32(48)
+              w.uint32(obj.playersMax)
+            }
+
             if ((obj.features != null && obj.features !== 0)) {
-              w.uint32(53)
+              w.uint32(61)
               w.fixed32(obj.features)
+            }
+
+            if ((obj.passwordProtected != null && obj.passwordProtected !== false)) {
+              w.uint32(64)
+              w.bool(obj.passwordProtected)
             }
 
             if (opts.lengthDelimited !== false) {
@@ -183,7 +196,9 @@ export namespace Peer {
               map: 0,
               mode: 0,
               players: 0,
-              features: 0
+              playersMax: 0,
+              features: 0,
+              passwordProtected: false
             }
 
             const end = length == null ? reader.len : reader.pos + length
@@ -209,7 +224,15 @@ export namespace Peer {
                   break
                 }
                 case 6: {
+                  obj.playersMax = reader.uint32()
+                  break
+                }
+                case 7: {
                   obj.features = reader.fixed32()
+                  break
+                }
+                case 8: {
+                  obj.passwordProtected = reader.bool()
                   break
                 }
                 default: {
@@ -244,14 +267,19 @@ export namespace Peer {
             w.fork()
           }
 
-          if (obj.serverSettings != null) {
+          if ((obj.name != null && obj.name !== '')) {
             w.uint32(10)
+            w.string(obj.name)
+          }
+
+          if (obj.serverSettings != null) {
+            w.uint32(18)
             Peer.AdditionalData.ServerSettings.codec().encode(obj.serverSettings, w)
           }
 
           if (obj.gameInfos != null) {
             for (const value of obj.gameInfos) {
-              w.uint32(18)
+              w.uint32(26)
               Peer.AdditionalData.GameInfo.codec().encode(value, w)
             }
           }
@@ -261,6 +289,7 @@ export namespace Peer {
           }
         }, (reader, length, opts = {}) => {
           const obj: any = {
+            name: '',
             gameInfos: []
           }
 
@@ -271,12 +300,16 @@ export namespace Peer {
 
             switch (tag >>> 3) {
               case 1: {
+                obj.name = reader.string()
+                break
+              }
+              case 2: {
                 obj.serverSettings = Peer.AdditionalData.ServerSettings.codec().decode(reader, reader.uint32(), {
                   limits: opts.limits?.serverSettings
                 })
                 break
               }
-              case 2: {
+              case 3: {
                 if (opts.limits?.gameInfos != null && obj.gameInfos.length === opts.limits.gameInfos) {
                   throw new MaxLengthError('Decode error - map field "gameInfos" had too many elements')
                 }

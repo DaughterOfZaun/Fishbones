@@ -28,7 +28,7 @@ export type PubSubPeerDiscoveryEvents = {
 
 export type PeerIdWithData = { id: PeerId, data?: PBPeer.AdditionalData }
 
-export function pubsubPeerDiscovery (init: PubsubPeerDiscoveryInit = {}): (components: PubSubPeerDiscoveryComponents) => PeerDiscovery {
+export function pubsubPeerDiscovery (init: PubsubPeerDiscoveryInit = {}): (components: PubSubPeerDiscoveryComponents) => PubSubPeerDiscovery {
     return (components: PubSubPeerDiscoveryComponents) => new PubSubPeerDiscovery(components, init)
 }
 
@@ -37,6 +37,7 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
     public readonly [Symbol.toStringTag] = '@libp2p/pubsub-peer-discovery'
 
     private readonly enableBroadcast: boolean
+    private intervalId?: ReturnType<typeof setInterval>
     getBroadcastEnabled = () => !!this.intervalId
     setBroadcastEnabled(broadcastEnabled: boolean){
         if(broadcastEnabled === !!this.intervalId) return
@@ -51,8 +52,10 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
         }
     }
 
-    private data?: PBPeer.AdditionalData
-    setData(data?: PBPeer.AdditionalData){
+    private data: undefined | PBPeer.AdditionalData
+    setData(data: null | undefined | PBPeer.AdditionalData){
+        data = data ? data : undefined
+        if(this.data == data) return
         this.data = data
         if(!data) this.broadcast(false)
         this.setBroadcastEnabled(!!data || this.enableBroadcast)
@@ -63,7 +66,6 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
 
     private readonly interval: number
     private readonly topics: string[]
-    private intervalId?: ReturnType<typeof setInterval>
     private readonly components: PubSubPeerDiscoveryComponents
     private readonly log: Logger
 
@@ -80,7 +82,7 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
 
     afterStart (): void {
         const pubsub = this.components.pubsub
-        if (pubsub == null) throw new Error('PubSub not configured')
+        if (!pubsub) throw new Error('PubSub not configured')
 
         for (const topic of this.topics) {
             pubsub.subscribe(topic)
@@ -92,17 +94,17 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
 
     beforeStop (): void {
         const pubsub = this.components.pubsub
-        if (pubsub == null) throw new Error('PubSub not configured')
-
+        if (!pubsub) throw new Error('PubSub not configured')
+            
+        this.setData(null)
+        
         for (const topic of this.topics) {
             pubsub.unsubscribe(topic)
             pubsub.removeEventListener('message', this.onMessage)
         }
     }
 
-    stop (): void {
-        this.setBroadcastEnabled(false)
-    }
+    stop (): void {}
 
     broadcast (announce = true): void {
         const peerId = this.components.peerId
@@ -155,6 +157,9 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
             this.safeDispatchEvent('update')
 
             if(peer.addrs.length > 0){
+                
+                //TODO: PeerStore.merge
+
                 this.safeDispatchEvent<PeerInfo>('peer', {
                     detail: {
                         id: peerId,

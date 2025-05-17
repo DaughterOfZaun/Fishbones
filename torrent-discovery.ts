@@ -1,5 +1,5 @@
 import { TypedEventEmitter, peerDiscoverySymbol, serviceCapabilities } from '@libp2p/interface'
-import type { ComponentLogger, Libp2pEvents, Logger, PeerDiscovery, PeerDiscoveryEvents, PeerDiscoveryProvider, PeerId, PeerInfo, Startable, TypedEventTarget } from '@libp2p/interface'
+import type { ComponentLogger, Libp2pEvents, Logger, PeerDiscovery, PeerDiscoveryEvents, PeerDiscoveryProvider, PeerId, PeerInfo, PeerStore, Startable, TypedEventTarget } from '@libp2p/interface'
 import { multiaddr, type Multiaddr } from '@multiformats/multiaddr'
 import { identity } from 'multiformats/hashes/identity'
 import { peerIdFromMultihash } from '@libp2p/peer-id'
@@ -11,7 +11,8 @@ import addrToIPPort from 'addr-to-ip-port'
 //@ts-ignore
 import Discovery from 'torrent-discovery'
 
-import { version as VERSION } from 'webtorrent/package.json'
+const VERSION = '2.6.7'
+//import { version as VERSION } from 'webtorrent/package.json'
 const USER_AGENT = `WebTorrent/${VERSION} (https://webtorrent.io)`
 
 interface DiscoveryInit {
@@ -28,6 +29,7 @@ interface DiscoveryComponents {
     logger: ComponentLogger
     connectionManager: ConnectionManager
     events: TypedEventTarget<Libp2pEvents>
+    //peerStore: PeerStore
 }
 
 export function torrentPeerDiscovery(init: DiscoveryInit): (components: DiscoveryComponents) => DiscoveryClass {
@@ -50,7 +52,7 @@ class DiscoveryClass extends TypedEventEmitter<PeerDiscoveryEvents> implements P
             peerId: this.components.peerId.toString(),
             userAgent: USER_AGENT
         }, init)
-        this.log = components.logger.forComponent('libp2p:discovery')
+        this.log = components.logger.forComponent('libp2p:torrent-discovery')
     }
 
     readonly [peerDiscoverySymbol] = this
@@ -62,13 +64,15 @@ class DiscoveryClass extends TypedEventEmitter<PeerDiscoveryEvents> implements P
     start() {
         if(this.discovery) return
         this.discovery = new Discovery(this.init)
-        this.discovery.addEventListener('peer', this.onPeer)
-        this.discovery.addEventListener('warning', this.onWarning)
-        this.discovery.addEventListener('error', this.onError)
+        this.discovery.addListener('peer', this.onPeer)
+        this.discovery.addListener('warning', this.onWarning)
+        this.discovery.addListener('error', this.onError)
+        this.components.events.addEventListener('peer:connect', this.onConnect)
         this.components.events.addEventListener('peer:disconnect', this.onDisconnect)
     }
 
     private onPeer = async (ipport: string /*| { id: string, ip: string, port: string }*/, source: 'tracker'|'dht'|'lsd') => {
+        this.log('discovered peer %s from %s', ipport, source)
         this.queue.push(ipport)
         this.drain()
     }
@@ -77,6 +81,9 @@ class DiscoveryClass extends TypedEventEmitter<PeerDiscoveryEvents> implements P
     }
     private onError = (err: Error) => {
         this.log.error('error', err)
+    }
+    private onConnect = (event: CustomEvent<PeerId>) => {
+        this.drain()
     }
     private onDisconnect = (event: CustomEvent<PeerId>) => {
         this.drain()
@@ -94,6 +101,8 @@ class DiscoveryClass extends TypedEventEmitter<PeerDiscoveryEvents> implements P
 
     private drain(){
         let cm = this.components.connectionManager
+        //let ps = this.components.peerStore
+
         while(
             this.queue.length
             && cm.getConnections().length < cm.getMaxConnections()
@@ -102,10 +111,13 @@ class DiscoveryClass extends TypedEventEmitter<PeerDiscoveryEvents> implements P
             const ipport = this.queue.shift()
             let [ip, port]: [string, number] = addrToIPPort(ipport)
             let peerAddr = ipPortToMultiaddr(ip, port)
+
+            //ps.all({ filters: [peer => peer.addresses.some(addr => addr.multiaddr.equals(peerAddr))], limit: 1 })
+
             //let peerId = peerIdFromMultihash(identity.digest(text2arr(peer)))
             cm.openConnection(peerAddr)
             .then(connection => this.safeDispatchEvent('peer', { detail: connection.remotePeer }))
-            .catch(err => this.log.error('could not dial discovered peer', err)) //TODO: Log addr
+            .catch(err => this.log.error('could not dial discovered peer %a', peerAddr, err))
         }
     }
 }
