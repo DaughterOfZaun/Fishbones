@@ -9,161 +9,161 @@ import type { AddressManager } from '@libp2p/interface-internal'
 export const TOPIC = '_peer-discovery._p2p._pubsub'
 
 export interface PubsubPeerDiscoveryInit {
-  interval?: number
-  topics?: string[]
-  enableBroadcast?: boolean
+    interval?: number
+    topics?: string[]
+    enableBroadcast?: boolean
 }
 
 export interface PubSubPeerDiscoveryComponents {
-  peerId: PeerId
-  pubsub?: PubSub
-  addressManager: AddressManager
-  logger: ComponentLogger
+    peerId: PeerId
+    pubsub?: PubSub
+    addressManager: AddressManager
+    logger: ComponentLogger
 }
 
 export type PubSubPeerDiscoveryEvents = {
-  //data: PeerIdWithData,
-  update: void
+    //data: PeerIdWithData,
+    update: void
 }
 
 export type PeerIdWithData = { id: PeerId, data?: PBPeer.AdditionalData }
 
 export function pubsubPeerDiscovery (init: PubsubPeerDiscoveryInit = {}): (components: PubSubPeerDiscoveryComponents) => PeerDiscovery {
-  return (components: PubSubPeerDiscoveryComponents) => new PubSubPeerDiscovery(components, init)
+    return (components: PubSubPeerDiscoveryComponents) => new PubSubPeerDiscovery(components, init)
 }
 
 export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents & PubSubPeerDiscoveryEvents> implements PeerDiscovery, Startable {
-  public readonly [peerDiscoverySymbol] = true
-  public readonly [Symbol.toStringTag] = '@libp2p/pubsub-peer-discovery'
+    public readonly [peerDiscoverySymbol] = true
+    public readonly [Symbol.toStringTag] = '@libp2p/pubsub-peer-discovery'
 
-  private readonly enableBroadcast: boolean
-  getBroadcastEnabled = () => !!this.intervalId
-  setBroadcastEnabled(broadcastEnabled: boolean){
-    if(broadcastEnabled === !!this.intervalId) return
-    if(broadcastEnabled){
-      this.broadcast()
-      this.intervalId = setInterval(() => {
-        this.broadcast()
-      }, this.interval)
-    } else if (this.intervalId) {
-      clearInterval(this.intervalId)
-      this.intervalId = undefined
-    }
-  }
-
-  private data?: PBPeer.AdditionalData
-  setData(data?: PBPeer.AdditionalData){
-    this.data = data
-    if(!data) this.broadcast(false)
-    this.setBroadcastEnabled(!!data || this.enableBroadcast)
-  }
-
-  private peersWithData: PeerIdWithData[] = []
-  getPeersWithData = () => this.peersWithData.slice(0)
-
-  private readonly interval: number
-  private readonly topics: string[]
-  private intervalId?: ReturnType<typeof setInterval>
-  private readonly components: PubSubPeerDiscoveryComponents
-  private readonly log: Logger
-
-  constructor (components: PubSubPeerDiscoveryComponents, init: PubsubPeerDiscoveryInit = {}) {
-    super()
-    this.components = components
-    this.interval = init.interval ?? 10000
-    this.enableBroadcast = init.enableBroadcast ?? false
-    this.log = components.logger.forComponent('libp2p:discovery:pubsub')
-    this.topics = (Array.isArray(init.topics) && init.topics.length > 0) ? init.topics : [ TOPIC ]
-  }
-
-  start (): void {}
-
-  afterStart (): void {
-    const pubsub = this.components.pubsub
-    if (pubsub == null) throw new Error('PubSub not configured')
-
-    for (const topic of this.topics) {
-      pubsub.subscribe(topic)
-      pubsub.addEventListener('message', this.onMessage)
+    private readonly enableBroadcast: boolean
+    getBroadcastEnabled = () => !!this.intervalId
+    setBroadcastEnabled(broadcastEnabled: boolean){
+        if(broadcastEnabled === !!this.intervalId) return
+        if(broadcastEnabled){
+            this.broadcast()
+            this.intervalId = setInterval(() => {
+                this.broadcast()
+            }, this.interval)
+        } else if (this.intervalId) {
+            clearInterval(this.intervalId)
+            this.intervalId = undefined
+        }
     }
 
-    this.setBroadcastEnabled(this.enableBroadcast)
-  }
-
-  beforeStop (): void {
-    const pubsub = this.components.pubsub
-    if (pubsub == null) throw new Error('PubSub not configured')
-
-    for (const topic of this.topics) {
-      pubsub.unsubscribe(topic)
-      pubsub.removeEventListener('message', this.onMessage)
+    private data?: PBPeer.AdditionalData
+    setData(data?: PBPeer.AdditionalData){
+        this.data = data
+        if(!data) this.broadcast(false)
+        this.setBroadcastEnabled(!!data || this.enableBroadcast)
     }
-  }
 
-  stop (): void {
-    this.setBroadcastEnabled(false)
-  }
+    private peersWithData: PeerIdWithData[] = []
+    getPeersWithData = () => this.peersWithData.slice(0)
 
-  broadcast (announce = true): void {
-    const peerId = this.components.peerId
-    const pubsub = this.components.pubsub
+    private readonly interval: number
+    private readonly topics: string[]
+    private intervalId?: ReturnType<typeof setInterval>
+    private readonly components: PubSubPeerDiscoveryComponents
+    private readonly log: Logger
 
-    if (!peerId.publicKey) throw new Error('PeerId was missing public key')
-    if (!pubsub) throw new Error('PubSub not configured')
-
-    const encodedPeer = PBPeer.encode({
-      publicKey: publicKeyToProtobuf(peerId.publicKey),
-      addrs: announce ? this.components.addressManager.getAddresses().map(ma => ma.bytes) : [],
-      data: announce ? this.data : undefined,
-    })
-    
-    for (const topic of this.topics) {
-      if (pubsub.getSubscribers(topic).length === 0) {
-        this.log('skipping broadcasting our peer data on topic %s because there are no peers present', topic)
-        continue
-      }
-
-      this.log('broadcasting our peer data on topic %s', topic)
-      void pubsub.publish(topic, encodedPeer)
+    constructor (components: PubSubPeerDiscoveryComponents, init: PubsubPeerDiscoveryInit = {}) {
+        super()
+        this.components = components
+        this.interval = init.interval ?? 10000
+        this.enableBroadcast = init.enableBroadcast ?? false
+        this.log = components.logger.forComponent('libp2p:discovery:pubsub')
+        this.topics = (Array.isArray(init.topics) && init.topics.length > 0) ? init.topics : [ TOPIC ]
     }
-  }
 
-  onMessage = (event: CustomEvent<Message>): void => {
-    const message = event.detail
+    start (): void {}
 
-    if (!this.topics.includes(message.topic)) return
+    afterStart (): void {
+        const pubsub = this.components.pubsub
+        if (pubsub == null) throw new Error('PubSub not configured')
 
-    try {
-      const peer = PBPeer.decode(message.data)
-      const publicKey = publicKeyFromProtobuf(peer.publicKey)
-      const peerId = peerIdFromPublicKey(publicKey)
+        for (const topic of this.topics) {
+            pubsub.subscribe(topic)
+            pubsub.addEventListener('message', this.onMessage)
+        }
 
-      if (peerId.equals(this.components.peerId)) return
-      
-      this.log('discovered peer %p on %s', peerId, message.topic)
+        this.setBroadcastEnabled(this.enableBroadcast)
+    }
 
-      let i = this.peersWithData.findIndex(pwd => pwd.id.equals(peerId))
-      if (peer.data){
-        let pwd = { id: peerId, data: peer.data }
-        if(i != -1) this.peersWithData.splice(i, 1, pwd)
-        else this.peersWithData.push(pwd)
+    beforeStop (): void {
+        const pubsub = this.components.pubsub
+        if (pubsub == null) throw new Error('PubSub not configured')
 
-        //this.safeDispatchEvent<PeerIdWithData>('data', { detail: pwd })
-      } else {
-        this.peersWithData.splice(i, 1)
-      }
-      this.safeDispatchEvent('update')
+        for (const topic of this.topics) {
+            pubsub.unsubscribe(topic)
+            pubsub.removeEventListener('message', this.onMessage)
+        }
+    }
 
-      if(peer.addrs.length > 0){
-        this.safeDispatchEvent<PeerInfo>('peer', {
-          detail: {
-            id: peerId,
-            multiaddrs: peer.addrs.map(b => multiaddr(b)),
-          }
+    stop (): void {
+        this.setBroadcastEnabled(false)
+    }
+
+    broadcast (announce = true): void {
+        const peerId = this.components.peerId
+        const pubsub = this.components.pubsub
+
+        if (!peerId.publicKey) throw new Error('PeerId was missing public key')
+        if (!pubsub) throw new Error('PubSub not configured')
+
+        const encodedPeer = PBPeer.encode({
+            publicKey: publicKeyToProtobuf(peerId.publicKey),
+            addrs: announce ? this.components.addressManager.getAddresses().map(ma => ma.bytes) : [],
+            data: announce ? this.data : undefined,
         })
-      }
-    } catch (err) {
-      this.log.error('error handling incoming message', err)
+        
+        for (const topic of this.topics) {
+            if (pubsub.getSubscribers(topic).length === 0) {
+                this.log('skipping broadcasting our peer data on topic %s because there are no peers present', topic)
+                continue
+            }
+
+            this.log('broadcasting our peer data on topic %s', topic)
+            void pubsub.publish(topic, encodedPeer)
+        }
     }
-  }
+
+    onMessage = (event: CustomEvent<Message>): void => {
+        const message = event.detail
+
+        if (!this.topics.includes(message.topic)) return
+
+        try {
+            const peer = PBPeer.decode(message.data)
+            const publicKey = publicKeyFromProtobuf(peer.publicKey)
+            const peerId = peerIdFromPublicKey(publicKey)
+
+            if (peerId.equals(this.components.peerId)) return
+            
+            this.log('discovered peer %p on %s', peerId, message.topic)
+
+            let i = this.peersWithData.findIndex(pwd => pwd.id.equals(peerId))
+            if (peer.data){
+                let pwd = { id: peerId, data: peer.data }
+                if(i != -1) this.peersWithData.splice(i, 1, pwd)
+                else this.peersWithData.push(pwd)
+
+                //this.safeDispatchEvent<PeerIdWithData>('data', { detail: pwd })
+            } else {
+                this.peersWithData.splice(i, 1)
+            }
+            this.safeDispatchEvent('update')
+
+            if(peer.addrs.length > 0){
+                this.safeDispatchEvent<PeerInfo>('peer', {
+                    detail: {
+                        id: peerId,
+                        multiaddrs: peer.addrs.map(b => multiaddr(b)),
+                    }
+                })
+            }
+        } catch (err) {
+            this.log.error('error handling incoming message', err)
+        }
+    }
 }
