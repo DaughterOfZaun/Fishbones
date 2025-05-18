@@ -73,30 +73,31 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
 export class LocalGame extends Game {
 
     public static async create(node: Libp2p){
-        const opts = new LocalGame(node, node.peerId)
+        const game = new LocalGame(node, node.peerId)
+        const opts = { clearPromptOnDone: true }
         loop: while(true){
             switch(await select({
                 message: 'Select property to edit',
                 choices: [
-                    { value: 'name', short: 'Name', name: `Name: ${opts.name}` },
-                    { value: 'map', short: 'Map', name: `Map: ${map2str(opts.map)}` },
-                    { value: 'mode', short: 'Mode', name: `Mode: ${mode2str(opts.mode)}` },
-                    { value: 'players', short: 'Players', name: `Players: ${opts.playersMax}v${opts.playersMax}` },
+                    { value: 'name', short: 'Name', name: `Name: ${game.name}` },
+                    { value: 'map', short: 'Map', name: `Map: ${map2str(game.map)}` },
+                    { value: 'mode', short: 'Mode', name: `Mode: ${mode2str(game.mode)}` },
+                    { value: 'players', short: 'Players', name: `Players: ${game.playersMax}v${game.playersMax}` },
                     //TODO: { value: 'features', short: 'Features', name: `Features: ${opts.features}` },
-                    { value: 'password', short: 'Password', name: `Password: ${opts.password}` },
+                    { value: 'password', short: 'Password', name: `Password: ${game.password}` },
                     { value: 'enter', short: 'Enter', name: 'Enter' }
                 ]
-            })){
-                case 'name': opts.name = await input({ message: 'Enter custom game name', default: opts.name }); break;
-                case 'map': opts.map = await select({ message: 'Select custom game map', choices: Object.entries(maps).map(([key, value]) => ({ value: Number(key), name: value })), default: opts.map }); break;
-                case 'mode': opts.mode = await select({ message: 'Select custom game mode', choices: Object.entries(modes).map(([key, value]) => ({ value: Number(key), name: value })), default: opts.mode }); break;
-                case 'players': opts.playersMax = await select({ message: 'Select custom game players', choices: [1, 2, 3, 4, 5, 6].map(v => ({ value: v, name: `${v}v${v}` })), default: opts.playersMax }); break;
-                //TODO: case 'features': opts.name = await input({ message: 'Enter custom game features', default: opts.name }); break;
-                case 'password': opts.name = await input({ message: 'Enter custom game password', default: opts.name }); break;
+            }, opts)){
+                case 'name': game.name = await input({ message: 'Enter custom game name', default: game.name }, opts); break;
+                case 'map': game.map = await select({ message: 'Select custom game map', choices: Object.entries(maps).map(([key, value]) => ({ value: Number(key), name: value })), default: game.map }, opts); break;
+                case 'mode': game.mode = await select({ message: 'Select custom game mode', choices: Object.entries(modes).map(([key, value]) => ({ value: Number(key), name: value })), default: game.mode }, opts); break;
+                case 'players': game.playersMax = await select({ message: 'Select custom game players', choices: [1, 2, 3, 4, 5, 6].map(v => ({ value: v, name: `${v}v${v}` })), default: game.playersMax }, opts); break;
+                //TODO: case 'features': opts.name = await input({ message: 'Enter custom game features', default: opts.name }, opts); break;
+                case 'password': game.name = await input({ message: 'Enter custom game password', default: game.name }, opts); break;
                 case 'enter': break loop;
             }
         }
-        return opts
+        return game
     }
 
     public getData() {
@@ -114,7 +115,7 @@ export class LocalGame extends Game {
                     name: this.name,
                     map: this.map,
                     mode: this.mode,
-                    players: 1,
+                    players: this.players.size,
                     playersMax: this.playersMax,
                     features: 0,
                     passwordProtected: !!this.password
@@ -148,12 +149,13 @@ export class LocalGame extends Game {
                             player.stream = pbStream(stream).pb(LobbyMessage)
                             this.joinInternal(peerId, req.joinRequest.name)
                         }
-                        if(req.leaveRequest){
-                            this.leaveInternal(peerId)
-                        }
+                        //if(req.leaveRequest){
+                        //    this.leaveInternal(peerId)
+                        //}
                     }
                 }
             )
+            this.leaveInternal(peerId)
         } catch(err) {
             this.log.error(err)
         }
@@ -199,31 +201,27 @@ export class LocalGame extends Game {
     private broadcast(msg: Partial<LobbyMessage> & { to: Iterable<GamePlayer>, ignore?: GamePlayer }){
         for(const player of msg.to){
             if(player.stream && player !== msg.ignore){
-                /* await */ player.stream
-                    .write({ ...lmDefaults, ...msg })
+                /* await */ player.stream.write({ ...lmDefaults, ...msg })
                     .catch(err => this.log.error(err))
             }
         }
     }
 
     public async leave(){
-        this.leaveInternal(this.id)
         this.node.unhandle(LOBBY_PROTOCOL)
-        this.joined = false
         for(const player of this.players.values()){
-            player?.stream?.unwrap().unwrap()
-                .close()
-                .catch(err => this.log(err))
+            /*await*/ player?.stream?.unwrap().unwrap().close()
+            .catch(err => this.log.error(err))
         }
         this.players.clear()
+        this.joined = false
     }
     private leaveInternal(id: PeerId){
         
         const player = this.players_get(id)!
 
-        player?.stream?.unwrap().unwrap()
-            .close()
-            .catch(err => this.log(err))
+        //player?.stream?.unwrap().unwrap().close()
+        //    .catch(err => this.log.error(err))
         
         this.players.delete(id)
         this.safeDispatchEvent('update')
@@ -277,7 +275,7 @@ export class RemoteGame extends Game {
                 async (source) => {
                     for await (const data of source) {
                         const req = LobbyMessage.decode(data)
-                        
+
                         if(req.joinNotifications.length){
                             for(const notification of req.joinNotifications){
                                 const id = peerIdFromPublicKey(publicKeyFromProtobuf(notification.publicKey))
@@ -290,9 +288,6 @@ export class RemoteGame extends Game {
                         if(req.leaveNotifications.length){
                             for(const notification of req.leaveNotifications){
                                 const id = peerIdFromPublicKey(publicKeyFromProtobuf(notification.publicKey))
-                                
-                                //TODO: if(id === this.id) return /*async*/ this.leave()
-                                
                                 this.players.delete(id)
                             }
                             this.safeDispatchEvent('update')
@@ -300,16 +295,20 @@ export class RemoteGame extends Game {
                     }
                 }
             )
+            this.stream = undefined
+            this.players.clear()
+            this.joined = false
+            this.safeDispatchEvent('leave')
         } catch(err) {
-            this.log(err)
+            this.log.error(err)
         }
     }
     
     public async leave() {
         try {
-            await this.stream?.write({ ...lmDefaults, leaveRequest: {} })
-            await this.stream?.unwrap().unwrap().close()
-            this.node.unhandle(LOBBY_PROTOCOL)
+            //await this.stream?.write({ ...lmDefaults, leaveRequest: {} })
+            /*await*/ this.stream?.unwrap().unwrap().close()
+                .catch(err => this.log.error(err))
             this.stream = undefined
             this.players.clear()
             this.joined = false

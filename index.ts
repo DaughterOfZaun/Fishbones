@@ -75,7 +75,7 @@ async function main(){
                 `[${id.toString().slice(-8)}] ${name}'s ${gameInfo.name} at ${serverSettings.name}`,
                 [
                     ` `,
-                    `(${('' + gameInfo.players).padStart(2, ' ')}/${('' + gameInfo.playersMax).padEnd(2, ' ')})`,
+                    `(${('' + gameInfo.players).padStart(2, ' ')}/${('' + 2 * gameInfo.playersMax).padEnd(2, ' ')})`,
                     `${mode2str(gameInfo.mode)} at ${map2str(gameInfo.map)}`,
                 ].join(' '),
                 //TODO: `  ${gameInfo.features}`,
@@ -96,14 +96,18 @@ async function main(){
                 pspd.addEventListener('update', listener)
                 return () => pspd.removeEventListener('update', listener)
             },
+        }, {
+            clearPromptOnDone: true,
         })
         if(action == 'host'){
             const game = await LocalGame.create(node)
+            const update = () => pspd.setData(game.getData())
+            game.addEventListener('update', update)
             game.join(name)
-            pspd.setData(game.getData())
             await lobby(game)
-            pspd.setData(null)
             game.leave()
+            pspd.setData(null)
+            game.removeEventListener('update', update)
         }
         if(action == 'join'){
             const [ id, gameInfo ] = args
@@ -126,7 +130,10 @@ async function lobby(game: Game){
             value: ['noop'] as Action, name: color[team2color(player.team)](`[${player.id.toString().slice(-8)}] ${player.name}`)
         })),
         { value: ['exit'] as Action, name: 'Exit' },
-    ]);
+    ])
+    const controller = new AbortController()
+    const abort = () => controller.abort()
+    game.addEventListener('leave', abort)
     while(true){
         const [action] = await select<Action>({
             message: 'Waiting for players...',
@@ -136,9 +143,17 @@ async function lobby(game: Game){
                 game.addEventListener('update', listener)
                 return () => game.removeEventListener('update', listener)
             }
+        }, {
+            signal: controller.signal,
+            clearPromptOnDone: true,
+        })
+        .catch((error) => {
+            if (error.name === 'AbortPromptError') return ['exit']
+            else throw error
         })
         if(action == 'exit'){
             break
         }
     }
+    game.removeEventListener('leave', abort)
 }
