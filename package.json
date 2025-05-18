@@ -4,7 +4,12 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@types/bun": "latest"
+    "@eslint/js": "^9.27.0",
+    "@types/bun": "latest",
+    "eslint": "^9.27.0",
+    "globals": "^16.1.0",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.32.1"
   },
   "peerDependencies": {
     "typescript": "^5"
@@ -17,6 +22,7 @@
     "@libp2p/identify": "^3.0.29",
     "@libp2p/logger": "^5.1.15",
     "@libp2p/ping": "^2.0.29",
+    "@libp2p/plaintext": "^2.0.22",
     "@libp2p/tcp": "^10.1.10",
     "libp2p": "^2.8.5",
     "protons": "^7.6.0",

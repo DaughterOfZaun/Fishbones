@@ -1,5 +1,5 @@
 import { gossipsub } from '@chainsafe/libp2p-gossipsub'
-import { noise } from '@chainsafe/libp2p-noise'
+//import { noise } from '@chainsafe/libp2p-noise'
 import { yamux } from '@chainsafe/libp2p-yamux'
 import { tcp } from '@libp2p/tcp'
 import { createLibp2p } from 'libp2p'
@@ -10,14 +10,36 @@ import { getAnnounceAddrs } from './trackers'
 import { identify, identifyPush } from '@libp2p/identify'
 import { ping } from '@libp2p/ping'
 import { defaultLogger } from '@libp2p/logger'
-import select, { Separator } from './dynamic-select'
-import { map2str, maps, mode2str, modes } from './constants'
-import { input } from '@inquirer/prompts'
-import { Peer as PBPeer } from './peer'
-import colors from 'yoctocolors'
-import { type Game, LocalGame } from './game'
-
-const port = 5118
+import select from './dynamic-select'
+import { map2str, mode2str, team2color } from './constants'
+import { type Game, LocalGame, RemoteGame } from './game'
+import type { PeerId } from '@libp2p/interface'
+import type { Peer } from './peer'
+import color from 'yoctocolors'
+import { noise } from '@chainsafe/libp2p-noise'
+/*
+const fix = <C, E>(ctr: (components: C) => ConnectionEncrypter<E>) => {
+    return (components: C) => {
+        const obj = ctr(components)
+        const obj_secureInbound = obj.secureInbound.bind(obj)
+        obj.secureInbound = async function(...args){
+            const [connection, opts] = args
+            const ret = await obj_secureInbound(connection, opts)
+            if(opts) opts.remotePeer ||= ret.remotePeer
+            return ret
+        }
+        const obj_secureOutbound = obj.secureOutbound.bind(obj)
+        obj.secureOutbound = async function(...args){
+            const [connection, opts] = args
+            const ret = await obj_secureOutbound(connection, opts)
+            if(opts) opts.remotePeer ||= ret.remotePeer
+            return ret
+        }
+        return obj
+    }
+}
+*/
+const port = Number(process.argv[2]) || 5118
 const portDHT = port - 1
 const node = await createLibp2p({
     start: false,
@@ -53,20 +75,22 @@ const node = await createLibp2p({
 
 const pspd = node.services.pubsubPeerDiscovery
 
-const name = node.peerId.toString().slice(-8)
+const name = 'Player'
+//const name = node.peerId.toString().slice(-8)
 
 /*await*/ main()
 async function main(){
-while(true){
+    type Action = ['host'] | ['exit'] | ['join', PeerId, Peer.AdditionalData.GameInfo]
     const defaultItems = [
-        { value: ['host'], name: 'Create a custom game lobby' },
-        { value: ['exit'], name: 'Exit' },
+        { value: ['host'] as Action, name: 'Create a custom game lobby' },
+        { value: ['exit'] as Action, name: 'Exit' },
     ]
-    let [action, ...args] = await select<any[]>({
+loop: while(true){
+    const [action, ...args] = await select<Action>({
         message: 'Select a custom game lobby',
         choices: defaultItems,
         cb(setItems) {
-            pspd.addEventListener('update', () => setItems(
+            const listener = () => setItems(
                 pspd.getPeersWithData()
                 .flatMap(pwd => pwd.data!.gameInfos.map(gameInfo => ({
                     id: pwd.id,
@@ -75,7 +99,7 @@ while(true){
                     gameInfo
                 })))
                 .map(({ id, name, gameInfo, serverSettings }) => ({
-                    value: ['join', id],
+                    value: ['join', id, gameInfo] as Action,
                     name: [
                         `[${id.toString().slice(-8)}] ${name}'s ${gameInfo.name} at ${serverSettings.name}`,
                         [
@@ -87,35 +111,50 @@ while(true){
                     ].join('\n')
                 }))
                 .concat(defaultItems)
-            ))
+            )
+            pspd.addEventListener('update', listener)
+            return () => pspd.removeEventListener('update', listener)
         },
     })
     if(action == 'exit'){
         /*await*/ node.stop()
-        break
+        break loop
     }
     if(action == 'host'){
-        let game = await LocalGame.create(node)
-        game.join()
+        const game = await LocalGame.create(node)
+        game.join(name)
         pspd.setData(game.getData())
         await lobby(game)
         pspd.setData(null)
+        game.leave()
+    }
+    if(action == 'join'){
+        const [ id, gameInfo ] = args
+        const game = await RemoteGame.create(node, id!, gameInfo!)
+        game.join(name)
+        await lobby(game)
         game.leave()
     }
 }
 }
 
 async function lobby(game: Game){
+    type Action = ['noop'] | ['exit']
+    const getChoices = () => ([
+        ...game.getPlayers().map(player => ({
+            value: ['noop'] as Action, name: color[team2color(player.team)](`[${player.id.toString().slice(-8)}] ${player.name}`)
+        })),
+        { value: ['exit'] as Action, name: 'Exit' },
+    ]);
     while(true){
-        let [action, ...args] = await select({
+        const [action] = await select<Action>({
             message: 'Waiting for players...',
-            choices: [
-                //TODO: { value: ['switch-team'], name: `Switch team` },
-                //new Separator(),
-                { value: ['noop'], name: `[${node.peerId.toString().slice(-8)}] ${name}` },
-                new Separator(),
-                { value: ['exit'], name: 'Exit' },
-            ]
+            choices: getChoices(),
+            cb: (setItem) => {
+                const listener = () => setItem(getChoices())
+                game.addEventListener('update', listener)
+                return () => game.removeEventListener('update', listener)
+            }
         })
         if(action == 'exit'){
             break

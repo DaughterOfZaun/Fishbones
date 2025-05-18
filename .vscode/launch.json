@@ -4,12 +4,24 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-    
+        {
+            "name": "Run File with TSX",
+            "type": "node",
+            "request": "launch",
+            "program": "${file}",
+            "runtimeExecutable": "tsx",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "skipFiles": [
+                //"<node_internals>/**",
+                //"${workspaceFolder}/node_modules/**",
+            ],
+        },
         {
             "type": "bun",
             "internalConsoleOptions": "neverOpen",
             "request": "launch",
-            "name": "Debug File",
+            "name": "Debug File with Bun",
             "program": "${file}",
             "cwd": "${workspaceFolder}",
             "stopOnEntry": false,
@@ -19,7 +31,7 @@
             "type": "bun",
             "internalConsoleOptions": "neverOpen",
             "request": "launch",
-            "name": "Run File",
+            "name": "Run File with Bun",
             "program": "${file}",
             "cwd": "${workspaceFolder}",
             "noDebug": true,

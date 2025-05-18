@@ -2,20 +2,37 @@ import { input } from '@inquirer/prompts'
 import { maps, map2str, modes, mode2str } from './constants'
 import select from './dynamic-select'
 import { Peer as PBPeer } from './peer'
-import { TypedEventEmitter, type Libp2p, type PeerId, type Stream } from '@libp2p/interface'
-import { PeerMap, PeerSet } from '@libp2p/peer-collections'
+import { TypedEventEmitter, type Libp2p, type PeerId, type Stream, type StreamHandler } from '@libp2p/interface'
+import { PeerMap } from '@libp2p/peer-collections'
 import * as lp from 'it-length-prefixed'
 import { pbStream, type MessageStream } from 'it-protobuf-stream'
 import { pipe } from 'it-pipe'
 import { LobbyMessage } from './lobby'
 import { logger, type Logger } from '@libp2p/logger'
+import { publicKeyToProtobuf, publicKeyFromProtobuf } from '@libp2p/crypto/keys'
+import { peerIdFromPublicKey } from '@libp2p/peer-id'
 
-const PROTOCOL = `/lobby/${0}`
+const LOBBY_PROTOCOL = `/lobby/${0}`
+const lmDefaults = {
+    joinNotifications: [],
+    switchNotifications: [],
+    leaveNotifications: [],
+}
 
-type TeamId = number & { readonly brand: unique symbol };
 const TEAM_COUNT = 2
+type TeamId = number //& { readonly brand: unique symbol };
 
-type GameEvents = { update: void }
+type GameEvents = { update: void, leave: void }
+
+class GamePlayer {
+    id: PeerId
+    name: string = 'Unnamed'
+    team: TeamId = 0
+    stream?: MessageStream<LobbyMessage, Stream>
+    constructor(id: PeerId){
+        this.id = id
+    }
+}
 
 export abstract class Game extends TypedEventEmitter<GameEvents> {
     protected id: PeerId
@@ -29,8 +46,18 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     //TODO: protected features: number[] = []
     protected password: undefined|boolean|string = undefined
 
-    protected teams: Array<PeerSet> & { [key: TeamId]: PeerSet } = [new PeerSet(), new PeerSet()]
-    protected streams = new PeerMap<MessageStream<LobbyMessage, Stream>>
+    protected players: PeerMap<GamePlayer> = new PeerMap<GamePlayer>()
+    protected players_get(id: PeerId): GamePlayer {
+        let player = this.players.get(id)
+        if(!player){
+            player = new GamePlayer(id)
+            this.players.set(id, player)
+        }
+        return player
+    }
+    public getPlayers(){
+        return [...this.players.values()]
+    }
 
     protected constructor(node: Libp2p, id: PeerId){
         super()
@@ -39,8 +66,8 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         this.log = logger('launcher:game')
     }
 
-    public abstract join(team?: TeamId): void
-    public abstract leave(): void
+    public abstract join(name: string): Promise<void>
+    public abstract leave(): Promise<void>
 }
 
 export class LocalGame extends Game {
@@ -73,9 +100,8 @@ export class LocalGame extends Game {
     }
 
     public getData() {
-        const opts = this
-        let data: PBPeer.AdditionalData = {
-            name: opts.name,
+        const data: PBPeer.AdditionalData = {
+            name: 'Player',
             serverSettings: {
                 name: 'Server',
                 maps: 0,
@@ -85,13 +111,13 @@ export class LocalGame extends Game {
             },
             gameInfos: [
                 {
-                    name: opts.name,
-                    map: opts.map,
-                    mode: opts.mode,
+                    name: this.name,
+                    map: this.map,
+                    mode: this.mode,
                     players: 1,
-                    playersMax: opts.playersMax,
+                    playersMax: this.playersMax,
                     features: 0,
-                    passwordProtected: !!opts.password
+                    passwordProtected: !!this.password
                 }
             ],
         }
@@ -99,90 +125,193 @@ export class LocalGame extends Game {
     }
 
     private joined = false
-    public join(team?: TeamId){
-        this.joinInternal(this.id, team)
+    public async join(name: string){
+        
+        this.joinInternal(this.id, name)
+
         if(!this.joined){
             this.joined = true
-            this.node.handle(PROTOCOL, async ({ stream, connection }) => {
-
-                const pbs = pbStream(stream).pb(LobbyMessage)
-                this.streams.set(connection.remotePeer, pbs)
-                
-                try {
-                    await pipe(
-                        stream,
-                        (source) => lp.decode(source),
-                        async (source) => {
-                            for await (const data of source) {
-                                let req = LobbyMessage.decode(data)
-                                if(req.join) this.joinInternal(connection.remotePeer)
-                                if(req.leave) this.leaveInternal(connection.remotePeer)
-                            }
-                        }
-                    )
-                } catch(err: any) {
-                    //this.log('connection ended %p', peerId)
-                    //this._removePeer(peerId)
-                    //stream.abort(err)
-                    this.log(err)
-                }
-            }, /*{ force: true }*/)
+            this.node.handle(LOBBY_PROTOCOL, this.handleProtocol)
         }
     }
-    private joinInternal(id: PeerId, team?: TeamId){
+    private handleProtocol: StreamHandler = async ({ stream, connection }) => {
+        const peerId = connection.remotePeer
+        const player = this.players_get(peerId)!
+
+        player.stream = pbStream(stream).pb(LobbyMessage)
         
-        console.assert(team === undefined || (team >= 0 && team <= TEAM_COUNT))
-
-        this.remove(id)
-
-        if(team === undefined){
-            let playerCounts = this.teams.map(peerIds => peerIds.size)
-            //let maxPlayers = playerCounts.reduce((a, c) => Math.max(a, c))
-            let minPlayers = playerCounts.reduce((a, c) => Math.min(a, c))
-            team = playerCounts.indexOf(minPlayers) as TeamId
+        try {
+            await pipe(
+                stream,
+                (source) => lp.decode(source),
+                async (source) => {
+                    for await (const data of source) {
+                        const req = LobbyMessage.decode(data)
+                        if(req.joinRequest) this.joinInternal(connection.remotePeer, req.joinRequest.name)
+                        if(req.leaveRequest) this.leaveInternal(connection.remotePeer)
+                    }
+                }
+            )
+        } catch(err) {
+            //this.log('connection ended %p', peerId)
+            //this._removePeer(peerId)
+            //stream.abort(err)
+            this.log.error(err)
         }
+    }
+    private joinInternal(id: PeerId, name: string){
+        
+        console.assert(id.publicKey !== undefined)
+        
+        const playerCounts = Array(TEAM_COUNT).fill(0)
+        this.players.forEach(player => playerCounts[player.team]!++ )
+        const minPlayers = playerCounts.reduce((a, c) => Math.min(a, c))
+        const team = playerCounts.indexOf(minPlayers) as TeamId
 
-        this.teams[team]!.add(id)
+        const player = this.players_get(id)!
+        player.name = name
+        player.team = team
+        this.safeDispatchEvent('update')
 
-        this.streams.forEach((stream, peerId) =>
-            /* await */ stream.write({ join: { team } })
-            .catch(err => this.log(err))
-        )
+        if(player.id.equals(this.id)) return
+
+        this.broadcast({
+            to: this.players.values(),
+            ignore: player,
+            joinNotifications: [{
+                publicKey: publicKeyToProtobuf(player.id.publicKey!),
+                name: player.name,
+                team: player.team,
+                addrs: [],
+            }]
+        })
+        
+        this.broadcast({
+            to: [ player ],
+            joinNotifications: [...this.players.values()].map(player => ({
+                publicKey: publicKeyToProtobuf(player.id.publicKey!),
+                name: player.name,
+                team: player.team,
+                addrs: [],
+            }))
+        })
     }
 
-    public leave(){
+    private broadcast(msg: Partial<LobbyMessage> & { to: Iterable<GamePlayer>, ignore?: GamePlayer }){
+        for(const player of msg.to){
+            if(player === msg.ignore) return;
+            /* await */ player.stream
+                ?.write({ ...lmDefaults, ...msg })
+                .catch(err => this.log.error(err))
+        }
+    }
+
+    public async leave(){
         this.leaveInternal(this.id)
-        this.node.unhandle(PROTOCOL)
+        this.node.unhandle(LOBBY_PROTOCOL)
+        this.joined = false
+        for(const player of this.players.values()){
+            player?.stream?.unwrap().unwrap()
+                .close()
+                .catch(err => this.log(err))
+        }
+        this.players.clear()
     }
     private leaveInternal(id: PeerId){
-        this.remove(id)
-    }
+        
+        const player = this.players_get(id)!
 
-    private remove(id: PeerId){
-        for(let teamId = 0 as TeamId; teamId < TEAM_COUNT; teamId++){
-            let peerIds = this.teams[teamId]!
-            peerIds.delete(id)
-        }
+        player?.stream?.unwrap().unwrap()
+            .close()
+            .catch(err => this.log(err))
+        
+        this.players.delete(id)
+        this.safeDispatchEvent('update')
+        
+        this.broadcast({
+            to: this.players.values(),
+            leaveNotifications: [{
+                publicKey: publicKeyToProtobuf(player.id.publicKey!),
+            }]
+        })
     }
 }
 
 export class RemoteGame extends Game {
 
     public static async create(node: Libp2p, id: PeerId, gameInfo: PBPeer.AdditionalData.GameInfo){
-        let opts = new RemoteGame(node, id)
-        opts.name = gameInfo.name
-        opts.map = gameInfo.map
-        opts.mode = gameInfo.mode
-        opts.playersMax = gameInfo.playersMax
-        //TODO: opts.features = gameInfo.features
-        opts.password = gameInfo.passwordProtected
+        const game = new RemoteGame(node, id)
+        game.name = gameInfo.name
+        game.map = gameInfo.map
+        game.mode = gameInfo.mode
+        game.playersMax = gameInfo.playersMax
+        //TODO: game.features = gameInfo.features
+        game.password = gameInfo.passwordProtected
+        return game
     }
 
-    public join(team?: TeamId): void {
-        throw new Error('Method not implemented.')
+    private joined = false
+    private stream?: MessageStream<LobbyMessage, Stream>
+    public async join(name: string) {
+        if(!this.joined){
+            this.joined = true
+
+            this.node.handle(LOBBY_PROTOCOL, this.handleProtocol)
+
+            const stream = await this.node.dialProtocol(this.id, LOBBY_PROTOCOL)
+            this.stream = pbStream(stream).pb(LobbyMessage)
+            this.stream.write({ joinRequest: { name }, ...lmDefaults})
+        }
+    }
+
+    private handleProtocol: StreamHandler = async ({ stream, connection }) => {
+        
+        if(!connection.remotePeer.equals(this.id)) return
+        
+        try {
+            await pipe(
+                stream,
+                (source) => lp.decode(source),
+                async (source) => {
+                    for await (const data of source) {
+                        const req = LobbyMessage.decode(data)
+                        if(req.joinNotifications.length){
+                            for(const notification of req.joinNotifications){
+                                const id = peerIdFromPublicKey(publicKeyFromProtobuf(notification.publicKey))
+                                const player = this.players_get(id)
+                                player.name = notification.name
+                                player.team = notification.team
+                            }
+                            this.safeDispatchEvent('update')
+                        }
+                        if(req.leaveNotifications.length){
+                            for(const notification of req.leaveNotifications){
+                                const id = peerIdFromPublicKey(publicKeyFromProtobuf(notification.publicKey))
+                                
+                                //TODO: if(id === this.id) return /*async*/ this.leave()
+                                
+                                this.players.delete(id)
+                            }
+                            this.safeDispatchEvent('update')
+                        }
+                    }
+                }
+            )
+        } catch(err) {
+            this.log(err)
+        }
     }
     
-    public leave(): void {
-        throw new Error('Method not implemented.')
+    public async leave() {
+        try {
+            await this.stream?.write({ leaveRequest: {}, ...lmDefaults })
+            await this.stream?.unwrap().unwrap().close()
+            this.node.unhandle(LOBBY_PROTOCOL)
+            this.stream = undefined
+            this.players.clear()
+            this.joined = false
+        } catch(err) {
+            this.log.error(err)
+        }
     }
 }

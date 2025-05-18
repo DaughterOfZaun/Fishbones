@@ -1,14 +1,10 @@
 import { TypedEventEmitter, peerDiscoverySymbol, serviceCapabilities } from '@libp2p/interface'
 import type { ComponentLogger, Libp2pEvents, Logger, PeerDiscovery, PeerDiscoveryEvents, PeerDiscoveryProvider, PeerId, PeerInfo, PeerStore, Startable, TypedEventTarget } from '@libp2p/interface'
-import { multiaddr, type Multiaddr } from '@multiformats/multiaddr'
-import { identity } from 'multiformats/hashes/identity'
-import { peerIdFromMultihash } from '@libp2p/peer-id'
-import { text2arr } from 'uint8-util'
-import type { ConnectionManager } from '@libp2p/interface-internal'
+import type { AddressManager, ConnectionManager } from '@libp2p/interface-internal'
 import { ipPortToMultiaddr } from '@libp2p/utils/ip-port-to-multiaddr'
-//@ts-ignore
+//@ts-expect-error: Could not find a declaration file for module 'addr-to-ip-port'
 import addrToIPPort from 'addr-to-ip-port'
-//@ts-ignore
+//@ts-expect-error: Could not find a declaration file for module 'torrent-discovery'
 import Discovery from 'torrent-discovery'
 
 const VERSION = '2.6.7'
@@ -29,7 +25,8 @@ interface DiscoveryComponents {
     logger: ComponentLogger
     connectionManager: ConnectionManager
     events: TypedEventTarget<Libp2pEvents>
-    //peerStore: PeerStore
+    peerStore: PeerStore
+    addressManager: AddressManager
 }
 
 export function torrentPeerDiscovery(init: DiscoveryInit): (components: DiscoveryComponents) => DiscoveryClass {
@@ -100,8 +97,9 @@ class DiscoveryClass extends TypedEventEmitter<PeerDiscoveryEvents> implements P
     }
 
     private drain(){
-        let cm = this.components.connectionManager
-        //let ps = this.components.peerStore
+        const cm = this.components.connectionManager
+        const ps = this.components.peerStore
+        const am = this.components.addressManager
 
         while(
             this.queue.length
@@ -109,14 +107,21 @@ class DiscoveryClass extends TypedEventEmitter<PeerDiscoveryEvents> implements P
             && cm.getDialQueue().length < 500 //TODO: Unhardcode
         ){
             const ipport = this.queue.shift()
-            let [ip, port]: [string, number] = addrToIPPort(ipport)
-            let peerAddr = ipPortToMultiaddr(ip, port)
+            const [ip, port]: [string, number] = addrToIPPort(ipport)
+            const peerAddr = ipPortToMultiaddr(ip, port)
 
-            //ps.all({ filters: [peer => peer.addresses.some(addr => addr.multiaddr.equals(peerAddr))], limit: 1 })
+            //console.log(peerAddr.toString(), 'vs', am.getAddresses().map(addr => addr.toString()).join(', '))
+            if(am.getAddresses().some(addr => addr.equals(peerAddr))) return
+            ps.all({ filters: [peer => peer.addresses.some(addr => addr.multiaddr.equals(peerAddr))], limit: 1 })
 
-            //let peerId = peerIdFromMultihash(identity.digest(text2arr(peer)))
             cm.openConnection(peerAddr)
-            .then(connection => this.safeDispatchEvent('peer', { detail: connection.remotePeer }))
+            .then(connection => {
+                const detail: PeerInfo = {
+                    id: connection.remotePeer,
+                    multiaddrs: [ connection.remoteAddr ]
+                }
+                this.safeDispatchEvent('peer', { detail })
+            })
             .catch(err => this.log.error('could not dial discovered peer %a', peerAddr, err))
         }
     }

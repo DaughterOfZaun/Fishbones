@@ -1,27 +1,33 @@
 syntax = "proto3"; 
 
 message LobbyMessage {
+
     optional JoinRequest join_request = 1;
-    optional LeaveRequest leave_request = 2;
-    repeated JoinNotification join_notification = 3;
-    repeated JoinNotification leave_notification = 4;
-}
+    message JoinRequest {
+        string name = 1;
+    }
+    repeated JoinNotification join_notifications = 2;
+    message JoinNotification {
+        bytes publicKey = 1;
+        repeated bytes addrs = 2;
+        string name = 3;
+        int32 team = 4;
+    }
+    
+    optional SwitchRequest switch_request = 3;
+    message SwitchRequest {
+        int32 team = 1;
+    }
+    repeated SwitchNotification switch_notifications = 4;
+    message SwitchNotification {
+        bytes publicKey = 1;
+        int32 team = 2;
+    }
 
-message JoinRequest {
-    optional int32 team = 1;
-}
-
-message LeaveRequest {}
-
-message JoinNotification {
-    Peer peer = 1;
-    int32 team = 2;
-}
-
-message LeaveNotification {
-    Peer peer = 1;
-}
-
-message Peer {
-    string name = 1;
+    optional LeaveRequest leave_request = 5;
+    message LeaveRequest {}
+    repeated LeaveNotification leave_notifications = 6;
+    message LeaveNotification {
+        bytes publicKey = 1;
+    }
 }

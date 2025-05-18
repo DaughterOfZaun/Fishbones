@@ -22,3 +22,8 @@ export const modes: { [key: number]: string } = {
     2: 'ARAM',
 }
 export const mode2str = (num: number) => num ? modes[num] || `Mode ${num}` : 'Unspecified'
+
+export const colorNames = [ 'blue', 'red', 'gray', 'green', 'yellow', 'magenta', 'cyan' ] as const
+export const team2color = (team: number): (typeof colorNames)[number] => {
+    return colorNames[team]!
+}
