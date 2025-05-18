@@ -2,7 +2,7 @@ import { publicKeyFromProtobuf, publicKeyToProtobuf } from '@libp2p/crypto/keys'
 import { TypedEventEmitter, peerDiscoverySymbol } from '@libp2p/interface'
 import { peerIdFromPublicKey } from '@libp2p/peer-id'
 import { multiaddr } from '@multiformats/multiaddr'
-import { Peer as PBPeer } from './peer.js'
+import { Peer as PBPeer } from '../message/peer.js'
 import type { PeerDiscovery, PeerDiscoveryEvents, PeerId, PeerInfo, Message, PubSub, Startable, ComponentLogger, Logger } from '@libp2p/interface'
 import type { AddressManager } from '@libp2p/interface-internal'
 
@@ -144,9 +144,9 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
             
             this.log('discovered peer %p on %s', peerId, message.topic)
 
-            let i = this.peersWithData.findIndex(pwd => pwd.id.equals(peerId))
+            const i = this.peersWithData.findIndex(pwd => pwd.id.equals(peerId))
             if (peer.data){
-                let pwd = { id: peerId, data: peer.data }
+                const pwd = { id: peerId, data: peer.data }
                 if(i != -1) this.peersWithData.splice(i, 1, pwd)
                 else this.peersWithData.push(pwd)
 

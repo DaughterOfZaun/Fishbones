@@ -1,13 +1,13 @@
 import { input } from '@inquirer/prompts'
-import { maps, map2str, modes, mode2str } from './constants'
-import select from './dynamic-select'
-import { Peer as PBPeer } from './peer'
+import { maps, map2str, modes, mode2str } from './utils/constants'
+import select from './ui/dynamic-select'
+import { Peer as PBPeer } from './message/peer'
 import { TypedEventEmitter, type Libp2p, type PeerId, type Stream, type StreamHandler } from '@libp2p/interface'
 import { PeerMap } from '@libp2p/peer-collections'
 import * as lp from 'it-length-prefixed'
 import { pbStream, type MessageStream } from 'it-protobuf-stream'
 import { pipe } from 'it-pipe'
-import { LobbyMessage } from './lobby'
+import { LobbyMessage } from './message/lobby'
 import { logger, type Logger } from '@libp2p/logger'
 import { publicKeyToProtobuf, publicKeyFromProtobuf } from '@libp2p/crypto/keys'
 import { peerIdFromPublicKey } from '@libp2p/peer-id'
@@ -136,10 +136,6 @@ export class LocalGame extends Game {
     }
     private handleProtocol: StreamHandler = async ({ stream, connection }) => {
         const peerId = connection.remotePeer
-        const player = this.players_get(peerId)!
-
-        player.stream = pbStream(stream).pb(LobbyMessage)
-        
         try {
             await pipe(
                 stream,
@@ -147,15 +143,18 @@ export class LocalGame extends Game {
                 async (source) => {
                     for await (const data of source) {
                         const req = LobbyMessage.decode(data)
-                        if(req.joinRequest) this.joinInternal(connection.remotePeer, req.joinRequest.name)
-                        if(req.leaveRequest) this.leaveInternal(connection.remotePeer)
+                        if(req.joinRequest){
+                            const player = this.players_get(peerId)!
+                            player.stream = pbStream(stream).pb(LobbyMessage)
+                            this.joinInternal(peerId, req.joinRequest.name)
+                        }
+                        if(req.leaveRequest){
+                            this.leaveInternal(peerId)
+                        }
                     }
                 }
             )
         } catch(err) {
-            //this.log('connection ended %p', peerId)
-            //this._removePeer(peerId)
-            //stream.abort(err)
             this.log.error(err)
         }
     }
@@ -199,10 +198,11 @@ export class LocalGame extends Game {
 
     private broadcast(msg: Partial<LobbyMessage> & { to: Iterable<GamePlayer>, ignore?: GamePlayer }){
         for(const player of msg.to){
-            if(player === msg.ignore) return;
-            /* await */ player.stream
-                ?.write({ ...lmDefaults, ...msg })
-                .catch(err => this.log.error(err))
+            if(player.stream && player !== msg.ignore){
+                /* await */ player.stream
+                    .write({ ...lmDefaults, ...msg })
+                    .catch(err => this.log.error(err))
+            }
         }
     }
 
@@ -256,17 +256,19 @@ export class RemoteGame extends Game {
         if(!this.joined){
             this.joined = true
 
-            this.node.handle(LOBBY_PROTOCOL, this.handleProtocol)
+            const connection = await this.node.dial(this.id)
+            const stream = await connection.newStream([ LOBBY_PROTOCOL ])
 
-            const stream = await this.node.dialProtocol(this.id, LOBBY_PROTOCOL)
             this.stream = pbStream(stream).pb(LobbyMessage)
-            this.stream.write({ joinRequest: { name }, ...lmDefaults})
+            await this.stream.write({ ...lmDefaults, joinRequest: { name } })
+
+            this.handleProtocol({ stream, connection })
         }
     }
 
     private handleProtocol: StreamHandler = async ({ stream, connection }) => {
         
-        if(!connection.remotePeer.equals(this.id)) return
+        //if(!connection.remotePeer.equals(this.id)) return
         
         try {
             await pipe(
@@ -275,6 +277,7 @@ export class RemoteGame extends Game {
                 async (source) => {
                     for await (const data of source) {
                         const req = LobbyMessage.decode(data)
+                        
                         if(req.joinNotifications.length){
                             for(const notification of req.joinNotifications){
                                 const id = peerIdFromPublicKey(publicKeyFromProtobuf(notification.publicKey))
@@ -304,7 +307,7 @@ export class RemoteGame extends Game {
     
     public async leave() {
         try {
-            await this.stream?.write({ leaveRequest: {}, ...lmDefaults })
+            await this.stream?.write({ ...lmDefaults, leaveRequest: {} })
             await this.stream?.unwrap().unwrap().close()
             this.node.unhandle(LOBBY_PROTOCOL)
             this.stream = undefined

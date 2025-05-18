@@ -13,7 +13,7 @@ export async function getAnnounceAddrs(){
         list = await fs.readFile('trackers.txt', 'utf-8')
     } catch(e) {
         console.log(e)
-        for(let url of trackerListsURLS){
+        for(const url of trackerListsURLS){
             try {
                 list = await (await fetch(url)).text()
                 try {

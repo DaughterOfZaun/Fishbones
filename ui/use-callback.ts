@@ -1,5 +1,5 @@
 import { useEffect, useRef } from '@inquirer/core';
-import { withUpdates } from './node_modules/@inquirer/core/dist/esm/lib/hook-engine.js';
+import { withUpdates } from '../node_modules/@inquirer/core/dist/esm/lib/hook-engine.js';
 
 export function useCallback<T>(
     callback: (handler: (event: T) => unknown) => () => void,
