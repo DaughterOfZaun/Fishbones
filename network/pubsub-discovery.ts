@@ -38,8 +38,8 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
 
     private readonly enableBroadcast: boolean
     private intervalId?: ReturnType<typeof setInterval>
-    getBroadcastEnabled = () => !!this.intervalId
-    setBroadcastEnabled(broadcastEnabled: boolean){
+    public getBroadcastEnabled = () => !!this.intervalId
+    public setBroadcastEnabled(broadcastEnabled: boolean){
         if(broadcastEnabled === !!this.intervalId) return
         if(broadcastEnabled){
             this.intervalId = setInterval(() => {
@@ -56,8 +56,8 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
         data = data ? data : undefined
         if(this.data == data) return
         this.data = data
-        this.broadcast(!!data)
-        this.setBroadcastEnabled(!!data || this.enableBroadcast)
+        //this.broadcast(!!data)
+        //this.setBroadcastEnabled(!!data || this.enableBroadcast)
     }
 
     private peersWithData: PeerIdWithData[] = []

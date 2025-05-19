@@ -14,20 +14,35 @@ message LobbyMessage {
         int32 team = 4;
     }
     
-    optional SwitchRequest switch_request = 3;
-    message SwitchRequest {
-        int32 team = 1;
-    }
-    repeated SwitchNotification switch_notifications = 4;
-    message SwitchNotification {
-        bytes publicKey = 1;
-        int32 team = 2;
-    }
+    //optional SwitchRequest switch_request = 3;
+    //message SwitchRequest {
+    //    int32 team = 1;
+    //}
+    //repeated SwitchNotification switch_notifications = 4;
+    //message SwitchNotification {
+    //    bytes publicKey = 1;
+    //    int32 team = 2;
+    //}
 
     optional LeaveRequest leave_request = 5;
     message LeaveRequest {}
     repeated LeaveNotification leave_notifications = 6;
     message LeaveNotification {
         bytes publicKey = 1;
+    }
+
+    optional StartNotification start_notification = 7;
+    message StartNotification {}
+
+    optional PickRequest pick_request = 8;
+    message PickRequest {
+        int32 prop = 1;
+        int32 value = 2;
+    }
+    repeated PickNotification pick_notifications = 9;
+    message PickNotification {
+        bytes publicKey = 1;
+        int32 prop = 2;
+        int32 value = 3;
     }
 }

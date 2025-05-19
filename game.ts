@@ -1,5 +1,5 @@
 import { input } from '@inquirer/prompts'
-import { maps, map2str, modes, mode2str } from './utils/constants'
+import { MAPS, map2str, MODES, mode2str, CHAMPIONS, SUMMONER_SPELLS, PLAYER_PICKABLE_PROPS, PLAYER_PICKABLE_PROPS_KEYS, type PlayerPickableProp, int2ppp, ppp2int } from './utils/constants'
 import select from './ui/dynamic-select'
 import { Peer as PBPeer } from './message/peer'
 import { TypedEventEmitter, type Libp2p, type PeerId, type Stream, type StreamHandler } from '@libp2p/interface'
@@ -17,20 +17,38 @@ const lmDefaults = {
     joinNotifications: [],
     switchNotifications: [],
     leaveNotifications: [],
+    pickNotifications: [],
 }
 
 const TEAM_COUNT = 2
 type TeamId = number //& { readonly brand: unique symbol };
 
-type GameEvents = { update: void, leave: void }
+type GameEvents = {
+    update: void,
+    kick: void,
+    pick: void,
+}
 
-class GamePlayer {
+class GamePlayer implements Record<PlayerPickableProp, number> {
     id: PeerId
     name: string = 'Unnamed'
-    team: TeamId = 0
     stream?: MessageStream<LobbyMessage, Stream>
+    
+    team = 0
+    champion = 0
+    summonerSpell1 = 0
+    summonerSpell2 = 0
+
     constructor(id: PeerId){
         this.id = id
+    }
+    set(prop: PlayerPickableProp, value: number): boolean {
+        const values = (PLAYER_PICKABLE_PROPS as Record<string, string[]>)[prop]!
+        if(value >= 0 && value < values.length){
+            (this as unknown as Record<string, number>)[prop] = value
+            return true
+        }
+        return false
     }
 }
 
@@ -68,6 +86,11 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
 
     public abstract join(name: string): Promise<void>
     public abstract leave(): Promise<void>
+    public abstract start(): Promise<void>
+    public abstract pick(prop: PlayerPickableProp, value: number): Promise<void>
+
+    public abstract get canStart(): boolean
+    //public abstract get canKick(): boolean
 }
 
 export class LocalGame extends Game {
@@ -89,8 +112,8 @@ export class LocalGame extends Game {
                 ]
             }, opts)){
                 case 'name': game.name = await input({ message: 'Enter custom game name', default: game.name }, opts); break;
-                case 'map': game.map = await select({ message: 'Select custom game map', choices: Object.entries(maps).map(([key, value]) => ({ value: Number(key), name: value })), default: game.map }, opts); break;
-                case 'mode': game.mode = await select({ message: 'Select custom game mode', choices: Object.entries(modes).map(([key, value]) => ({ value: Number(key), name: value })), default: game.mode }, opts); break;
+                case 'map': game.map = await select({ message: 'Select custom game map', choices: Object.entries(MAPS).map(([key, value]) => ({ value: Number(key), name: value })), default: game.map }, opts); break;
+                case 'mode': game.mode = await select({ message: 'Select custom game mode', choices: Object.entries(MODES).map(([key, value]) => ({ value: Number(key), name: value })), default: game.mode }, opts); break;
                 case 'players': game.playersMax = await select({ message: 'Select custom game players', choices: [1, 2, 3, 4, 5, 6].map(v => ({ value: v, name: `${v}v${v}` })), default: game.playersMax }, opts); break;
                 //TODO: case 'features': opts.name = await input({ message: 'Enter custom game features', default: opts.name }, opts); break;
                 case 'password': game.name = await input({ message: 'Enter custom game password', default: game.name }, opts); break;
@@ -152,6 +175,12 @@ export class LocalGame extends Game {
                         //if(req.leaveRequest){
                         //    this.leaveInternal(peerId)
                         //}
+                        if(req.pickRequest){
+                            const key = int2ppp(req.pickRequest.prop)
+                            const value = req.pickRequest.value
+                            if(key && value >= 0)
+                                this.pickInternal(peerId, key, value)
+                        }
                     }
                 }
             )
@@ -233,6 +262,36 @@ export class LocalGame extends Game {
             }]
         })
     }
+
+    started = false
+    public get canStart(): boolean { return true }
+    public async start(){
+        if(!this.started){
+            this.started = true
+            this.broadcast({
+                to: this.players.values(),
+                startNotification: {},
+            })
+        }
+    }
+
+    public async pick(prop: PlayerPickableProp, value: number){
+        this.pickInternal(this.id, prop, value)
+    }
+    private pickInternal(id: PeerId, prop: PlayerPickableProp, value: number) {
+        const player = this.players_get(id)!
+        player.set(prop, value)
+        this.safeDispatchEvent('update')
+
+        this.broadcast({
+            to: this.players.values(),
+            pickNotifications: [{
+                publicKey: publicKeyToProtobuf(player.id.publicKey!),
+                prop: ppp2int(prop),
+                value,
+            }]
+        })
+    }
 }
 
 export class RemoteGame extends Game {
@@ -292,13 +351,23 @@ export class RemoteGame extends Game {
                             }
                             this.safeDispatchEvent('update')
                         }
+                        if(req.pickNotifications.length){
+                            for(const notification of req.pickNotifications){
+                                const id = peerIdFromPublicKey(publicKeyFromProtobuf(notification.publicKey))
+                                const player = this.players_get(id)
+                                const key = int2ppp(notification.prop)
+                                const value = notification.value
+                                if(key) player.set(key, value)
+                            }
+                            this.safeDispatchEvent('update')
+                        }
                     }
                 }
             )
             this.stream = undefined
             this.players.clear()
             this.joined = false
-            this.safeDispatchEvent('leave')
+            this.safeDispatchEvent('kick')
         } catch(err) {
             this.log.error(err)
         }
