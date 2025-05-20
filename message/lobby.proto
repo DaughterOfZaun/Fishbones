@@ -1,48 +1,26 @@
 syntax = "proto3"; 
 
-message LobbyMessage {
+message JoinRequest {
+    string name = 1;
+}
 
+message PickRequest {
+    int32 prop = 1;
+    int32 value = 2;
+}
+
+message LobbyRequestMessage {
     optional JoinRequest join_request = 1;
-    message JoinRequest {
-        string name = 1;
-    }
-    repeated JoinNotification join_notifications = 2;
-    message JoinNotification {
-        bytes publicKey = 1;
-        repeated bytes addrs = 2;
-        string name = 3;
-        int32 team = 4;
-    }
-    
-    //optional SwitchRequest switch_request = 3;
-    //message SwitchRequest {
-    //    int32 team = 1;
-    //}
-    //repeated SwitchNotification switch_notifications = 4;
-    //message SwitchNotification {
-    //    bytes publicKey = 1;
-    //    int32 team = 2;
-    //}
+    repeated PickRequest pick_requests = 2;
+}
 
-    optional LeaveRequest leave_request = 5;
-    message LeaveRequest {}
-    repeated LeaveNotification leave_notifications = 6;
-    message LeaveNotification {
+message LobbyNotificationMessage {
+    bool start_notification = 1;
+    repeated PeerRequests peers_requests = 2;
+    message PeerRequests {
         bytes publicKey = 1;
-    }
-
-    optional StartNotification start_notification = 7;
-    message StartNotification {}
-
-    optional PickRequest pick_request = 8;
-    message PickRequest {
-        int32 prop = 1;
-        int32 value = 2;
-    }
-    repeated PickNotification pick_notifications = 9;
-    message PickNotification {
-        bytes publicKey = 1;
-        int32 prop = 2;
-        int32 value = 3;
+        bool leave_notification = 2;
+        optional JoinRequest join_request = 3;
+        repeated PickRequest pick_requests = 4;
     }
 }

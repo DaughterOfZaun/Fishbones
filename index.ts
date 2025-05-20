@@ -11,7 +11,7 @@ import { identify, identifyPush } from '@libp2p/identify'
 import { ping } from '@libp2p/ping'
 import { defaultLogger } from '@libp2p/logger'
 import select from './ui/dynamic-select'
-import { map2str, mode2str, PLAYER_PICKABLE_PROPS, PLAYER_PICKABLE_PROPS_KEYS, team2color, type PlayerPickableProp } from './utils/constants'
+import { map2str, mode2str, PLAYER_PICKABLE_PROPS as PPPs, team2color, PlayerPickableProp as PPP, champ2str, sspell2str, ppp2str, lock2str } from './utils/constants'
 import { type Game, LocalGame, RemoteGame } from './game'
 import type { PeerId } from '@libp2p/interface'
 import type { Peer } from './message/peer'
@@ -137,31 +137,51 @@ async function main(){
 }
 
 async function lobby(game: Game){
-    type Action = ['noop'] | ['start'] | ['pick'] | ['pick', PlayerPickableProp] | ['exit']
+    type Action = ['noop'] | ['start'] | ['pick'] | ['pick', PPP] | ['lock'] | ['exit']
     const getChoices = () => ([
-        { value: ['start'] as Action, name: 'Start Game', disable: game.canStart() },
+        ...((!game.isStarted) ?
+            [{ value: ['start'] as Action, name: 'Start Game', disabled: !game.canStart }] :
+            [
+                { value: ['lock'] as Action, name: 'Lock In', disabled: false },
+                ...[PPP.Champion, PPP.SummonerSpell1, PPP.SummonerSpell2]
+                .map(ppp => ({ value: ['pick', ppp] as Action, name: ppp2str(ppp), disabled: false })),
+            ].map(c => {
+                c.disabled = game.getPlayer().lock > 0
+                return c
+            })
+        ),
         ...game.getPlayers().map(player => ({
-            value: ['noop'] as Action, name: color[team2color(player.team)](`[${player.id.toString().slice(-8)}] ${player.name}`)
+            value: ['noop'] as Action, name: color[team2color(player.team)]([
+                `[${player.id.toString().slice(-8)}] ${player.name}`,
+                `${champ2str(player.champion)}`,
+                `${sspell2str(player.sspell1)}`,
+                `${sspell2str(player.sspell2)}`,
+                `${lock2str(player.lock)}`,
+            ].join(' - '))
         })),
         { value: ['exit'] as Action, name: 'Quit' },
     ])
-    const controller = new AbortController()
-    const onexit = () => controller.abort(['exit'])
-    const onpick = () => controller.abort(['pick'])
-    game.addEventListener('kick', onexit)
-    game.addEventListener('pick', onpick)
+    let controller = new AbortController()
     const opts = {
         signal: controller.signal,
         clearPromptOnDone: true,
     }
+    const onexit = () => controller.abort(['exit'])
+    const onpick = () => {
+        controller.abort(['pick'])
+        controller = new AbortController()
+        opts.signal = controller.signal
+    }
+    game.addEventListener('kick', onexit)
+    game.addEventListener('pick', onpick)
     const handleAbort = (error: unknown) => {
         if (error instanceof AbortPromptError)
             return error.cause as Action
         else throw error
     }
-    while(true){
+    loop: while(true){
         const [action, ...args] = await select<Action>({
-            message: 'Waiting for players...',
+            message: (!game.isStarted) ? 'Waiting for players...' : 'Waiting for the game to start...',
             choices: getChoices(),
             cb: (setItem) => {
                 const listener = () => setItem(getChoices())
@@ -169,28 +189,41 @@ async function lobby(game: Game){
                 return () => game.removeEventListener('update', listener)
             }
         }, opts).catch(handleAbort)
+
         if(action == 'start' || (action == 'pick' && args.length == 0)){
-            if(action == 'start') game.start()
-            for(const prop of PLAYER_PICKABLE_PROPS_KEYS){
+            if(action == 'start'){
+                game.start()
+            }
+            for(const prop of [PPP.Champion, PPP.SummonerSpell1, PPP.SummonerSpell2]){
                 const [action] = await pick(prop, game, opts).catch(handleAbort)
                 if(action === 'exit'){
-                    break
+                    break loop
                 }
             }
         }
+        if(action == 'pick' && args.length == 1){
+            const prop = args[0]
+            const [action] = await pick(prop, game, opts).catch(handleAbort)
+            if(action === 'exit'){
+                break loop
+            }
+        }
+        if(action == 'lock'){
+            game.pick(PPP.Lock, +true)
+        }
         if(action == 'exit'){
-            break
+            break loop
         }
     }
     game.removeEventListener('kick', onexit)
     game.removeEventListener('pick', onpick)
 }
 
-async function pick(prop: PlayerPickableProp, game: Game, opts: Context){
+async function pick(prop: PPP, game: Game, opts: Context){
     type Action = ['pick', number]
     const [action, ...args] = await select<Action>({
-        message: `Pick your ${prop}!`,
-        choices: PLAYER_PICKABLE_PROPS[prop].map((v, i) => ({ value: ['pick', i], name: v}))
+        message: `Pick your ${ppp2str(prop)}!`,
+        choices: PPPs[prop].map((v, i) => ({ value: ['pick', i], name: v}))
     }, opts)
     if(action == 'pick')
         game.pick(prop, args[0])

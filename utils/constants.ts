@@ -1,5 +1,5 @@
+export const map2str = (num: number) => (num >= 0) ? MAPS[num] ?? `Map ${num}` : 'undefined'
 export const MAPS: Record<number, string> = {
-    0: `Unspecified`,
     1: `Old Summoner's Rift`,
     3: `Proving Grounds`,
     8: `Crystal Scar`,
@@ -15,23 +15,21 @@ export const MAPS: Record<number, string> = {
     21: `Temple of Lily and Lotus`,
     30: `Arena: Rings of Wrath`,
     35: `The Bandlewood`,
-} as const
-export const map2str = (num: number) => MAPS[num] || `Map ${num}`
+} //as const
 
+export const mode2str = (num: number) => (num >= 0) ? MODES[num] ?? `Mode ${num}` : 'undefined'
 export const MODES: Record<number, string> = {
-    0: 'Unspecified',
     1: 'CLASSIC',
     2: 'ARAM',
-} as const
-export const mode2str = (num: number) => MODES[num] || `Mode ${num}`
+} //as const
 
-export const COLOR_NAMES = [ 'blue', 'red', 'gray', 'green', 'yellow', 'magenta', 'cyan' ] as const
-export const team2color = (team: number): (typeof COLOR_NAMES)[number] => {
-    return COLOR_NAMES[team]!
+export const COLOR_NAMES = [ 'blue', 'red', 'green', 'yellow', 'magenta', 'cyan', 'white' ] as const
+export const team2color = (team: number): (typeof COLOR_NAMES)[number] | 'gray' => {
+    return (team >= 0) ? COLOR_NAMES[team] ?? 'white' : 'gray'
 }
 
+export const champ2str = (num: number) => (num >= 0) ? CHAMPIONS[num] ?? `Champion ${num}` : 'undefined'
 export const CHAMPIONS = [
-    'Unspecified',
     "Alistar",
     "Annie",
     "Ashe",
@@ -202,9 +200,10 @@ export const CHAMPIONS = [
     "Aurora",
     "Ambessa",
     "Mel",
-]
+] //as const
+
+export const sspell2str = (num: number) => (num >= 0) ? SUMMONER_SPELLS[num] ?? `Summoner Spell ${num}` : 'undefined'
 export const SUMMONER_SPELLS = [
-    'Unspecified',
     "Heal",
     "Ghost",
     "Barrier",
@@ -217,21 +216,46 @@ export const SUMMONER_SPELLS = [
     "Smite",
     "Cleanse", 
     "Ignite"
+] //as const
+
+export const team2str = (num: number) => (num >= 0) ? TEAMS[num] ?? `Team ${num}` : 'undefined'
+export const TEAMS = [
+    "Blue", "Purple", "Neutral",
 ]
 
-export const PLAYER_PICKABLE_PROPS = {
-    champion: CHAMPIONS,
-    summonerSpell1: SUMMONER_SPELLS,
-    summonerSpell2: SUMMONER_SPELLS,
-} as const
+export const lock2str = (num: number) => (num > 0) ? 'Locked' : 'Unlocked'
+export const LOCK = [ "Unlocked", "Locked" ]
 
-export type PlayerPickableProp = keyof typeof PLAYER_PICKABLE_PROPS
-export const PLAYER_PICKABLE_PROPS_KEYS = Object.keys(PLAYER_PICKABLE_PROPS) as PlayerPickableProp[]
-export const ppp2int = (ppp: PlayerPickableProp) => {
-    return PLAYER_PICKABLE_PROPS_KEYS.indexOf(ppp) + 1
+export enum PlayerPickableProp {
+    Team = 0,
+    Champion = 1,
+    SummonerSpell1 = 2,
+    SummonerSpell2 = 3,
+    Lock = 4,
 }
-export const int2ppp = (int: number) => {
-    if(int > 0 && int <= PLAYER_PICKABLE_PROPS_KEYS.length)
-        return PLAYER_PICKABLE_PROPS_KEYS[int - 1]!
-    return undefined
+
+export const ppp2str = (prop: PlayerPickableProp) => PLAYER_PICKABLE_PROPS_NAMES[prop]!
+const PLAYER_PICKABLE_PROPS_NAMES = [
+    'Team',
+    'Champion',
+    'Summoner Spell 1',
+    'Summoner Spell 2',
+    'Lock',
+]
+
+export const PLAYER_PICKABLE_PROPS: Record<PlayerPickableProp, string[]> = {
+    [PlayerPickableProp.Team]: TEAMS,
+    [PlayerPickableProp.Champion]: CHAMPIONS,
+    [PlayerPickableProp.SummonerSpell1]: SUMMONER_SPELLS,
+    [PlayerPickableProp.SummonerSpell2]: SUMMONER_SPELLS,
+    [PlayerPickableProp.Lock]: LOCK,
 }
+//export type PlayerPickablePropKeys = Uncapitalize<keyof typeof PlayerPickableProp>
+export const PLAYER_PICKABLE_PROPS_KEYS:
+(keyof typeof PLAYER_PICKABLE_PROPS)[] = [
+    PlayerPickableProp.Team,
+    PlayerPickableProp.Champion,
+    PlayerPickableProp.SummonerSpell1,
+    PlayerPickableProp.SummonerSpell2,
+    PlayerPickableProp.Lock,
+]
