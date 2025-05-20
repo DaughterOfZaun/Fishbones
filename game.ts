@@ -96,10 +96,10 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         this.log = logger('launcher:game')
     }
 
-    public abstract join(name: string): Promise<void>
-    public abstract leave(): Promise<void>
-    public abstract start(): Promise<void>
-    public abstract pick(prop: PPP, value: number): Promise<void>
+    public abstract join(name: string): Promise<boolean>
+    public abstract leave(): Promise<boolean>
+    public abstract start(): Promise<boolean>
+    public abstract pick(prop: PPP, value: number): Promise<boolean>
 
     public abstract get canStart(): boolean
     //public abstract get canKick(): boolean
@@ -171,6 +171,8 @@ export class LocalGame extends Game {
             this.joined = true
             this.node.handle(LOBBY_PROTOCOL, this.handleProtocol)
         }
+
+        return true
     }
     private handleProtocol: StreamHandler = async ({ stream, connection }) => {
         const peerId = connection.remotePeer
@@ -271,6 +273,7 @@ export class LocalGame extends Game {
         }
         this.players.clear()
         this.joined = false
+        return true
     }
     private leaveInternal(id: PeerId){
         
@@ -305,10 +308,12 @@ export class LocalGame extends Game {
                 startNotification: true,
             })
         }
+        return true
     }
 
     public async pick(prop: PPP, value: number){
         this.pickInternal(this.id, prop, value)
+        return true
     }
     private pickInternal(id: PeerId, prop: PPP, value: number) {
         const player = this.players_get(id)!
@@ -345,9 +350,8 @@ export class RemoteGame extends Game {
     private joined = false
     private stream?: MessageStream<LobbyRequestMessage, Stream>
     public async join(name: string) {
-        if(!this.joined){
-            this.joined = true
-            
+        if(this.joined) return true
+        try {
             const connection = await this.node.dial(this.id)
             const stream = await connection.newStream([ LOBBY_PROTOCOL ])
             
@@ -355,6 +359,11 @@ export class RemoteGame extends Game {
             await this.stream.write({ ...lrmDefaults, joinRequest: { name } })
             
             this.handleProtocol({ stream, connection })
+
+            return this.joined = true
+        } catch(err) {
+            this.log.error(err)
+            return false
         }
     }
     
@@ -404,28 +413,35 @@ export class RemoteGame extends Game {
     }
     
     public async leave() {
-        try {
+        //try {
             //await this.stream?.write({ ...lmDefaults, leaveRequest: {} })
             /*await*/ this.stream?.unwrap().unwrap().close()
                 .catch(err => this.log.error(err))
             this.stream = undefined
             this.players.clear()
             this.joined = false
-        } catch(err) {
-            this.log.error(err)
-        }
+        //} catch(err) {
+        //    this.log.error(err)
+        //}
+        return true
     }
 
     private started = false
     public get isStarted(){ return this.started }
     public get canStart(): boolean { return false }
-    public async start() {}
+    public async start() { return true }
     public async pick(prop: PPP, value: number) {
-        await this.stream?.write({
-            pickRequests: [{
-                prop: prop + 1,
-                value: value + 1,
-            }]
-        })
+        try {
+            await this.stream?.write({
+                pickRequests: [{
+                    prop: prop + 1,
+                    value: value + 1,
+                }]
+            })
+            return true
+        } catch(err) {
+            this.log.error(err)
+            return false
+        }
     }
 }

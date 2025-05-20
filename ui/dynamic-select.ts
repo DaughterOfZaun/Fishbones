@@ -128,7 +128,7 @@ export default createPrompt(
         const [items, setItems] = useState(() => normalizeChoices(config.choices))
         if(config.cb) useCallback(config.cb, choices => {
             setItems(normalizeChoices(choices))
-            setActive(Math.max(0, Math.min(items.length, active)))
+            setActive(Math.min(Math.max(0, active), choices.length - 1))
         })
 
         const bounds = useMemo(() => {
