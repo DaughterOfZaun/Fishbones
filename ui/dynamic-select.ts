@@ -24,7 +24,7 @@ import figures from '@inquirer/figures';
 import ansiEscapes from 'ansi-escapes';
 import { useCallback } from './use-callback';
 
-type SelectTheme = {
+export type SelectTheme = {
     icon: { cursor: string };
     style: {
         disabled: (text: string) => string;
@@ -44,7 +44,7 @@ const selectTheme: SelectTheme = {
     indexMode: 'hidden',
 };
 
-type Choice<Value> = {
+export type Choice<Value> = {
     value: Value;
     name?: string;
     description?: string;
@@ -53,7 +53,7 @@ type Choice<Value> = {
     type?: never;
 };
 
-type NormalizedChoice<Value> = {
+export type NormalizedChoice<Value> = {
     value: Value;
     name: string;
     description?: string;
@@ -61,7 +61,7 @@ type NormalizedChoice<Value> = {
     disabled: boolean | string;
 };
 
-type SelectConfig<
+export type SelectConfig<
     Value,
     ChoicesObject = ReadonlyArray<string | Choice<Value> | Separator>,
 > = {
