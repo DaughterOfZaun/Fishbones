@@ -1,5 +1,4 @@
-import { LOBBY_PROTOCOL, Team, type u } from './utils/constants'
-import select from './ui/dynamic-select'
+import { LOBBY_PROTOCOL, Team, ufill, type u } from './utils/constants'
 import { Peer as PBPeer } from './message/peer'
 import { type Libp2p, type PeerId, type StreamHandler } from '@libp2p/interface'
 import * as lp from 'it-length-prefixed'
@@ -9,40 +8,20 @@ import { LobbyRequestMessage, LobbyNotificationMessage, PickRequest } from './me
 import { publicKeyToProtobuf } from '@libp2p/crypto/keys'
 import { Game } from './game'
 import type { GamePlayer } from './game-player'
+import { logger } from '@libp2p/logger'
+import type { Server } from './server'
 
 export class LocalGame extends Game {
+    private log = logger('launcher:game-local')
 
-    private static fieldsToFillOnCreation = ['name', 'map', 'mode', 'playersMax', 'password'] as const
-    public static async create(node: Libp2p){
-        const game = new LocalGame(node, node.peerId)
-        const opts = { clearPromptOnDone: true }
-        loop: while(true){
-            type Action = ['edit', typeof LocalGame.fieldsToFillOnCreation[number]] | ['enter']
-            const [action, key] = await select<Action>({
-                message: 'Select property to edit',
-                choices: [
-                    ...LocalGame.fieldsToFillOnCreation.map(key => (
-                        { value: ['edit', key] as Action, short: game[key].name, name: `${game[key].name}: ${game[key].toString()}` }
-                    )),
-                    { value: ['enter'], short: 'Enter', name: 'Enter' },
-                ]
-            }, opts)
-            if(action == 'edit') await game[key].uinput()
-            if(action == 'enter') break loop;
-        }
-        return game
+    public static create(node: Libp2p, server: Server){
+        return ufill(new LocalGame(node, server)/*, ['name', 'map', 'mode', 'playersMax', 'password']*/)
     }
 
     public getData() {
         const data: PBPeer.AdditionalData = {
             name: 'Player',
-            serverSettings: {
-                name: 'Server',
-                maps: 0,
-                modes: 0,
-                tickRate: 0,
-                champions: []
-            },
+            serverSettings: this.server.encode(),
             gameInfos: [ this.encode() ],
         }
         return data
@@ -69,23 +48,21 @@ export class LocalGame extends Game {
                     for await (const data of source) {
                         const req = LobbyRequestMessage.decode(data)
                         let player: u|GamePlayer
-                        if(req.joinRequest && (player = this.players_get(peerId))){
+                        if(req.joinRequest && (player = this.players_add(peerId))){
                             player.stream = pbStream(stream).pb(LobbyNotificationMessage)
                             this.joinInternal(peerId, req.joinRequest.name)
                         }
                         //if(req.leaveRequest){
                         //    this.leaveInternal(peerId)
                         //}
-                        if(req.pickRequests.length && (player = this.players.get(peerId))){
-                            player.decodeAllInplace(req.pickRequests)
+                        if(req.pickRequest && (player = this.players.get(peerId))){
+                            player.decodeInplace(req.pickRequest)
                             this.safeDispatchEvent('update')
                             this.broadcast({
                                 to: this.players.values(),
-                                startNotification: false,
                                 peersRequests: [{
                                     publicKey: publicKeyToProtobuf(player.id.publicKey!),
-                                    pickRequests: req.pickRequests,
-                                    leaveNotification: false,
+                                    pickRequest: req.pickRequest,
                                 }],
                             })
                         }
@@ -109,7 +86,7 @@ export class LocalGame extends Game {
         const minPlayers = playerCounts.reduce((a, c) => Math.min(a, c))
         const team = playerCounts.indexOf(minPlayers)
 
-        const player = this.players_get(id)!
+        const player = this.players_add(id)
         player.name.value = name //TODO:
         player.team.value = team //TODO:
         this.safeDispatchEvent('update')
@@ -119,24 +96,20 @@ export class LocalGame extends Game {
         this.broadcast({
             to: this.players.values(),
             ignore: player,
-            startNotification: false,
             peersRequests: [{
                 publicKey: publicKeyToProtobuf(player.id.publicKey!),
-                leaveNotification: false,
                 joinRequest: { name: player.name.encode(), },
-                pickRequests: [ player.encode('team') ],
+                pickRequest: player.encode('team'),
             }]
         })
         
         this.broadcast({
             to: [ player ],
-            startNotification: false,
             peersRequests: [...this.players.values()].map(player => ({
                 publicKey: publicKeyToProtobuf(player.id.publicKey!),
                 //TODO: publicKey: new UInt8Array(),
-                leaveNotification: false,
                 joinRequest: { name: player.name.encode(), },
-                pickRequests: player.encodeAll(),
+                pickRequests: player.encode(),
             }))
         })
     }
@@ -162,7 +135,8 @@ export class LocalGame extends Game {
     }
     private leaveInternal(id: PeerId){
         
-        const player = this.players_get(id)!
+        const player = this.players.get(id)
+        if(!player) return
 
         //player?.stream?.unwrap().unwrap().close()
         //    .catch(err => this.log.error(err))
@@ -172,11 +146,9 @@ export class LocalGame extends Game {
         
         this.broadcast({
             to: this.players.values(),
-            startNotification: false,
             peersRequests: [{
                 publicKey: publicKeyToProtobuf(player.id.publicKey!),
                 leaveNotification: true,
-                pickRequests: [],
             }]
         })
     }
@@ -206,8 +178,7 @@ export class LocalGame extends Game {
             startNotification: false,
             peersRequests: [{
                 publicKey: publicKeyToProtobuf(player.id.publicKey!),
-                leaveNotification: false,
-                pickRequests: [ pr ]
+                pickRequest: pr
             }]
         })
         return true

@@ -1,39 +1,34 @@
-import { Champion, Lock, Name, PickableValue, SummonerSpell, Team, type u } from './utils/constants'
+import { Champion, Lock, Name, PickableValue, SummonerSpell, Team, type KeysByValue } from './utils/constants'
 import { type PeerId, type Stream } from '@libp2p/interface'
 import { type MessageStream } from 'it-protobuf-stream'
 import { LobbyNotificationMessage, PickRequest } from './message/lobby'
+import type { Game } from './game'
 
-type KeysByValue<T, V> = Exclude<{ [K in keyof T]: T[K] extends V ? K : u }[keyof T], u>
 const pickableKeys = ["team", "champion", "spell1", "spell2", "lock"] as const
 export type PlayerPickableProps = KeysByValue<GamePlayer, PickableValue>
 export type PPP = PlayerPickableProps
 export class GamePlayer {
-    id: PeerId
+    private readonly game: Game
+    public readonly id: PeerId
+    
     name = new Name('Player')
     stream?: MessageStream<LobbyNotificationMessage, Stream>
-    constructor(id: PeerId){
+    
+    constructor(game: Game, id: PeerId){
+        this.game = game
         this.id = id
     }
+    
+    public readonly team = new Team() //TODO: disallow uinput & decodeInplace
+    public readonly champion = new Champion(undefined, () => this.game.server.champions)
+    public readonly spell1 = new SummonerSpell(undefined, () => this.game.server.spells)
+    public readonly spell2 = new SummonerSpell(undefined, () => this.game.server.spells)
+    public readonly lock = new Lock()
 
-    team = new Team()
-    champion = new Champion()
-    spell1 = new SummonerSpell()
-    spell2 = new SummonerSpell()
-    lock = new Lock()
-
-    encode(ppp: PPP): PickRequest {
-        return { prop: pickableKeys.indexOf(ppp), value: this[ppp].encode() }
+    encode(ppp?: PPP): PickRequest {
+        return ppp ? ({ [ppp]: this[ppp].encode() }) : Object.fromEntries(pickableKeys.map(key => [key, this[key].encode()]))
     }
-    encodeAll(): PickRequest[] {
-        //const keys = Object.entries(this).filter(([k, v]) => v instanceof PickableValue).map(([k, v]) => k)
-        return pickableKeys.map((key, i) => ({ prop: i, value: this[key].encode() }))
-    }
-    decodeInplace(pr: PickRequest): boolean {
-        return pr.prop >= 0
-            && pr.prop < pickableKeys.length
-            && this[pickableKeys[pr.prop]!].decodeInplace(pr.value)
-    }
-    decodeAllInplace(prs: PickRequest[]): boolean {
-        return prs.reduce((a, pr) => a && this.decodeInplace(pr), true)
+    decodeInplace(prs: PickRequest): boolean {
+        return Object.entries(prs).reduce((a, [key, value]) => this[key as PPP].decodeInplace(+value), true)
     }
 }

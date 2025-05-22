@@ -10,7 +10,6 @@ import { identify, identifyPush } from '@libp2p/identify'
 import { ping } from '@libp2p/ping'
 import { defaultLogger } from '@libp2p/logger'
 import select, { type Choice } from './ui/dynamic-select'
-import {} from './utils/constants'
 import { type Game } from './game'
 import color from 'yoctocolors'
 import { noise } from '@chainsafe/libp2p-noise'
@@ -18,6 +17,7 @@ import { AbortPromptError } from '@inquirer/core'
 import { RemoteGame } from './game-remote'
 import { LocalGame } from './game-local'
 import type { PPP } from './game-player'
+import { LocalServer, RemoteServer } from './server'
 
 const port = Number(process.argv[2]) || 5118
 const portDHT = port - 1
@@ -64,16 +64,20 @@ async function main(){
     
     const getChoices = () =>
         pspd.getPeersWithData()
-        .flatMap(pwd => pwd.data!.gameInfos.map(gameInfo => ({
-            id: pwd.id,
-            name: pwd.data!.name,
-            serverSettings: pwd.data!.serverSettings!,
-            game: RemoteGame.create(node, pwd.id, gameInfo) //TODO: Cache
-        })))
-        .map(({ id, name, game, serverSettings }) => ({
+        .filter(pwd => pwd.data?.serverSettings)
+        .flatMap(pwd => {
+            const server = RemoteServer.create(node, pwd.id, pwd.data!.serverSettings!) //TODO: Cache
+            return pwd.data!.gameInfos.map(gameInfo => ({
+                id: pwd.id,
+                name: pwd.data!.name,
+                server: server,
+                game: RemoteGame.create(node, server, gameInfo) //TODO: Cache
+            }))
+        })
+        .map(({ id, name, game, server }) => ({
             value: ['join', game] as Action,
             name: [
-                `[${id.toString().slice(-8)}] ${name}'s ${game.name.toString()} at ${serverSettings.name}`,
+                `[${id.toString().slice(-8)}] ${name}'s ${game.name.toString()} at ${server.name.toString()}`,
                 [
                     ` `,
                     `(${('' + game.getPlayersCount()).padStart(2, ' ')}/${('' + 2 * (game.playersMax.value ?? 0)).padEnd(2, ' ')})`,
@@ -100,7 +104,8 @@ async function main(){
             clearPromptOnDone: true,
         })
         if(action == 'host'){
-            const game = await LocalGame.create(node)
+            const server = await LocalServer.create(node, node.peerId)
+            const game = await LocalGame.create(node, server)
 
             const data = game.getData()
             pspd.setData(data)

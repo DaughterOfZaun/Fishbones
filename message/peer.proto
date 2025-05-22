@@ -9,19 +9,21 @@ message Peer {
         ServerSettings serverSettings = 2;
         message ServerSettings {
             string name = 1;
-            fixed32 maps = 2;
-            fixed32 modes = 3;
+            repeated uint32 maps = 2;
+            repeated uint32 modes = 3;
             uint32 tickRate = 4;
-            repeated fixed32 champions = 5;
+            repeated int32 champions = 5;
+            repeated int32 spells = 6;
         }
         repeated GameInfo gameInfos = 3;
         message GameInfo {
-            string name = 1;
-            uint32 map = 2;
-            uint32 mode = 3;
+            uint32 id = 1;
+            string name = 2;
+            uint32 map = 3;
+            uint32 mode = 4;
             uint32 players = 5;
             uint32 players_max = 6;
-            fixed32 features = 7;
+            uint32 features = 7;
             bool passwordProtected = 8;
         }
     }

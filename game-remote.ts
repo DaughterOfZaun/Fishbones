@@ -1,6 +1,6 @@
 import { LOBBY_PROTOCOL } from './utils/constants'
 import { Peer as PBPeer } from './message/peer'
-import { type Libp2p, type PeerId, type Stream, type StreamHandler } from '@libp2p/interface'
+import { type Libp2p, type Stream, type StreamHandler } from '@libp2p/interface'
 import * as lp from 'it-length-prefixed'
 import { pbStream, type MessageStream } from 'it-protobuf-stream'
 import { pipe } from 'it-pipe'
@@ -8,12 +8,15 @@ import { LobbyRequestMessage, LobbyNotificationMessage, PickRequest } from './me
 import { publicKeyFromProtobuf } from '@libp2p/crypto/keys'
 import { peerIdFromPublicKey } from '@libp2p/peer-id'
 import { Game } from './game'
+import type { Server } from './server'
+import { logger } from '@libp2p/logger'
 
 export class RemoteGame extends Game {
+    private log = logger('launcher:game-remote')
 
-    public static create(node: Libp2p, id: PeerId, gameInfo: PBPeer.AdditionalData.GameInfo){
-        const game = new RemoteGame(node, id)
-        game.decode(gameInfo)
+    public static create(node: Libp2p, server: Server, gameInfo: PBPeer.AdditionalData.GameInfo){
+        const game = new RemoteGame(node, server)
+        game.decodeInplace(gameInfo)
         return game
     }
 
@@ -26,8 +29,7 @@ export class RemoteGame extends Game {
             
             this.stream = pbStream(stream).pb(LobbyRequestMessage)
             await this.stream.write({
-                joinRequest: { name },
-                pickRequests: [],
+                joinRequest: { name, roomId: 0 },
             })
             
             this.handleProtocol({ stream, connection })
@@ -59,14 +61,14 @@ export class RemoteGame extends Game {
                             for(const r of req.peersRequests){
                                 const id = r.publicKey ? peerIdFromPublicKey(publicKeyFromProtobuf(r.publicKey)) : this.node.peerId
                                 if(r.joinRequest){
-                                    const player = this.players_get(id)
+                                    const player = this.players_add(id)
                                     player.name.decodeInplace(r.joinRequest.name)
                                 }
                                 if(r.leaveNotification){
                                     this.players.delete(id)
                                 }
-                                if(r.pickRequests){
-                                    this.players.get(id)?.decodeAllInplace(r.pickRequests)
+                                if(r.pickRequest){
+                                    this.players.get(id)?.decodeInplace(r.pickRequest)
                                 }
                             }
                             this.safeDispatchEvent('update')
@@ -102,7 +104,7 @@ export class RemoteGame extends Game {
     public async pick(pr: PickRequest) {
         try {
             await this.stream?.write({
-                pickRequests: [ pr ]
+                pickRequest: pr
             })
             return true
         } catch(err) {

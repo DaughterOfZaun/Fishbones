@@ -1,29 +1,41 @@
-import { input, select } from "@inquirer/prompts"
-import type { Choice } from "../ui/dynamic-select"
+import { input, select, checkbox } from "@inquirer/prompts"
+import type { Choice as SelectChoice } from "../ui/dynamic-select"
+type CheckboxChoice<T> = Extract<Parameters<typeof checkbox<T>>[0]['choices'][number], { value: T }>
 
 export type u = undefined
 
 export const LOBBY_PROTOCOL = `/lobby/${0}`
 
-export interface ValueDesc<I, E> {
-    name: string
-    value?: I
-    encode(): E
-    decodeInplace(v: E): void
-    uinput(...args: unknown[]): Promise<unknown>
-    toString(): string
+export abstract class ValueDesc<I, E> {
+    public name!: string
+    public value?: I
+    abstract encode(): E
+    abstract decodeInplace(v: E): boolean
+    abstract uinput(...args: unknown[]): Promise<unknown>
+    abstract toString(): string
 }
 
-export class PickableValue implements ValueDesc<number, number> {
-    public readonly name: string
+//type OmitFirst<T extends unknown[]> = T extends [unknown, ...infer R] ? R : never
+//type PickableValueConstructorArgs = OmitFirst<ConstructorParameters<typeof PickableValue>>
+//type PickableValueConstructor = new (...args: ConstructorParameters<typeof PickableValue>) => PickableValue
+type PickableValueStatics = { name: string, values: Record<number, string>, choices: SelectChoice<number>[] }
+export class PickableValue extends ValueDesc<number, number> {
     public value?: number
+    public readonly name: string
     private readonly values: Record<number, string>
-    private readonly choices: Choice<number>[]
-    constructor(name: string, value: u|number, values: Record<number, string>, choices: Choice<number>[]){
-        this.name = name
+    private readonly choices: SelectChoice<number>[]
+    private readonly enabledGetter?: () => Enabled
+    //private readonly enabled?: Enabled
+    constructor(value?: number, enabledGetter?: () => Enabled){
+    //constructor(value?: number, enabled?: Enabled){
+        super()
+        const statics = this.constructor as unknown as PickableValueStatics
+        this.name = statics.name
+        this.values = statics.values
+        this.choices = statics.choices
         this.value = value
-        this.values = values
-        this.choices = choices
+        this.enabledGetter = enabledGetter
+        //this.enabled = enabled
     }
     public encode(){ return (this.value ?? -1) + 1 }
     public decodeInplace(from: number): boolean {
@@ -34,13 +46,24 @@ export class PickableValue implements ValueDesc<number, number> {
         return false
     }
     public async uinput(controller?: AbortController) {
-        this.value = await select({
-            message: `Select ${this.name}`,
-            choices: this.choices
-        }, {
-            clearPromptOnDone: true,
-            signal: controller?.signal
-        })
+        const enabled = this.enabledGetter?.call(null)
+        //const enabled = this.enabled
+        if(enabled) for(const choice of this.choices){
+            choice.disabled = !enabled.value.includes(choice.value)
+        }
+        try {
+            this.value = await select({
+                message: `Select ${this.name}`,
+                choices: this.choices
+            }, {
+                clearPromptOnDone: true,
+                signal: controller?.signal
+            })
+        } finally {
+            if(enabled) for(const choice of this.choices){
+                choice.disabled = false
+            }
+        }
     }
     public get [Symbol.toStringTag]() {
         throw new Error("An attempt to output an object without first converting it to a string")
@@ -49,14 +72,14 @@ export class PickableValue implements ValueDesc<number, number> {
     public toString(): string {
         return (this.value != undefined) ? this.values[this.value]! : 'undefined'
     }
-    public static normalize(values: Record<number, string>): Choice<number>[] {
+    public static normalize(values: Record<number, string>): SelectChoice<number>[] {
         return Object.entries(values).map(([k, v]) => ({ value: Number(k), name: v }))
     }
 }
 
-export class Map extends PickableValue {
-    private static name = 'Map'
-    private static values = {
+export class GameMap extends PickableValue {
+    public static readonly name = 'Game Map'
+    public static readonly values = {
         1: `Old Summoner's Rift`,
         3: `Proving Grounds`,
         8: `Crystal Scar`,
@@ -73,23 +96,21 @@ export class Map extends PickableValue {
         30: `Arena: Rings of Wrath`,
         35: `The Bandlewood`,
     }
-    private static choices = PickableValue.normalize(Map.values)
-    public constructor(value?: number){ super(Map.name, value, Map.values, Map.choices) }
+    public static readonly choices = PickableValue.normalize(GameMap.values)
 }
 
-export class Mode extends PickableValue {
-    private static name = 'Mode'
-    private static values = [
+export class GameMode extends PickableValue {
+    public static readonly name = 'Game Mode'
+    public static readonly values = [
         'CLASSIC',
         'ARAM',
     ]
-    private static choices = PickableValue.normalize(Mode.values)
-    public constructor(value?: number){ super(Mode.name, value, Mode.values, Mode.choices) }
+    public static readonly choices = PickableValue.normalize(GameMode.values)
 }
 
 export class Champion extends PickableValue {
-    private static name = 'Champion'
-    private static values = [
+    public static readonly name = 'Champion'
+    public static readonly values = [
         "Alistar",
         "Annie",
         "Ashe",
@@ -261,13 +282,12 @@ export class Champion extends PickableValue {
         "Ambessa",
         "Mel",
     ]
-    private static choices = PickableValue.normalize(Champion.values)
-    public constructor(value?: number){ super(Champion.name, value, Champion.values, Champion.choices) }
+    public static readonly choices = PickableValue.normalize(Champion.values)
 }
 
 export class SummonerSpell extends PickableValue {
-    private static name = 'Summoner Spell'
-    private static values = [
+    public static readonly name = 'Summoner Spell'
+    public static readonly values = [
         "Heal",
         "Ghost",
         "Barrier",
@@ -281,43 +301,48 @@ export class SummonerSpell extends PickableValue {
         "Cleanse", 
         "Ignite"
     ]
-    private static choices = PickableValue.normalize(SummonerSpell.values)
-    public constructor(value?: number){ super(SummonerSpell.name, value, SummonerSpell.values, SummonerSpell.choices) }
+    public static readonly choices = PickableValue.normalize(SummonerSpell.values)
 }
 
 export class Team extends PickableValue {
-    private static name = 'Team'
+    public static readonly name = 'Team'
     public  static values = [
         "Blue", "Purple", "Neutral",
     ]
     public static readonly count = 2
-    private static choices = PickableValue.normalize(Team.values)
-    public constructor(value?: number){ super(Team.name, value, Team.values, Team.choices) }
+    public static readonly choices = PickableValue.normalize(Team.values)
+
     static colors = [ 'blue', 'red', 'green', 'yellow', 'magenta', 'cyan', 'white' ] as const
     public color(): (typeof Team.colors)[number] | 'gray' {
         return (this.value != undefined) ? Team.colors[this.value] ?? 'white' : 'gray'
     }
+
     public get index(){ return this.value ?? -1 }
 }
 
 export class Lock extends PickableValue {
-    private static name = 'Lock'
-    private static values = [ "Unlocked", "Locked" ]
-    private static choices = PickableValue.normalize(Lock.values)
-    public constructor(value: number = +false){ super(Lock.name, value, Lock.values, Lock.choices) }
+    public static readonly name = 'Lock'
+    public static readonly values = [ "Unlocked", "Locked" ]
+    public static readonly choices = PickableValue.normalize(Lock.values)
 }
 
 export class PlayerCount extends PickableValue {
-    private static name = 'Player Count'
-    private static values = Object.fromEntries(Array(6).fill(0).map((v, i) => [ ++i, `${i}v${i}`]))
-    private static choices = PickableValue.normalize(PlayerCount.values)
-    public constructor(value?: number){ super(PlayerCount.name, value, PlayerCount.values, PlayerCount.choices) }
+    public static readonly name = 'Player Count'
+    public static values = Object.fromEntries(Array(6).fill(0).map((v, i) => [ ++i, `${i}v${i}`]))
+    public static readonly choices = PickableValue.normalize(PlayerCount.values)
 }
 
-export class InputableValue implements ValueDesc<string, string> {
-    public readonly name: string
+export class TickRate extends PickableValue {
+    public static readonly name = 'Tick Rate'
+    public static values = Object.fromEntries([30, 60, 15].map(v => [ v, `${v} fps`]))
+    public static readonly choices = PickableValue.normalize(TickRate.values)
+}
+
+export class InputableValue extends ValueDesc<string, string> {
     public value?: string
+    public readonly name: string
     constructor(name: string, value?: string){
+        super()
         this.name = name
         this.value = value
     }
@@ -346,7 +371,7 @@ export class InputableValue implements ValueDesc<string, string> {
 }
 
 export class Password extends InputableValue {
-    private static name = 'Password'
+    public static readonly name = 'Password'
     public constructor(){ super(Password.name) }
     public toString(): string {
         return this.value?.replace(/./g, '*') ?? 'undefined'
@@ -355,9 +380,97 @@ export class Password extends InputableValue {
 }
 
 export class Name extends InputableValue {
-    private static name = 'Name'
+    public static readonly name = 'Name'
     public constructor(value: string){ super(Name.name, value) }
     public toString(): string {
         return this.value ?? 'undefined'
     }
+}
+
+export class Enabled extends ValueDesc<number[], number[]>{
+    public value: number[] = []
+    public readonly name: string
+    private readonly values: Record<number, string>
+    private readonly choices: CheckboxChoice<number>[]
+    constructor(){
+        super()
+        const statics = this.constructor as unknown as PickableValueStatics
+        this.name = statics.name
+        this.values = statics.values
+        this.choices = statics.choices
+    }
+    encode(): number[] {
+        return this.value
+    }
+    decodeInplace(v: number[]): boolean {
+        this.value = v.filter(v => v in this.values)
+        return true
+    }
+    async uinput(controller?: AbortController) {
+        this.value = await checkbox({
+            message: `Check ${this.name}`,
+            choices: this.choices
+        }, {
+            clearPromptOnDone: true,
+            signal: controller?.signal,
+        })
+    }
+    public get [Symbol.toStringTag]() {
+        throw new Error("An attempt to output an object without first converting it to a string")
+        //return this.toString()
+    }
+    toString(): string {
+        return `${this.value.length} of ${this.choices.length} checked`
+    }
+}
+
+export const GameMapsEnabled = enabled(GameMap)
+export const GameModesEnabled = enabled(GameMode)
+export const ChampionsEnabled = enabled(Champion)
+export const SummonerSpellsEnabled = enabled(SummonerSpell)
+
+export function enabled(wrapped: PickableValueStatics){
+    return class EnabledSubclass extends Enabled {
+        public static readonly name = `${wrapped.name}s Enabled`
+        public static readonly values = wrapped.values
+        public static readonly choices: CheckboxChoice<number>[] = wrapped.choices
+    }
+}
+
+export type KeysByValue<T, V> = Exclude<{ [K in keyof T]: T[K] extends V ? K : u }[keyof T], u>
+
+export type DescKeys<T> = KeysByValue<T, ValueDesc<unknown, unknown>>
+export async function ufill<T extends object>(obj: T, fields?: DescKeys<T>[]): Promise<T> {
+    fields ||= (Object.keys(obj) as (keyof T)[]).filter(key => obj[key] instanceof ValueDesc) as unknown as DescKeys<T>[]
+    const opts = { clearPromptOnDone: true }
+    type ActionEdit = ['edit', DescKeys<T>]
+    type Action = ActionEdit | ['enter']
+    let selected: u|Action = undefined
+    const fieldChoices = fields.map(key => {
+        const obj_key = obj[key] as ValueDesc<unknown, unknown>
+        return { value: ['edit', key] as ActionEdit, short: obj_key.name, name: '' }
+    })
+    const choices = [
+        ...fieldChoices,
+        { value: ['enter'] as Action, short: 'Enter', name: 'Enter' },
+    ]
+    loop: while(true){
+        for(const fieldChoice of fieldChoices){
+            const key = fieldChoice.value[1]
+            const obj_key = obj[key] as ValueDesc<unknown, unknown>
+            fieldChoice.name = `${obj_key.name}: ${obj_key.toString()}`
+        }
+        selected = await select<Action>({
+            message: 'Select property to edit',
+            default: selected,
+            choices,
+        }, opts)
+        const [action, key] = selected
+        if(action == 'edit'){
+            const obj_key = obj[key] as ValueDesc<unknown, unknown>
+            await obj_key.uinput(obj_key)
+        }
+        if(action == 'enter') break loop;
+    }
+    return obj
 }
