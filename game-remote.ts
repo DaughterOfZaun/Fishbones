@@ -4,12 +4,13 @@ import { type Libp2p, type Stream, type StreamHandler } from '@libp2p/interface'
 import * as lp from 'it-length-prefixed'
 import { pbStream, type MessageStream } from 'it-protobuf-stream'
 import { pipe } from 'it-pipe'
-import { LobbyRequestMessage, LobbyNotificationMessage, PickRequest } from './message/lobby'
+import { LobbyRequestMessage, LobbyNotificationMessage } from './message/lobby'
 import { publicKeyFromProtobuf } from '@libp2p/crypto/keys'
 import { peerIdFromPublicKey } from '@libp2p/peer-id'
 import { Game } from './game'
 import type { Server } from './server'
 import { logger } from '@libp2p/logger'
+import type { PPP } from './game-player'
 
 export class RemoteGame extends Game {
     private log = logger('launcher:game-remote')
@@ -101,15 +102,22 @@ export class RemoteGame extends Game {
 
     public get canStart(): boolean { return false }
     public async start() { return true }
-    public async pick(pr: PickRequest) {
+    public async set(prop: PPP, value?: number){
+        const player = this.getPlayer()
+        if(!player) return false
+
+        if(value !== undefined)
+            player[prop].value = value
+
         try {
             await this.stream?.write({
-                pickRequest: pr
+                pickRequest: player.encode(prop)
             })
             return true
         } catch(err) {
             this.log.error(err)
             return false
         }
+        return true
     }
 }

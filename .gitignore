@@ -1,5 +1,9 @@
 # generated
-./message/*.ts
+/message/*.ts
+
+# downloaded
+/downloads/*
+!/downloads/*.torrent
 
 # dependencies (bun install)
 node_modules

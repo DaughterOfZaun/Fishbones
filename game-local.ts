@@ -7,7 +7,7 @@ import { pipe } from 'it-pipe'
 import { LobbyRequestMessage, LobbyNotificationMessage, PickRequest } from './message/lobby'
 import { publicKeyToProtobuf } from '@libp2p/crypto/keys'
 import { Game } from './game'
-import type { GamePlayer } from './game-player'
+import type { GamePlayer, PPP } from './game-player'
 import { logger } from '@libp2p/logger'
 import type { Server } from './server'
 
@@ -29,13 +29,12 @@ export class LocalGame extends Game {
 
     public async join(name: string){
         
-        this.joinInternal(this.id, name)
+        this.joinInternal(this.id, { name, roomId: 0 })
 
         if(!this.joined){
             this.joined = true
             this.node.handle(LOBBY_PROTOCOL, this.handleProtocol)
         }
-
         return true
     }
     private handleProtocol: StreamHandler = async ({ stream, connection }) => {
@@ -50,21 +49,13 @@ export class LocalGame extends Game {
                         let player: u|GamePlayer
                         if(req.joinRequest && (player = this.players_add(peerId))){
                             player.stream = pbStream(stream).pb(LobbyNotificationMessage)
-                            this.joinInternal(peerId, req.joinRequest.name)
+                            this.joinInternal(peerId, req.joinRequest)
                         }
                         //if(req.leaveRequest){
                         //    this.leaveInternal(peerId)
                         //}
                         if(req.pickRequest && (player = this.players.get(peerId))){
-                            player.decodeInplace(req.pickRequest)
-                            this.safeDispatchEvent('update')
-                            this.broadcast({
-                                to: this.players.values(),
-                                peersRequests: [{
-                                    publicKey: publicKeyToProtobuf(player.id.publicKey!),
-                                    pickRequest: req.pickRequest,
-                                }],
-                            })
+                            this.pickInternal(peerId, req.pickRequest)
                         }
                     }
                 }
@@ -74,7 +65,7 @@ export class LocalGame extends Game {
             this.log.error(err)
         }
     }
-    private joinInternal(id: PeerId, name: string){
+    private joinInternal(id: PeerId, { name }: LobbyRequestMessage.JoinRequest) {
         
         console.assert(id.publicKey !== undefined)
         
@@ -168,19 +159,26 @@ export class LocalGame extends Game {
         return true
     }
 
-    public async pick(pr: PickRequest){
+    public async set(prop: PPP, value?: number){
         const player = this.getPlayer()
-        if(!player) return false //TODO:
-        //player.decodeInplace(pr)
+        if(!player) return false
+
+        if(value !== undefined)
+            player[prop].value = value
+        
+        this.pickInternal(player.id, player.encode(prop))
+        return true
+    }
+
+    private pickInternal(peerId: PeerId, req: PickRequest){
         this.safeDispatchEvent('update')
         this.broadcast({
             to: this.players.values(),
             startNotification: false,
             peersRequests: [{
-                publicKey: publicKeyToProtobuf(player.id.publicKey!),
-                pickRequest: pr
+                publicKey: publicKeyToProtobuf(peerId.publicKey!),
+                pickRequest: req
             }]
         })
-        return true
     }
 }

@@ -1,8 +1,7 @@
 import { GameMap as GameMap, GameMode as GameMode, Name, Password, PlayerCount } from './utils/constants'
 import { TypedEventEmitter, type Libp2p, type PeerId } from '@libp2p/interface'
 import { PeerMap } from '@libp2p/peer-collections'
-import { GamePlayer } from './game-player'
-import type { PickRequest } from './message/lobby'
+import { GamePlayer, type PPP } from './game-player'
 import type { Peer as PBPeer } from './message/peer'
 import type { Server } from './server'
 
@@ -55,7 +54,13 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     public abstract join(name: string): Promise<boolean>
     public abstract leave(): Promise<boolean>
     public abstract start(): Promise<boolean>
-    public abstract pick(pr: PickRequest): Promise<boolean>
+    public async pick(prop: PPP, controller: AbortController): Promise<boolean> {
+        const player = this.getPlayer()
+        if(!player) return false
+        await player[prop].uinput(controller)
+        return await this.set(prop)
+    }
+    public abstract set(prop: PPP, value?: number): Promise<boolean>
 
     public abstract get canStart(): boolean
     //public abstract get canKick(): boolean

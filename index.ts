@@ -205,7 +205,8 @@ async function lobby(game: Game){
                 game.start()
             }
             for(const prop of ['champion', 'spell1', 'spell2'] as const){
-                const [action] = await pick(prop, game, controller).catch(handleAbort)
+                const [action] = await game.pick(prop, controller)
+                    .then(() => ['noop']).catch(handleAbort)
                 if(action === 'exit'){
                     break loop
                 }
@@ -213,15 +214,14 @@ async function lobby(game: Game){
         }
         if(action == 'pick' && args.length == 1){
             const prop = args[0]
-            const [action] = await pick(prop, game, controller).catch(handleAbort)
+            const [action] = await game.pick(prop, controller)
+                .then(() => ['noop']).catch(handleAbort)
             if(action === 'exit'){
                 break loop
             }
         }
         if(action == 'lock'){
-            const player = game.getPlayer()!
-            player.lock.value = +true
-            game.pick(player.encode('lock'))
+            game.set('lock', +true)
         }
         if(action == 'exit'){
             break loop
@@ -229,12 +229,4 @@ async function lobby(game: Game){
     }
     game.removeEventListener('kick', onexit)
     game.removeEventListener('pick', onpick)
-}
-
-//TODO:
-async function pick(prop: PPP, game: Game, controller: AbortController){
-    const player = game.getPlayer()!
-    await player[prop].uinput(controller)
-    game.pick(player.encode(prop))
-    return ['noop']
 }
