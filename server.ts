@@ -40,6 +40,13 @@ export abstract class Server {
             && this.champions.decodeInplace(settings.champions)
             && this.spells.decodeInplace(settings.spells)
     }
+
+    public validate(){
+        return this.maps.value.length > 0
+            && this.modes.value.length > 0
+            && this.champions.value.length > 0
+            && this.spells.value.length > 0
+    }
 }
 
 export class RemoteServer extends Server {
@@ -53,7 +60,7 @@ export class RemoteServer extends Server {
 
 export class LocalServer extends Server {
     private log = logger('launcher:server-local')
-    public static create(node: Libp2p, id: PeerId){
-        return ufill(new LocalServer(node, id)/*, ['name', 'maps', 'modes', 'tickRate', 'champions', 'spells']*/)
+    public static create(node: Libp2p){
+        return ufill(new LocalServer(node, node.peerId)/*, ['name', 'maps', 'modes', 'tickRate', 'champions', 'spells']*/)
     }
 }

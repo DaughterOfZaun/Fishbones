@@ -1,51 +1,53 @@
 import { LOBBY_PROTOCOL } from './utils/constants'
 import { Peer as PBPeer } from './message/peer'
-import { type Libp2p, type Stream, type StreamHandler } from '@libp2p/interface'
+import { type Libp2p, type PeerId, type Stream, type StreamHandler } from '@libp2p/interface'
 import * as lp from 'it-length-prefixed'
 import { pbStream, type MessageStream } from 'it-protobuf-stream'
 import { pipe } from 'it-pipe'
 import { LobbyRequestMessage, LobbyNotificationMessage } from './message/lobby'
-import { publicKeyFromProtobuf } from '@libp2p/crypto/keys'
-import { peerIdFromPublicKey } from '@libp2p/peer-id'
 import { Game } from './game'
 import type { Server } from './server'
 import { logger } from '@libp2p/logger'
-import type { PPP } from './game-player'
 
 export class RemoteGame extends Game {
-    private log = logger('launcher:game-remote')
+    protected log = logger('launcher:game-remote')
 
-    public static create(node: Libp2p, server: Server, gameInfo: PBPeer.AdditionalData.GameInfo){
-        const game = new RemoteGame(node, server)
+    public get canStart(): boolean { return false }
+
+    public static create(node: Libp2p, ownerId: PeerId, server: Server, gameInfo: PBPeer.AdditionalData.GameInfo){
+        const game = new RemoteGame(node, ownerId, server)
         game.decodeInplace(gameInfo)
         return game
     }
 
-    private stream?: MessageStream<LobbyRequestMessage, Stream>
-    public async join(name: string) {
-        if(this.joined) return true
+    public async connect(){
+        if(this.connected) return true
         try {
-            const connection = await this.node.dial(this.id)
+            const connection = await this.node.dial(this.ownerId)
             const stream = await connection.newStream([ LOBBY_PROTOCOL ])
-            
             this.stream = pbStream(stream).pb(LobbyRequestMessage)
-            await this.stream.write({
-                joinRequest: { name, roomId: 0 },
-            })
-            
-            this.handleProtocol({ stream, connection })
+            this.handleOutgoingStream({ stream, connection })
+            this.connected = true
+            return true
+        } catch(err) {
+            this.log.error(err)
+            return false
+        }
+    }
 
-            return this.joined = true
+    private stream?: MessageStream<LobbyRequestMessage, Stream>
+    protected async stream_write(req: LobbyRequestMessage){
+        try {
+            await this.stream?.write(req)
+            return true
         } catch(err) {
             this.log.error(err)
             return false
         }
     }
     
-    private handleProtocol: StreamHandler = async ({ stream /*, connection*/ }) => {
-        
+    private handleOutgoingStream: StreamHandler = async ({ stream /*, connection*/ }) => {
         //if(!connection.remotePeer.equals(this.id)) return
-        
         try {
             await pipe(
                 stream,
@@ -53,71 +55,35 @@ export class RemoteGame extends Game {
                 async (source) => {
                     for await (const data of source) {
                         const req = LobbyNotificationMessage.decode(data)
-
-                        if(req.startNotification){
-                            this.started = true
-                            this.safeDispatchEvent('pick')
-                        }
-                        if(req.peersRequests.length){
-                            for(const r of req.peersRequests){
-                                const id = r.publicKey ? peerIdFromPublicKey(publicKeyFromProtobuf(r.publicKey)) : this.node.peerId
-                                if(r.joinRequest){
-                                    const player = this.players_add(id)
-                                    player.name.decodeInplace(r.joinRequest.name)
-                                }
-                                if(r.leaveNotification){
-                                    this.players.delete(id)
-                                }
-                                if(r.pickRequest){
-                                    this.players.get(id)?.decodeInplace(r.pickRequest)
-                                }
-                            }
-                            this.safeDispatchEvent('update')
-                        }
+                        this.handleResponse(req)
                     }
                 }
             )
-            this.stream = undefined
-            this.players.clear()
-            this.joined = false
+            this.cleanup()
             this.safeDispatchEvent('kick')
         } catch(err) {
             this.log.error(err)
         }
     }
     
-    public async leave() {
+    public disconnect() {
+        if(!this.connected) return true
         //try {
             //await this.stream?.write({ ...lmDefaults, leaveRequest: {} })
             /*await*/ this.stream?.unwrap().unwrap().close()
                 .catch(err => this.log.error(err))
-            this.stream = undefined
-            this.players.clear()
-            this.joined = false
+            this.cleanup()
         //} catch(err) {
         //    this.log.error(err)
         //}
         return true
     }
 
-    public get canStart(): boolean { return false }
-    public async start() { return true }
-    public async set(prop: PPP, value?: number){
-        const player = this.getPlayer()
-        if(!player) return false
-
-        if(value !== undefined)
-            player[prop].value = value
-
-        try {
-            await this.stream?.write({
-                pickRequest: player.encode(prop)
-            })
-            return true
-        } catch(err) {
-            this.log.error(err)
-            return false
-        }
-        return true
+    private cleanup(){
+        this.stream = undefined
+        this.players.clear()
+        this.connected = false
+        this.joined = false
+        this.started = false
     }
 }

@@ -3,18 +3,19 @@ syntax = "proto3";
 message LobbyRequestMessage {
     optional JoinRequest join_request = 1;
     optional PickRequest pick_request = 2;
+    optional bool leave_request = 3;
     message JoinRequest {
         string name = 1;
-        int32 roomId = 2;
+        //int32 roomId = 2;
     }
 }
 
 message LobbyNotificationMessage {
-    optional bool start_notification = 1;
+    optional bool start_request = 1;
     repeated PeerRequests peers_requests = 2;
     message PeerRequests {
         bytes publicKey = 1;
-        optional bool leave_notification = 2;
+        optional bool leave_request = 2;
         optional JoinRequest join_request = 3;
         optional PickRequest pick_request = 4;
     }

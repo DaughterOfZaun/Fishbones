@@ -67,11 +67,14 @@ async function main(){
         .filter(pwd => pwd.data?.serverSettings)
         .flatMap(pwd => {
             const server = RemoteServer.create(node, pwd.id, pwd.data!.serverSettings!) //TODO: Cache
+            
+             if(!server.validate()) return []
+
             return pwd.data!.gameInfos.map(gameInfo => ({
                 id: pwd.id,
                 name: pwd.data!.name,
                 server: server,
-                game: RemoteGame.create(node, server, gameInfo) //TODO: Cache
+                game: RemoteGame.create(node, pwd.id, server, gameInfo) //TODO: Cache
             }))
         })
         .map(({ id, name, game, server }) => ({
@@ -104,10 +107,10 @@ async function main(){
             clearPromptOnDone: true,
         })
         if(action == 'host'){
-            const server = await LocalServer.create(node, node.peerId)
+            const server = await LocalServer.create(node)
             const game = await LocalGame.create(node, server)
 
-            const data = game.getData()
+            const data = game.encodeData()
             pspd.setData(data)
             pspd.setBroadcastEnabled(true)
             const update = () => {
@@ -116,9 +119,10 @@ async function main(){
             }
             game.addEventListener('update', update)
             
-            game.join(name)
+            game.listen()
+            await game.join(name)
             await lobby(game)
-            game.leave()
+            game.stop()
 
             game.removeEventListener('update', update)
             pspd.broadcast(false)
@@ -127,9 +131,11 @@ async function main(){
         }
         if(action == 'join'){
             const game = args[0]!
-            game.join(name)
+
+            await game.connect()
+            await game.join(name)
             await lobby(game)
-            game.leave()
+            game.disconnect()
         }
         if(action == 'exit'){
             /*await*/ node.stop()
