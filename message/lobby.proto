@@ -1,5 +1,13 @@
 syntax = "proto3"; 
 
+enum State {
+    UNDEFINED = 0;
+    STOPPED = 1;
+    STARTED = 2;
+    LAUNCHING = 3;
+    LAUNCHED = 4;
+}
+
 message LobbyRequestMessage {
     optional JoinRequest join_request = 1;
     optional PickRequest pick_request = 2;
@@ -11,8 +19,15 @@ message LobbyRequestMessage {
 }
 
 message LobbyNotificationMessage {
-    optional bool start_request = 1;
-    repeated PeerRequests peers_requests = 2;
+    optional State switch_state_request = 1;
+    optional LaunchRequest launch_request = 2;
+    message LaunchRequest {
+        fixed64 ip = 1; //127.0.0.1
+        uint32 port = 2; // 5119
+        bytes key = 3; //17BLOhi6KZsTtldTsizvHg==
+        uint32 client_id = 4; // 1
+    }
+    repeated PeerRequests peers_requests = 3;
     message PeerRequests {
         bytes publicKey = 1;
         optional bool leave_request = 2;
@@ -25,9 +40,9 @@ message LobbyNotificationMessage {
 }
 
 message PickRequest {
-    optional int32 team = 1;
-    optional int32 champion = 2;
-    optional int32 spell1 = 3;
-    optional int32 spell2 = 4;
+    optional uint32 team = 1;
+    optional uint32 champion = 2;
+    optional uint32 spell1 = 3;
+    optional uint32 spell2 = 4;
     optional bool lock = 5;
 }

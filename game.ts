@@ -1,10 +1,10 @@
-import { GameMap as GameMap, GameMode as GameMode, Name, Password, PlayerCount, Team, type u } from './utils/constants'
+import { GameMap as GameMap, GameMode as GameMode, Name, Password, PlayerCount, Rank, runes, talents, Team, type u } from './utils/constants'
 import { TypedEventEmitter, type Libp2p, type PeerId, type Stream } from '@libp2p/interface'
 import { PeerMap } from '@libp2p/peer-collections'
 import { GamePlayer, type PPP } from './game-player'
 import type { Peer as PBPeer } from './message/peer'
 import type { Server } from './server'
-import { LobbyNotificationMessage, PickRequest, type LobbyRequestMessage } from './message/lobby'
+import { LobbyNotificationMessage, PickRequest, State, type LobbyRequestMessage } from './message/lobby'
 import { peerIdFromPublicKey } from '@libp2p/peer-id'
 import { publicKeyFromProtobuf, publicKeyToProtobuf } from '@libp2p/crypto/keys'
 import { pbStream } from 'it-protobuf-stream'
@@ -12,7 +12,9 @@ import { pbStream } from 'it-protobuf-stream'
 type GameEvents = {
     update: void,
     kick: void,
-    pick: void,
+    start: void,
+    launch: void,
+    stop: void,
 }
 /*
 enum State {
@@ -131,20 +133,62 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         this.safeDispatchEvent('update')
     }
 
-    public async start(){
+    public start(){
         if(this.started) return true
         
         this.started = true
         this.broadcast({
             to: this.players.values(),
-            startRequest: true,
+            switchStateRequest: State.STARTED,
             peersRequests: [],
         })
         return true
     }
-    private handleStartResponse(){
+    public launch(){
+        if(this.launched) return true
+        
+        this.launched = true
+        this.broadcast({
+            to: this.players.values(),
+            switchStateRequest: State.LAUNCHED,
+            peersRequests: [],
+        })
+        return true
+    }
+    public stop(){
+        if(!this.started) return true
+        if(!this.launched) return true
+
         this.started = true
-        this.safeDispatchEvent('pick')
+        this.launched = false
+
+        this.broadcast({
+            to: this.players.values(),
+            switchStateRequest: State.STOPPED,
+            peersRequests: [],
+        })
+        return true
+    }
+    private handleSwitchStateResponse(state: State){
+        switch(state){
+            //case State.UNDEFINED: break
+            case State.STARTED:
+                this.started = true
+                this.launched = false
+                this.safeDispatchEvent('start')
+                break
+            case State.LAUNCHED:
+                this.started = true
+                this.launched = true
+                this.safeDispatchEvent('launch')
+                break
+            case State.STOPPED:
+                this.started = false
+                this.launched = false
+                this.safeDispatchEvent('stop')
+                break
+        }
+        
     }
     
     public async pick(prop: PPP, controller: AbortController) {
@@ -165,12 +209,27 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             pickRequest: player.encode(prop)
         })
     }
-    private handlePickRequest({ id }: GamePlayer, req: PickRequest){
-        //if(!this.started) return false
+    private handlePickRequest(player: GamePlayer, req: PickRequest){
+        
+        // Fields cannot be changed when a player is locked.
+        if(player.lock.value) return false
+        // The player's team can only change before the game starts.
+        if(this.started && req.team !== undefined) return false
+        // The player's team is the only thing that can change before the game starts.
+        if(!this.started && req.team === undefined) return false
+        
+        if(this.started && req.lock === true){
+            player.lock.value = 1
+            if(this.getPlayers().every(p => !!p.lock.value)){
+                this.launch()
+                return
+            }
+        }
+
         this.broadcast({
             to: this.players.values(),
             peersRequests: [{
-                publicKey: publicKeyToProtobuf(id.publicKey!),
+                publicKey: publicKeyToProtobuf(player.id.publicKey!),
                 pickRequest: req
             }]
         })
@@ -253,8 +312,56 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 }
             }
         }
-        if(ress.startRequest){
-            this.handleStartResponse()
+        if(ress.switchStateRequest){
+            this.handleSwitchStateResponse(ress.switchStateRequest)
         }
+    }
+
+    private generateGameInfoJson(){
+        const gameInfo = {
+            gameId: 1,
+            game: {
+                map: this.map.value,
+                gameMode: this.mode.value,
+                mutators: Array(8).fill(''),
+            },
+            gameInfo: {
+                TICK_RATE: this.server.tickRate.value,
+                FORCE_START_TIMER: 60, //TODO: Unhardcode
+                USE_CACHE: true,
+                IS_DAMAGE_TEXT_GLOBAL: false,
+                ENABLE_CONTENT_LOADING_LOGS: false,
+                SUPRESS_SCRIPT_NOT_FOUND_LOGS: false,
+                CHEATS_ENABLED: false, //TODO: Unhardcode. Features
+                MANACOSTS_ENABLED: true, //TODO: Unhardcode. Features
+                COOLDOWNS_ENABLED: true, //TODO: Unhardcode. Features
+                MINION_SPAWNS_ENABLED: true, //TODO: Unhardcode. Features
+                LOG_IN_PACKETS: false,
+                LOG_OUT_PACKETS: false,
+                CONTENT_PATH: "../../../../Content/GameClient",
+                ENDGAME_HTTP_POST_ADDRESS: "",
+                scriptAssemblies: [
+                    "ScriptsCore",
+                    "CBProject-Converted",
+                    "Chronobreak-Scripts"
+                ]
+            },
+            players: this.getPlayers().map((player, i) => ({
+                playerId: i + 1,
+                blowfishKey: "17BLOhi6KZsTtldTsizvHg==", //TODO: Unhardcore. Security
+                rank: Rank.random(),
+                name: player.name.value,
+                champion: player.champion.toString(), //TODO:
+                team: player.team.toString().toUpperCase(),
+                skin: 0,
+                summoner1: `Summoner${player.spell1.toString()}`,
+                summoner2: `Summoner${player.spell2.toString()}`,
+                ribbon: 2, // Unused
+                icon: Math.floor(Math.random() * 743),
+                runes,
+                talents,
+            }))
+        }
+        JSON.stringify(gameInfo, null, 4)
     }
 }

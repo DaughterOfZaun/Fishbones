@@ -474,3 +474,70 @@ export async function ufill<T extends object>(obj: T, fields?: DescKeys<T>[]): P
     }
     return obj
 }
+
+export const runes = {
+    "1": 5245,
+    "2": 5245,
+    "3": 5245,
+    "4": 5245,
+    "5": 5245,
+    "6": 5245,
+    "7": 5245,
+    "8": 5245,
+    "9": 5245,
+    "10": 5317,
+    "11": 5317,
+    "12": 5317,
+    "13": 5317,
+    "14": 5317,
+    "15": 5317,
+    "16": 5317,
+    "17": 5317,
+    "18": 5317,
+    "19": 5289,
+    "20": 5289,
+    "21": 5289,
+    "22": 5289,
+    "23": 5289,
+    "24": 5289,
+    "25": 5289,
+    "26": 5289,
+    "27": 5289,
+    "28": 5335,
+    "29": 5335,
+    "30": 5335
+}
+
+export const talents = {
+    "4111": 1,
+    "4112": 3,
+    "4114": 1,
+    "4122": 3,
+    "4124": 1,
+    "4132": 1,
+    "4134": 3,
+    "4142": 3,
+    "4151": 1,
+    "4152": 3,
+    "4162": 1,
+    "4211": 2,
+    "4213": 2,
+    "4221": 1,
+    "4222": 3,
+    "4232": 1
+}
+
+export class Rank extends PickableValue {
+    public static readonly name = 'Rank'
+    public static readonly values = [
+        //"",
+        "BRONZE",
+        "GOLD",
+        "PLATINUM",
+        "SILVER",
+        "UNRANKED",
+    ]
+    public static random(){
+        return this.values[Math.floor(Math.random() * this.values.length)]
+    }
+}

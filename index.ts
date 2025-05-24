@@ -19,6 +19,9 @@ import { LocalGame } from './game-local'
 import type { PPP } from './game-player'
 import { LocalServer, RemoteServer } from './server'
 
+// DOTNET_CLI_TELEMETRY_OPTOUT=1
+// <TargetFramework>net8.0</TargetFramework>
+
 const port = Number(process.argv[2]) || 5118
 const portDHT = port - 1
 const node = await createLibp2p({
@@ -119,10 +122,10 @@ async function main(){
             }
             game.addEventListener('update', update)
             
-            game.listen()
+            game.startListening()
             await game.join(name)
             await lobby(game)
-            game.stop()
+            game.stopListening()
 
             game.removeEventListener('update', update)
             pspd.broadcast(false)
@@ -182,14 +185,14 @@ async function lobby(game: Game){
         signal: controller.signal,
         clearPromptOnDone: true,
     }
-    const onexit = () => controller.abort(['exit'])
-    const onpick = () => {
+    const onkick = () => controller.abort(['exit'])
+    const onstart = () => {
         controller.abort(['pick'])
         controller = new AbortController()
         opts.signal = controller.signal
     }
-    game.addEventListener('kick', onexit)
-    game.addEventListener('pick', onpick)
+    game.addEventListener('kick', onkick)
+    game.addEventListener('start', onstart)
     const handleAbort = (error: unknown) => {
         if (error instanceof AbortPromptError)
             return error.cause as Action
@@ -233,6 +236,6 @@ async function lobby(game: Game){
             break loop
         }
     }
-    game.removeEventListener('kick', onexit)
-    game.removeEventListener('pick', onpick)
+    game.removeEventListener('kick', onkick)
+    game.removeEventListener('start', onstart)
 }

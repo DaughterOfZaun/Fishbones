@@ -26,7 +26,7 @@ export class LocalGame extends Game {
         return data
     }
 
-    public listen(){
+    public startListening(){
         if(this.connected) return true
         this.node.handle(LOBBY_PROTOCOL, this.handleIncomingStream)
         this.connected = true
@@ -68,7 +68,7 @@ export class LocalGame extends Game {
         }
     }
 
-    public async stop(){
+    public stopListening(){
         if(!this.connected) return true
         
         this.node.unhandle(LOBBY_PROTOCOL)
