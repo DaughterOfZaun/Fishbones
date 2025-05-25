@@ -33,6 +33,8 @@
     "@libp2p/tcp": "^10.1.12",
     "@libp2p/utils": "^6.6.4",
     "@multiformats/multiaddr": "^12.4.0",
+    "@types/teen_process": "^2.0.4",
+    "@types/webtorrent": "^0.110.0",
     "addr-to-ip-port": "^2.0.0",
     "ansi-escapes": "^7.0.0",
     "fs": "^0.0.1-security",
@@ -41,10 +43,12 @@
     "it-protobuf-stream": "^2.0.2",
     "libp2p": "^2.8.7",
     "protons-runtime": "^5.5.0",
+    "teen_process": "^2.3.2",
     "torrent-discovery": "^11.0.17",
     "uint8-util": "^2.2.5",
     "uint8arraylist": "^2.4.8",
     "uint8arrays": "^5.1.0",
+    "webtorrent": "^2.6.7",
     "yoctocolors": "^2.1.1",
     "yoctocolors-cjs": "^2.1.2"
   }

@@ -72,7 +72,8 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     public connected = false
     public joined = false
     public started = false
-    public launched = false
+    public launchedServer = false
+    public launchedClient = false
 
     public abstract get canStart(): boolean
     //public abstract get canKick(): boolean
@@ -146,8 +147,8 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         return true
     }
     private async launch(){
-        if(this.launched) return true
-        this.launched = true
+        if(this.launchedServer) return true
+        this.launchedServer = true
 
         this.broadcast({
             to: this.players.values(),
@@ -157,6 +158,8 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         
         const port = 5119 //TODO: Unhardcode
         await Data.instance.launchServer(port, this.getGameInfo())
+
+        this.launchedClient = true
 
         let i = 1
         for(const player of this.players.values())
@@ -170,29 +173,38 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             },
             peersRequests: [],
         })
+
         return true
     }
     private handleSwitchStateResponse(state: State){
         switch(state){
             //case State.UNDEFINED: break
+            case State.STOPPED:
+                this.started = false
+                this.launchedServer = false
+                this.launchedClient = false
+                this.safeDispatchEvent('stop')
+                break
             case State.STARTED:
                 this.started = true
-                this.launched = false
+                this.launchedServer = false
+                this.launchedClient = false
                 this.safeDispatchEvent('start')
                 break
             case State.LAUNCHED:
                 this.started = true
-                this.launched = true
+                this.launchedServer = true
+                this.launchedClient = false
                 this.safeDispatchEvent('wait')
-                break
-            case State.STOPPED:
-                this.started = false
-                this.launched = false
-                this.safeDispatchEvent('stop')
                 break
         }
     }
     private async handleLaunchResponse(res: LobbyNotificationMessage.LaunchRequest){
+        this.started = true
+        this.launchedServer = true
+        this.launchedClient = true
+        this.safeDispatchEvent('launch')
+
         const peer = await this.node.peerStore.get(this.ownerId)
         const ip = peer.addresses
             //.sort((a, b) => 0)
@@ -204,8 +216,6 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         
         if(ip) //TODO:
         await Data.instance.launchClient(ip, port, key, clientId)
-
-        this.safeDispatchEvent('launch')
     }
     
     public async pick(prop: PPP, controller: AbortController) {

@@ -1,17 +1,36 @@
-//import { promises } from "fs"
+import { exec } from 'teen_process'
+import { promises as fs } from "fs"
 
 export class Data {
     public static readonly instance = new Data()
     public async repair(){
-        
+        if(await fs.exists('./downloads/GameServer/GameServerConsole/bin/Debug/net9.0/GameServerConsole')){
+            // OK
+        } else if(await fs.exists('./downloads/GameServer')){
+            if(await fs.exists('./downloads/dotnet-sdk-9.0.300-linux-x64/dotnet')){
+                // BUILD
+            } else if(await fs.exists('./downloads/dotnet-sdk-9.0.300-linux-x64.tar.gz')){
+                // UNPACK
+            } else if(await fs.exists('./downloads/dotnet-sdk-9.0.300-linux-x64.tar.gz.torrent')){
+                // DOWNLOAD .TORRENT
+            } else {
+                // DOWNLOAD VIA MAGNET
+            }
+        } else if(await fs.exists('./downloads/Chronobreak.GameServer.7z')){
+            // UNPACK
+        } else if(await fs.exists('./downloads/Chronobreak.GameServer.7z.torrent')){
+            // DOWNLOAD .TORRENT
+        } else {
+            // DOWNLOAD VIA MAGNET
+        }
     }
     public async launchClient(ip: string, port: number, key: string, clientId: number){
         const clientExePath = './downloads/League of Legends_UNPACKED/League-of-Legends-4-20/RADS/solutions/lol_game_client_sln/releases/0.0.1.68/deploy/League of Legends.exe'
-        //console.log(`"${clientExePath}" "" "" "" "${ip} ${port} ${key} ${clientId}"`)
+        console.log(`"${clientExePath}" "" "" "" "${ip} ${port} ${key} ${clientId}"`)
     }
     public async launchServer(port: number, info: GameInfo){
         const serverExePath = './downloads/GameServer/GameServerConsole/bin/Debug/net9.0/GameServerConsole'
-        //console.log(`"${serverExePath}" --port='${port}' --config-json='${JSON.stringify(info)}'`)
+        console.log(`"${serverExePath}" --port='${port}' --config-json='${JSON.stringify(info)}'`)
     }
 }
 
