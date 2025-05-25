@@ -18,6 +18,7 @@ import { RemoteGame } from './game-remote'
 import { LocalGame } from './game-local'
 import type { PPP } from './game-player'
 import { LocalServer, RemoteServer } from './server'
+import spinner from './ui/spinner'
 
 // DOTNET_CLI_TELEMETRY_OPTOUT=1
 // <TargetFramework>net8.0</TargetFramework>
@@ -35,6 +36,7 @@ const node = await createLibp2p({
     //peerDiscovery: [],
     services: {
         ping: ping(),
+        //@ts-expect-error: Types have separate declarations of a private property 'map'
         pubsub: gossipsub(),
         identify: identify(),
         identifyPush: identifyPush(),
@@ -95,7 +97,7 @@ async function main(){
     
     const defaultItems = [
         { value: ['host'] as Action, name: 'Create a custom game lobby' },
-        { value: ['exit'] as Action, name: 'Exit' },
+        { value: ['exit'] as Action, name: 'Quit' },
     ]
     loop: while(true){
         const [action, ...args] = await select<Action>({
@@ -148,10 +150,14 @@ async function main(){
 }
 
 async function lobby(game: Game){
-    type Action = ['noop'] | ['start'] | ['pick'] | ['pick', PPP] | ['lock'] | ['exit']
+    type Action = ['noop'] | ['start'] | ['pick'] | ['pick', PPP] | ['lock'] | ['wait'] | ['launch'] | ['stop'] | ['exit']
+    
+    let action: Action[0] = 'noop'
+    let args: [] | [Action[1]] = []
+
     const getChoices = () => {
         const choices: Choice<Action>[] = []
-        if(!game.isStarted){
+        if(!game.started){
             choices.push(
                 { value: ['start'] as Action, name: 'Start Game', disabled: !game.canStart },
             )
@@ -161,7 +167,7 @@ async function lobby(game: Game){
             choices.push(
                 { value: ['lock'] as Action, name: 'Lock In', disabled },
                 ...(['champion', 'spell1', 'spell2'] as PPP[]).map(ppp => (
-                    { value: ['pick', ppp] as Action, name: `Pick ${player[ppp].name}`, disabled }
+                    { value: ['pick', ppp] as Action, name: `${player[ppp].name}: ${player[ppp].toString()}`, disabled }
                 ))
             )
         }
@@ -185,57 +191,82 @@ async function lobby(game: Game){
         signal: controller.signal,
         clearPromptOnDone: true,
     }
-    const onkick = () => controller.abort(['exit'])
-    const onstart = () => {
-        controller.abort(['pick'])
+    const controller_abort = (action: Action) => {
+        controller.abort(action)
         controller = new AbortController()
         opts.signal = controller.signal
     }
-    game.addEventListener('kick', onkick)
-    game.addEventListener('start', onstart)
+    const handlers = {
+        kick: () => controller.abort([action] = ['exit'] as Action),
+        start: () => controller_abort([action] = ['pick'] as Action),
+        wait: () => controller_abort([action] = ['wait'] as Action),
+        launch: () => controller_abort([action] = ['launch'] as Action),
+        stop: () => controller_abort([action] = ['stop'] as Action),
+    }
+    const handlers_keys = Object.keys(handlers) as (keyof typeof handlers)[]
+    for(const name of handlers_keys)
+        game.addEventListener(name, handlers[name])
+    
     const handleAbort = (error: unknown) => {
         if (error instanceof AbortPromptError)
             return error.cause as Action
         else throw error
     }
     loop: while(true){
-        const [action, ...args] = await select<Action>({
-            message: (!game.isStarted) ? 'Waiting for players...' : 'Waiting for the game to start...',
+        
+        let message = 'Waiting for players...'
+        if(game.started) message = 'Waiting for all players to lock their choice...'
+        if(game.launched) message = 'Waiting for the game to start...'
+
+        ;[action, ...args] = await select<Action>({
+            message,
             choices: getChoices(),
             cb: (setItem) => {
                 const listener = () => setItem(getChoices())
                 game.addEventListener('update', listener)
                 return () => game.removeEventListener('update', listener)
+            },
+            theme: {
+                style: {
+                    //disabled: (text: string) => colors.dim(`${text} - locked`)
+                }
             }
         }, opts).catch(handleAbort)
+
+        if(action == 'exit') break loop
 
         if(action == 'start' || (action == 'pick' && args.length == 0)){
             if(action == 'start'){
                 game.start()
             }
             for(const prop of ['champion', 'spell1', 'spell2'] as const){
-                const [action] = await game.pick(prop, controller)
-                    .then(() => ['noop']).catch(handleAbort)
-                if(action === 'exit'){
-                    break loop
-                }
+                ;[action] = await game.pick(prop, controller)
+                    .then(() => ['noop'] as Action).catch(handleAbort)
+                if(action === 'exit') break loop
             }
         }
         if(action == 'pick' && args.length == 1){
-            const prop = args[0]
-            const [action] = await game.pick(prop, controller)
-                .then(() => ['noop']).catch(handleAbort)
-            if(action === 'exit'){
-                break loop
-            }
+            const prop = args[0]!
+            ;[action] = await game.pick(prop, controller)
+                .then(() => ['noop'] as Action).catch(handleAbort)
+            if(action === 'exit') break loop
         }
         if(action == 'lock'){
-            game.set('lock', +true)
+            [action] = ['noop'] as Action
+            await game.set('lock', +true)
         }
-        if(action == 'exit'){
-            break loop
+        if(action == 'wait'){
+            ;[action] = await spinner({ message: 'Waiting for the server to start...' })
+                .then(() => ['noop'] as Action).catch(handleAbort)
+            if(action === 'exit') break loop
+            if(action == 'launch'){
+                [action] = await spinner({ message: 'Waiting for the end of the game...' })
+                    .then(() => ['noop'] as Action).catch(handleAbort)
+                if(action === 'exit') break loop
+            }
         }
     }
-    game.removeEventListener('kick', onkick)
-    game.removeEventListener('start', onstart)
+
+    for(const name of handlers_keys)
+        game.removeEventListener(name, handlers[name])
 }

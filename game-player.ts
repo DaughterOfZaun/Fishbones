@@ -29,6 +29,6 @@ export class GamePlayer {
         return ppp ? ({ [ppp]: this[ppp].encode() }) : Object.fromEntries(pickableKeys.map(key => [key, this[key].encode()]))
     }
     decodeInplace(prs: PickRequest): boolean {
-        return Object.entries(prs).reduce((a, [key, value]) => this[key as PPP].decodeInplace(+value), true)
+        return Object.entries(prs).reduce((a, [key, value]) => a && this[key as PPP].decodeInplace(+value), true)
     }
 }

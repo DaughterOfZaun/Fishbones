@@ -2,8 +2,8 @@ import { useEffect, useRef } from '@inquirer/core';
 import { withUpdates } from '../node_modules/@inquirer/core/dist/esm/lib/hook-engine.js';
 
 export function useCallback<T>(
-    callback: (handler: (event: T) => unknown) => () => void,
-    userHandler: (event: T) => void | Promise<void>,
+    callback: (handler: (event: T) => void) => () => void,
+    userHandler: (event: T) => void,
 ): void {
     const signal = useRef(userHandler);
     signal.current = userHandler;

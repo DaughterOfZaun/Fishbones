@@ -538,6 +538,8 @@ export class Rank extends PickableValue {
         "UNRANKED",
     ]
     public static random(){
-        return this.values[Math.floor(Math.random() * this.values.length)]
+        return this.values[Math.floor(Math.random() * this.values.length)]!
     }
 }
+
+export const blowfishKey = "17BLOhi6KZsTtldTsizvHg=="

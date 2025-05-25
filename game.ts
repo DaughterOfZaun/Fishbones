@@ -1,4 +1,4 @@
-import { GameMap as GameMap, GameMode as GameMode, Name, Password, PlayerCount, Rank, runes, talents, Team, type u } from './utils/constants'
+import { blowfishKey, GameMap as GameMap, GameMode as GameMode, Name, Password, PlayerCount, Rank, runes, talents, Team, type u } from './utils/constants'
 import { TypedEventEmitter, type Libp2p, type PeerId, type Stream } from '@libp2p/interface'
 import { PeerMap } from '@libp2p/peer-collections'
 import { GamePlayer, type PPP } from './game-player'
@@ -8,13 +8,16 @@ import { LobbyNotificationMessage, PickRequest, State, type LobbyRequestMessage 
 import { peerIdFromPublicKey } from '@libp2p/peer-id'
 import { publicKeyFromProtobuf, publicKeyToProtobuf } from '@libp2p/crypto/keys'
 import { pbStream } from 'it-protobuf-stream'
+import { arr2text, text2arr } from 'uint8-util'
+import { Data, type GameInfo } from './data'
 
 type GameEvents = {
-    update: void,
-    kick: void,
-    start: void,
-    launch: void,
-    stop: void,
+    update: CustomEvent,
+    kick: CustomEvent,
+    start: CustomEvent,
+    wait: CustomEvent,
+    launch: CustomEvent,
+    stop: CustomEvent,
 }
 /*
 enum State {
@@ -66,12 +69,10 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         this.ownerId = ownerId
     }
 
-    protected connected = false
-    protected joined = false
-    protected started = false
-    protected launched = false
-    
-    public get isStarted(){ return this.started }
+    public connected = false
+    public joined = false
+    public started = false
+    public launched = false
 
     public abstract get canStart(): boolean
     //public abstract get canKick(): boolean
@@ -144,27 +145,29 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         })
         return true
     }
-    public launch(){
+    private async launch(){
         if(this.launched) return true
-        
         this.launched = true
+
         this.broadcast({
             to: this.players.values(),
             switchStateRequest: State.LAUNCHED,
             peersRequests: [],
         })
-        return true
-    }
-    public stop(){
-        if(!this.started) return true
-        if(!this.launched) return true
+        
+        const port = 5119 //TODO: Unhardcode
+        await Data.instance.launchServer(port, this.getGameInfo())
 
-        this.started = true
-        this.launched = false
-
+        let i = 1
+        for(const player of this.players.values())
         this.broadcast({
-            to: this.players.values(),
-            switchStateRequest: State.STOPPED,
+            to: [ player ],
+            launchRequest: {
+                ip: 0n,
+                port,
+                key: text2arr(blowfishKey),
+                clientId: i++
+            },
             peersRequests: [],
         })
         return true
@@ -180,7 +183,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             case State.LAUNCHED:
                 this.started = true
                 this.launched = true
-                this.safeDispatchEvent('launch')
+                this.safeDispatchEvent('wait')
                 break
             case State.STOPPED:
                 this.started = false
@@ -188,7 +191,21 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 this.safeDispatchEvent('stop')
                 break
         }
+    }
+    private async handleLaunchResponse(res: LobbyNotificationMessage.LaunchRequest){
+        const peer = await this.node.peerStore.get(this.ownerId)
+        const ip = peer.addresses
+            //.sort((a, b) => 0)
+            .map(({ multiaddr }) => multiaddr.toOptions())
+            .find(opts => opts.family == 4)?.host
         
+        const key = arr2text(res.key)
+        const { port, clientId } = res
+        
+        if(ip) //TODO:
+        await Data.instance.launchClient(ip, port, key, clientId)
+
+        this.safeDispatchEvent('launch')
     }
     
     public async pick(prop: PPP, controller: AbortController) {
@@ -196,30 +213,41 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         if(!player) return false
         const pdesc = player[prop]
         await pdesc.uinput(controller)
-        return await this.set(prop, pdesc.value)
+        return await this.stream_write({
+            pickRequest: player.encode(prop)
+        })
     }
-    public async set(prop: PPP, value: u|number){
+    public async set(prop: PPP, value: number){
         const player = this.getPlayer()
         if(!player) return false
-
         //if(value !== undefined)
         player[prop].value = value
-
         return await this.stream_write({
             pickRequest: player.encode(prop)
         })
     }
     private handlePickRequest(player: GamePlayer, req: PickRequest){
         
-        // Fields cannot be changed when a player is locked.
-        if(player.lock.value) return false
-        // The player's team can only change before the game starts.
-        if(this.started && req.team !== undefined) return false
-        // The player's team is the only thing that can change before the game starts.
-        if(!this.started && req.team === undefined) return false
-        
-        if(this.started && req.lock === true){
-            player.lock.value = 1
+        if(req.lock !== undefined){
+            player.lock.value = +true
+            req.lock = player.lock.encode()
+        }
+
+        if(player.lock.value){
+            if(req.lock !== undefined) req = { lock: req.lock }
+            else return false
+        }
+
+        if(this.started) {
+            delete req.team
+        } else {
+            if(req.team !== undefined) req = { team: req.team }
+            else return false
+        }
+
+        if(this.started && req.lock !== undefined){
+            player.lock.value = +true
+            
             if(this.getPlayers().every(p => !!p.lock.value)){
                 this.launch()
                 return
@@ -315,18 +343,21 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         if(ress.switchStateRequest){
             this.handleSwitchStateResponse(ress.switchStateRequest)
         }
+        if(ress.launchRequest){
+            this.handleLaunchResponse(ress.launchRequest)
+        }
     }
 
-    private generateGameInfoJson(){
-        const gameInfo = {
+    private getGameInfo(): GameInfo {
+        return {
             gameId: 1,
             game: {
-                map: this.map.value,
-                gameMode: this.mode.value,
+                map: `Map${this.map.value}`,
+                gameMode: this.mode.toString(),
                 mutators: Array(8).fill(''),
             },
             gameInfo: {
-                TICK_RATE: this.server.tickRate.value,
+                TICK_RATE: this.server.tickRate.value ?? 30,
                 FORCE_START_TIMER: 60, //TODO: Unhardcode
                 USE_CACHE: true,
                 IS_DAMAGE_TEXT_GLOBAL: false,
@@ -348,10 +379,10 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             },
             players: this.getPlayers().map((player, i) => ({
                 playerId: i + 1,
-                blowfishKey: "17BLOhi6KZsTtldTsizvHg==", //TODO: Unhardcore. Security
-                rank: Rank.random(),
-                name: player.name.value,
-                champion: player.champion.toString(), //TODO:
+                blowfishKey, //TODO: Unhardcode. Security
+                rank: Rank.random() ?? "DIAMOND",
+                name: player.name.value ?? `Player ${i + 1}`,
+                champion: player.champion.toString(), //TODO: Fix
                 team: player.team.toString().toUpperCase(),
                 skin: 0,
                 summoner1: `Summoner${player.spell1.toString()}`,
@@ -362,6 +393,5 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 talents,
             }))
         }
-        JSON.stringify(gameInfo, null, 4)
     }
 }

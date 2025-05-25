@@ -4,7 +4,6 @@ enum State {
     UNDEFINED = 0;
     STOPPED = 1;
     STARTED = 2;
-    LAUNCHING = 3;
     LAUNCHED = 4;
 }
 
@@ -44,5 +43,5 @@ message PickRequest {
     optional uint32 champion = 2;
     optional uint32 spell1 = 3;
     optional uint32 spell2 = 4;
-    optional bool lock = 5;
+    optional uint32 lock = 5;
 }

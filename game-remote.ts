@@ -46,7 +46,7 @@ export class RemoteGame extends Game {
         }
     }
     
-    private handleOutgoingStream: StreamHandler = async ({ stream /*, connection*/ }) => {
+    private handleOutgoingStream: StreamHandler = async ({ stream, /*connection*/ }) => {
         //if(!connection.remotePeer.equals(this.id)) return
         try {
             await pipe(
