@@ -1,36 +1,88 @@
 import { exec } from 'teen_process'
 import { promises as fs } from "fs"
+import s7z from '7z-bin'
+
+const downloads = `./downloads`
+
+const gcExe = `${downloads}/League of Legends_UNPACKED/League-of-Legends-4-20/RADS/solutions/lol_game_client_sln/releases/0.0.1.68/deploy/League of Legends.exe`
+const gcZip = `${downloads}/League of Legends_UNPACKED.7z`
+const gcZipTorrent = `${gcZip}.torrent`
+const gcZipMagnet = ``
+
+const sdkVer = `9.0.300`
+const sdkPlatform = `linux`
+const sdkArch = `x64`
+const sdkName = `dotnet-sdk-${sdkVer}-${sdkPlatform}-${sdkArch}`
+const sdkExeExt = ``
+const sdkExe = `${downloads}/${sdkName}/dotnet${sdkExeExt}`
+const sdkZipExt = `.tar.gz`
+const sdkZip = `${downloads}/${sdkName}${sdkZipExt}`
+const sdkZipTorrent = `${sdkZip}.torrent`
+const sdkZipMagnet = ``
+
+const gsProjName = `GameServerConsole`
+const gsDir = `${downloads}/GameServer/${gsProjName}`
+const gsTarget = `Debug`
+const netVer = `net9.0`
+const gsExeExt = ``
+const gsExe = `${gsDir}/bin/${gsTarget}/${netVer}/${gsProjName}${gsExeExt}`
+const gsCSProj = `${gsDir}/${gsProjName}.csproj`
+const gsZip = `${downloads}/Chronobreak.GameServer.7z`
+const gsZipTorrent = `${gsZip}.torrent`
+const gsZipMagnet = ``
 
 export class Data {
     public static readonly instance = new Data()
-    public async repair(){
-        if(await fs.exists('./downloads/GameServer/GameServerConsole/bin/Debug/net9.0/GameServerConsole')){
-            // OK
-        } else if(await fs.exists('./downloads/GameServer')){
-            if(await fs.exists('./downloads/dotnet-sdk-9.0.300-linux-x64/dotnet')){
-                // BUILD
-            } else if(await fs.exists('./downloads/dotnet-sdk-9.0.300-linux-x64.tar.gz')){
-                // UNPACK
-            } else if(await fs.exists('./downloads/dotnet-sdk-9.0.300-linux-x64.tar.gz.torrent')){
-                // DOWNLOAD .TORRENT
-            } else {
-                // DOWNLOAD VIA MAGNET
-            }
-        } else if(await fs.exists('./downloads/Chronobreak.GameServer.7z')){
-            // UNPACK
-        } else if(await fs.exists('./downloads/Chronobreak.GameServer.7z.torrent')){
-            // DOWNLOAD .TORRENT
-        } else {
-            // DOWNLOAD VIA MAGNET
-        }
-    }
+
     public async launchClient(ip: string, port: number, key: string, clientId: number){
-        const clientExePath = './downloads/League of Legends_UNPACKED/League-of-Legends-4-20/RADS/solutions/lol_game_client_sln/releases/0.0.1.68/deploy/League of Legends.exe'
-        console.log(`"${clientExePath}" "" "" "" "${ip} ${port} ${key} ${clientId}"`)
+        console.log(`"${gcExe}" "" "" "" "${ip} ${port} ${key} ${clientId}"`)
     }
     public async launchServer(port: number, info: GameInfo){
-        const serverExePath = './downloads/GameServer/GameServerConsole/bin/Debug/net9.0/GameServerConsole'
-        console.log(`"${serverExePath}" --port='${port}' --config-json='${JSON.stringify(info)}'`)
+        console.log(`"${gsExe}" --port='${port}' --config-json='${JSON.stringify(info)}'`)
+    }
+
+    public async repair(){
+        Promise.all([
+            Promise.all([
+                this.repairArchived(sdkExe, sdkZip, sdkZipTorrent, sdkZipMagnet),
+                this.repairArchived(gsExe, gsZip, gsZipTorrent, gsZipMagnet)
+            ]).then(() =>
+                this.repairServerBuild()
+            ),
+            this.repairArchived(gcExe, gcZip, gcZipTorrent, gcZipMagnet),
+        ])
+    }
+    private async repairArchived(exe: string, zip: string, torrent: string, magnet: string){
+        if(await fs.exists(exe)){
+            // OK
+        } else if(await fs.exists(zip)){
+            await this.unpack(zip)
+        } else if(await fs.exists(torrent)){
+            await this.downloadTorrent(torrent)
+            await this.unpack(zip)
+        } else {
+            await this.downloadMagnet(magnet)
+            await this.unpack(zip)
+        }
+    }
+    private async repairServerBuild(){
+        if(await fs.exists(gsExe)){
+            // OK
+        } else {
+            await this.build(sdkExe, gsCSProj)
+        }
+    }
+    private async unpack(filepath: string){
+        await exec(s7z.path7z, ['x', filepath], { shell: true })
+    }
+    private async downloadTorrent(filepath: string){
+        
+    }
+    private async downloadMagnet(url: string){
+
+    }
+    private async build(exe: string, csproj: string){
+        await exec(exe, ['build', csproj])
     }
 }
 
