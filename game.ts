@@ -9,7 +9,8 @@ import { peerIdFromPublicKey } from '@libp2p/peer-id'
 import { publicKeyFromProtobuf, publicKeyToProtobuf } from '@libp2p/crypto/keys'
 import { pbStream } from 'it-protobuf-stream'
 import { arr2text, text2arr } from 'uint8-util'
-import { Data, type GameInfo } from './data'
+import type { GameInfo } from './data'
+import * as Data from './data'
 
 type GameEvents = {
     update: CustomEvent,
@@ -157,7 +158,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         })
         
         const port = 5119 //TODO: Unhardcode
-        await Data.instance.launchServer(port, this.getGameInfo())
+        await Data.launchServer(port, this.getGameInfo())
 
         this.launchedClient = true
 
@@ -215,7 +216,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         const { port, clientId } = res
         
         if(ip) //TODO:
-        await Data.instance.launchClient(ip, port, key, clientId)
+        await Data.launchClient(ip, port, key, clientId)
     }
     
     public async pick(prop: PPP, controller: AbortController) {

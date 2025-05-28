@@ -338,6 +338,10 @@ export class TickRate extends PickableValue {
     public static readonly choices = PickableValue.normalize(TickRate.values)
 }
 
+export function sanitize_str(v: string){
+    return v.replace(/\W/g, '').slice(0, 16)
+}
+
 export class InputableValue extends ValueDesc<string, string> {
     public value?: string
     public readonly name: string
@@ -350,12 +354,14 @@ export class InputableValue extends ValueDesc<string, string> {
         return this.value ?? ''
     }
     public decodeInplace(v: string): boolean {
-        this.value = v
+        this.value = sanitize_str(v)
         return true
     }
     public async uinput(controller?: AbortController) {
         this.value = await input({
-            message: `Enter ${this.name}`
+            message: `Enter ${this.name}`,
+            //transformer: (v, /*{ isFinal }*/) => sanitize_str(v),
+            validate: v => v == sanitize_str(v),
         }, {
             clearPromptOnDone: true,
             signal: controller?.signal
@@ -543,3 +549,6 @@ export class Rank extends PickableValue {
 }
 
 export const blowfishKey = "17BLOhi6KZsTtldTsizvHg=="
+export function sanitize_bfkey(v: string){
+    return v.replace(/[^a-zA-Z0-9=]/g, '')
+}

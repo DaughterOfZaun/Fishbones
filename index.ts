@@ -5,7 +5,6 @@ import { createLibp2p } from 'libp2p'
 import { torrentPeerDiscovery } from './network/torrent-discovery'
 import { pubsubPeerDiscovery } from './network/pubsub-discovery'
 import { hash } from 'uint8-util'
-import { getAnnounceAddrs } from './utils/trackers'
 import { identify, identifyPush } from '@libp2p/identify'
 import { ping } from '@libp2p/ping'
 import { defaultLogger } from '@libp2p/logger'
@@ -19,9 +18,15 @@ import { LocalGame } from './game-local'
 import type { PPP } from './game-player'
 import { LocalServer, RemoteServer } from './server'
 import spinner from './ui/spinner'
+import * as Data from './data'
 
-// DOTNET_CLI_TELEMETRY_OPTOUT=1
-// <TargetFramework>net8.0</TargetFramework>
+//const controller = new AbortController()
+///*await*/ spinner({ message: 'Data check and repair' }, {
+//    clearPromptOnDone: true,
+//    signal: controller.signal,
+//}).catch(() => {})
+await Data.repair()
+//controller.abort()
 
 const port = Number(process.argv[2]) || 5118
 const portDHT = port - 1
@@ -48,7 +53,7 @@ const node = await createLibp2p({
         torrentPeerDiscovery: torrentPeerDiscovery({
             infoHash: (await hash(`jinx/launcher/${0}`, 'hex', 'sha-1')) as string,
             port: port,
-            announce: await getAnnounceAddrs(),
+            announce: await Data.getAnnounceAddrs(),
             dht: true,
             dhtPort: portDHT,
             tracker: true,
@@ -56,14 +61,19 @@ const node = await createLibp2p({
         }),
     }
 })
-/*await*/ node.start()
+await node.start()
 
 const pspd = node.services.pubsubPeerDiscovery
 
 const name = 'Player'
 //const name = node.peerId.toString().slice(-8)
 
-/*await*/ main()
+await main()
+
+//loop: while(true){
+//    const action = await select()
+//}
+
 async function main(){
     type Action = ['host'] | ['exit'] | ['join', RemoteGame]
     
