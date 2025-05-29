@@ -90,7 +90,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
 
     public async join(name: string): Promise<boolean> {
 
-        if(!this.connected) return false
+        //if(!this.connected) return false
         if(this.joined) return true
 
         return this.joined = await this.stream_write({
@@ -116,7 +116,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             to: this.players.values(),
             ignore: player,
             peersRequests: [{
-                publicKey: publicKeyToProtobuf(player.id.publicKey!),
+                publicKey: this.PeerId_encode(player.id),
                 joinRequest: { name: player.name.encode(), },
                 pickRequest: player.encode('team'),
             }]
@@ -125,7 +125,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         this.broadcast({
             to: [ player ],
             peersRequests: [...this.players.values()].map(player => ({
-                publicKey: publicKeyToProtobuf(player.id.publicKey!),
+                publicKey: this.PeerId_encode(player.id),
                 joinRequest: { name: player.name.encode(), },
                 pickRequest: player.encode(),
             }))
@@ -268,7 +268,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         this.broadcast({
             to: this.players.values(),
             peersRequests: [{
-                publicKey: publicKeyToProtobuf(player.id.publicKey!),
+                publicKey: this.PeerId_encode(player.id),
                 pickRequest: req
             }]
         })
@@ -288,7 +288,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         this.broadcast({
             to: this.players.values(),
             peersRequests: [{
-                publicKey: publicKeyToProtobuf(player.id.publicKey!),
+                publicKey: this.PeerId_encode(player.id),
                 leaveRequest: true,
             }]
         })
@@ -339,7 +339,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         if(ress.peersRequests.length){
             for(const res of ress.peersRequests){
                 let player: u|GamePlayer
-                const peerId = peerIdFromPublicKey(publicKeyFromProtobuf(res.publicKey))
+                const peerId = this.PeerId_decode(res.publicKey)
                 if(res.joinRequest && (player = this.players_add(peerId))){
                     this.handleJoinResponse(player, res.joinRequest)
                 }
@@ -359,11 +359,20 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         }
     }
 
-    private getGameInfo(): GameInfo {
+    PeerId_encode(from: PeerId){
+        if(from == this.ownerId) return new Uint8Array()
+        return publicKeyToProtobuf(from.publicKey!)
+    }
+    PeerId_decode(from: Uint8Array){
+        if(from.length == 0) return this.ownerId
+        return peerIdFromPublicKey(publicKeyFromProtobuf(from))
+    }
+
+    public getGameInfo(): GameInfo {
         return {
             gameId: 1,
             game: {
-                map: `Map${this.map.value}`,
+                map: this.map.value ?? 1,
                 gameMode: this.mode.toString(),
                 mutators: Array(8).fill(''),
             },
@@ -373,7 +382,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 USE_CACHE: true,
                 IS_DAMAGE_TEXT_GLOBAL: false,
                 ENABLE_CONTENT_LOADING_LOGS: false,
-                SUPRESS_SCRIPT_NOT_FOUND_LOGS: false,
+                SUPRESS_SCRIPT_NOT_FOUND_LOGS: true,
                 CHEATS_ENABLED: false, //TODO: Unhardcode. Features
                 MANACOSTS_ENABLED: true, //TODO: Unhardcode. Features
                 COOLDOWNS_ENABLED: true, //TODO: Unhardcode. Features

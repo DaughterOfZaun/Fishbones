@@ -2,7 +2,7 @@ import { exec, spawn, SubProcess } from 'teen_process'
 import { promises as fs } from "fs"
 import s7z from '7z-bin'
 import WebTorrent from 'webtorrent'
-import { sanitize_bfkey, sanitize_str } from './utils/constants'
+import { sanitize_bfkey, /*sanitize_str*/ } from './utils/constants'
 import path from 'path'
 import { quote } from 'shell-quote'
 import type { ChildProcess } from 'child_process'
@@ -20,7 +20,8 @@ async function fs_exists(path: string){
 const downloads = path.join(process.cwd(), 'downloads')
 
 const gcDir = path.join(downloads, 'League of Legends_UNPACKED')
-const gcExe = path.join(gcDir, 'League-of-Legends-4-20', 'RADS', 'solutions', 'lol_game_client_sln', 'releases', '0.0.1.68', 'deploy', 'League of Legends.exe')
+const gcExeDir = path.join(gcDir, 'League-of-Legends-4-20', 'RADS', 'solutions', 'lol_game_client_sln', 'releases', '0.0.1.68', 'deploy')
+const gcExe = path.join(gcExeDir, 'League of Legends.exe')
 const gcZipName = 'League of Legends_UNPACKED.7z'
 const gcZip = path.join(downloads, gcZipName)
 const gcZipTorrent = `${gcZip}.torrent`
@@ -42,8 +43,9 @@ else if(process.arch == 'arm64') sdkArch = 'arm64'
 else throw new Error(`Unsupported arch: ${process.arch}`)
 
 const sdkName = `dotnet-sdk-${sdkVer}-${sdkPlatform}-${sdkArch}`
+const sdkDir = path.join(downloads, sdkName), sdkExeDir = sdkDir
 const sdkExeExt = (sdkPlatform == 'win') ? '.exe' : ''
-const sdkExe = path.join(downloads, sdkName, `dotnet${sdkExeExt}`)
+const sdkExe = path.join(sdkExeDir, `dotnet${sdkExeExt}`)
 const sdkZipExt = (sdkPlatform == 'win') ? '.zip' : '.tar.gz'
 const sdkZipName = `${sdkName}${sdkZipExt}`
 const sdkZip = path.join(downloads, sdkZipName)
@@ -54,7 +56,6 @@ const sdkZipInfoHash = {
 }[sdkZipName]!
 if(!sdkZipInfoHash)
     throw new Error(`Unsupported dotnet-sdk-version-platform-arch combination: ${sdkName}`)
-const sdkDir = path.join(downloads, sdkName)
 
 const gsProjName = 'GameServerConsole'
 const gsDir = path.join(downloads, 'GameServer')
@@ -63,12 +64,15 @@ const gsTarget = 'Debug'
 const netVer = 'net9.0'
 const gsExeExt = (sdkPlatform == 'win') ? '.exe' : ''
 const gsExeName = `${gsProjName}${gsExeExt}`
-const gsExe = path.join(gsProjDir, 'bin', gsTarget, netVer, gsExeName)
+const gsExeDir = path.join(gsProjDir, 'bin', gsTarget, netVer)
+const gsExe = path.join(gsExeDir, gsExeName)
 const gsCSProj = path.join(gsProjDir, `${gsProjName}.csproj`)
 const gsZipName = 'Chronobreak.GameServer.7z'
 const gsZip = path.join(downloads, gsZipName)
 const gsZipTorrent = `${gsZip}.torrent`
 const gsZipInfoHash = 'e4043fdc210a896470d662933f7829ccf3ed781b'
+const gsgcDir = path.join(gsDir, 'Content', 'GameClient')
+const gsInfoDir = path.join(gsExeDir, 'Settings')
 
 const trackersTxtName = 'trackers.txt'
 const trackersTxt = path.join(downloads, trackersTxtName)
@@ -132,16 +136,18 @@ async function repair7z(){
         await fs.chmod(exe, rwx_rx_rx)
 }
 
-const sanitize_kv = (key: string, value: string) => {
-    if(typeof value === 'string')
-        return sanitize_str(value)
-}
+//const sanitize_kv = (key: string, value: string) => {
+//    if(typeof value === 'string')
+//        return sanitize_str(value)
+//}
 
 let clientSubprocess: undefined | SubProcess
-export function launchClient(ip: string, port: number, key: string, clientId: number){
+export async function launchClient(ip: string, port: number, key: string, clientId: number){
     //console.log(`"${gcExe}" "" "" "" "${ip} ${port} ${key} ${clientId}"`)
-    const gcArgs = ['', '', '', `${ip} ${port} ${sanitize_bfkey(key)} ${clientId}`]
-
+    const gcArgs = ['', '', '', /*quote*/([ip, port.toString(), sanitize_bfkey(key), clientId.toString()]).join(' ')]
+    
+    console.log(quote(['bottles-cli', 'run', '-b', 'Default Gaming', '-e', gcExe, ...gcArgs]))
+    
     if(process.platform == 'win32')
         clientSubprocess = new SubProcess(gcExe, gcArgs)
     else if(process.platform == 'linux')
@@ -150,16 +156,28 @@ export function launchClient(ip: string, port: number, key: string, clientId: nu
         ])
     else throw new Error(`Unsupported platform: ${process.platform}`)
 
-    return clientSubprocess.start()
+    await clientSubprocess.start()
 }
     
 let serverSubprocess: undefined | SubProcess
 export async function launchServer(port: number, info: GameInfo){
-    //console.log(`"${gsExe}" --port='${port}' --config-json='${JSON.stringify(info, sanitize_kv)}'`)
+    //console.log(`"${gsExe}" --port ${port} --config-json ${quote([JSON.stringify(info, sanitize_kv)])}`)
+
+    info.gameInfo.CONTENT_PATH = path.relative(gsExeDir, gsgcDir)
+
+    const gsInfo = path.join(gsInfoDir, `GameInfo.${info.gameId}.json`)
+    await fs.writeFile(gsInfo, JSON.stringify(info, null, 4))
+    const gsInfoRel = path.relative(gsExeDir, gsInfo)
+
+    console.log(`${path.relative(gsExeDir, gsExe)} --port ${port} --config ${gsInfoRel}`)
+    
     serverSubprocess = new SubProcess(gsExe, [
-        `--port='${port}'`, `--config-json='${JSON.stringify(info, sanitize_kv)}'`,
-    ])
-    return serverSubprocess.start((stdout: string, /*stderr: string*/) => stdout.includes('Server is ready'))
+        //'--port', port.toString(), '--config-json', quote([JSON.stringify(info, sanitize_kv)]),
+        '--port', port.toString(), '--config', gsInfoRel,
+    ], {
+        cwd: gsExeDir 
+    })
+    await serverSubprocess.start((stdout: string, /*stderr: string*/) => stdout.includes('Server is ready'))
 }
 
 export async function repair(){
@@ -178,6 +196,8 @@ export async function repair(){
         ]).then(async () => {
             if(!await fs_exists(gsExe))
                 await build(gsExe, gsExeName, gsCSProj)
+            if(!await fs_exists(gsInfoDir))
+                await fs.mkdir(gsInfoDir)
         }),
         repairArchived(gcExe, gcDir, gcZip, gcZipName, gcZipTorrent, gcZipInfoHash),
     ] as Promise<unknown>[])
@@ -274,7 +294,7 @@ async function download(
 export type GameInfo = {
     gameId: number
     game: {
-        map: string
+        map: number
         gameMode: string
         mutators: string[]
     }

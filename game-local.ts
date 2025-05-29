@@ -70,6 +70,7 @@ export class LocalGame extends Game {
 
     public stopListening(){
         if(!this.connected) return true
+        this.connected = false
         
         this.node.unhandle(LOBBY_PROTOCOL)
         for(const player of this.players.values()){
