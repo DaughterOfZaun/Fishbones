@@ -5,14 +5,7 @@ import * as Data from './data'
 
 await Data.repair()
 
-const node = {
-    peerId: {
-        publicKey: {
-            type: 'ECDSA',
-            raw: new Uint8Array()
-        }
-    }
-} as unknown as Libp2p
+const node = { peerId: { publicKey: {} } } as unknown as Libp2p
 const server = LocalServer.create(node)
 const game = await LocalGame.create(node, server)
 

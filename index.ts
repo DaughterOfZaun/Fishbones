@@ -185,7 +185,7 @@ async function lobby(game: Game){
             ...game.getPlayers().map(player => ({
                 value: ['noop'] as Action,
                 name: color[player.team.color()]([
-                    `[${player.id.toString().slice(-8)}] ${player.name}`,
+                    `[${player.id.toString(16).padStart(8, '0')}] ${player.name}`,
                     `${player.champion.toString()}`,
                     `${player.spell1.toString()}`,
                     `${player.spell2.toString()}`,
@@ -238,7 +238,7 @@ async function lobby(game: Game){
         
         let message = 'Waiting for players...'
         if(game.started) message = 'Waiting for all players to lock their choice...'
-        if(game.launchedServer) message = 'Waiting for the game to start...'
+        if(game.launched) message = 'Waiting for the game to start...'
 
         ;[action, ...args] = await select<Action>({
             message,

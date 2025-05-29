@@ -1,12 +1,9 @@
 import { blowfishKey, GameMap as GameMap, GameMode as GameMode, Name, Password, PlayerCount, Rank, runes, talents, Team, type u } from './utils/constants'
 import { TypedEventEmitter, type Libp2p, type PeerId, type Stream } from '@libp2p/interface'
-import { PeerMap } from '@libp2p/peer-collections'
-import { GamePlayer, type PPP } from './game-player'
+import { GamePlayer, type PlayerId, type PPP } from './game-player'
 import type { Peer as PBPeer } from './message/peer'
 import type { Server } from './server'
 import { LobbyNotificationMessage, PickRequest, State, type LobbyRequestMessage } from './message/lobby'
-import { peerIdFromPublicKey } from '@libp2p/peer-id'
-import { publicKeyFromProtobuf, publicKeyToProtobuf } from '@libp2p/crypto/keys'
 import { pbStream } from 'it-protobuf-stream'
 import { arr2text, text2arr } from 'uint8-util'
 import type { GameInfo } from './data'
@@ -43,9 +40,14 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     public readonly playersMax = new PlayerCount(5)
     public readonly password = new Password()
 
-    protected players: PeerMap<GamePlayer> = new PeerMap<GamePlayer>()
-    protected players_size: number = 0
-    protected players_add(id: PeerId): GamePlayer {
+    protected player?: GamePlayer
+    public getPlayer(){
+        return this.player
+    }
+    
+    protected players = new Map<PlayerId, GamePlayer>()
+    protected players_count: number = 0
+    protected players_add(id: PlayerId): GamePlayer {
         let player = this.players.get(id)
         if(!player){
             player = new GamePlayer(this, id)
@@ -56,11 +58,8 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     public getPlayers(){
         return [...this.players.values()]
     }
-    public getPlayer(){
-        return this.players.get(this.node.peerId)
-    }
     public getPlayersCount(){
-        return this.joined ? this.players.size : this.players_size
+        return this.joined ? this.players.size : this.players_count
     }
 
     protected constructor(node: Libp2p, ownerId: PeerId, server: Server){
@@ -73,8 +72,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     public connected = false
     public joined = false
     public started = false
-    public launchedServer = false
-    public launchedClient = false
+    public launched = false
 
     public abstract get canStart(): boolean
     //public abstract get canKick(): boolean
@@ -93,14 +91,12 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         //if(!this.connected) return false
         if(this.joined) return true
 
-        return this.joined = await this.stream_write({
+        return await this.stream_write({
             joinRequest: { name },
         })
     }
     private handleJoinRequest(player: GamePlayer, { name }: LobbyRequestMessage.JoinRequest) {
-        
-        //console.assert(player.id.publicKey !== undefined)
-        
+
         const playerCounts: number[] = Array(Team.count).fill(0)
         this.players.forEach(player => {
             const i = player.team.value
@@ -116,30 +112,37 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             to: this.players.values(),
             ignore: player,
             peersRequests: [{
-                publicKey: this.PeerId_encode(player.id),
+                playerId: player.id,
                 joinRequest: { name: player.name.encode(), },
                 pickRequest: player.encode('team'),
             }]
         })
         
+        const newPlayer = player
         this.broadcast({
             to: [ player ],
             peersRequests: [...this.players.values()].map(player => ({
-                publicKey: this.PeerId_encode(player.id),
-                joinRequest: { name: player.name.encode(), },
+                playerId: player.id,
+                joinRequest: {
+                    name: player.name.encode(),
+                    isMe: player == newPlayer,
+                },
                 pickRequest: player.encode(),
             }))
         })
     }
     private handleJoinResponse(player: GamePlayer, res: LobbyNotificationMessage.JoinRequest){
         player.name.decodeInplace(res.name)
-        this.safeDispatchEvent('update')
+        if(res.isMe){
+            this.player = player
+            this.joined = true
+        }
     }
 
     public start(){
         if(this.started) return true
-        
         this.started = true
+        
         this.broadcast({
             to: this.players.values(),
             switchStateRequest: State.STARTED,
@@ -148,8 +151,8 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         return true
     }
     private async launch(){
-        if(this.launchedServer) return true
-        this.launchedServer = true
+        if(this.launched) return true
+        this.launched = true
 
         this.broadcast({
             to: this.players.values(),
@@ -159,8 +162,6 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         
         const port = 5119 //TODO: Unhardcode
         await Data.launchServer(port, this.getGameInfo())
-
-        this.launchedClient = true
 
         let i = 1
         for(const player of this.players.values())
@@ -182,28 +183,24 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             //case State.UNDEFINED: break
             case State.STOPPED:
                 this.started = false
-                this.launchedServer = false
-                this.launchedClient = false
+                this.launched = false
                 this.safeDispatchEvent('stop')
                 break
             case State.STARTED:
                 this.started = true
-                this.launchedServer = false
-                this.launchedClient = false
+                this.launched = false
                 this.safeDispatchEvent('start')
                 break
             case State.LAUNCHED:
                 this.started = true
-                this.launchedServer = true
-                this.launchedClient = false
+                this.launched = true
                 this.safeDispatchEvent('wait')
                 break
         }
     }
     private async handleLaunchResponse(res: LobbyNotificationMessage.LaunchRequest){
         this.started = true
-        this.launchedServer = true
-        this.launchedClient = true
+        this.launched = true
         this.safeDispatchEvent('launch')
 
         const peer = await this.node.peerStore.get(this.ownerId)
@@ -268,14 +265,13 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         this.broadcast({
             to: this.players.values(),
             peersRequests: [{
-                publicKey: this.PeerId_encode(player.id),
+                playerId: player.id,
                 pickRequest: req
             }]
         })
     }
     private handlePickResponse(player: GamePlayer, res: PickRequest){
         player.decodeInplace(res)
-        this.safeDispatchEvent('update')
     }
 
     private handleLeaveRequest(player: GamePlayer){
@@ -288,14 +284,13 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         this.broadcast({
             to: this.players.values(),
             peersRequests: [{
-                publicKey: this.PeerId_encode(player.id),
+                playerId: player.id,
                 leaveRequest: true,
             }]
         })
     }
     private handleLeaveResponse(player: GamePlayer){
         this.players.delete(player.id)
-        this.safeDispatchEvent('update')
     }
 
     public encode() {
@@ -315,23 +310,23 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             ret &&= this.name.decodeInplace(gi.name)
             ret &&= this.map.decodeInplace(gi.map)
             ret &&= this.mode.decodeInplace(gi.mode)
-            this.players_size = gi.players
+            this.players_count = gi.players
             ret &&= this.playersMax.decodeInplace(gi.playersMax)
         this.password.value = gi.passwordProtected ? '' : undefined
         return ret
     }
 
-    protected handleRequest(peerId: PeerId, req: LobbyRequestMessage, stream: u|Stream){
+    protected handleRequest(playerId: PlayerId, req: LobbyRequestMessage, stream: u|Stream){
         let player: u|GamePlayer
-        if(req.joinRequest && (player = this.players_add(peerId))){
+        if(req.joinRequest && (player = this.players_add(playerId))){
             if(stream)
                 player.stream = pbStream(stream).pb(LobbyNotificationMessage)
             this.handleJoinRequest(player, req.joinRequest)
         }
-        if(req.pickRequest && (player = this.players.get(peerId))){
+        if(req.pickRequest && (player = this.players.get(playerId))){
             this.handlePickRequest(player, req.pickRequest)
         }
-        if(req.leaveRequest && (player = this.players.get(peerId))){
+        if(req.leaveRequest && (player = this.players.get(playerId))){
             this.handleLeaveRequest(player)
         }
     }
@@ -339,17 +334,18 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         if(ress.peersRequests.length){
             for(const res of ress.peersRequests){
                 let player: u|GamePlayer
-                const peerId = this.PeerId_decode(res.publicKey)
-                if(res.joinRequest && (player = this.players_add(peerId))){
+                const playerId = res.playerId as PlayerId
+                if(res.joinRequest && (player = this.players_add(playerId))){
                     this.handleJoinResponse(player, res.joinRequest)
                 }
-                if(res.pickRequest && (player = this.players.get(peerId))){
+                if(res.pickRequest && (player = this.players.get(playerId))){
                     this.handlePickResponse(player, res.pickRequest)
                 }
-                if(res.leaveRequest && (player = this.players.get(peerId))){
+                if(res.leaveRequest && (player = this.players.get(playerId))){
                     this.handleLeaveResponse(player)
                 }
             }
+            this.safeDispatchEvent('update')
         }
         if(ress.switchStateRequest){
             this.handleSwitchStateResponse(ress.switchStateRequest)
@@ -358,7 +354,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             this.handleLaunchResponse(ress.launchRequest)
         }
     }
-
+    /*
     PeerId_encode(from: PeerId){
         if(from == this.ownerId) return new Uint8Array()
         return publicKeyToProtobuf(from.publicKey!)
@@ -367,7 +363,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         if(from.length == 0) return this.ownerId
         return peerIdFromPublicKey(publicKeyFromProtobuf(from))
     }
-
+    */
     public getGameInfo(): GameInfo {
         return {
             gameId: 1,

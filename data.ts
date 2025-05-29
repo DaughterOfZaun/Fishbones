@@ -144,16 +144,16 @@ async function repair7z(){
 let clientSubprocess: undefined | SubProcess
 export async function launchClient(ip: string, port: number, key: string, clientId: number){
     //console.log(`"${gcExe}" "" "" "" "${ip} ${port} ${key} ${clientId}"`)
-    const gcArgs = ['', '', '', /*quote*/([ip, port.toString(), sanitize_bfkey(key), clientId.toString()]).join(' ')]
+    const gcArgs = ['', '', '', /*quote*/([ip, port.toString(), sanitize_bfkey(key), clientId.toString()]).join(' ')].map(a => `"${a}"`).join(' ')
     
-    console.log(quote(['bottles-cli', 'run', '-b', 'Default Gaming', '-e', gcExe, ...gcArgs]))
-    
+    console.log(quote(['bottles-cli', 'run', '-b', 'Default Gaming', '-e', gcExe, gcArgs]))
+    //console.log(quote(['bottles-cli', 'run', '-b', 'Default Gaming', '-p', 'League of Legends', '--args-replace', gcArgs]))
+
     if(process.platform == 'win32')
-        clientSubprocess = new SubProcess(gcExe, gcArgs)
+        clientSubprocess = new SubProcess(gcExe, [ gcArgs ])
     else if(process.platform == 'linux')
-        clientSubprocess = new SubProcess('bottles-cli', [
-            'run', '-b', 'Default Gaming', '-e', gcExe, ...gcArgs,
-        ])
+        clientSubprocess = new SubProcess('bottles-cli', ['run', '-b', 'Default Gaming', '-e', gcExe, gcArgs])
+        //clientSubprocess = new SubProcess('bottles-cli', ['run', '-b', 'Default Gaming', '-p', 'League of Legends', '--args-replace', gcArgs])
     else throw new Error(`Unsupported platform: ${process.platform}`)
 
     await clientSubprocess.start()
@@ -175,7 +175,7 @@ export async function launchServer(port: number, info: GameInfo){
         //'--port', port.toString(), '--config-json', quote([JSON.stringify(info, sanitize_kv)]),
         '--port', port.toString(), '--config', gsInfoRel,
     ], {
-        cwd: gsExeDir 
+        cwd: gsExeDir,
     })
     await serverSubprocess.start((stdout: string, /*stderr: string*/) => stdout.includes('Server is ready'))
 }
