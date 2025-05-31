@@ -168,20 +168,28 @@ export async function relaunchClient(){
     await clientSubprocess.start()
     return clientSubprocess
 }
+
 export async function stopClient(){
+    const prevSubprocess = clientSubprocess!
+
     if(!clientSubprocess) return
+    clientSubprocess = undefined
+
+    await killSubprocess(prevSubprocess)
+}
+
+async function killSubprocess(sp: SubProcess){
     try {
-        await clientSubprocess.stop('SIGTERM', 10 * 1000)
+        await sp.stop('SIGTERM', 10 * 1000)
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch(err){
         try {
-            await clientSubprocess.stop('SIGKILL', 5 * 1000)
+            await sp.stop('SIGKILL', 5 * 1000)
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (err) {
             //TODO: Handle errors
         }
     }
-    clientSubprocess = undefined
 }
 
 let serverSubprocess: undefined | SubProcess
@@ -204,6 +212,15 @@ export async function launchServer(port: number, info: GameInfo){
     })
     await serverSubprocess.start((stdout: string, /*stderr: string*/) => stdout.includes('Server is ready'))
     return serverSubprocess
+}
+
+export async function stopServer(){
+    const prevSubprocess = serverSubprocess!
+
+    if(!serverSubprocess) return
+    serverSubprocess = undefined
+
+    await killSubprocess(prevSubprocess)
 }
 
 export async function repair(){

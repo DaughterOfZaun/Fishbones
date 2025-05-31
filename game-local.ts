@@ -96,6 +96,7 @@ export class LocalGame extends Game {
         this.connected = false
         this.joined = false
         this.started = false
+        this.launched = false
     }
 
     private playerIds = new Set<PlayerId>()

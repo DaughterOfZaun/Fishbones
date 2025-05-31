@@ -85,5 +85,6 @@ export class RemoteGame extends Game {
         this.connected = false
         this.joined = false
         this.started = false
+        this.launched = false
     }
 }

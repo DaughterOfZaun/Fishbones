@@ -28,8 +28,8 @@ import * as Data from './data'
 await Data.repair()
 //controller.abort()
 
-const port = Number(process.argv[2]) || 5118
-const portDHT = port - 1
+const port = Number(process.argv[2]) || 5117
+const portDHT = port + 1
 const node = await createLibp2p({
     start: false,
     addresses: {
@@ -75,7 +75,7 @@ await main()
 //}
 
 async function main(){
-    type Action = ['host'] | ['exit'] | ['join', RemoteGame]
+    type Action = ['join', RemoteGame] | ['host'] | ['exit']
     
     const getChoices = () =>
         pspd.getPeersWithData()
@@ -172,143 +172,155 @@ function playerChoices<T>(game: Game, cb: (player: GamePlayer) => T){
     })) as Choice<T>[]
 }
 
-async function lobby(game: Game){
-    type Action = ['noop'] | ['start'] | ['pick'] | ['pick', PPP] | ['lock'] | ['wait'] | ['launch'] | ['crash'] | ['stop'] | ['exit']
-    
-    let action: Action[0] = 'noop'
-    let args: [] | [Action[1]] = []
+type Context = {
+    signal: AbortSignal,
+    clearPromptOnDone: boolean,
+    controller: AbortController,
+    game: Game,
+}
 
-    const getChoices = () => {
-        const choices: Choice<Action>[] = []
-        if(!game.started){
-            choices.push(
-                { value: ['start'] as Action, name: 'Start Game', disabled: !game.canStart },
-            )
-        } else {
-            const player = game.getPlayer()!
-            const disabled = !!player.lock.value
-            choices.push(
-                { value: ['lock'] as Action, name: 'Lock In', disabled },
-                ...(['champion', 'spell1', 'spell2'] as PPP[]).map(ppp => (
-                    { value: ['pick', ppp] as Action, name: `${player[ppp].name}: ${player[ppp].toString()}`, disabled }
-                ))
-            )
-        }
-        choices.push(
-            ...playerChoices<Action>(game, () => ['noop'] as Action),
-            { value: ['exit'] as Action, name: 'Quit' },
-        )
-        return choices
-    }
+async function lobby(game: Game){
+    type View = null | ((opts: Context) => Promise<unknown>)
+
     let controller = new AbortController()
-    const opts = {
+    const ctx: Context = {
         signal: controller.signal,
         clearPromptOnDone: true,
-    }
-    const controller_abort = (action: Action) => {
-        controller.abort(action)
-        controller = new AbortController()
-        opts.signal = controller.signal
+        controller,
+        game,
     }
     const handlers = {
-        kick: () => {
-            controller.abort([action] = ['exit'] as Action)
-        },
-        start: () => {
-            controller_abort([action] = ['pick'] as Action)
-        },
-        wait: () => {
-            controller_abort([action] = ['wait'] as Action)
-        },
-        launch: () => {
-            controller_abort([action] = ['launch'] as Action)
-        },
-        crash: () => {
-            controller_abort([action] = ['crash'] as Action)
-        },
-        stop: () => {
-            controller_abort([action] = ['stop'] as Action)
-        },
+        kick: () => controller.abort(null),
+        start: () => controller.abort(lobby_pick),
+        wait: () => controller.abort(lobby_wait_for_start),
+        crash: () => controller.abort(lobby_crash_report),
+        launch: () => controller.abort(lobby_wait_for_end),
+        stop: () => controller.abort(lobby_gather),
     }
     const handlers_keys = Object.keys(handlers) as (keyof typeof handlers)[]
     for(const name of handlers_keys)
         game.addEventListener(name, handlers[name])
     
-    const handleAbort = (error: unknown) => {
-        if (error instanceof AbortPromptError){
-            controller = new AbortController()
-            opts.signal = controller.signal
-            return [action] = error.cause as Action
-        } else throw error
+    let view: View = lobby_gather
+    while(view){
+        try {
+            await view(ctx)
+            //break
+        } catch(error) {
+            if (error instanceof AbortPromptError){
+                controller = new AbortController()
+                ctx.signal = controller.signal
+                view = error.cause as View
+            } else throw error
+        }
     }
-    loop: while(true){
-        
-        let message = 'Waiting for players...'
-        if(game.started) message = 'Waiting for all players to lock their choice...'
-        if(game.launched) message = 'Waiting for the game to start...'
 
-        ;[action, ...args] = await select<Action>({
-            message,
+    for(const name of handlers_keys)
+        game.removeEventListener(name, handlers[name])
+}
+
+async function lobby_gather(ctx: Context){
+    const { game } = ctx
+
+    type Action = ['noop'] | ['start'] | ['exit']
+    
+    const getChoices = () => ([
+        { value: ['start'] as Action, name: 'Start Game', disabled: !game.canStart },
+        ...playerChoices<Action>(game, () => ['noop'] as Action),
+        { value: ['exit'] as Action, name: 'Quit' },
+    ])
+    loop: while(true){
+        const [action] = await select<Action>({
+            message: 'Waiting for players...',
             choices: getChoices(),
             cb: (setItem) => {
                 const listener = () => setItem(getChoices())
                 game.addEventListener('update', listener)
                 return () => game.removeEventListener('update', listener)
             },
-            theme: {
-                style: {
-                    //disabled: (text: string) => colors.dim(`${text} - locked`)
-                }
-            }
-        }, opts).catch(handleAbort)
-
+        }, ctx)
         if(action == 'start'){
-            game.start()
+            /*await*/ game.start()
+            break loop
+        } else if(action == 'noop'){
+            continue
+        } else if(action == 'exit'){
+            throw new AbortPromptError({ cause: null })
         }
-        if(action == 'pick' && args.length == 0){
-            for(const prop of ['champion', 'spell1', 'spell2'] as const){
-                ;[action] = ['noop'] as Action
-                await game.pick(prop, controller).catch(handleAbort)
-            }
-        }
-        if(action == 'pick' && args.length == 1){
-            const prop = args[0]!
-            ;[action] = ['noop'] as Action
-            await game.pick(prop, controller).catch(handleAbort)
-        }
-        if(action == 'lock'){
-            ;[action] = ['noop'] as Action
-            await game.set('lock', +true).catch(handleAbort)
-        }
-        if(action == 'wait'){
-            ;[action] = ['noop'] as Action
-            const message = 'Waiting for the server to start...'
-            await spinner({ message }, opts).catch(handleAbort)
-        }
-        if(action == 'launch'){
-            while(true){ // game loop
-                ;[action] = ['noop'] as Action
-                const message = 'Waiting for the end of the game...'
-                await spinner({ message }, opts).catch(handleAbort)
-                if(action == 'crash'){
-                    ;[action] = await select({
-                        message: 'The client exited unexpectedly',
-                        choices: [
-                            { value: ['launch'] as Action, name: 'Restart the client' },
-                            { value: ['exit'] as Action, name: 'Leave' },
-                        ]
-                    })
-                    if(action === 'launch'){
-                        /*await*/ game.relaunch()
-                        continue
-                    }
-                }
-                break
-            }
-        }
-        if(action == 'exit') break loop
+    }
+}
+
+async function lobby_pick(ctx: Context){
+    const { game } = ctx
+
+    type Action = ['lock'] | ['pick', PPP] | ['noop'] | ['exit']
+    
+    const player = game.getPlayer()!
+    const disabled = !!player.lock.value
+    const getChoices = () => ([
+        { value: ['lock'] as Action, name: 'Lock In', disabled },
+        ...(['champion', 'spell1', 'spell2'] as PPP[]).map(ppp => (
+            { value: ['pick', ppp] as Action, name: `${player[ppp].name}: ${player[ppp].toString()}`, disabled }
+        )),
+        ...playerChoices<Action>(game, () => ['noop'] as Action),
+        { value: ['exit'] as Action, name: 'Quit' },
+    ])
+
+    for(const prop of ['champion', 'spell1', 'spell2'] as const){
+        await game.pick(prop, ctx.signal)
     }
 
-    for(const name of handlers_keys)
-        game.removeEventListener(name, handlers[name])
+    loop: while(true){
+        const [action, ...args] = await select<Action>({
+            message: 'Waiting for all players to lock their choice...',
+            choices: getChoices(),
+            cb: (setItem) => {
+                const listener = () => setItem(getChoices())
+                game.addEventListener('update', listener)
+                return () => game.removeEventListener('update', listener)
+            },
+        }, ctx)
+        if(action == 'lock'){
+            await game.set('lock', +true)
+            break loop
+        } else if(action == 'pick'){
+            const prop = args[0]!
+            await game.pick(prop, ctx.signal)
+        } else if(action == 'noop'){
+            continue
+        } else if(action == 'exit'){
+            throw new AbortPromptError({ cause: null })
+        }
+    }
+}
+
+async function lobby_wait_for_start(ctx: Context){
+    const message = 'Waiting for the server to start...'
+    await spinner({ message }, ctx)
+}
+
+async function lobby_wait_for_end(ctx: Context){
+    const message = 'Waiting for the end of the game...'
+    await spinner({ message }, ctx)
+}
+
+async function lobby_crash_report(ctx: Context){
+    const { game } = ctx
+
+    type Action = ['relaunch'] | ['exit']
+    
+    const [action] = await select({
+        message: 'The client exited unexpectedly',
+        choices: [
+            { value: ['relaunch'] as Action, name: 'Restart the client' },
+            { value: ['exit'] as Action, name: 'Leave' },
+        ]
+    }, ctx)
+    if(action === 'relaunch'){
+        /*await*/ game.relaunch()
+        //return await lobby_wait_for_end(ctx)
+        throw new AbortPromptError({ cause: lobby_wait_for_end })   
+    } else if(action == 'exit'){
+        throw new AbortPromptError({ cause: null })
+    }
 }

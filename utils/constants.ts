@@ -1,4 +1,4 @@
-import { input, select, checkbox } from "@inquirer/prompts"
+import { input, checkbox, select } from "@inquirer/prompts"
 import type { Choice as SelectChoice } from "../ui/dynamic-select"
 type CheckboxChoice<T> = Extract<Parameters<typeof checkbox<T>>[0]['choices'][number], { value: T }>
 
@@ -11,7 +11,7 @@ export abstract class ValueDesc<I, E> {
     public value?: I
     abstract encode(): E
     abstract decodeInplace(v: E): boolean
-    abstract uinput(...args: unknown[]): Promise<unknown>
+    abstract uinput(signal?: AbortSignal): Promise<unknown>
     abstract toString(): string
 }
 
@@ -45,7 +45,7 @@ export class PickableValue extends ValueDesc<number, number> {
         }
         return false
     }
-    public async uinput(controller?: AbortController) {
+    public async uinput(signal?: AbortSignal) {
         const enabled = this.enabledGetter?.call(null)
         //const enabled = this.enabled
         if(enabled) for(const choice of this.choices){
@@ -57,7 +57,7 @@ export class PickableValue extends ValueDesc<number, number> {
                 choices: this.choices
             }, {
                 clearPromptOnDone: true,
-                signal: controller?.signal
+                signal: signal,
             })
         } finally {
             if(enabled) for(const choice of this.choices){
@@ -357,14 +357,14 @@ export class InputableValue extends ValueDesc<string, string> {
         this.value = sanitize_str(v)
         return true
     }
-    public async uinput(controller?: AbortController) {
+    public async uinput(signal?: AbortSignal) {
         this.value = await input({
             message: `Enter ${this.name}`,
             //transformer: (v, /*{ isFinal }*/) => sanitize_str(v),
             validate: v => v == sanitize_str(v),
         }, {
             clearPromptOnDone: true,
-            signal: controller?.signal
+            signal: signal,
         })
     }
     public get [Symbol.toStringTag]() {
@@ -412,13 +412,13 @@ export class Enabled extends ValueDesc<number[], number[]>{
         this.value = v.filter(v => v in this.values)
         return true
     }
-    async uinput(controller?: AbortController) {
+    async uinput(signal?: AbortSignal) {
         this.value = await checkbox({
             message: `Check ${this.name}`,
             choices: this.choices
         }, {
             clearPromptOnDone: true,
-            signal: controller?.signal,
+            signal: signal,
         })
     }
     public get [Symbol.toStringTag]() {
@@ -474,7 +474,7 @@ export async function ufill<T extends object>(obj: T, fields?: DescKeys<T>[]): P
         const [action, key] = selected
         if(action == 'edit'){
             const obj_key = obj[key] as ValueDesc<unknown, unknown>
-            await obj_key.uinput(obj_key)
+            await obj_key.uinput()
         }
         if(action == 'enter') break loop;
     }

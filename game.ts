@@ -185,7 +185,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             case State.STOPPED:
                 this.started = false
                 this.launched = false
-                this.stopClient()
+                /*await*/ Data.stopClient()
                 this.safeDispatchEvent('stop')
                 break
             case State.STARTED:
@@ -218,22 +218,20 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         const proc = await Data.launchClient(ip, port, key, clientId)
         proc.once('exit', this.onClientExit)
     }
-
     public async relaunch(){
         const proc = await Data.relaunchClient()
         proc.once('exit', this.onClientExit)
     }
-
     private onClientExit = (/*code, signal*/) => {
         if(this.launched)
             this.safeDispatchEvent('crash')
     }
 
-    public async pick(prop: PPP, controller: AbortController) {
+    public async pick(prop: PPP, signal?: AbortSignal) {
         const player = this.getPlayer()
         if(!player) return false
         const pdesc = player[prop]
-        await pdesc.uinput(controller)
+        await pdesc.uinput(signal)
         return await this.stream_write({
             pickRequest: player.encode(prop)
         })
