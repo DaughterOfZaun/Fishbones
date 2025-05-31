@@ -97,18 +97,41 @@ async function main(){
                 game: RemoteGame.create(node, pwd.id, server, gameInfo) //TODO: Cache
             }))
         })
-        .map(({ id, name, game, server }) => ({
-            value: ['join', game] as Action,
-            name: [
-                `[${id.toString().slice(-8)}] ${name}'s ${game.name.toString()} at ${server.name.toString()}`,
-                [
-                    ` `,
-                    `(${('' + game.getPlayersCount()).padStart(2, ' ')}/${('' + 2 * (game.playersMax.value ?? 0)).padEnd(2, ' ')})`,
-                    `${game.mode.toString()} at ${game.map.toString()}`,
-                    (game.password.isSet ? '[PASSWORD]' : '') + game.features.asString(),
-                ].join(' '),
-            ].join('\n')
-        }))
+        .map(({ id, name, game, server }) => {
+            //const ownerId = id.toString().slice(-8)
+            //const gameName = game.name.toString()
+            //const serverName = server.name.toString()
+            const players = ('' + game.getPlayersCount()).padStart(2, ' ')
+            const playersMax = ('' + 2 * (game.playersMax.value ?? 0)).padEnd(2, ' ')
+            const mode = game.mode.toString()
+            const map = game.map.toString()
+            //const password = (game.password.isSet ? '[P] ' : '   ')
+            const features = game.features.asString().replaceAll(' ', '_').replaceAll('][', ' ').replace(/\[|\]/g, '')
+            //const ping = Math.min(100, 999).toString().padStart(3, ' ')
+            
+            let line = [
+                `${players}/${playersMax}`,
+                name.padEnd(16, ' '),
+                map.padEnd(24, ' '),
+                mode.padEnd(7, ' '),
+                features
+            ]
+            //.map(segment => color.underline(segment))
+            .join(' | ')
+
+            if(game.password.isSet)
+                line = color.gray(line)
+
+            return ({
+                value: ['join', game] as Action,
+                name: line,
+                
+                // name: [
+                //     `[${players}/${playersMax}] ${name}'s ${gameName} at ${serverName}`,
+                //     [` `, password, `${mode} at ${map}`, features].join(' '),
+                // ].join('\n')
+            })
+        })
         .concat(defaultItems)
     
     const defaultItems = [
@@ -124,6 +147,7 @@ async function main(){
                 pspd.addEventListener('update', listener)
                 return () => pspd.removeEventListener('update', listener)
             },
+            pageSize: 20,
         }, {
             clearPromptOnDone: true,
         })
@@ -191,16 +215,20 @@ async function main(){
 }
 
 function playerChoices<T>(game: Game, cb: (player: GamePlayer) => T){
-    return game.getPlayers().map(player => ({
-        value: cb(player),
-        name: color[player.team.color()]([
-            `[${player.id.toString(16).padStart(8, '0')}] ${player.name}`,
-            `${player.champion.toString()}`,
-            `${player.spell1.toString()}`,
-            `${player.spell2.toString()}`,
-            `${player.lock.toString()}`,
-        ].join(' - '))
-    })) as Choice<T>[]
+    return game.getPlayers().map(player => {
+        const colorFunc = color[player.team.color()]
+        const playerId = player.id.toString(16).padStart(8, '0')
+        const champion = player.champion.toString()
+        const spell1 = player.spell1.toString()
+        const spell2 = player.spell2.toString()
+        const locked = player.lock.toString()
+        return ({
+            value: cb(player),
+            name: colorFunc(
+                [`[${playerId}] ${player.name}`, champion, spell1, spell2, locked].join(' - ')
+            )
+        })
+    }) as Choice<T>[]
 }
 
 type Context = {
@@ -269,6 +297,7 @@ async function lobby_gather(ctx: Context){
                 game.addEventListener('update', listener)
                 return () => game.removeEventListener('update', listener)
             },
+            pageSize: 20,
         }, ctx)
         if(action == 'start'){
             /*await*/ game.start()
@@ -312,6 +341,7 @@ async function lobby_pick(ctx: Context){
                 game.addEventListener('update', listener)
                 return () => game.removeEventListener('update', listener)
             },
+            pageSize: 20,
         }, ctx)
         if(action == 'lock'){
             await game.set('lock', +true)
@@ -347,7 +377,8 @@ async function lobby_crash_report(ctx: Context){
         choices: [
             { value: ['relaunch'] as Action, name: 'Restart the client' },
             { value: ['exit'] as Action, name: 'Leave' },
-        ]
+        ],
+        pageSize: 20,
     }, ctx)
     if(action === 'relaunch'){
         /*await*/ game.relaunch()

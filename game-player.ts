@@ -30,7 +30,11 @@ export class GamePlayer {
 
     public encode(ppp?: PPP): PickRequest {
         return ppp ? ({ [ppp]: this[ppp].encode() }) :
-            Object.fromEntries(pickableKeys.map(key => [key, this[key].encode()]))
+            Object.fromEntries(
+                pickableKeys
+                .filter(key => this[key].value !== undefined)
+                .map(key => [key, this[key].encode()])
+            )
     }
     public decodeInplace(prs: PickRequest): boolean {
         return Object.entries(prs).reduce((a, [key, value]) =>

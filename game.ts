@@ -35,7 +35,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     public readonly server: Server
     public readonly ownerId: PeerId
     
-    public readonly name = new Name(`Custom Game`)
+    public readonly name = new Name(`Game`)
     public readonly map = new GameMap(1, () => this.server.maps)
     public readonly mode = new GameMode(0, () => this.server.modes)
     public readonly playersMax = new PlayerCount(5)

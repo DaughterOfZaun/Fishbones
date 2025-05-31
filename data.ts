@@ -2,10 +2,12 @@ import { exec, spawn, SubProcess } from 'teen_process'
 import { promises as fs } from "fs"
 import s7z from '7z-bin'
 import WebTorrent from 'webtorrent'
-import { sanitize_bfkey, /*sanitize_str*/ } from './utils/constants'
+import { champions, maps, modes, sanitize_bfkey, spells, /*sanitize_str*/ } from './utils/constants'
 import path from 'path'
 //import { quote } from 'shell-quote'
 import type { ChildProcess } from 'child_process'
+
+process.env['DOTNET_CLI_TELEMETRY_OPTOUT'] = '1'
 
 async function fs_exists(path: string){
     try {
@@ -61,11 +63,12 @@ const gsProjName = 'GameServerConsole'
 const gsDir = path.join(downloads, 'GameServer')
 const gsProjDir = path.join(gsDir, gsProjName)
 const gsTarget = 'Debug'
-const netVer = 'net9.0'
+const gsNetVer = 'net9.0'
 const gsExeExt = (sdkPlatform == 'win') ? '.exe' : ''
 const gsExeName = `${gsProjName}${gsExeExt}`
-const gsExeDir = path.join(gsProjDir, 'bin', gsTarget, netVer)
+const gsExeDir = path.join(gsProjDir, 'bin', gsTarget, gsNetVer)
 const gsExe = path.join(gsExeDir, gsExeName)
+const gsDll = path.join(gsExeDir, `${gsProjName}.dll`)
 const gsCSProj = path.join(gsProjDir, `${gsProjName}.csproj`)
 const gsZipName = 'Chronobreak.GameServer.7z'
 const gsZip = path.join(downloads, gsZipName)
@@ -136,6 +139,39 @@ async function repair7z(){
         await fs.chmod(exe, rwx_rx_rx)
 }
 
+const serverSettingsJson = path.join(downloads, 'server-settings.jsonc')
+let serverSettings: undefined | Record<'maps' | 'modes' | 'champions' | 'spells', number[]>
+async function repairServerSettingsJsonc(){
+    if(await fs_exists(serverSettingsJson)) return
+    const line = (i: number, name: string, enabled: boolean) => '        ' + (enabled ? '' : '//') + `${i}, // ${name}`
+    const txt =`{
+    "maps": [
+${ maps.map(([i, name, enabled]) => line(i, name, enabled)).join('\n') }
+    ],
+    "modes": [
+${ modes.map(([, name, enabled], i) => line(i, name, enabled)).join('\n') }
+    ],
+    "champions": [
+${ champions.map(([, name, enabled], i) => line(i, name, enabled)).join('\n') }
+    ],
+    "spells": [
+${ spells.map(([, name, enabled], i) => line(i, name, enabled)).join('\n') }
+    ],
+}`.trim()
+    await fs.writeFile(serverSettingsJson, txt, 'utf8')
+    parseServerSettings(txt)
+}
+function parseServerSettings(txt: string){
+    txt = txt.replace(/\n? *\/\/.*/g, '').replace(/,(?=[\s\n]*[\]}])/g, '')
+    serverSettings = JSON.parse(txt)
+}
+export async function getServerSettings(){
+    if(serverSettings) return serverSettings
+    const txt = await fs.readFile(serverSettingsJson, 'utf8')
+    parseServerSettings(txt)
+    return serverSettings!
+}
+
 //const sanitize_kv = (key: string, value: string) => {
 //    if(typeof value === 'string')
 //        return sanitize_str(value)
@@ -150,12 +186,8 @@ export async function launchClient(ip: string, port: number, key: string, client
 export async function relaunchClient(){
     const [ip, port, key, clientId] = launchArgs!
 
-    //console.log(`"${gcExe}" "" "" "" "${ip} ${port} ${key} ${clientId}"`)
     const gcArgs = ['', '', '', /*quote*/([ip, port.toString(), sanitize_bfkey(key), clientId.toString()]).join(' ')].map(a => `"${a}"`).join(' ')
     
-    //console.log(quote(['bottles-cli', 'run', '-b', 'Default Gaming', '-e', gcExe, gcArgs]))
-    //console.log(quote(['bottles-cli', 'run', '-b', 'Default Gaming', '-p', 'League of Legends', '--args-replace', gcArgs]))
-
     await stopClient()
 
     if(process.platform == 'win32')
@@ -164,6 +196,8 @@ export async function relaunchClient(){
         clientSubprocess = new SubProcess('bottles-cli', ['run', '-b', 'Default Gaming', '-e', gcExe, gcArgs])
         //clientSubprocess = new SubProcess('bottles-cli', ['run', '-b', 'Default Gaming', '-p', 'League of Legends', '--args-replace', gcArgs])
     else throw new Error(`Unsupported platform: ${process.platform}`)
+
+    console.log(clientSubprocess.rep)
 
     await clientSubprocess.start()
     return clientSubprocess
@@ -194,22 +228,21 @@ async function killSubprocess(sp: SubProcess){
 
 let serverSubprocess: undefined | SubProcess
 export async function launchServer(port: number, info: GameInfo){
-    //console.log(`"${gsExe}" --port ${port} --config-json ${quote([JSON.stringify(info, sanitize_kv)])}`)
-
     info.gameInfo.CONTENT_PATH = path.relative(gsExeDir, gsgcDir)
 
     const gsInfo = path.join(gsInfoDir, `GameInfo.${info.gameId}.json`)
     await fs.writeFile(gsInfo, JSON.stringify(info, null, 4))
     const gsInfoRel = path.relative(gsExeDir, gsInfo)
 
-    //console.log(`${path.relative(gsExeDir, gsExe)} --port ${port} --config ${gsInfoRel}`)
-    
-    serverSubprocess = new SubProcess(gsExe, [
-        //'--port', port.toString(), '--config-json', quote([JSON.stringify(info, sanitize_kv)]),
-        '--port', port.toString(), '--config', gsInfoRel,
+    serverSubprocess = new SubProcess(sdkExe, [
+        gsDll, '--port', port.toString(), '--config', gsInfoRel,
     ], {
         cwd: gsExeDir,
+        //timeout: 15 * 1000
     })
+    
+    console.log(serverSubprocess.rep)
+
     await serverSubprocess.start((stdout: string, /*stderr: string*/) => stdout.includes('Server is ready'))
     return serverSubprocess
 }
@@ -229,6 +262,7 @@ export async function repair(){
     if(!await fs_exists(downloads))
         await fs.mkdir(downloads)
     
+    await repairServerSettingsJsonc()
     await repairTorrentsTxt()
     await repair7z()
 
@@ -270,9 +304,15 @@ function successfulTermination(proc: ChildProcess){
 async function unpack(exe: string, dir: string, zip: string, zipName: string){
     console.log(`Unpacking ${zipName}...`)
 
-    await fs.mkdir(dir)
-
-    const opts = ['-aoa', `-o${dir}`]
+    try {
+        await fs.mkdir(dir)
+    } catch(unk_err) {
+        const err = unk_err as ErrnoException
+        if(err.code != 'EEXIST')
+            console.log(err)
+    }
+    
+    const opts = ['-spe', '-aoa', `-o${dir}`]
     if(zip.endsWith('.tar.gz')){
         const s7z1 = spawn(
             s7z.path7z, /*quote*/(['x', '-so', zip])/*.split(' ')*/,
@@ -296,13 +336,14 @@ async function unpack(exe: string, dir: string, zip: string, zipName: string){
         throw new Error(`Unable to unpack ${zipName}`)
 }
 
-//TODO: <TargetFramework>net8.0</TargetFramework>
 async function build(exe: string, exeName: string, csproj: string){
     console.log(`Building ${csproj}...`)
 
-    await exec(sdkExe, ['build', csproj], {
-        env: {...process.env, 'DOTNET_CLI_TELEMETRY_OPTOUT': '1' }
-    })
+    let txt = await fs.readFile(csproj, 'utf8')
+    txt = txt.replace(/(?<=<TargetFramework>)(?:.|\n)*?(?=<\/TargetFramework>)/g, gsNetVer)
+    await fs.writeFile(csproj, txt, 'utf8')
+
+    await exec(sdkExe, ['build', csproj])
     if(!await fs_exists(exe))
         throw new Error(`Unable to build ${exeName}`)
 }

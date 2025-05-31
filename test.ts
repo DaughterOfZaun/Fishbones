@@ -7,7 +7,7 @@ import { ufill } from "./utils/constants"
 await Data.repair()
 
 const node = { peerId: { publicKey: {} } } as unknown as Libp2p
-const server = LocalServer.create(node)
+const server = await LocalServer.create(node)
 const game = await LocalGame.create(node, server)
 
 await game.join('Player', undefined)
