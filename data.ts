@@ -141,13 +141,22 @@ async function repair7z(){
 //        return sanitize_str(value)
 //}
 
+let launchArgs: undefined | Parameters<typeof launchClient>
 let clientSubprocess: undefined | SubProcess
 export async function launchClient(ip: string, port: number, key: string, clientId: number){
+    launchArgs = [ip, port, key, clientId]
+    return await relaunchClient()
+}
+export async function relaunchClient(){
+    const [ip, port, key, clientId] = launchArgs!
+
     //console.log(`"${gcExe}" "" "" "" "${ip} ${port} ${key} ${clientId}"`)
     const gcArgs = ['', '', '', /*quote*/([ip, port.toString(), sanitize_bfkey(key), clientId.toString()]).join(' ')].map(a => `"${a}"`).join(' ')
     
     console.log(quote(['bottles-cli', 'run', '-b', 'Default Gaming', '-e', gcExe, gcArgs]))
     //console.log(quote(['bottles-cli', 'run', '-b', 'Default Gaming', '-p', 'League of Legends', '--args-replace', gcArgs]))
+
+    await stopClient()
 
     if(process.platform == 'win32')
         clientSubprocess = new SubProcess(gcExe, [ gcArgs ])
@@ -157,8 +166,24 @@ export async function launchClient(ip: string, port: number, key: string, client
     else throw new Error(`Unsupported platform: ${process.platform}`)
 
     await clientSubprocess.start()
+    return clientSubprocess
 }
-    
+export async function stopClient(){
+    if(!clientSubprocess) return
+    try {
+        await clientSubprocess.stop('SIGTERM', 10 * 1000)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch(err){
+        try {
+            await clientSubprocess.stop('SIGKILL', 5 * 1000)
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (err) {
+            //TODO: Handle errors
+        }
+    }
+    clientSubprocess = undefined
+}
+
 let serverSubprocess: undefined | SubProcess
 export async function launchServer(port: number, info: GameInfo){
     //console.log(`"${gsExe}" --port ${port} --config-json ${quote([JSON.stringify(info, sanitize_kv)])}`)
@@ -178,6 +203,7 @@ export async function launchServer(port: number, info: GameInfo){
         cwd: gsExeDir,
     })
     await serverSubprocess.start((stdout: string, /*stderr: string*/) => stdout.includes('Server is ready'))
+    return serverSubprocess
 }
 
 export async function repair(){

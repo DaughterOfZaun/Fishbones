@@ -15,7 +15,7 @@ import { noise } from '@chainsafe/libp2p-noise'
 import { AbortPromptError } from '@inquirer/core'
 import { RemoteGame } from './game-remote'
 import { LocalGame } from './game-local'
-import type { PPP } from './game-player'
+import type { GamePlayer, PPP } from './game-player'
 import { LocalServer, RemoteServer } from './server'
 import spinner from './ui/spinner'
 import * as Data from './data'
@@ -159,8 +159,21 @@ async function main(){
     }
 }
 
+function playerChoices<T>(game: Game, cb: (player: GamePlayer) => T){
+    return game.getPlayers().map(player => ({
+        value: cb(player),
+        name: color[player.team.color()]([
+            `[${player.id.toString(16).padStart(8, '0')}] ${player.name}`,
+            `${player.champion.toString()}`,
+            `${player.spell1.toString()}`,
+            `${player.spell2.toString()}`,
+            `${player.lock.toString()}`,
+        ].join(' - '))
+    })) as Choice<T>[]
+}
+
 async function lobby(game: Game){
-    type Action = ['noop'] | ['start'] | ['pick'] | ['pick', PPP] | ['lock'] | ['wait'] | ['launch'] | ['stop'] | ['exit']
+    type Action = ['noop'] | ['start'] | ['pick'] | ['pick', PPP] | ['lock'] | ['wait'] | ['launch'] | ['crash'] | ['stop'] | ['exit']
     
     let action: Action[0] = 'noop'
     let args: [] | [Action[1]] = []
@@ -182,17 +195,8 @@ async function lobby(game: Game){
             )
         }
         choices.push(
-            ...game.getPlayers().map(player => ({
-                value: ['noop'] as Action,
-                name: color[player.team.color()]([
-                    `[${player.id.toString(16).padStart(8, '0')}] ${player.name}`,
-                    `${player.champion.toString()}`,
-                    `${player.spell1.toString()}`,
-                    `${player.spell2.toString()}`,
-                    `${player.lock.toString()}`,
-                ].join(' - '))
-            })),
-            { value: ['exit'] as Action, name: 'Quit' }
+            ...playerChoices<Action>(game, () => ['noop'] as Action),
+            { value: ['exit'] as Action, name: 'Quit' },
         )
         return choices
     }
@@ -218,6 +222,9 @@ async function lobby(game: Game){
         },
         launch: () => {
             controller_abort([action] = ['launch'] as Action)
+        },
+        crash: () => {
+            controller_abort([action] = ['crash'] as Action)
         },
         stop: () => {
             controller_abort([action] = ['stop'] as Action)
@@ -255,41 +262,51 @@ async function lobby(game: Game){
             }
         }, opts).catch(handleAbort)
 
-        if(action == 'exit') break loop
-
-        if(action == 'start' || (action == 'pick' && args.length == 0)){
-            if(action == 'start'){
-                game.start()
-            }
+        if(action == 'start'){
+            game.start()
+        }
+        if(action == 'pick' && args.length == 0){
             for(const prop of ['champion', 'spell1', 'spell2'] as const){
                 ;[action] = ['noop'] as Action
                 await game.pick(prop, controller).catch(handleAbort)
-                if(action === 'exit') break loop
             }
         }
         if(action == 'pick' && args.length == 1){
             const prop = args[0]!
             ;[action] = ['noop'] as Action
             await game.pick(prop, controller).catch(handleAbort)
-            if(action === 'exit') break loop
         }
         if(action == 'lock'){
             ;[action] = ['noop'] as Action
             await game.set('lock', +true).catch(handleAbort)
-            if(action === 'exit') break loop
         }
         if(action == 'wait'){
             ;[action] = ['noop'] as Action
             const message = 'Waiting for the server to start...'
             await spinner({ message }, opts).catch(handleAbort)
-            if(action === 'exit') break loop
         }
         if(action == 'launch'){
-            ;[action] = ['noop'] as Action
-            const message = 'Waiting for the end of the game...'
-            await spinner({ message }, opts).catch(handleAbort)
-            if(action === 'exit') break loop
+            while(true){ // game loop
+                ;[action] = ['noop'] as Action
+                const message = 'Waiting for the end of the game...'
+                await spinner({ message }, opts).catch(handleAbort)
+                if(action == 'crash'){
+                    ;[action] = await select({
+                        message: 'The client exited unexpectedly',
+                        choices: [
+                            { value: ['launch'] as Action, name: 'Restart the client' },
+                            { value: ['exit'] as Action, name: 'Leave' },
+                        ]
+                    })
+                    if(action === 'launch'){
+                        /*await*/ game.relaunch()
+                        continue
+                    }
+                }
+                break
+            }
         }
+        if(action == 'exit') break loop
     }
 
     for(const name of handlers_keys)

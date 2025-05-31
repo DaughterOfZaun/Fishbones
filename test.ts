@@ -2,6 +2,7 @@ import type { Libp2p } from "@libp2p/interface"
 import { LocalGame } from "./game-local"
 import { LocalServer } from "./server"
 import * as Data from './data'
+import { ufill } from "./utils/constants"
 
 await Data.repair()
 
@@ -11,10 +12,7 @@ const game = await LocalGame.create(node, server)
 
 await game.join('Player')
 const player = game.getPlayer()!
-player.champion.value = 0
-player.spell1.value = 0
-player.spell2.value = 1
-player.lock.value = +true
+await ufill(player)
 
 //await game.start()
 //await game.set('champion', 0)
