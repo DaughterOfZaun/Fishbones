@@ -19,6 +19,7 @@ import type { GamePlayer, PPP } from './game-player'
 import { LocalServer, RemoteServer } from './server'
 import spinner from './ui/spinner'
 import * as Data from './data'
+import type { Peer as PBPeer } from './message/peer'
 
 //const controller = new AbortController()
 ///*await*/ spinner({ message: 'Data check and repair' }, {
@@ -80,6 +81,10 @@ async function main(){
     const getChoices = () =>
         pspd.getPeersWithData()
         .filter(pwd => pwd.data?.serverSettings)
+        //.filter(pwd => {
+        //    const gi = pwd.data?.gameInfos[0]
+        //    return gi && gi.players < 2 * gi.playersMax
+        //})
         .flatMap(pwd => {
             const server = RemoteServer.create(node, pwd.id, pwd.data!.serverSettings!) //TODO: Cache
             
@@ -100,6 +105,7 @@ async function main(){
                     ` `,
                     `(${('' + game.getPlayersCount()).padStart(2, ' ')}/${('' + 2 * (game.playersMax.value ?? 0)).padEnd(2, ' ')})`,
                     `${game.mode.toString()} at ${game.map.toString()}`,
+                    (game.password.isSet ? '[PASSWORD]' : '') + game.features.asString(),
                 ].join(' '),
             ].join('\n')
         }))
@@ -125,30 +131,55 @@ async function main(){
             const server = await LocalServer.create(node)
             const game = await LocalGame.create(node, server)
 
-            const data = game.encodeData()
-            pspd.setData(data)
-            pspd.setBroadcastEnabled(true)
-            const update = () => {
-                data.gameInfos[0]!.players = game.getPlayers().length
-                pspd.broadcast(true)
-            }
-            game.addEventListener('update', update)
-            
             game.startListening()
-            await game.join(name)
+            await game.join(name, undefined)
+
+            const data = {
+                name: 'Player',
+                serverSettings: server.encode(),
+                gameInfos: [ game.encode() ],
+            } as PBPeer.AdditionalData
+            pspd.setData(data)
+            
+            broadcast(true)
+            function broadcast(announce: boolean){
+                if(announce || pspd.getBroadcastEnabled()){
+                    pspd.setBroadcastEnabled(announce)
+                    pspd.broadcast(announce)
+                }
+            }
+            
+            let prevPlayerCount = 0
+            game.addEventListener('update', update)
+            function update(){
+                const gi = data.gameInfos[0]!
+                gi.players = game.getPlayersCount()
+                if(gi.players != prevPlayerCount){
+                    prevPlayerCount = gi.players
+                    broadcast(game.isJoinable())
+                }
+            }
+            game.addEventListener('start', start)
+            function start(){ broadcast(game.isJoinable()) }
+            game.addEventListener('stop', stop)
+            function stop(){ broadcast(game.isJoinable()) }
+            
             await lobby(game)
             game.stopListening()
 
             game.removeEventListener('update', update)
-            pspd.broadcast(false)
-            pspd.setBroadcastEnabled(false)
+            game.removeEventListener('start', start)
+            game.removeEventListener('stop', stop)
             pspd.setData(null)
+            broadcast(false)
         }
         if(action == 'join'){
             const game = args[0]!
 
             await game.connect()
-            await game.join(name)
+            if(game.password.isSet)
+                await game.password.uinput()
+            await game.join(name, game.password.encode())
             await lobby(game)
             game.disconnect()
         }
@@ -254,23 +285,25 @@ async function lobby_pick(ctx: Context){
     const { game } = ctx
 
     type Action = ['lock'] | ['pick', PPP] | ['noop'] | ['exit']
-    
-    const player = game.getPlayer()!
-    const disabled = !!player.lock.value
-    const getChoices = () => ([
-        { value: ['lock'] as Action, name: 'Lock In', disabled },
-        ...(['champion', 'spell1', 'spell2'] as PPP[]).map(ppp => (
-            { value: ['pick', ppp] as Action, name: `${player[ppp].name}: ${player[ppp].toString()}`, disabled }
-        )),
-        ...playerChoices<Action>(game, () => ['noop'] as Action),
-        { value: ['exit'] as Action, name: 'Quit' },
-    ])
+
+    const getChoices = () => {
+        const player = game.getPlayer()!
+        const disabled = !!player.lock.value
+        return [
+            { value: ['lock'] as Action, name: 'Lock In', disabled },
+            ...(['champion', 'spell1', 'spell2'] as PPP[]).map(ppp => (
+                { value: ['pick', ppp] as Action, name: `${player[ppp].name}: ${player[ppp].toString()}`, disabled }
+            )),
+            ...playerChoices<Action>(game, () => ['noop'] as Action),
+            { value: ['exit'] as Action, name: 'Quit' },
+        ]
+    }
 
     for(const prop of ['champion', 'spell1', 'spell2'] as const){
         await game.pick(prop, ctx.signal)
     }
 
-    loop: while(true){
+    /*loop:*/ while(true){
         const [action, ...args] = await select<Action>({
             message: 'Waiting for all players to lock their choice...',
             choices: getChoices(),
@@ -282,7 +315,7 @@ async function lobby_pick(ctx: Context){
         }, ctx)
         if(action == 'lock'){
             await game.set('lock', +true)
-            break loop
+            //break loop
         } else if(action == 'pick'){
             const prop = args[0]!
             await game.pick(prop, ctx.signal)

@@ -37,10 +37,13 @@ export class PickableValue extends ValueDesc<number, number> {
         this.enabledGetter = enabledGetter
         //this.enabled = enabled
     }
-    public encode(){ return (this.value ?? -1) + 1 }
+    //public encode(){ return (this.value ?? -1) + 1 }
+    public encode(){ return this.value ?? 0 }
     public decodeInplace(from: number): boolean {
-        if((from - 1) in this.values){
-            this.value = from - 1
+        if(from === undefined) return false
+        //from--
+        if(from in this.values){
+            this.value = from
             return true
         }
         return false
@@ -74,6 +77,10 @@ export class PickableValue extends ValueDesc<number, number> {
     }
     public static normalize(values: Record<number, string>): SelectChoice<number>[] {
         return Object.entries(values).map(([k, v]) => ({ value: Number(k), name: v }))
+    }
+    public setRandom(){
+        const enabled = this.enabledGetter?.call(null).value ?? Object.keys(this.values)
+        this.value = Number(enabled[Math.floor(Math.random() * enabled.length)])
     }
 }
 
@@ -382,7 +389,7 @@ export class Password extends InputableValue {
     public toString(): string {
         return this.value?.replace(/./g, '*') ?? 'undefined'
     }
-    public isSet(){ return this.value != undefined }
+    public get isSet(){ return this.value != undefined && this.value != '' }
 }
 
 export class Name extends InputableValue {
@@ -551,4 +558,35 @@ export class Rank extends PickableValue {
 export const blowfishKey = "17BLOhi6KZsTtldTsizvHg=="
 export function sanitize_bfkey(v: string){
     return v.replace(/[^a-zA-Z0-9=]/g, '')
+}
+
+export enum Features {
+    CHEATS_ENABLED = 1 << 0,
+    MANACOSTS_DISABLED = 1 << 1,
+    COOLDOWNS_DISABLED = 1 << 2,
+    MINIONS_DISABLED = 1 << 3,
+}
+
+export class FeaturesEnabled extends Enabled {
+    public static readonly name = `Features Enabled`
+    public static readonly values = {
+        [Features.CHEATS_ENABLED]: 'Enable Cheats',
+        [Features.MANACOSTS_DISABLED]: 'Disable Manacosts',
+        [Features.COOLDOWNS_DISABLED]: 'Disable Cooldowns',
+        [Features.MINIONS_DISABLED]: 'Disable Minions',
+    }
+    public static readonly choices = PickableValue.normalize(FeaturesEnabled.values)
+    
+    public get isCheatsEnabled(){ return this.value.includes(Features.CHEATS_ENABLED) }
+    public get isManacostsEnabled(){ return !this.value.includes(Features.MANACOSTS_DISABLED) }
+    public get isCooldownsEnabled(){ return !this.value.includes(Features.COOLDOWNS_DISABLED) }
+    public get isMinionsEnabled(){ return !this.value.includes(Features.MINIONS_DISABLED) }
+    public asString(): string {
+        let ret = ''
+        if(this.isCheatsEnabled) ret += '[CHEATS]'
+        if(!this.isManacostsEnabled) ret += '[NO MANA]'
+        if(!this.isCooldownsEnabled) ret += '[NO CD]'
+        if(!this.isMinionsEnabled) ret += '[NO MINIONS]'
+        return ret
+    }
 }

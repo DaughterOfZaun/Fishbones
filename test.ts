@@ -10,7 +10,7 @@ const node = { peerId: { publicKey: {} } } as unknown as Libp2p
 const server = LocalServer.create(node)
 const game = await LocalGame.create(node, server)
 
-await game.join('Player')
+await game.join('Player', undefined)
 const player = game.getPlayer()!
 await ufill(player)
 
@@ -25,3 +25,5 @@ await ufill(player)
 
 await Data.launchServer(5119, game.getGameInfo())
 await Data.launchClient('127.0.0.1', 5119, '17BLOhi6KZsTtldTsizvHg==', 1)
+//await Data.stopClient()
+//await Data.stopServer()

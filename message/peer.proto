@@ -23,7 +23,7 @@ message Peer {
             uint32 mode = 4;
             uint32 players = 5;
             uint32 players_max = 6;
-            uint32 features = 7;
+            repeated uint32 features = 7;
             bool passwordProtected = 8;
         }
     }

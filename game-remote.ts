@@ -79,12 +79,8 @@ export class RemoteGame extends Game {
         return true
     }
 
-    private cleanup(){
+    protected cleanup() {
+        super.cleanup()
         this.stream = undefined
-        this.players.clear()
-        this.connected = false
-        this.joined = false
-        this.started = false
-        this.launched = false
     }
 }

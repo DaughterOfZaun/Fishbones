@@ -26,12 +26,22 @@ export class GamePlayer {
     public readonly champion = new Champion(undefined, () => this.game.server.champions)
     public readonly spell1 = new SummonerSpell(undefined, () => this.game.server.spells)
     public readonly spell2 = new SummonerSpell(undefined, () => this.game.server.spells)
-    public readonly lock = new Lock()
+    public readonly lock = new Lock() //TODO: Hide in test
 
-    encode(ppp?: PPP): PickRequest {
-        return ppp ? ({ [ppp]: this[ppp].encode() }) : Object.fromEntries(pickableKeys.map(key => [key, this[key].encode()]))
+    public encode(ppp?: PPP): PickRequest {
+        return ppp ? ({ [ppp]: this[ppp].encode() }) :
+            Object.fromEntries(pickableKeys.map(key => [key, this[key].encode()]))
     }
-    decodeInplace(prs: PickRequest): boolean {
-        return Object.entries(prs).reduce((a, [key, value]) => a && this[key as PPP].decodeInplace(+value), true)
+    public decodeInplace(prs: PickRequest): boolean {
+        return Object.entries(prs).reduce((a, [key, value]) =>
+            a && (value === undefined || this[key as PPP].decodeInplace(value)
+        ), true)
+    }
+
+    public fillUnset(){
+        for(const prop of ['champion', 'spell1', 'spell2'] as const){
+            if(this[prop].value === undefined)
+                this[prop].setRandom()
+        }
     }
 }

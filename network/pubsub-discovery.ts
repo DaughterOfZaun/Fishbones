@@ -45,7 +45,7 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
             this.intervalId = setInterval(() => {
                 this.broadcast()
             }, this.interval)
-        } else if (this.intervalId) {
+        } else { //if (this.intervalId) {
             clearInterval(this.intervalId)
             this.intervalId = undefined
         }

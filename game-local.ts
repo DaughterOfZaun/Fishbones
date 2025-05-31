@@ -1,14 +1,14 @@
 import { LOBBY_PROTOCOL, ufill } from './utils/constants'
-import { Peer as PBPeer } from './message/peer'
 import { type Libp2p, type PeerId, type StreamHandler } from '@libp2p/interface'
 import * as lp from 'it-length-prefixed'
 import { pipe } from 'it-pipe'
-import { LobbyRequestMessage, LobbyNotificationMessage } from './message/lobby'
+import { LobbyRequestMessage, LobbyNotificationMessage, KickReason } from './message/lobby'
 import { Game, type BroadcastOpts } from './game'
 import { logger } from '@libp2p/logger'
 import type { Server } from './server'
 import type { PlayerId } from './game-player'
 import { PeerMap } from '@libp2p/peer-collections'
+import { pbStream } from 'it-protobuf-stream'
 
 export class LocalGame extends Game {
     protected log = logger('launcher:game-local')
@@ -25,15 +25,6 @@ export class LocalGame extends Game {
         this.playerId = this.peerIdToPlayerId(node.peerId)
     }
 
-    public encodeData() {
-        const data: PBPeer.AdditionalData = {
-            name: 'Player',
-            serverSettings: this.server.encode(),
-            gameInfos: [ this.encode() ],
-        }
-        return data
-    }
-
     public startListening(){
         if(this.connected) return true
         this.node.handle(LOBBY_PROTOCOL, this.handleIncomingStream)
@@ -44,6 +35,8 @@ export class LocalGame extends Game {
     private handleIncomingStream: StreamHandler = async ({ stream, connection }) => {
         const peerId = connection.remotePeer
         const playerId = this.peerIdToPlayerId(peerId)
+        let reason = KickReason.UNDEFINED
+        let passedCheck = false
         try {
             await pipe(
                 stream,
@@ -51,7 +44,27 @@ export class LocalGame extends Game {
                 async (source) => {
                     for await (const data of source) {
                         const req = LobbyRequestMessage.decode(data)
-                        this.handleRequest(playerId, req, stream)
+                        const wrapped = pbStream(stream).pb(LobbyNotificationMessage)
+                        if(req.joinRequest){
+                            if(!this.isJoinable()){
+                                reason = KickReason.MAX_PLAYERS
+                            } else if(this.password.isSet && this.password.encode() != req.joinRequest.password){
+                                reason = KickReason.WRONG_PASSWORD
+                            } else {
+                                passedCheck = true
+                            }
+                        }
+                        if(reason != KickReason.UNDEFINED){
+                            try { await wrapped.write({ kickRequest: reason, peersRequests: [] }) }
+                            catch(err) { this.log.error(err) }
+                        }
+                        if(passedCheck){
+                            this.handleRequest(playerId, req, wrapped)
+                        } else {
+                            try { await stream.close() }
+                            catch(err) { this.log.error(err) }
+                            break
+                        }
                     }
                 }
             )
@@ -89,14 +102,6 @@ export class LocalGame extends Game {
         }
         this.cleanup()
         return true
-    }
-
-    private cleanup(){
-        this.players.clear()
-        this.connected = false
-        this.joined = false
-        this.started = false
-        this.launched = false
     }
 
     private playerIds = new Set<PlayerId>()

@@ -7,13 +7,20 @@ enum State {
     LAUNCHED = 4;
 }
 
+enum KickReason {
+    UNDEFINED = 0;
+    MAX_PLAYERS = 1;
+    WRONG_PASSWORD = 2;
+    MAKER_DECISION = 3;
+}
+
 message LobbyRequestMessage {
     optional JoinRequest join_request = 1;
     optional PickRequest pick_request = 2;
     optional bool leave_request = 3;
     message JoinRequest {
         string name = 1;
-        //int32 roomId = 2;
+        optional string password = 2;
     }
 }
 
@@ -37,6 +44,7 @@ message LobbyNotificationMessage {
         string name = 1;
         optional bool is_me = 2;
     }
+    optional KickReason kick_request = 4;
 }
 
 message PickRequest {

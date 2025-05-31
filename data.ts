@@ -4,7 +4,7 @@ import s7z from '7z-bin'
 import WebTorrent from 'webtorrent'
 import { sanitize_bfkey, /*sanitize_str*/ } from './utils/constants'
 import path from 'path'
-import { quote } from 'shell-quote'
+//import { quote } from 'shell-quote'
 import type { ChildProcess } from 'child_process'
 
 async function fs_exists(path: string){
@@ -153,7 +153,7 @@ export async function relaunchClient(){
     //console.log(`"${gcExe}" "" "" "" "${ip} ${port} ${key} ${clientId}"`)
     const gcArgs = ['', '', '', /*quote*/([ip, port.toString(), sanitize_bfkey(key), clientId.toString()]).join(' ')].map(a => `"${a}"`).join(' ')
     
-    console.log(quote(['bottles-cli', 'run', '-b', 'Default Gaming', '-e', gcExe, gcArgs]))
+    //console.log(quote(['bottles-cli', 'run', '-b', 'Default Gaming', '-e', gcExe, gcArgs]))
     //console.log(quote(['bottles-cli', 'run', '-b', 'Default Gaming', '-p', 'League of Legends', '--args-replace', gcArgs]))
 
     await stopClient()
@@ -202,7 +202,7 @@ export async function launchServer(port: number, info: GameInfo){
     await fs.writeFile(gsInfo, JSON.stringify(info, null, 4))
     const gsInfoRel = path.relative(gsExeDir, gsInfo)
 
-    console.log(`${path.relative(gsExeDir, gsExe)} --port ${port} --config ${gsInfoRel}`)
+    //console.log(`${path.relative(gsExeDir, gsExe)} --port ${port} --config ${gsInfoRel}`)
     
     serverSubprocess = new SubProcess(gsExe, [
         //'--port', port.toString(), '--config-json', quote([JSON.stringify(info, sanitize_kv)]),

@@ -1,10 +1,10 @@
-import { blowfishKey, GameMap as GameMap, GameMode as GameMode, Name, Password, PlayerCount, Rank, runes, talents, Team, type u } from './utils/constants'
+import { blowfishKey, FeaturesEnabled, GameMap as GameMap, GameMode as GameMode, Name, Password, PlayerCount, Rank, runes, talents, Team, type u } from './utils/constants'
 import { TypedEventEmitter, type Libp2p, type PeerId, type Stream } from '@libp2p/interface'
 import { GamePlayer, type PlayerId, type PPP } from './game-player'
 import type { Peer as PBPeer } from './message/peer'
 import type { Server } from './server'
-import { LobbyNotificationMessage, PickRequest, State, type LobbyRequestMessage } from './message/lobby'
-import { pbStream } from 'it-protobuf-stream'
+import { KickReason, LobbyNotificationMessage, PickRequest, State, type LobbyRequestMessage } from './message/lobby'
+import { type MessageStream } from 'it-protobuf-stream'
 import { arr2text, text2arr } from 'uint8-util'
 import type { GameInfo } from './data'
 import * as Data from './data'
@@ -40,6 +40,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     public readonly mode = new GameMode(0, () => this.server.modes)
     public readonly playersMax = new PlayerCount(5)
     public readonly password = new Password()
+    public readonly features = new FeaturesEnabled()
 
     protected player?: GamePlayer
     public getPlayer(){
@@ -75,8 +76,22 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     public started = false
     public launched = false
 
+    protected cleanup(){
+        /*await*/ Data.stopClient()
+        /*await*/ Data.stopServer()
+        this.players.clear()
+        this.connected = false
+        this.joined = false
+        this.started = false
+        this.launched = false
+    }
+
     public abstract get canStart(): boolean
     //public abstract get canKick(): boolean
+
+    public isJoinable(){
+        return !this.started && this.getPlayersCount() < 2 * (this.playersMax.value ?? 0)
+    }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     protected stream_write(req: LobbyRequestMessage): Promise<boolean> {
@@ -87,13 +102,13 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         throw new Error("Method not implemented")
     }
 
-    public async join(name: string): Promise<boolean> {
+    public async join(name: string, password: u|string): Promise<boolean> {
 
         //if(!this.connected) return false
         if(this.joined) return true
 
         return await this.stream_write({
-            joinRequest: { name },
+            joinRequest: { name, password },
         })
     }
     private handleJoinRequest(player: GamePlayer, { name }: LobbyRequestMessage.JoinRequest) {
@@ -162,7 +177,8 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         })
         
         const port = 5119 //TODO: Unhardcode
-        await Data.launchServer(port, this.getGameInfo())
+        const proc = await Data.launchServer(port, this.getGameInfo())
+        proc.once('exit', this.onServerExit)
 
         let i = 1
         for(const player of this.players.values())
@@ -179,13 +195,23 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
 
         return true
     }
+    private onServerExit = (/*code, signal*/) => {
+        this.broadcast({
+            to: this.players.values(),
+            switchStateRequest: State.STOPPED,
+            //peersRequests: this.unlockAllPlayers(),
+            peersRequests: []
+        })
+    }
     private handleSwitchStateResponse(state: State){
         switch(state){
             //case State.UNDEFINED: break
             case State.STOPPED:
                 this.started = false
                 this.launched = false
+                this.unlockAllPlayers()
                 /*await*/ Data.stopClient()
+                /*await*/ Data.stopServer()
                 this.safeDispatchEvent('stop')
                 break
             case State.STARTED:
@@ -267,7 +293,10 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         if(this.started && req.lock !== undefined){
             player.lock.value = +true
             
-            if(this.getPlayers().every(p => !!p.lock.value)){
+            const players = this.getPlayers()
+            if(players.every(p => !!p.lock.value)){
+                for(const player of players)
+                    player.fillUnset()
                 this.launch()
                 return
             }
@@ -285,26 +314,58 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         player.decodeInplace(res)
     }
 
+    private unlockAllPlayers(){
+        const remainingPlayers = this.players.values()
+        //const unlockRequests: LobbyNotificationMessage.PeerRequests[] = []
+        for(const player of remainingPlayers){
+            if(player.lock.value){
+                player.lock.value = +false
+                //unlockRequests.push({
+                //    playerId: player.id,
+                //    pickRequest: {
+                //        lock: player.lock.encode()
+                //    }
+                //})
+            }
+        }
+        //return unlockRequests
+    }
     private handleLeaveRequest(player: GamePlayer){
         
         //player?.stream?.unwrap().unwrap().close()
         //    .catch(err => this.log.error(err))
         
         this.players.delete(player.id)
-        
-        this.broadcast({
-            to: this.players.values(),
-            peersRequests: [{
-                playerId: player.id,
-                leaveRequest: true,
-            }]
-        })
+        const leaveRequest = {
+            playerId: player.id,
+            leaveRequest: true,
+        }
+        const remainingPlayers = [...this.players.values()]
+        if(!this.started || this.launched){
+            this.broadcast({
+                to: remainingPlayers,
+                peersRequests: [ leaveRequest ]
+            })
+        } else {
+            this.broadcast({
+                to: remainingPlayers,
+                switchStateRequest: State.STOPPED,
+                peersRequests: [
+                    leaveRequest,
+                    //...this.unlockAllPlayers()
+                ]
+            })
+        }
     }
     private handleLeaveResponse(player: GamePlayer){
         this.players.delete(player.id)
     }
 
-    public encode() {
+    private handleKickRequest(reason: KickReason){
+        this.safeDispatchEvent('kick', { reason })
+    }
+
+    public encode(): PBPeer.AdditionalData.GameInfo {
         return {
             id: 0,
             name: this.name.encode(),
@@ -312,8 +373,8 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             mode: this.mode.encode(),
             players: this.players.size,
             playersMax: this.playersMax.encode(),
-            features: 0,
-            passwordProtected: this.password.isSet(),
+            features: this.features.encode(),
+            passwordProtected: this.password.isSet,
         }
     }
     public decodeInplace(gi: PBPeer.AdditionalData.GameInfo): boolean {
@@ -323,15 +384,15 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             ret &&= this.mode.decodeInplace(gi.mode)
             this.players_count = gi.players
             ret &&= this.playersMax.decodeInplace(gi.playersMax)
-        this.password.value = gi.passwordProtected ? '' : undefined
+            ret &&= this.features.decodeInplace(gi.features)
+        this.password.value = gi.passwordProtected ? 'non-empty' : undefined
         return ret
     }
 
-    protected handleRequest(playerId: PlayerId, req: LobbyRequestMessage, stream: u|Stream){
+    protected handleRequest(playerId: PlayerId, req: LobbyRequestMessage, stream: u|MessageStream<LobbyNotificationMessage, Stream>){
         let player: u|GamePlayer
         if(req.joinRequest && (player = this.players_add(playerId))){
-            if(stream)
-                player.stream = pbStream(stream).pb(LobbyNotificationMessage)
+            if(stream) player.stream = stream
             this.handleJoinRequest(player, req.joinRequest)
         }
         if(req.pickRequest && (player = this.players.get(playerId))){
@@ -364,6 +425,9 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         if(ress.launchRequest){
             this.handleLaunchResponse(ress.launchRequest)
         }
+        if(ress.kickRequest){
+            this.handleKickRequest(ress.kickRequest)
+        }
     }
     /*
     PeerId_encode(from: PeerId){
@@ -390,10 +454,10 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 IS_DAMAGE_TEXT_GLOBAL: false,
                 ENABLE_CONTENT_LOADING_LOGS: false,
                 SUPRESS_SCRIPT_NOT_FOUND_LOGS: true,
-                CHEATS_ENABLED: false, //TODO: Unhardcode. Features
-                MANACOSTS_ENABLED: true, //TODO: Unhardcode. Features
-                COOLDOWNS_ENABLED: true, //TODO: Unhardcode. Features
-                MINION_SPAWNS_ENABLED: true, //TODO: Unhardcode. Features
+                CHEATS_ENABLED: this.features.isCheatsEnabled,
+                MANACOSTS_ENABLED: this.features.isManacostsEnabled,
+                COOLDOWNS_ENABLED: this.features.isCooldownsEnabled,
+                MINION_SPAWNS_ENABLED: this.features.isMinionsEnabled,
                 LOG_IN_PACKETS: false,
                 LOG_OUT_PACKETS: false,
                 CONTENT_PATH: "../../../../Content/GameClient",
