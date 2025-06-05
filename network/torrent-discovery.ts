@@ -15,10 +15,10 @@ interface DiscoveryInit {
     infoHash: string,
     port: number,
     announce: string[],
-    dht: boolean | any,
+    dht: boolean | object,
     dhtPort: number,
-    tracker: boolean | any,
-    lsd: boolean | any,
+    tracker: boolean | object,
+    lsd: boolean | object,
 }
 interface DiscoveryComponents {
     peerId: PeerId
@@ -79,14 +79,15 @@ class DiscoveryClass extends TypedEventEmitter<PeerDiscoveryEvents> implements P
     private onError = (err: Error) => {
         this.log.error('error', err)
     }
-    private onConnect = (event: CustomEvent<PeerId>) => {
+    private onConnect = (/*event: CustomEvent<PeerId>*/) => {
         this.drain()
     }
-    private onDisconnect = (event: CustomEvent<PeerId>) => {
+    private onDisconnect = (/*event: CustomEvent<PeerId>*/) => {
         this.drain()
     }
 
     stop() {
+        if(!this.discovery) return
         this.components.events.removeEventListener('peer:disconnect', this.onDisconnect)
         return new Promise<void>((res) => {
             this.discovery.destroy(() => {

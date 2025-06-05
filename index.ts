@@ -10,7 +10,7 @@ import { ping } from '@libp2p/ping'
 import { defaultLogger } from '@libp2p/logger'
 import select, { type Choice } from './ui/dynamic-select'
 import { type Game } from './game'
-import color from 'yoctocolors'
+import color from 'yoctocolors-cjs'
 import { noise } from '@chainsafe/libp2p-noise'
 import { AbortPromptError } from '@inquirer/core'
 import { RemoteGame } from './game-remote'
@@ -208,7 +208,11 @@ async function main(){
             game.disconnect()
         }
         if(action == 'exit'){
-            /*await*/ node.stop()
+            await node.services.pubsubPeerDiscovery.beforeStop()
+            //await node.services.pubsubPeerDiscovery.stop()
+            //await node.services.torrentPeerDiscovery.beforeStop()
+            await node.services.torrentPeerDiscovery.stop()
+            await node.stop()
             break loop
         }
     }

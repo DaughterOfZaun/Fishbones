@@ -99,10 +99,14 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
         if (!pubsub) throw new Error('PubSub not configured')
             
         this.setData(null)
+        if(this.getBroadcastEnabled()){
+            this.setBroadcastEnabled(false)
+            this.broadcast(false)
+        }
         
         for (const topic of this.topics) {
-            pubsub.unsubscribe(topic)
             pubsub.removeEventListener('message', this.onMessage)
+            pubsub.unsubscribe(topic)
         }
     }
 

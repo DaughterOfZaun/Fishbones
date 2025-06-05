@@ -5,7 +5,7 @@
   "private": true,
   "devDependencies": {
     "@eslint/js": "^9.27.0",
-    "@types/bun": "latest",
+    "@types/teen_process": "^2.0.4",
     "eslint": "^9.27.0",
     "globals": "^16.1.0",
     "typescript": "^5.8.3",
@@ -34,9 +34,6 @@
     "@libp2p/tcp": "^10.1.12",
     "@libp2p/utils": "^6.6.4",
     "@multiformats/multiaddr": "^12.4.0",
-    "@types/shell-quote": "^1.7.5",
-    "@types/teen_process": "^2.0.4",
-    "@types/webtorrent": "^0.110.0",
     "addr-to-ip-port": "^2.0.0",
     "ansi-escapes": "^7.0.0",
     "fs": "^0.0.1-security",
@@ -44,15 +41,13 @@
     "it-pipe": "^3.0.1",
     "it-protobuf-stream": "^2.0.2",
     "libp2p": "^2.8.7",
+    "maria2": "^0.4.0",
     "protons-runtime": "^5.5.0",
-    "shell-quote": "^1.8.2",
     "teen_process": "^2.3.2",
     "torrent-discovery": "^11.0.17",
     "uint8-util": "^2.2.5",
     "uint8arraylist": "^2.4.8",
     "uint8arrays": "^5.1.0",
-    "webtorrent": "^2.6.7",
-    "yoctocolors": "^2.1.1",
     "yoctocolors-cjs": "^2.1.2"
   }
 }
