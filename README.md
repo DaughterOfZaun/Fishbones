@@ -1,15 +1,3 @@
-# launcher
-
-To install dependencies:
-
-```bash
-bun install
-```
-
-To run:
-
-```bash
-bun run index.ts
-```
-
-This project was created using `bun init` in bun v1.2.10. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
+<p align="center" width="100%">
+    <img width="100%" src="demo.gif">
+</p>
