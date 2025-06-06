@@ -1,5 +1,5 @@
 import { exec, spawn, SubProcess } from 'teen_process'
-import { promises as fs } from "node:fs"
+import { promises as fs, type PathLike } from "node:fs"
 import { path7z } from '7z-bin'
 //import WebTorrent from 'webtorrent'
 import { champions, maps, modes, sanitize_bfkey, spells, /*sanitize_str*/ } from './utils/constants'
@@ -7,10 +7,13 @@ import path from 'node:path'
 //import { quote } from 'shell-quote'
 import type { ChildProcess } from 'child_process'
 import { aria2, open, createWebSocket, type Conn } from 'maria2/dist/index.js'
+import { randomBytes } from '@libp2p/crypto'
+import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
+import { MultiBar, Presets, SingleBar } from 'cli-progress'
 
 process.env['DOTNET_CLI_TELEMETRY_OPTOUT'] = '1'
 
-async function fs_exists(path: string){
+async function fs_exists(path: PathLike){
     try {
         await fs.access(path)
         return true
@@ -20,8 +23,26 @@ async function fs_exists(path: string){
     }
 }
 
+async function fs_exists_and_size_eq(path: PathLike, size: number) {
+    try {
+        return (await fs.stat(path)).size == size
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (err) {
+        return false
+    }
+}
+
 const cwd = process.cwd()
 const downloads = path.join(cwd, 'downloads')
+
+const magnet = (ihv1?: string, ihv2?: string, fname?: string, size?: number) => {
+    const parts: string[] = []
+    if(ihv1) parts.push(`xt=urn:btih:${ihv1}`)
+    if(ihv2) parts.push(`xt=urn:btmh:${ihv2}`)
+    if(fname) parts.push(`dn=${fname}`)
+    if(size) parts.push(`xl=${size}`)
+    return `magnet:?${parts.join('&')}`
+}
 
 const gcDir = path.join(downloads, 'League of Legends_UNPACKED')
 const gcExeDir = path.join(gcDir, 'League-of-Legends-4-20', 'RADS', 'solutions', 'lol_game_client_sln', 'releases', '0.0.1.68', 'deploy')
@@ -29,8 +50,10 @@ const gcExe = path.join(gcExeDir, 'League of Legends.exe')
 const gcZipName = 'League of Legends_UNPACKED.7z'
 const gcZip = path.join(downloads, gcZipName)
 const gcZipTorrent = `${gcZip}.torrent`
-const gcZipInfoHash = '4bb197635194f4242d9f937f0f9225851786a0a8'
-
+const gcZipInfoHashV1 = '4bb197635194f4242d9f937f0f9225851786a0a8'
+const gcZipInfoHashV2 = ''
+const gcZipSize = 2171262108
+const gcZipMagnet = magnet(gcZipInfoHashV1, gcZipInfoHashV2, gcZipName, gcZipSize)
 const sdkVer = '9.0.300'
 
 const sdkPlatformMap: Record<string, string> = {
@@ -58,12 +81,24 @@ const sdkZipExt = (sdkPlatform == 'win') ? '.zip' : '.tar.gz'
 const sdkZipName = `${sdkName}${sdkZipExt}`
 const sdkZip = path.join(downloads, sdkZipName)
 const sdkZipTorrent = `${sdkZip}.torrent`
-const sdkZipInfoHash = {
-    'dotnet-sdk-9.0.300-win-x64.zip': '740101aee53e396fc278afb5bb248cc2ac32123e',
-    'dotnet-sdk-9.0.300-linux-x64.tar.gz': 'dbec3b9150545a5d5edde95e1a63c9c27feb0b35',
+const sdkZipInfo = {
+    'dotnet-sdk-9.0.300-win-x64.zip': {
+        ihv1: '249a75bd3c8abba27b59fe42ab0771f77d6caee7',
+        ihv2: '1220418d03e796bd159ed3ff24606a7b4948e520fbc4e93a172fc8a1798c51bc5647',
+        size: 298580138,
+    },
+    'dotnet-sdk-9.0.300-linux-x64.tar.gz': {
+        ihv1: 'f859eefcf797348b967220427a721655a9af0bc8',
+        ihv2: '1220db828e2a00844b2ad1a457b03e521d24a0b03d4746b0e849bcf0ea1d2b34eb77',
+        size: 217847129,
+    },
 }[sdkZipName]!
-if(!sdkZipInfoHash)
+if(!sdkZipInfo)
     throw new Error(`Unsupported dotnet-sdk-version-platform-arch combination: ${sdkName}`)
+const sdkZipInfoHashV1 = sdkZipInfo.ihv1
+const sdkZipInfoHashV2 = sdkZipInfo.ihv2
+const sdkZipSize = sdkZipInfo.size
+const sdkZipMagnet = magnet(sdkZipInfoHashV1, sdkZipInfoHashV2, sdkZipName, sdkZipSize)
 
 const gsProjName = 'GameServerConsole'
 const gsDir = path.join(downloads, 'GameServer')
@@ -79,8 +114,10 @@ const gsCSProj = path.join(gsProjDir, `${gsProjName}.csproj`)
 const gsZipName = 'Chronobreak.GameServer.7z'
 const gsZip = path.join(downloads, gsZipName)
 const gsZipTorrent = `${gsZip}.torrent`
-const gsZipInfoHash = 'e4043fdc210a896470d662933f7829ccf3ed781b'
-const gsZipMagnet = `magnet:?xt=urn:btih:${gsZipInfoHash}`
+const gsZipInfoHashV1 = 'e4043fdc210a896470d662933f7829ccf3ed781b'
+const gsZipInfoHashV2 = 'cf9bfaba0f9653255ff5b19820ea4c01ac8484d0f8407b109ca358236d4f4abc'
+const gsZipSize = 21309506
+const gsZipMagnet = magnet(gsZipInfoHashV1, gsZipInfoHashV2, gsZipName, gsZipSize)
 const gsgcDir = path.join(gsDir, 'Content', 'GameClient')
 const gsInfoDir = path.join(gsExeDir, 'Settings')
 
@@ -172,9 +209,9 @@ async function repairAria2(){
 }
 
 async function repairTorrents() {
-    try { await fs.rename(path.join(downloads, `${gsZipInfoHash}.torrent`), gsZipTorrent) } catch(err) {}
-    try { await fs.rename(path.join(downloads, `${gcZipInfoHash}.torrent`), gcZipTorrent) } catch(err) {}
-    try { await fs.rename(path.join(downloads, `${sdkZipInfoHash}.torrent`), sdkZipTorrent) } catch(err) {}
+    try { await fs.rename(path.join(downloads, `${gsZipInfoHashV1}.torrent`), gsZipTorrent) } catch(err) {}
+    try { await fs.rename(path.join(downloads, `${gcZipInfoHashV1}.torrent`), gcZipTorrent) } catch(err) {}
+    try { await fs.rename(path.join(downloads, `${sdkZipInfoHashV1}.torrent`), sdkZipTorrent) } catch(err) {}
 }
 
 const serverSettingsJson = path.join(downloads, 'server-settings.jsonc')
@@ -308,41 +345,63 @@ export async function repair(){
         repairAria2(),
     ] as Promise<unknown>[])
 
-    await repairArchived(gsCSProj, gsDir, gsZip, gsZipName, gsZipTorrent, gsZipInfoHash)
-    return
-
     await Promise.all([
         Promise.all([
-            repairArchived(sdkExe, sdkDir, sdkZip, sdkZipName, sdkZipTorrent, sdkZipInfoHash),
-            repairArchived(gsCSProj, gsDir, gsZip, gsZipName, gsZipTorrent, gsZipInfoHash),
+            repairArchived(sdkExe, sdkDir, sdkZip, sdkZipName, sdkZipTorrent, sdkZipMagnet, sdkZipSize),
+            repairArchived(gsCSProj, gsDir, gsZip, gsZipName, gsZipTorrent, gsZipMagnet, gsZipSize),
         ]).then(async () => {
             if(!await fs_exists(gsExe))
                 await build(gsExe, gsExeName, gsCSProj)
             if(!await fs_exists(gsInfoDir))
                 await fs.mkdir(gsInfoDir)
         }),
-        repairArchived(gcExe, gcDir, gcZip, gcZipName, gcZipTorrent, gcZipInfoHash),
+        repairArchived(gcExe, gcDir, gcZip, gcZipName, gcZipTorrent, gcZipMagnet, gcZipSize),
     ] as Promise<unknown>[])
 }
 
-async function repairArchived(exe: string, dir: string, zip: string, zipName: string, torrent: string, infohash: string){
+async function repairArchived(exe: string, dir: string, zip: string, zipName: string, torrent: string, magnet: string, zipSize: number){
     if(await fs_exists(exe)){
-        // OK
-    } else if(await fs_exists(zip)){
-        await unpack(exe, dir, zip, zipName)
-    } else if(await fs_exists(torrent)){
-        await download(zip, zipName, 'torrent', torrent)
+        return // OK
+    } else if(await fs_exists_and_size_eq(zip, zipSize)){
+        try {
+            await unpack(exe, dir, zip, zipName)
+            return // OK
+        } catch(unk_err) {
+            const err = unk_err as Error & { cause?: { code: null|number, signal: null|string } }
+            if(err.cause){
+                if(err.cause.code === 1){
+                    // 7z 1 Warning
+                    return // OK
+                } else if(err.cause.code !== 2){
+                    // 7z 7   Command line error
+                    // 7z 8   Not enough memory for operation
+                    // 7z 255 User stopped the process
+                    // The archive is not damaged, there is no point in downloading it again
+                    throw err
+                }
+            }
+        }
+    }
+    if(await fs_exists(torrent)){
+        await download(zip, zipName, 'torrent', torrent, torrent, zipSize)
         await unpack(exe, dir, zip, zipName)
     } else {
-        await download(zip, zipName, 'magnet', infohash, torrent)
+        await download(zip, zipName, 'magnet', magnet, torrent, zipSize)
         await unpack(exe, dir, zip, zipName)
     }
 }
 
 function successfulTermination(proc: ChildProcess){
-    return new Promise((resolve, reject) => {
-        proc.on('error', reject)
-        proc.on('exit', resolve)
+    return new Promise<void>((resolve, reject) => {
+        proc.on('error', () => reject())
+        proc.on('exit', (code: null|number, signal: null|string) => {
+            if(code === 0) resolve()
+            else {
+                let msg = `Process exited with code ${code}`
+                if(signal) msg += ` by signal ${signal}`
+                reject(new Error(msg, { cause: { code, signal } }))
+            }
+        })
     })
 }
 
@@ -361,13 +420,16 @@ async function unpack(exe: string, dir: string, zip: string, zipName: string){
     if(zip.endsWith('.tar.gz')){
         const s7z1 = spawn(
             path7z, /*quote*/(['x', '-so', zip])/*.split(' ')*/,
-            { stdio: [ 'inherit', 'pipe', 'inherit' ] },
+            { stdio: [ 'inherit', 'pipe', 'ignore' ] },
         )
         const s7z2 = spawn(
             path7z, /*quote*/(['x', '-si', '-ttar', ...opts])/*.split(' ')*/,
-            { stdio: [ 'pipe', 'inherit', 'inherit' ] },
+            { stdio: [ 'pipe', 'ignore', 'ignore' ] },
         )
         s7z1.stdout.pipe(s7z2.stdin)
+        
+        //TODO: `ERROR: Data Error : `
+
         await Promise.all([
             successfulTermination(s7z1),
             successfulTermination(s7z2),
@@ -424,35 +486,50 @@ async function download(
         throw new Error(`Unable to download ${zipName}`)
 }
 */
+const multibar = new MultiBar({
+    format: '{filename} [{bar}] {percentage}% | {value}/{total} | {duration_formatted}/{eta_formatted}',
+    //clearOnComplete: false,
+    //hideCursor: true,
+}, Presets.legacy);
+const bars = new Set<SingleBar>()
+
 let aria2proc: SubProcess
 let aria2procPromise: undefined | Promise<void>
 let aria2conn: Conn
 let aria2connPromise: undefined | Promise<Conn>
+let aria2secret: string
 async function download(
     zip: string,
     zipName: string,
     type: 'magnet' | 'torrent',
-    torrent: string,
-    saveto?: string,
+    torrentPathOrMagnetLink: string,
+    torrentSavePath: string,
+    zipSize: number,
 ){
-    console.log(`Downloading ${zipName}...`)
+    //console.log(`Downloading ${zipName}...`)
+    const bar = multibar.create(zipSize, 0, { filename: zipName })
+    bars.add(bar)
     
     if(!aria2procPromise){
+        aria2secret = uint8ArrayToString(randomBytes(8), 'base32')
         aria2proc = new SubProcess(ariaExe, [
             `--conf-path=${ariaConf}`,
             `--enable-rpc=${true}`,
             `--rpc-listen-port=${6800}`,
             `--rpc-listen-all=${false}`,
             `--rpc-allow-origin-all=${false}`,
-            //`--rpc-secret=${''}`,
+            `--rpc-secret=${aria2secret}`,
             `--bt-save-metadata=${true}`,
             `--bt-load-saved-metadata=${true}`,
             `--rpc-save-upload-metadata=${true}`,
-            //`--input-file="${ariaSession}"`,
-            //`--save-session="${ariaSession}"`,
-            //`--dir="${downloads}"`
+            //`--input-file=${ariaSession}`,
+            //`--save-session=${ariaSession}`,
+            `--check-integrity=${true}`,
+            //`--dir=${downloads}`,
+            `--bt-exclude-tracker=${'*'}`,
+            `--bt-tracker=${trackers?.join(',')}`,
         ])
-        console.log(aria2proc.cmd, ...aria2proc.args)
+        //console.log(aria2proc.cmd, ...aria2proc.args)
         aria2procPromise = aria2proc.start()
         //TODO: Handle start fail
         await aria2procPromise
@@ -460,7 +537,7 @@ async function download(
         await aria2procPromise
     
     if(!aria2connPromise){
-        aria2connPromise = open(createWebSocket('ws://localhost:6800/jsonrpc'))
+        aria2connPromise = open(createWebSocket('ws://localhost:6800/jsonrpc'), { secret: aria2secret })
         aria2conn = await aria2connPromise
     } else
         await aria2connPromise
@@ -474,34 +551,41 @@ async function download(
     }
 
     if(type == 'torrent'){
-        const b64 = await fs.readFile(torrent, 'base64')
+        const b64 = await fs.readFile(torrentPathOrMagnetLink, 'base64')
         const gid = await aria2.addTorrent(aria2conn, b64, [], opts)
-        await forCompletion(gid, false)
+        await forCompletion(gid, false, bar)
     } else if(type == 'magnet'){
-        const magnet = `magnet:?xt=urn:btih:${torrent}`
-        const gid = await aria2.addUri(aria2conn, [ magnet ], opts)
-        await forCompletion(gid, true)
+        const gid = await aria2.addUri(aria2conn, [ torrentPathOrMagnetLink ], opts)
+        await forCompletion(gid, true, bar)
     }
 
-    if(!await fs_exists(zip))
+    if(!await fs_exists_and_size_eq(zip, zipSize))
         throw new Error(`Unable to download ${zipName}`)
+
+    bar.stop()
+    bars.delete(bar)
 }
 
-function forCompletion(gid: string, isMetadata: boolean){
+function forCompletion(gid: string, isMetadata: boolean, bar: SingleBar){
+    
+    const delay = 100 //TODO: Unhardcode. delay = 1000 / bar.fps
+    let timeout: ReturnType<typeof setTimeout>
+    async function update(){
+        try {
+            const status = await aria2.tellStatus(aria2conn, gid, ['completedLength'])
+            bar.update(Number(status.completedLength))
+        } catch(err) {}
+        timeout = setTimeout(update, delay)
+    }
+
+    if(!isMetadata) timeout = setTimeout(update, delay)
+
     return new Promise<void>((resolve, reject) => {
         const cbs = [
             aria2.onDownloadComplete(aria2conn, onComplete),
             aria2.onBtDownloadComplete(aria2conn, onComplete),
             aria2.onDownloadError(aria2conn, onError),
         ]
-        /*
-        if(isMetadata){
-            cbs.push(aria2.onDownloadStart(aria2conn, onStart))
-        }
-        async function onStart(notification: { gid: string }){
-            await aria2.tellStatus(aria2conn, ...)
-        }
-        */
         async function onComplete(notification: { gid: string }){
             if(notification.gid == gid){
                 if(isMetadata){
@@ -510,11 +594,15 @@ function forCompletion(gid: string, isMetadata: boolean){
                         console.assert(status.followedBy?.length == 1)
                         gid = status.followedBy![0]!
                         isMetadata = false
+                        timeout = setTimeout(update, delay)
                     } catch(err) {
+                        cbs.forEach(cb => cb.dispose())
+                        clearTimeout(timeout)
                         reject(err)
                     }
                 } else {
                     cbs.forEach(cb => cb.dispose())
+                    clearTimeout(timeout)
                     resolve()
                 }
             }
@@ -522,6 +610,7 @@ function forCompletion(gid: string, isMetadata: boolean){
         function onError(notification: { gid: string }) {
             if(notification.gid == gid){
                 cbs.forEach(cb => cb.dispose())
+                clearTimeout(timeout)
                 reject()
             }
         }

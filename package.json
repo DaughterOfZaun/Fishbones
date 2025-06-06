@@ -5,6 +5,7 @@
   "private": true,
   "devDependencies": {
     "@eslint/js": "^9.27.0",
+    "@types/cli-progress": "^3.11.6",
     "@types/teen_process": "^2.0.4",
     "eslint": "^9.27.0",
     "globals": "^16.1.0",
@@ -36,6 +37,7 @@
     "@multiformats/multiaddr": "^12.4.0",
     "addr-to-ip-port": "^2.0.0",
     "ansi-escapes": "^7.0.0",
+    "cli-progress": "^3.12.0",
     "fs": "^0.0.1-security",
     "it-length-prefixed": "^10.0.1",
     "it-pipe": "^3.0.1",
