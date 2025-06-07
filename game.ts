@@ -6,7 +6,7 @@ import type { Server } from './server'
 import { KickReason, LobbyNotificationMessage, PickRequest, State, type LobbyRequestMessage } from './message/lobby'
 import { type MessageStream } from 'it-protobuf-stream'
 import { arr2text, text2arr } from 'uint8-util'
-import type { GameInfo } from './data'
+import type { GameInfo } from './utils/game-info'
 import * as Data from './data'
 
 type GameEvents = {
