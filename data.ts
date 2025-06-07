@@ -1,10 +1,8 @@
 import { exec, spawn, SubProcess } from 'teen_process'
 import { promises as fs, type PathLike } from "node:fs"
 import { path7z } from '7z-bin'
-//import WebTorrent from 'webtorrent'
 import { champions, maps, modes, sanitize_bfkey, spells, /*sanitize_str*/ } from './utils/constants'
 import path from 'node:path'
-//import { quote } from 'shell-quote'
 import type { ChildProcess } from 'child_process'
 import { aria2, open, createWebSocket, type Conn } from 'maria2/dist/index.js'
 import { randomBytes } from '@libp2p/crypto'
@@ -25,9 +23,13 @@ async function fs_exists(path: PathLike){
 
 async function fs_exists_and_size_eq(path: PathLike, size: number) {
     try {
-        return (await fs.stat(path)).size == size
+        const stat = await fs.stat(path)
+        //console.log('fs_exists_and_size_eq', path, size, stat.size)
+        return stat.size == size
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (err) {
+    } catch (unk_err) {
+        const err = unk_err as ErrnoException
+        //console.log('fs_exists_and_size_eq', path, size, err.code)
         return false
     }
 }
@@ -44,16 +46,58 @@ const magnet = (ihv1?: string, ihv2?: string, fname?: string, size?: number) => 
     return `magnet:?${parts.join('&')}`
 }
 
-const gcDir = path.join(downloads, 'League of Legends_UNPACKED')
-const gcExeDir = path.join(gcDir, 'League-of-Legends-4-20', 'RADS', 'solutions', 'lol_game_client_sln', 'releases', '0.0.1.68', 'deploy')
-const gcExe = path.join(gcExeDir, 'League of Legends.exe')
-const gcZipName = 'League of Legends_UNPACKED.7z'
-const gcZip = path.join(downloads, gcZipName)
-const gcZipTorrent = `${gcZip}.torrent`
-const gcZipInfoHashV1 = '4bb197635194f4242d9f937f0f9225851786a0a8'
-const gcZipInfoHashV2 = ''
-const gcZipSize = 2171262108
-const gcZipMagnet = magnet(gcZipInfoHashV1, gcZipInfoHashV2, gcZipName, gcZipSize)
+abstract class PkgInfo {
+    abstract dirName: string
+    abstract noDedup: boolean
+    
+    abstract zipExt: string
+    abstract zipName: string
+    abstract zipInfoHashV1: string
+    abstract zipInfoHashV2: string
+    abstract zipSize: number
+
+    abstract dir: string
+    abstract zip: string
+    abstract zipTorrent: string
+    abstract zipMagnet: string
+
+    abstract checkUnpackBy: string
+}
+
+abstract class PkgInfoExe extends PkgInfo {
+    get checkUnpackBy(){ return this.exe }
+    
+    abstract exe: string
+}
+
+abstract class PkgInfoCSProj extends PkgInfo {
+    get checkUnpackBy(){ return this.csProj }
+
+    abstract target: string
+    abstract netVer: string
+    abstract csProj: string
+    abstract dllDir: string
+    abstract dllName: string
+    abstract dll: string
+}
+
+const gcPkg = new class extends PkgInfoExe {
+    dirName = 'League of Legends_UNPACKED'
+    noDedup = false
+    zipExt = '.7z'
+    zipName = `League of Legends_UNPACKED${this.zipExt}`
+    zipInfoHashV1 = '4bb197635194f4242d9f937f0f9225851786a0a8'
+    zipInfoHashV2 = ''
+    zipSize = 2171262108
+
+    dir = path.join(downloads, this.dirName)
+    zip = path.join(downloads, this.zipName)
+    zipTorrent = `${this.zip}.torrent`
+    zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
+
+    exe = path.join(this.dir, 'League-of-Legends-4-20', 'RADS', 'solutions', 'lol_game_client_sln', 'releases', '0.0.1.68', 'deploy', 'League of Legends.exe')
+}()
+
 const sdkVer = '9.0.300'
 
 const sdkPlatformMap: Record<string, string> = {
@@ -74,13 +118,8 @@ const sdkArch = sdkArchMap[process.arch]
 if(!sdkArchMap) throw new Error(`Unsupported arch: ${process.arch}`)
 
 const sdkName = `dotnet-sdk-${sdkVer}-${sdkPlatform}-${sdkArch}`
-const sdkDir = path.join(downloads, sdkName), sdkExeDir = sdkDir
-const sdkExeExt = (sdkPlatform == 'win') ? '.exe' : ''
-const sdkExe = path.join(sdkExeDir, `dotnet${sdkExeExt}`)
 const sdkZipExt = (sdkPlatform == 'win') ? '.zip' : '.tar.gz'
 const sdkZipName = `${sdkName}${sdkZipExt}`
-const sdkZip = path.join(downloads, sdkZipName)
-const sdkZipTorrent = `${sdkZip}.torrent`
 const sdkZipInfo = {
     'dotnet-sdk-9.0.300-win-x64.zip': {
         ihv1: '249a75bd3c8abba27b59fe42ab0771f77d6caee7',
@@ -94,32 +133,53 @@ const sdkZipInfo = {
     },
 }[sdkZipName]!
 if(!sdkZipInfo)
-    throw new Error(`Unsupported dotnet-sdk-version-platform-arch combination: ${sdkName}`)
-const sdkZipInfoHashV1 = sdkZipInfo.ihv1
-const sdkZipInfoHashV2 = sdkZipInfo.ihv2
-const sdkZipSize = sdkZipInfo.size
-const sdkZipMagnet = magnet(sdkZipInfoHashV1, sdkZipInfoHashV2, sdkZipName, sdkZipSize)
+    throw new Error(`Unsupported dotnet-sdk-version-platform-arch.ext combination: ${sdkZipName}`)
 
-const gsProjName = 'GameServerConsole'
-const gsDir = path.join(downloads, 'GameServer')
-const gsProjDir = path.join(gsDir, gsProjName)
-const gsTarget = 'Debug'
-const gsNetVer = 'net9.0'
-const gsExeExt = (sdkPlatform == 'win') ? '.exe' : ''
-const gsExeName = `${gsProjName}${gsExeExt}`
-const gsExeDir = path.join(gsProjDir, 'bin', gsTarget, gsNetVer)
-const gsExe = path.join(gsExeDir, gsExeName)
-const gsDll = path.join(gsExeDir, `${gsProjName}.dll`)
-const gsCSProj = path.join(gsProjDir, `${gsProjName}.csproj`)
-const gsZipName = 'Chronobreak.GameServer.7z'
-const gsZip = path.join(downloads, gsZipName)
-const gsZipTorrent = `${gsZip}.torrent`
-const gsZipInfoHashV1 = 'e4043fdc210a896470d662933f7829ccf3ed781b'
-const gsZipInfoHashV2 = 'cf9bfaba0f9653255ff5b19820ea4c01ac8484d0f8407b109ca358236d4f4abc'
-const gsZipSize = 21309506
-const gsZipMagnet = magnet(gsZipInfoHashV1, gsZipInfoHashV2, gsZipName, gsZipSize)
-const gsgcDir = path.join(gsDir, 'Content', 'GameClient')
-const gsInfoDir = path.join(gsExeDir, 'Settings')
+const sdkPkg = new class extends PkgInfoExe {
+    dirName = sdkName
+    noDedup = true
+    zipExt = sdkZipExt
+    zipName = sdkZipName
+    zipInfoHashV1 = sdkZipInfo.ihv1
+    zipInfoHashV2 = sdkZipInfo.ihv2
+    zipSize = sdkZipInfo.size
+    
+    dir = path.join(downloads, this.dirName)
+    zip = path.join(downloads, this.zipName)
+    zipTorrent = `${this.zip}.torrent`
+    zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
+
+    exeExt = (sdkPlatform == 'win') ? '.exe' : ''
+    exe = path.join(this.dir, `dotnet${this.exeExt}`)
+}()
+
+const gsPkg = new class extends PkgInfoCSProj {
+    dirName = 'GameServer'
+    noDedup = false
+    zipExt = '.7z'
+    zipName = `Chronobreak.GameServer${this.zipExt}`
+    zipInfoHashV1 = 'e4043fdc210a896470d662933f7829ccf3ed781b'
+    zipInfoHashV2 = 'cf9bfaba0f9653255ff5b19820ea4c01ac8484d0f8407b109ca358236d4f4abc'
+    zipSize = 21309506
+    
+    dir = path.join(downloads, this.dirName)
+    zip = path.join(downloads, this.zipName)
+    zipTorrent = `${this.zip}.torrent`
+    zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
+
+    projName = 'GameServerConsole'
+    csProjDir = path.join(this.dir, this.projName)
+    
+    target = 'Debug'
+    netVer = 'net9.0'
+    csProj = path.join(this.csProjDir, `${this.projName}.csproj`)
+    dllDir = path.join(this.csProjDir, 'bin', this.target, this.netVer)
+    dllName = `${this.projName}.dll`
+    dll = path.join(this.dllDir, this.dllName)
+    
+    infoDir = path.join(this.dllDir, 'Settings')
+    gcDir = path.join(this.dir, 'Content', 'GameClient')
+}()
 
 const trackersTxtName = 'trackers.txt'
 const trackersTxt = path.join(downloads, trackersTxtName)
@@ -153,7 +213,7 @@ const ariaExeExt = (sdkPlatform == 'win') ? '.exe' : ''
 const ariaExeDir = path.join(cwd, 'thirdparty', 'Motrix', 'extra', ariaPlatform, ariaArch, 'engine')
 const ariaExe = path.join(ariaExeDir, `aria2c${ariaExeExt}`)
 const ariaConf = path.join(ariaExeDir, 'aria2.conf')
-const ariaSession = path.join(downloads, 'aria2.session')
+//const ariaSession = path.join(downloads, 'aria2.session')
 
 let trackers: undefined | string[]
 export async function getAnnounceAddrs(){
@@ -209,9 +269,9 @@ async function repairAria2(){
 }
 
 async function repairTorrents() {
-    try { await fs.rename(path.join(downloads, `${gsZipInfoHashV1}.torrent`), gsZipTorrent) } catch(err) {}
-    try { await fs.rename(path.join(downloads, `${gcZipInfoHashV1}.torrent`), gcZipTorrent) } catch(err) {}
-    try { await fs.rename(path.join(downloads, `${sdkZipInfoHashV1}.torrent`), sdkZipTorrent) } catch(err) {}
+    try { await fs.rename(path.join(downloads, `${gsPkg.zipInfoHashV1}.torrent`), gsPkg.zipTorrent) } catch(err) {}
+    try { await fs.rename(path.join(downloads, `${gcPkg.zipInfoHashV1}.torrent`), gcPkg.zipTorrent) } catch(err) {}
+    try { await fs.rename(path.join(downloads, `${sdkPkg.zipInfoHashV1}.torrent`), sdkPkg.zipTorrent) } catch(err) {}
 }
 
 const serverSettingsJson = path.join(downloads, 'server-settings.jsonc')
@@ -261,14 +321,14 @@ export async function launchClient(ip: string, port: number, key: string, client
 export async function relaunchClient(){
     const [ip, port, key, clientId] = launchArgs!
 
-    const gcArgs = ['', '', '', /*quote*/([ip, port.toString(), sanitize_bfkey(key), clientId.toString()]).join(' ')].map(a => `"${a}"`).join(' ')
+    const gcArgs = ['', '', '', ([ip, port.toString(), sanitize_bfkey(key), clientId.toString()]).join(' ')].map(a => `"${a}"`).join(' ')
     
     await stopClient()
 
     if(process.platform == 'win32')
-        clientSubprocess = new SubProcess(gcExe, [ gcArgs ])
+        clientSubprocess = new SubProcess(gcPkg.exe, [ gcArgs ])
     else if(process.platform == 'linux')
-        clientSubprocess = new SubProcess('bottles-cli', ['run', '-b', 'Default Gaming', '-e', gcExe, gcArgs])
+        clientSubprocess = new SubProcess('bottles-cli', ['run', '-b', 'Default Gaming', '-e', gcPkg.exe, gcArgs])
         //clientSubprocess = new SubProcess('bottles-cli', ['run', '-b', 'Default Gaming', '-p', 'League of Legends', '--args-replace', gcArgs])
     else throw new Error(`Unsupported platform: ${process.platform}`)
 
@@ -303,16 +363,16 @@ async function killSubprocess(sp: SubProcess){
 
 let serverSubprocess: undefined | SubProcess
 export async function launchServer(port: number, info: GameInfo){
-    info.gameInfo.CONTENT_PATH = path.relative(gsExeDir, gsgcDir)
+    info.gameInfo.CONTENT_PATH = path.relative(gsPkg.dllDir, gsPkg.gcDir)
 
-    const gsInfo = path.join(gsInfoDir, `GameInfo.${info.gameId}.json`)
+    const gsInfo = path.join(gsPkg.infoDir, `GameInfo.${info.gameId}.json`)
     await fs.writeFile(gsInfo, JSON.stringify(info, null, 4))
-    const gsInfoRel = path.relative(gsExeDir, gsInfo)
+    const gsInfoRel = path.relative(gsPkg.dllDir, gsInfo)
 
-    serverSubprocess = new SubProcess(sdkExe, [
-        gsDll, '--port', port.toString(), '--config', gsInfoRel,
+    serverSubprocess = new SubProcess(sdkPkg.exe, [
+        gsPkg.dll, '--port', port.toString(), '--config', gsInfoRel,
     ], {
-        cwd: gsExeDir,
+        cwd: gsPkg.dllDir,
         //timeout: 15 * 1000
     })
     
@@ -347,145 +407,159 @@ export async function repair(){
 
     await Promise.all([
         Promise.all([
-            repairArchived(sdkExe, sdkDir, sdkZip, sdkZipName, sdkZipTorrent, sdkZipMagnet, sdkZipSize),
-            repairArchived(gsCSProj, gsDir, gsZip, gsZipName, gsZipTorrent, gsZipMagnet, gsZipSize),
+            repairArchived(sdkPkg),
+            repairArchived(gsPkg),
         ]).then(async () => {
-            if(!await fs_exists(gsExe))
-                await build(gsExe, gsExeName, gsCSProj)
-            if(!await fs_exists(gsInfoDir))
-                await fs.mkdir(gsInfoDir)
+            if(!await fs_exists(gsPkg.dll))
+                await build(gsPkg)
+            if(!await fs_exists(gsPkg.infoDir))
+                await fs.mkdir(gsPkg.infoDir)
         }),
-        repairArchived(gcExe, gcDir, gcZip, gcZipName, gcZipTorrent, gcZipMagnet, gcZipSize),
+        repairArchived(gcPkg),
     ] as Promise<unknown>[])
 }
 
-async function repairArchived(exe: string, dir: string, zip: string, zipName: string, torrent: string, magnet: string, zipSize: number){
-    if(await fs_exists(exe)){
+async function repairArchived(pkg: PkgInfo){
+    if(await fs_exists(pkg.checkUnpackBy)){
         return // OK
-    } else if(await fs_exists_and_size_eq(zip, zipSize)){
+    } else if(await fs_exists_and_size_eq(pkg.zip, pkg.zipSize)){
         try {
-            await unpack(exe, dir, zip, zipName)
+            await unpack(pkg)
             return // OK
-        } catch(unk_err) {
-            const err = unk_err as Error & { cause?: { code: null|number, signal: null|string } }
-            if(err.cause){
-                if(err.cause.code === 1){
-                    // 7z 1 Warning
-                    return // OK
-                } else if(err.cause.code !== 2){
-                    // 7z 7   Command line error
-                    // 7z 8   Not enough memory for operation
-                    // 7z 255 User stopped the process
-                    // The archive is not damaged, there is no point in downloading it again
-                    throw err
-                }
-            }
+        } catch(err) {
+            if(!(err instanceof DataError))
+                throw err
         }
     }
-    if(await fs_exists(torrent)){
-        await download(zip, zipName, 'torrent', torrent, torrent, zipSize)
-        await unpack(exe, dir, zip, zipName)
+    if(await fs_exists(pkg.zipTorrent)){
+        await download(pkg, 'torrent')
+        await unpack(pkg)
     } else {
-        await download(zip, zipName, 'magnet', magnet, torrent, zipSize)
-        await unpack(exe, dir, zip, zipName)
+        await download(pkg, 'magnet')
+        await unpack(pkg)
     }
 }
 
+type TerminationErrorCause = { code: null|number, signal: null|string }
+type TerminationErrorOptions = { cause?: TerminationErrorCause }
+class TerminationError extends Error implements TerminationErrorOptions {
+    cause?: TerminationErrorCause
+    constructor(msg: string, options?: TerminationErrorOptions){
+        super(msg)
+        this.cause = options?.cause
+    }
+}
 function successfulTermination(proc: ChildProcess){
     return new Promise<void>((resolve, reject) => {
-        proc.on('error', () => reject())
+        proc.on('error', (err) => reject(err))
         proc.on('exit', (code: null|number, signal: null|string) => {
+
+            let msg = `Process exited with code ${code}`
+            if(signal) msg += ` by signal ${signal}`
+            console.log(msg)
+
             if(code === 0) resolve()
-            else {
-                let msg = `Process exited with code ${code}`
-                if(signal) msg += ` by signal ${signal}`
-                reject(new Error(msg, { cause: { code, signal } }))
+            else {    
+                reject(new TerminationError(msg, { cause: { code, signal } }))
             }
         })
     })
 }
 
-async function unpack(exe: string, dir: string, zip: string, zipName: string){
-    console.log(`Unpacking ${zipName}...`)
+const s7zDataErrorMsgs = [
+    /\bData Error\b/,
+    /\bCRC Failed\b/,
+    /\bIs not archive\b/,
+    /\bCan(?: ?not|'?t) open (?:the )?file as archive\b/,
+    /\bUnexpected end of (?:data|archive|(?:input )?stream)\b/,
+    //TODO: ...
+]
+
+enum s7zExitCodes {
+    Warning = 1,
+    FatalError = 2,
+    CommandLineError = 7,
+    NotEnoughMemoryForOperation = 8,
+    UserStoppedTheProcess = 255,
+}
+
+class DataError extends Error {}
+async function unpack(pkg: PkgInfo){
+    console.log(`Unpacking ${pkg.zipName}...`)
 
     try {
-        await fs.mkdir(dir)
+        await fs.mkdir(pkg.dir)
     } catch(unk_err) {
         const err = unk_err as ErrnoException
         if(err.code != 'EEXIST')
-            console.log(err)
+            throw err
     }
     
-    const opts = ['-spe', '-aoa', `-o${dir}`]
-    if(zip.endsWith('.tar.gz')){
-        const s7z1 = spawn(
-            path7z, /*quote*/(['x', '-so', zip])/*.split(' ')*/,
-            { stdio: [ 'inherit', 'pipe', 'ignore' ] },
-        )
-        const s7z2 = spawn(
-            path7z, /*quote*/(['x', '-si', '-ttar', ...opts])/*.split(' ')*/,
-            { stdio: [ 'pipe', 'ignore', 'ignore' ] },
-        )
-        s7z1.stdout.pipe(s7z2.stdin)
-        
-        //TODO: `ERROR: Data Error : `
+    const controller = new AbortController();
+    const { signal } = controller;
 
-        await Promise.all([
-            successfulTermination(s7z1),
-            successfulTermination(s7z2),
-        ])
-    } else {
-        const s7z1 = spawn(path7z, /*quote*/(['x', ...opts, zip])/*.split(' ')*/)
-        await successfulTermination(s7z1)
-    }
+    const opts = ['-aoa', `-o${pkg.dir}`, '-bsp2']
+    if(!pkg.noDedup) opts.push('-spe')
     
-    if(!await fs_exists(exe))
-        throw new Error(`Unable to unpack ${zipName}`)
-}
+    const s7zs: ChildProcess[] = []
 
-async function build(exe: string, exeName: string, csproj: string){
-    console.log(`Building ${csproj}...`)
-
-    let txt = await fs.readFile(csproj, 'utf8')
-    txt = txt.replace(/(?<=<TargetFramework>)(?:.|\n)*?(?=<\/TargetFramework>)/g, gsNetVer)
-    await fs.writeFile(csproj, txt, 'utf8')
-
-    await exec(sdkExe, ['build', csproj])
-    if(!await fs_exists(exe))
-        throw new Error(`Unable to build ${exeName}`)
-}
-/*
-let webtorrent: undefined | WebTorrent.Instance
-async function download(
-    zip: string,
-    zipName: string,
-    torrent: Parameters<WebTorrent.Instance['add']>[0],
-    saveto?: Parameters<(typeof fs)['writeFile']>[0]
-){
-    console.log(`Downloading ${zipName}...`)
-    
-    webtorrent = new WebTorrent({
-        tracker: {
-            announce: await getAnnounceAddrs()
-        }
-    })
-    await new Promise<void>((resolve, reject) => {
-        webtorrent!.add(torrent, { path: downloads, strategy: 'rarest' }, async torrent => {
-            if(saveto)
-            torrent.on('metadata', async () => {
-                await fs.writeFile(saveto, torrent.torrentFile)
-            })
-            torrent.on('done', resolve)
-            torrent.on('error', reject)
-            torrent.on('download', (bytes: number) => {
-                console.log(zipName, (torrent.progress * 100).toFixed(2) + '%')
-            })
+    if(pkg.zipExt == '.tar.gz'){
+        s7zs[0] = spawn(path7z, ['x', '-so', '-tgzip', pkg.zip], {
+            stdio: [ 'inherit', 'pipe', 'pipe' ], signal
         })
-    })
-    if(!await fs_exists(zip))
-        throw new Error(`Unable to download ${zipName}`)
+        s7zs[1] = spawn(path7z, ['x', '-si', '-ttar', ...opts], {
+            stdio: [ 'pipe', 'pipe', 'pipe' ], signal
+        })
+        s7zs[0].stdout!.pipe(s7zs[1].stdin!)
+    } else {
+        s7zs[0] = spawn(path7z, (['x', ...opts, pkg.zip]))
+    }
+
+    s7zs.at(-1)!.stdout!.setEncoding('utf8').addListener('data', (chunk) => onData(-1, 'stdout', chunk))
+    s7zs.at(-1)!.stderr!.setEncoding('utf8').addListener('data', (chunk) => onData(-1, 'stderr', chunk))
+    function onData(i: number, src: 'stdout' | 'stderr', chunk: string){
+        console.log(`s7zs[${i}]`, src, chunk)
+        if(s7zDataErrorMsgs.some(msg => msg.test(chunk))){
+            s7zs.at(i)![src]!.removeAllListeners('data')
+            controller.abort(new DataError())
+            console.log('abort')
+        }
+    }
+
+    try {
+        await Promise.race([
+            Promise.all(s7zs.map(s7zi => successfulTermination(s7zi))),
+            new Promise((resolve, reject) => {
+                signal.addEventListener('abort', () => {
+                    reject(signal.reason)
+                })
+            }),
+        ])
+    } catch(err) {
+        if(err instanceof DataError) throw err
+        else if(err instanceof TerminationError){
+            if(err.cause?.code === s7zExitCodes.Warning){ /*OK*/ }
+            else throw err
+        } else throw err
+    }
+    
+    if(!await fs_exists(pkg.checkUnpackBy))
+        throw new Error(`Unable to unpack ${pkg.zipName}`)
 }
-*/
+
+async function build(pkg: PkgInfoCSProj){
+    console.log(`Building ${pkg.csProj}...`)
+
+    let txt = await fs.readFile(pkg.csProj, 'utf8')
+    txt = txt.replace(/(?<=<TargetFramework>)(?:.|\n)*?(?=<\/TargetFramework>)/g, pkg.netVer)
+    await fs.writeFile(pkg.csProj, txt, 'utf8')
+
+    await exec(sdkPkg.exe, ['build', pkg.csProj])
+
+    if(!await fs_exists(gsPkg.dll))
+        throw new Error(`Unable to build ${gsPkg.dllName}`)
+}
+
 const multibar = new MultiBar({
     format: '{filename} [{bar}] {percentage}% | {value}/{total} | {duration_formatted}/{eta_formatted}',
     //clearOnComplete: false,
@@ -493,23 +567,13 @@ const multibar = new MultiBar({
 }, Presets.legacy);
 const bars = new Set<SingleBar>()
 
-let aria2proc: SubProcess
+let aria2proc: undefined | SubProcess
 let aria2procPromise: undefined | Promise<void>
-let aria2conn: Conn
+let aria2conn: undefined | Conn
 let aria2connPromise: undefined | Promise<Conn>
-let aria2secret: string
-async function download(
-    zip: string,
-    zipName: string,
-    type: 'magnet' | 'torrent',
-    torrentPathOrMagnetLink: string,
-    torrentSavePath: string,
-    zipSize: number,
-){
-    //console.log(`Downloading ${zipName}...`)
-    const bar = multibar.create(zipSize, 0, { filename: zipName })
-    bars.add(bar)
-    
+let aria2secret: undefined | string
+
+async function startAria2(){
     if(!aria2procPromise){
         aria2secret = uint8ArrayToString(randomBytes(8), 'base32')
         aria2proc = new SubProcess(ariaExe, [
@@ -541,26 +605,44 @@ async function download(
         aria2conn = await aria2connPromise
     } else
         await aria2connPromise
+}
+
+async function stopAria2(){
+    const prevSubprocess = aria2proc!
+
+    if(!aria2proc) return
+    aria2proc = undefined
+
+    await killSubprocess(prevSubprocess)
+}
+
+async function download(pkg: PkgInfo, type: 'magnet' | 'torrent'){
+    //console.log(`Downloading ${zipName}...`)
+    const bar = multibar.create(pkg.zipSize, 0, { filename: pkg.zipName })
+    bars.add(bar)
+    multibar.stop()
+    
+    await startAria2()
     
     const opts = {
         'bt-save-metadata': true,
         'bt-load-saved-metadata': true,
         'rpc-save-upload-metadata': true,
         dir: downloads,
-        out: zipName,
+        out: pkg.zipName,
     }
 
     if(type == 'torrent'){
-        const b64 = await fs.readFile(torrentPathOrMagnetLink, 'base64')
+        const b64 = await fs.readFile(pkg.zipTorrent, 'base64')
         const gid = await aria2.addTorrent(aria2conn, b64, [], opts)
         await forCompletion(gid, false, bar)
     } else if(type == 'magnet'){
-        const gid = await aria2.addUri(aria2conn, [ torrentPathOrMagnetLink ], opts)
+        const gid = await aria2.addUri(aria2conn, [ pkg.zipMagnet ], opts)
         await forCompletion(gid, true, bar)
     }
 
-    if(!await fs_exists_and_size_eq(zip, zipSize))
-        throw new Error(`Unable to download ${zipName}`)
+    if(!await fs_exists_and_size_eq(pkg.zip, pkg.zipSize))
+        throw new Error(`Unable to download ${pkg.zipName}`)
 
     bar.stop()
     bars.delete(bar)
@@ -616,6 +698,14 @@ function forCompletion(gid: string, isMetadata: boolean, bar: SingleBar){
         }
         
     })
+}
+
+await repair() //DEBUG:
+
+export async function stop(){
+    stopServer()
+    stopClient()
+    
 }
 
 export type GameInfo = {
