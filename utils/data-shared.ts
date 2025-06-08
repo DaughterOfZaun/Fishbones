@@ -9,8 +9,8 @@ const cwdLin = cwd.replaceAll('\\', '/') // For Logger
 export const downloads = path.join(cwd, 'downloads')
 await fs_ensure_dir(downloads) // For Logger
 
-//export const importMetaDirname = `${import.meta.dirname}/..`
-export const importMetaDirname = `/tmp/deno-compile-index`
+export const importMetaDirname = path.dirname(import.meta.dirname)
+//export const importMetaDirname = `/tmp/deno-compile-index`
 
 export const rwx_rx_rx =
     fs.constants.S_IRUSR | fs.constants.S_IWUSR | fs.constants.S_IXUSR |

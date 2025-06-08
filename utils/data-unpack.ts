@@ -5,7 +5,9 @@ import { type PkgInfo } from './data-packages'
 import { barOpts, downloads, fs_ensure_dir, fs_exists, importMetaDirname, logger, logTerminationMsg, multibar, rwx_rx_rx, TerminationError } from './data-shared'
 import path from 'node:path'
 
-let s7zExeEmbded = `${importMetaDirname}/node_modules/7z-bin/bin`
+
+const s7zBinEmbded = path.join(importMetaDirname, 'node_modules', '7z-bin', 'bin')
+let s7zExeEmbded: string
 let s7zExe: string
 let s7zDllEmbded: undefined | string
 let s7zDll: undefined | string
@@ -14,19 +16,21 @@ if (process.platform === "win32") {
     if(!['arm64', 'ia32', 'x64'].includes(process.arch))
         throw new Error(`Unsupported arch: ${process.arch}`)
     const s7zExeName = '7z.exe'
-    s7zExeEmbded = `${s7zExeEmbded}/win/${process.arch}/${s7zExeName}`
+    const s7zDllName = '7z.dll'
+    const s7zBinWinArch = path.join(s7zBinEmbded, 'win', process.arch)
+    s7zExeEmbded = path.join(s7zBinWinArch, s7zExeName)
+    s7zDllEmbded = path.join(s7zBinWinArch, s7zDllName)
     s7zExe = path.join(downloads, s7zExeName)
-    s7zDllEmbded = s7zExeEmbded.replace('.exe', '.dll')
-    s7zDll = s7zExe.replace('.exe', '.dll')
+    s7zDll = path.join(downloads, s7zDllName)
 } else if (process.platform === "darwin") {
     const s7zExeName = '7zz'
-    s7zExeEmbded = `${s7zExeEmbded}/mac/${s7zExeName}`
+    s7zExeEmbded = path.join(s7zBinEmbded, 'mac', s7zExeName)
     s7zExe = path.join(downloads, s7zExeName)
 } else if (process.platform === "linux"){
     if(!['arm', 'arm64', 'ia32', 'x64'].includes(process.arch))
         throw new Error(`Unsupported arch: ${process.arch}`)
     const s7zExeName = '7zzs'
-    s7zExeEmbded = `${s7zExeEmbded}/linux/${process.arch}/${s7zExeName}`
+    s7zExeEmbded = path.join(s7zBinEmbded, 'linux', process.arch, s7zExeName)
     s7zExe = path.join(downloads, s7zExeName)
 } else {
     throw new Error(`Unsupported platform: ${process.platform}`)
@@ -42,21 +46,21 @@ export function repair7z(){
         (async () => {
             //if(fs_exists(s7zDll))
             if(s7zDll && s7zDllEmbded)
-            await fs.copyFile(s7zExeEmbded, s7zExe)
+            await fs.copyFile(s7zDllEmbded, s7zDll)
         })(),
     ])
 }
 
 function successfulTermination(proc: ChildProcess & { id: number }){
     return new Promise<void>((resolve, reject) => {
-        proc.on('error', (err) => reject(err))
-        proc.on('close', (code, signal) => {
+        proc.once('error', (err) => reject(err))
+        proc.once('close', (code, signal) => {
             logTerminationMsg(['7Z', proc.id], 'closed', code, signal)
         })
-        proc.on('exit', (code, signal) => {
+        proc.once('exit', (code, signal) => {
             const msg = logTerminationMsg(['7Z', proc.id], 'exited', code, signal)
             if(code === 0) resolve()
-            else {    
+            else {
                 reject(new TerminationError(msg, { cause: { code, signal } }))
             }
         })
@@ -133,25 +137,27 @@ export async function unpack(pkg: PkgInfo){
     }
 
     try {
-        await Promise.race([
-            Promise.all(s7zs.map(s7zi => successfulTermination(s7zi))),
+        await /*Promise.race([*/
+            Promise.all(s7zs.map(s7zi => successfulTermination(s7zi)))
+                .then(() => bar.update(100))/*,
             new Promise((resolve, reject) => {
                 signal.addEventListener('abort', () => {
                     reject(signal.reason)
                 })
             }),
-        ])
+        ])*/
     } catch(err) {
         if(err instanceof DataError) throw err
-        else if(err instanceof TerminationError){
+        if(err instanceof Error && err.name === 'AbortError'){
+            throw signal.reason
+        } else if(err instanceof TerminationError){
             if(err.cause?.code === s7zExitCodes.Warning){ /*OK*/ }
             else throw err
         } else throw err
+    } finally {
+        bar.stop()
     }
     
-    bar.update(100)
-    bar.stop()
-
     if(!await fs_exists(pkg.checkUnpackBy))
         throw new Error(`Unable to unpack ${pkg.zipName}`)
 }

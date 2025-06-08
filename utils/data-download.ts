@@ -152,7 +152,7 @@ function forCompletion(gid: string, isMetadata: boolean, cb: (progress: number) 
         timeout = setTimeout(update, delay)
     }
 
-    if(!isMetadata) timeout = setTimeout(update, delay)
+    /*if(!isMetadata)*/ timeout = setTimeout(update, delay)
 
     return new Promise<void>((resolve, reject) => {
         const cbs = [
@@ -166,9 +166,11 @@ function forCompletion(gid: string, isMetadata: boolean, cb: (progress: number) 
                     try {
                         const status = await aria2.tellStatus(aria2conn, gid, [ 'followedBy' ])
                         console.assert(status.followedBy?.length == 1)
-                        gid = status.followedBy![0]!
-                        isMetadata = false
-                        timeout = setTimeout(update, delay)
+                        if(status.followedBy && status.followedBy.length > 0){
+                            gid = status.followedBy[0]!
+                            isMetadata = false
+                            //timeout = setTimeout(update, delay)
+                        }
                     } catch(err) {
                         cbs.forEach(cb => cb.dispose())
                         clearTimeout(timeout)
