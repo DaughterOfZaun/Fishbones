@@ -1,7 +1,7 @@
 import { SubProcess } from "teen_process"
 import { gcPkg } from "./data-packages"
 import { sanitize_bfkey } from "./constants"
-import { killSubprocess } from "./data-shared"
+import { killSubprocess, logger, startProcess } from "./data-shared"
 
 let launchArgs: undefined | Parameters<typeof launchClient>
 let clientSubprocess: undefined | SubProcess
@@ -23,10 +23,10 @@ export async function relaunchClient(){
         //clientSubprocess = new SubProcess('bottles-cli', ['run', '-b', 'Default Gaming', '-p', 'League of Legends', '--args-replace', gcArgs])
     else throw new Error(`Unsupported platform: ${process.platform}`)
 
-    console.log(clientSubprocess.rep)
+    //console.log(clientSubprocess.rep)
+    clientSubprocess.on('stream-line', line => logger.log('CLIENT', line))
 
-    await clientSubprocess.start()
-    return clientSubprocess
+    return await startProcess(clientSubprocess, ['CLIENT'])
 }
 
 export async function stopClient(){

@@ -27,6 +27,8 @@ export abstract class PkgInfo {
     abstract zipMagnet: string
 
     abstract checkUnpackBy: string
+    
+    zipWebSeed?: string
 }
 
 export abstract class PkgInfoExe extends PkgInfo {
@@ -116,6 +118,8 @@ export const sdkPkg = new class extends PkgInfoExe {
 
     exeExt = (sdkPlatform == 'win') ? '.exe' : ''
     exe = path.join(this.dir, `dotnet${this.exeExt}`)
+
+    zipWebSeed = `https://builds.dotnet.microsoft.com/dotnet/Sdk/${sdkVer}/${sdkZipName}`
 }()
 
 export const gsPkg = new class extends PkgInfoCSProj {

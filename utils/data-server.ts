@@ -3,7 +3,7 @@ import path from 'node:path'
 import { SubProcess } from 'teen_process'
 import { champions, maps, modes, spells, /*sanitize_str*/ } from './constants'
 import { gsPkg, sdkPkg } from './data-packages'
-import { downloads, fs_exists, killSubprocess } from './data-shared'
+import { downloads, fs_exists, killSubprocess, logger, startProcess } from './data-shared'
 import type { GameInfo } from './game-info'
 
 //const sanitize_kv = (key: string, value: string) => {
@@ -26,10 +26,12 @@ export async function launchServer(port: number, info: GameInfo){
         //timeout: 15 * 1000
     })
     
-    console.log(serverSubprocess.rep)
+    //console.log(serverSubprocess.rep)
+    serverSubprocess.on('stream-line', line => logger.log('SERVER', line))
 
-    await serverSubprocess.start((stdout: string, /*stderr: string*/) => stdout.includes('Server is ready'))
-    return serverSubprocess
+    return await startProcess(serverSubprocess, ['SERVER'], (stdout, /*stderr*/) => {
+        return /\b(?:Game)?Server (?:is )?ready\b/.test(stdout)
+    })
 }
 
 export async function stopServer(){

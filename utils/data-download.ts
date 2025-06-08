@@ -4,7 +4,7 @@ import { SubProcess } from 'teen_process'
 import { aria2, open, createWebSocket, type Conn } from 'maria2/dist/index.js'
 import { randomBytes } from '@libp2p/crypto'
 import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
-import { cwd, downloads, fs_exists_and_size_eq, killSubprocess, multibar, rwx_rx_rx } from './data-shared'
+import { barOpts, downloads, fs_exists_and_size_eq, importMetaDirname, killSubprocess, logger, multibar, rwx_rx_rx } from './data-shared'
 import { getAnnounceAddrs } from './data-trackers'
 import type { PkgInfo } from './data-packages'
 
@@ -28,14 +28,33 @@ const ariaPlatform = process.platform
 const ariaArch = (AriaPlatformArchMap[process.platform] ?? {})[process.arch];
 if(!ariaArch) throw new Error(`Unsupported platform-arch combination: ${process.platform}-${process.arch}`)
 
+//const ariaExeDir = path.join(cwd, 'thirdparty', 'Motrix', 'extra', ariaPlatform, ariaArch, 'engine')
+const ariaExeDir = `${importMetaDirname}/thirdparty/Motrix/extra/${ariaPlatform}/${ariaArch}/engine`
 const ariaExeExt = (ariaPlatform == 'win32') ? '.exe' : ''
-const ariaExeDir = path.join(cwd, 'thirdparty', 'Motrix', 'extra', ariaPlatform, ariaArch, 'engine')
-const ariaExe = path.join(ariaExeDir, `aria2c${ariaExeExt}`)
-const ariaConf = path.join(ariaExeDir, 'aria2.conf')
+const ariaExeName = `aria2c${ariaExeExt}`
+//const ariaExe = path.join(ariaExeDir, ariaExeName)
+const ariaExeEmbded = `${ariaExeDir}/${ariaExeName}`
+const ariaExe = path.join(downloads, ariaExeName)
+
+const ariaConfName = 'aria2.conf'
+//const ariaConf = path.join(ariaExeDir, ariaConfName)
+const ariaConfEmbded = `${ariaExeDir}/${ariaConfName}`
+const ariaConf = path.join(downloads, ariaConfName)
+
 //const ariaSession = path.join(downloads, 'aria2.session')
 
-export async function repairAria2(){
-    await fs.chmod(ariaExe, rwx_rx_rx)
+export function repairAria2(){
+    return Promise.all([
+        (async () => {
+            //if(await fs_exists(ariaExe)) return
+            await fs.copyFile(ariaExeEmbded, ariaExe)
+            await fs.chmod(ariaExe, rwx_rx_rx)
+        })(),
+        (async () => {
+            //if(await fs_exists(ariaExe)) return
+            await fs.copyFile(ariaConfEmbded, ariaConf)
+        })(),
+    ])
 }
 
 let aria2proc: undefined | SubProcess
@@ -67,6 +86,7 @@ async function startAria2(){
             `--bt-exclude-tracker=${'*'}`,
             `--bt-tracker=${trackers?.join(',')}`,
         ])
+        aria2proc.on('stream-line', line => logger.log('ARIA2C', line))
         //console.log(aria2proc.cmd, ...aria2proc.args)
         aria2procPromise = aria2proc.start()
         //TODO: Handle start fail
@@ -92,7 +112,7 @@ export async function stopAria2(){
 
 export async function download(pkg: PkgInfo, type: 'magnet' | 'torrent'){
     //console.log(`Downloading ${zipName}...`)
-    const bar = multibar.create(pkg.zipSize, 0, { filename: pkg.zipName })
+    const bar = multibar.create(pkg.zipSize, 0, { operation: 'Downloading', filename: pkg.zipName }, barOpts)
     
     await startAria2()
     
@@ -104,19 +124,20 @@ export async function download(pkg: PkgInfo, type: 'magnet' | 'torrent'){
         out: pkg.zipName,
     }
 
+    const webSeeds = pkg.zipWebSeed ? [ pkg.zipWebSeed ] : []
     if(type == 'torrent'){
         const b64 = await fs.readFile(pkg.zipTorrent, 'base64')
-        const gid = await aria2.addTorrent(aria2conn, b64, [], opts)
+        const gid = await aria2.addTorrent(aria2conn, b64, webSeeds, opts)
         await forCompletion(gid, false, p => bar.update(p))
     } else if(type == 'magnet'){
-        const gid = await aria2.addUri(aria2conn, [ pkg.zipMagnet ], opts)
+        const gid = await aria2.addUri(aria2conn, [ pkg.zipMagnet ].concat(webSeeds), opts)
         await forCompletion(gid, true, p => bar.update(p))
     }
 
+    bar.stop()
+
     if(!await fs_exists_and_size_eq(pkg.zip, pkg.zipSize))
         throw new Error(`Unable to download ${pkg.zipName}`)
-
-    bar.stop()
 }
 
 function forCompletion(gid: string, isMetadata: boolean, cb: (progress: number) => void){

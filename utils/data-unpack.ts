@@ -1,29 +1,60 @@
-import { spawn } from 'teen_process'
-import { promises as fs } from "node:fs"
-import { path7z } from '7z-bin'
 import type { ChildProcess } from 'child_process'
+import { promises as fs } from "node:fs"
+import { spawn } from 'teen_process'
+import { type PkgInfo } from './data-packages'
+import { barOpts, downloads, fs_ensure_dir, fs_exists, importMetaDirname, logger, logTerminationMsg, multibar, rwx_rx_rx, TerminationError } from './data-shared'
+import path from 'node:path'
 
-import { fs_exists, rwx_rx_rx } from './data-shared'
-import type { PkgInfo } from './data-packages'
+let s7zExeEmbded = `${importMetaDirname}/node_modules/7z-bin/bin`
+let s7zExe: string
+let s7zDllEmbded: undefined | string
+let s7zDll: undefined | string
 
-type TerminationErrorCause = { code: null|number, signal: null|string }
-type TerminationErrorOptions = { cause?: TerminationErrorCause }
-class TerminationError extends Error implements TerminationErrorOptions {
-    cause?: TerminationErrorCause
-    constructor(msg: string, options?: TerminationErrorOptions){
-        super(msg)
-        this.cause = options?.cause
-    }
+if (process.platform === "win32") {
+    if(!['arm64', 'ia32', 'x64'].includes(process.arch))
+        throw new Error(`Unsupported arch: ${process.arch}`)
+    const s7zExeName = '7z.exe'
+    s7zExeEmbded = `${s7zExeEmbded}/win/${process.arch}/${s7zExeName}`
+    s7zExe = path.join(downloads, s7zExeName)
+    s7zDllEmbded = s7zExeEmbded.replace('.exe', '.dll')
+    s7zDll = s7zExe.replace('.exe', '.dll')
+} else if (process.platform === "darwin") {
+    const s7zExeName = '7zz'
+    s7zExeEmbded = `${s7zExeEmbded}/mac/${s7zExeName}`
+    s7zExe = path.join(downloads, s7zExeName)
+} else if (process.platform === "linux"){
+    if(!['arm', 'arm64', 'ia32', 'x64'].includes(process.arch))
+        throw new Error(`Unsupported arch: ${process.arch}`)
+    const s7zExeName = '7zzs'
+    s7zExeEmbded = `${s7zExeEmbded}/linux/${process.arch}/${s7zExeName}`
+    s7zExe = path.join(downloads, s7zExeName)
+} else {
+    throw new Error(`Unsupported platform: ${process.platform}`)
 }
-function successfulTermination(proc: ChildProcess){
+
+export function repair7z(){
+    return Promise.all([
+        (async () => {
+            //if(fs_exists(s7zExe))
+            await fs.copyFile(s7zExeEmbded, s7zExe)
+            await fs.chmod(s7zExe, rwx_rx_rx)
+        })(),
+        (async () => {
+            //if(fs_exists(s7zDll))
+            if(s7zDll && s7zDllEmbded)
+            await fs.copyFile(s7zExeEmbded, s7zExe)
+        })(),
+    ])
+}
+
+function successfulTermination(proc: ChildProcess & { id: number }){
     return new Promise<void>((resolve, reject) => {
         proc.on('error', (err) => reject(err))
-        proc.on('exit', (code: null|number, signal: null|string) => {
-
-            let msg = `Process exited with code ${code}`
-            if(signal) msg += ` by signal ${signal}`
-            console.log(msg)
-
+        proc.on('close', (code, signal) => {
+            logTerminationMsg(['7Z', proc.id], 'closed', code, signal)
+        })
+        proc.on('exit', (code, signal) => {
+            const msg = logTerminationMsg(['7Z', proc.id], 'exited', code, signal)
             if(code === 0) resolve()
             else {    
                 reject(new TerminationError(msg, { cause: { code, signal } }))
@@ -33,13 +64,16 @@ function successfulTermination(proc: ChildProcess){
 }
 
 const s7zDataErrorMsgs = [
+    /\bHeaders Error\b/,
     /\bData Error\b/,
     /\bCRC Failed\b/,
     /\bIs not archive\b/,
-    /\bCan(?: ?not|'?t) open (?:the )?file as archive\b/,
+    /\bCan(?: ?not|'?t) open (?:(?:the )?file )?as (?:\[\w+\] )?archive\b/,
     /\bUnexpected end of (?:data|archive|(?:input )?stream)\b/,
     //TODO: ...
 ]
+
+const s7zProgressMsg = /(\d+)%/m
 
 enum s7zExitCodes {
     Warning = 1,
@@ -49,46 +83,52 @@ enum s7zExitCodes {
     UserStoppedTheProcess = 255,
 }
 
+let pid = 0
 export class DataError extends Error {}
 export async function unpack(pkg: PkgInfo){
-    console.log(`Unpacking ${pkg.zipName}...`)
-
-    try {
-        await fs.mkdir(pkg.dir)
-    } catch(unk_err) {
-        const err = unk_err as ErrnoException
-        if(err.code != 'EEXIST')
-            throw err
-    }
+    //console.log(`Unpacking ${pkg.zipName}...`)
+    const bar = multibar.create(100, 0, { operation: 'Unpacking', filename: pkg.zipName }, barOpts)
+    
+    await fs_ensure_dir(pkg.dir)
     
     const controller = new AbortController();
     const { signal } = controller;
 
-    const opts = ['-aoa', `-o${pkg.dir}`, '-bsp2']
+    const opts = ['-aoa', `-o${pkg.dir}`, '-bsp1']
     if(!pkg.noDedup) opts.push('-spe')
     
-    const s7zs: ChildProcess[] = []
+    const s7zs: (ChildProcess & { id: number })[] = []
 
     if(pkg.zipExt == '.tar.gz'){
-        s7zs[0] = spawn(path7z, ['x', '-so', '-tgzip', pkg.zip], {
+        s7zs[0] = Object.assign(spawn(s7zExe, ['x', '-so', '-tgzip', pkg.zip], {
             stdio: [ 'inherit', 'pipe', 'pipe' ], signal
-        })
-        s7zs[1] = spawn(path7z, ['x', '-si', '-ttar', ...opts], {
+        }), { id: pid })
+        s7zs[1] = Object.assign(spawn(s7zExe, ['x', '-si', '-ttar', ...opts], {
             stdio: [ 'pipe', 'pipe', 'pipe' ], signal
-        })
+        }), { id: pid })
         s7zs[0].stdout!.pipe(s7zs[1].stdin!)
+        pid++
     } else {
-        s7zs[0] = spawn(path7z, (['x', ...opts, pkg.zip]))
+        s7zs[0] = Object.assign(spawn(s7zExe, (['x', ...opts, pkg.zip])), { id: pid++ })
     }
 
+    if(s7zs.length > 1)
+    s7zs.at(+0)!.stderr!.setEncoding('utf8').addListener('data', (chunk) => onData(+0, 'stderr', chunk))
     s7zs.at(-1)!.stdout!.setEncoding('utf8').addListener('data', (chunk) => onData(-1, 'stdout', chunk))
     s7zs.at(-1)!.stderr!.setEncoding('utf8').addListener('data', (chunk) => onData(-1, 'stderr', chunk))
     function onData(i: number, src: 'stdout' | 'stderr', chunk: string){
-        console.log(`s7zs[${i}]`, src, chunk)
-        if(s7zDataErrorMsgs.some(msg => msg.test(chunk))){
-            s7zs.at(i)![src]!.removeAllListeners('data')
-            controller.abort(new DataError())
-            console.log('abort')
+        chunk = chunk.replace(/[\b]/g, '').trim()
+        const args = [`7Z`, pid, i, src]
+        logger.log(...args, chunk)
+        if(!signal.aborted){
+            if(src === 'stdout'){
+                const m = s7zProgressMsg.exec(chunk)
+                if(m && m[1]) bar.update(parseInt(m[1]))
+            } else if(src === 'stderr' && s7zDataErrorMsgs.some(msg => msg.test(chunk))){
+                //s7zs.at(i)![src]!.removeAllListeners('data')
+                controller.abort(new DataError())
+                logger.log(...args, 'abort')
+            }
         }
     }
 
@@ -109,10 +149,9 @@ export async function unpack(pkg: PkgInfo){
         } else throw err
     }
     
+    bar.update(100)
+    bar.stop()
+
     if(!await fs_exists(pkg.checkUnpackBy))
         throw new Error(`Unable to unpack ${pkg.zipName}`)
-}
-
-export async function repair7z(){
-    await fs.chmod(path7z, rwx_rx_rx)
 }

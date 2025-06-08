@@ -1,19 +1,15 @@
-import { promises as fs } from "node:fs"
 import { build } from "./data-build"
 import { download, repairAria2 } from "./data-download"
 import { gcPkg, gsPkg, PkgInfo, repairTorrents, sdkPkg } from "./data-packages"
 import { repairServerSettingsJsonc } from "./data-server"
-import { downloads, fs_exists, fs_exists_and_size_eq } from "./data-shared"
+import { downloads, fs_ensure_dir, fs_exists, fs_exists_and_size_eq } from "./data-shared"
 import { repairTorrentsTxt } from "./data-trackers"
 import { DataError, repair7z, unpack } from "./data-unpack"
-
-//await repair() //DEBUG:
 
 export async function repair(){
     //console.log('Running data check and repair...')
 
-    if(!await fs_exists(downloads))
-        await fs.mkdir(downloads)
+    await fs_ensure_dir(downloads)
     
     await Promise.all([
         repairServerSettingsJsonc(),
@@ -30,8 +26,7 @@ export async function repair(){
         ]).then(async () => {
             if(!await fs_exists(gsPkg.dll))
                 await build(gsPkg)
-            if(!await fs_exists(gsPkg.infoDir))
-                await fs.mkdir(gsPkg.infoDir)
+            await fs_ensure_dir(gsPkg.infoDir)
         }),
         repairArchived(gcPkg),
     ] as Promise<unknown>[])

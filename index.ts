@@ -42,7 +42,6 @@ const node = await createLibp2p({
     //peerDiscovery: [],
     services: {
         ping: ping(),
-        //@ts-expect-error: Types have separate declarations of a private property 'map'
         pubsub: gossipsub(),
         identify: identify(),
         identifyPush: identifyPush(),

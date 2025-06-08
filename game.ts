@@ -178,7 +178,11 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         
         const port = 5119 //TODO: Unhardcode
         const proc = await Data.launchServer(port, this.getGameInfo())
-        proc.once('exit', this.onServerExit)
+        if(proc) proc.once('exit', this.onServerExit)
+        else {
+            this.onServerExit()
+            return false
+        }
 
         let i = 1
         for(const player of this.players.values())
@@ -242,11 +246,20 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         
         if(!ip) return //TODO:
         const proc = await Data.launchClient(ip, port, key, clientId)
-        proc.once('exit', this.onClientExit)
+        if(proc) proc.once('exit', this.onClientExit)
+        else {
+            this.onClientExit()
+            return false
+        }
     }
     public async relaunch(){
         const proc = await Data.relaunchClient()
-        proc.once('exit', this.onClientExit)
+        if(proc) proc.once('exit', this.onClientExit)
+        else {
+            this.onClientExit()
+            return false
+        }
+        return true
     }
     private onClientExit = (/*code, signal*/) => {
         if(this.launched)
