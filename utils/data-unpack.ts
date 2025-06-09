@@ -2,10 +2,10 @@ import type { ChildProcess } from 'child_process'
 import { promises as fs } from "node:fs"
 import { spawn } from 'teen_process'
 import { type PkgInfo } from './data-packages'
-import { barOpts, downloads, fs_ensure_dir, fs_exists, importMetaDirname, logger, logTerminationMsg, multibar, rwx_rx_rx, TerminationError } from './data-shared'
+import { barOpts, downloads, fs_copyFile, fs_ensure_dir, fs_exists, logger, logTerminationMsg, multibar, rwx_rx_rx, TerminationError } from './data-shared'
 import path from 'node:path'
 
-
+/*
 const s7zBinEmbded = path.join(importMetaDirname, 'node_modules', '7z-bin', 'bin')
 let s7zExeEmbded: string
 let s7zExe: string
@@ -35,20 +35,38 @@ if (process.platform === "win32") {
 } else {
     throw new Error(`Unsupported platform: ${process.platform}`)
 }
+*/
 
-export function repair7z(){
-    return Promise.all([
-        (async () => {
-            //if(fs_exists(s7zExe))
-            await fs.copyFile(s7zExeEmbded, s7zExe)
-            await fs.chmod(s7zExe, rwx_rx_rx)
-        })(),
-        (async () => {
-            //if(fs_exists(s7zDll))
-            if(s7zDll && s7zDllEmbded)
-            await fs.copyFile(s7zDllEmbded, s7zDll)
-        })(),
-    ])
+//@ts-expect-error Cannot find module or its corresponding type declarations.
+//import s7zExeEmbded from '../node_modules/7z-bin/bin/linux/x64/7zzs' with { type: 'file' }
+import s7zExeEmbded from '../node_modules/7z-bin/bin/win/x64/7z.exe' with { type: 'file' }
+const s7zExe = path.join(downloads, '7z.exe')
+
+//@ts-expect-error Cannot find module or its corresponding type declarations.
+import s7zDllEmbded from '../node_modules/7z-bin/bin/win/x64/7z.dll' with { type: 'file' }
+const s7zDll = path.join(downloads, '7z.dll')
+//const s7zDllEmbded = undefined
+//const s7zDll = undefined
+
+export async function repair7z(){
+    try {
+        await Promise.all([
+            (async () => {
+                //if(fs_exists(s7zExe)) return
+                await fs_copyFile(s7zExeEmbded, s7zExe)
+                await fs.chmod(s7zExe, rwx_rx_rx)
+            })(),
+            (async () => {
+                //if(fs_exists(s7zDll)) return
+                if(s7zDll && s7zDllEmbded)
+                await fs_copyFile(s7zDllEmbded, s7zDll)
+            })(),
+        ])
+    } catch(unk_err){
+        const err = unk_err as ErrnoException
+        if(err.errno == 32){ /*OK*/ } // The process cannot access the file because it is being used by another process.
+        else throw err
+    }
 }
 
 function successfulTermination(proc: ChildProcess & { id: number }){

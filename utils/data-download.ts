@@ -4,10 +4,25 @@ import { SubProcess } from 'teen_process'
 import { aria2, open, createWebSocket, type Conn } from 'maria2/dist/index.js'
 import { randomBytes } from '@libp2p/crypto'
 import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
-import { barOpts, downloads, fs_exists_and_size_eq, importMetaDirname, killSubprocess, logger, multibar, rwx_rx_rx } from './data-shared'
+import { barOpts, downloads, fs_copyFile, fs_exists_and_size_eq, killSubprocess, logger, multibar, rwx_rx_rx } from './data-shared'
 import { getAnnounceAddrs } from './data-trackers'
 import type { PkgInfo } from './data-packages'
 
+//import aria_darwin_arm64_conf from './thirdparty/Motrix/extra/darwin/arm64/engine/aria2.conf' with { type: 'file' }
+//import aria_darwin_arm64_exe from './thirdparty/Motrix/extra/darwin/arm64/engine/aria2c' with { type: 'file' }
+//import aria_darwin_x64_conf from './thirdparty/Motrix/extra/darwin/x64/engine/aria2.conf' with { type: 'file' }
+//import aria_darwin_x64_exe from './thirdparty/Motrix/extra/darwin/x64/engine/aria2c' with { type: 'file' }
+//import aria_linux_arm64_conf from './thirdparty/Motrix/extra/linux/arm64/engine/aria2.conf' with { type: 'file' }
+//import aria_linux_arm64_exe from './thirdparty/Motrix/extra/linux/arm64/engine/aria2c' with { type: 'file' }
+//import aria_linux_armv7l_conf from './thirdparty/Motrix/extra/linux/armv7l/engine/aria2.conf' with { type: 'file' }
+//import aria_linux_armv7l_exe from './thirdparty/Motrix/extra/linux/armv7l/engine/aria2c' with { type: 'file' }
+//import aria_linux_x64_conf from './thirdparty/Motrix/extra/linux/x64/engine/aria2.conf' with { type: 'file' }
+//import aria_linux_x64_exe from './thirdparty/Motrix/extra/linux/x64/engine/aria2c' with { type: 'file' }
+//import aria_win32_ia32_conf from './thirdparty/Motrix/extra/win32/ia32/engine/aria2.conf' with { type: 'file' }
+//import aria_win32_ia32_exe from './thirdparty/Motrix/extra/win32/ia32/engine/aria2c.exe' with { type: 'file' }
+//import aria_win32_x64_conf from '../thirdparty/Motrix/extra/win32/x64/engine/aria2.conf' with { type: 'file' }
+//import aria_win32_x64_exe from '../thirdparty/Motrix/extra/win32/x64/engine/aria2c.exe' with { type: 'file' }
+/*
 const AriaPlatformArchMap: Record<string, Record<string, string>> = {
     darwin: {
         x64: 'x64',
@@ -40,19 +55,30 @@ const ariaConfName = 'aria2.conf'
 //const ariaConf = path.join(ariaExeDir, ariaConfName)
 const ariaConfEmbded = `${ariaExeDir}/${ariaConfName}`
 const ariaConf = path.join(downloads, ariaConfName)
-
+*/
 //const ariaSession = path.join(downloads, 'aria2.session')
+
+//@ts-expect-error Cannot find module or its corresponding type declarations.
+//import ariaExeEmbded from '../thirdparty/Motrix/extra/linux/x64/engine/aria2c' with { type: 'file' }
+import ariaExeEmbded from '../thirdparty/Motrix/extra/win32/x64/engine/aria2c.exe' with { type: 'file' }
+
+//@ts-expect-error Cannot find module or its corresponding type declarations.
+//import ariaConfEmbded from '../thirdparty/Motrix/extra/linux/x64/engine/aria2.conf' with { type: 'file' }
+import ariaConfEmbded from '../thirdparty/Motrix/extra/win32/x64/engine/aria2.conf' with { type: 'file' }
+
+const ariaExe = path.join(downloads, 'aria2c.exe')
+const ariaConf = path.join(downloads, 'aria2.conf')
 
 export function repairAria2(){
     return Promise.all([
         (async () => {
             //if(await fs_exists(ariaExe)) return
-            await fs.copyFile(ariaExeEmbded, ariaExe)
+            await fs_copyFile(ariaExeEmbded, ariaExe)
             await fs.chmod(ariaExe, rwx_rx_rx)
         })(),
         (async () => {
             //if(await fs_exists(ariaExe)) return
-            await fs.copyFile(ariaConfEmbded, ariaConf)
+            await fs_copyFile(ariaConfEmbded, ariaConf)
         })(),
     ])
 }
@@ -165,7 +191,7 @@ function forCompletion(gid: string, isMetadata: boolean, cb: (progress: number) 
                 if(isMetadata){
                     try {
                         const status = await aria2.tellStatus(aria2conn, gid, [ 'followedBy' ])
-                        console.assert(status.followedBy?.length == 1)
+                        //console.assert(status.followedBy?.length == 1)
                         if(status.followedBy && status.followedBy.length > 0){
                             gid = status.followedBy[0]!
                             isMetadata = false

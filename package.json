@@ -5,7 +5,9 @@
   "private": true,
   "devDependencies": {
     "@eslint/js": "^9.27.0",
+    "@types/bun": "^1.2.15",
     "@types/cli-progress": "^3.11.6",
+    "@types/deno": "^2.3.0",
     "@types/teen_process": "^2.0.4",
     "eslint": "^9.27.0",
     "globals": "^16.1.0",
@@ -44,6 +46,7 @@
     "it-protobuf-stream": "^2.0.2",
     "libp2p": "^2.8.7",
     "maria2": "^0.4.0",
+    "node-datachannel": "^0.27.0",
     "protons-runtime": "^5.5.0",
     "teen_process": "^2.3.2",
     "torrent-discovery": "^11.0.17",

@@ -1,4 +1,4 @@
-import { gossipsub } from '@chainsafe/libp2p-gossipsub'
+import { GossipSub, gossipsub } from '@chainsafe/libp2p-gossipsub'
 import { yamux } from '@chainsafe/libp2p-yamux'
 import { tcp } from '@libp2p/tcp'
 import { createLibp2p } from 'libp2p'
@@ -20,6 +20,11 @@ import { LocalServer, RemoteServer } from './server'
 import spinner from './ui/spinner'
 import * as Data from './data'
 import type { Peer as PBPeer } from './message/peer'
+
+////@ts-expect-error Cannot find module or its corresponding type declarations.
+//import nodeDataChannel from './node_modules/node-datachannel/build/Release/node_datachannel.node'
+//import nodeDataChannel from 'node-datachannel'
+//console.log(nodeDataChannel)
 
 //const controller = new AbortController()
 ///*await*/ spinner({ message: 'Data check and repair' }, {
@@ -46,6 +51,7 @@ const node = await createLibp2p({
         identify: identify(),
         identifyPush: identifyPush(),
         logger: defaultLogger,
+        //@ts-expect-error Types of property 'pubsub' are incompatible.
         pubsubPeerDiscovery: pubsubPeerDiscovery({
             enableBroadcast: false,
             interval: 10000,
@@ -62,8 +68,11 @@ const node = await createLibp2p({
     }
 })
 await node.start()
+//node.status = 'started'
+//await node.stop()
 
 const pspd = node.services.pubsubPeerDiscovery
+const pubsub = node.services.pubsub as GossipSub
 
 const name = 'Player'
 //const name = node.peerId.toString().slice(-8)
@@ -75,10 +84,10 @@ await main()
 //}
 
 async function main(){
-    type Action = ['join', RemoteGame] | ['host'] | ['exit']
+    type Action = ['join', RemoteGame] | ['host'] | ['exit'] | ['noop']
     
-    const getChoices = () =>
-        pspd.getPeersWithData()
+    const getChoices = () => {
+        let ret = pspd.getPeersWithData()
         .filter(pwd => pwd.data?.serverSettings)
         //.filter(pwd => {
         //    const gi = pwd.data?.gameInfos[0]
@@ -87,7 +96,7 @@ async function main(){
         .flatMap(pwd => {
             const server = RemoteServer.create(node, pwd.id, pwd.data!.serverSettings!) //TODO: Cache
             
-             if(!server.validate()) return []
+            if(!server.validate()) return []
 
             return pwd.data!.gameInfos.map(gameInfo => ({
                 id: pwd.id,
@@ -96,6 +105,7 @@ async function main(){
                 game: RemoteGame.create(node, pwd.id, server, gameInfo) //TODO: Cache
             }))
         })
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         .map(({ id, name, game, server }) => {
             //const ownerId = id.toString().slice(-8)
             //const gameName = game.name.toString()
@@ -131,8 +141,13 @@ async function main(){
                 // ].join('\n')
             })
         })
-        .concat(defaultItems)
-    
+        if(ret.length == 0){
+            ret = pubsub.isStarted() ?
+                [ { value: ['noop'], name: color.gray('Waiting for the servers to appear...') } ] :
+                [ { value: ['noop'], name: color.red('Failed to initialize the network...') } ]
+        }
+        return ret.concat(defaultItems)
+    }
     const defaultItems = [
         { value: ['host'] as Action, name: 'Create a custom game lobby' },
         { value: ['exit'] as Action, name: 'Quit' },
@@ -150,7 +165,13 @@ async function main(){
         }, {
             clearPromptOnDone: true,
         })
-        if(action == 'host'){
+        if(action == 'host' && pubsub.isStarted() == false){
+            const server = await LocalServer.create(node)
+            const game = await LocalGame.create(node, server)
+            await game.join(name, undefined)
+            await lobby(game)
+        }
+        if(action == 'host' && pubsub.isStarted() == true){
             const server = await LocalServer.create(node)
             const game = await LocalGame.create(node, server)
 

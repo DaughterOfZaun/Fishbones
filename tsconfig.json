@@ -23,6 +23,11 @@
     // Some stricter flags (disabled by default)
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "noPropertyAccessFromIndexSignature": false
-  }
+    "noPropertyAccessFromIndexSignature": false,
+  },
+  "exclude": [
+    "node_modules",
+    "node_modules_linux_deno",
+    "node_modules_win_npm",
+  ]
 }

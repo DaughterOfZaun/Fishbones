@@ -5,8 +5,10 @@
 /downloads/*
 !/downloads/*.torrent
 
-# dependencies (bun install)
+# dependencies
 node_modules
+node_modules_win_npm
+node_modules_linux_deno
 
 # output
 out

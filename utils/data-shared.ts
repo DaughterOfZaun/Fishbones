@@ -3,13 +3,16 @@ import { promises as fs, type PathLike, createWriteStream as fs_createWriteStrea
 import type { SubProcess } from 'teen_process'
 import { MultiBar, Presets } from 'cli-progress'
 
-export const cwd = path.dirname(process.execPath)
+//export const cwd = process.cwd()
+//export const cwd = path.dirname(process.execPath)
+export const cwd = globalThis.Deno?.build?.standalone ?
+    path.dirname(process.execPath) : process.cwd()
 const cwdWin = cwd.replaceAll('/', '\\') // For Logger
 const cwdLin = cwd.replaceAll('\\', '/') // For Logger
-export const downloads = path.join(cwd, 'downloads')
+export const downloads = path.join(cwd, 'Fishbones_Data')
 await fs_ensure_dir(downloads) // For Logger
 
-export const importMetaDirname = path.dirname(import.meta.dirname)
+//export const importMetaDirname = path.dirname(import.meta.dirname)
 //export const importMetaDirname = `/tmp/deno-compile-index`
 
 export const rwx_rx_rx =
@@ -48,6 +51,10 @@ export async function fs_ensure_dir(path: PathLike) {
         if(err.code != 'EEXIST')
             throw err
     }
+}
+
+export async function fs_copyFile(src: PathLike, dest: PathLike){
+    await fs.writeFile(dest, await fs.readFile(src))
 }
 
 type TerminationErrorCause = { code: null|number, signal: null|string }

@@ -3,8 +3,9 @@ import { TypedEventEmitter, peerDiscoverySymbol } from '@libp2p/interface'
 import { peerIdFromPublicKey } from '@libp2p/peer-id'
 import { multiaddr } from '@multiformats/multiaddr'
 import { Peer as PBPeer } from '../message/peer.js'
-import type { PeerDiscovery, PeerDiscoveryEvents, PeerId, PeerInfo, Message, PubSub, Startable, ComponentLogger, Logger } from '@libp2p/interface'
+import type { PeerDiscovery, PeerDiscoveryEvents, PeerId, PeerInfo, Message, Startable, ComponentLogger, Logger } from '@libp2p/interface'
 import type { AddressManager } from '@libp2p/interface-internal'
+import type { GossipSub } from '@chainsafe/libp2p-gossipsub'
 
 export const TOPIC = '_peer-discovery._p2p._pubsub'
 
@@ -16,7 +17,7 @@ export interface PubsubPeerDiscoveryInit {
 
 export interface PubSubPeerDiscoveryComponents {
     peerId: PeerId
-    pubsub?: PubSub
+    pubsub?: GossipSub
     addressManager: AddressManager
     logger: ComponentLogger
 }
@@ -96,16 +97,19 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
 
     beforeStop (): void {
         const pubsub = this.components.pubsub
-        if (!pubsub) throw new Error('PubSub not configured')
+        //if (!pubsub) throw new Error('PubSub not configured')
             
         this.setData(null)
         if(this.getBroadcastEnabled()){
             this.setBroadcastEnabled(false)
+            if(pubsub?.isStarted())
             this.broadcast(false)
         }
         
+        if(pubsub)
         for (const topic of this.topics) {
             pubsub.removeEventListener('message', this.onMessage)
+            if(pubsub?.isStarted())
             pubsub.unsubscribe(topic)
         }
     }
@@ -115,13 +119,14 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
     broadcast (announce = true): void {
         const peerId = this.components.peerId
         const pubsub = this.components.pubsub
+        const am = this.components.addressManager
 
         if (!peerId.publicKey) throw new Error('PeerId was missing public key')
         if (!pubsub) throw new Error('PubSub not configured')
 
         const encodedPeer = PBPeer.encode({
             publicKey: publicKeyToProtobuf(peerId.publicKey),
-            addrs: announce ? this.components.addressManager.getAddresses().map(ma => ma.bytes) : [],
+            addrs: announce ? am.getAddresses().map(ma => ma.bytes) : [],
             data: announce ? this.data : undefined,
         })
         
