@@ -35,6 +35,7 @@ export abstract class PkgInfoExe extends PkgInfo {
     get checkUnpackBy(){ return this.exe }
     
     abstract exe: string
+    abstract exeDir: string
 }
 
 export abstract class PkgInfoCSProj extends PkgInfo {
@@ -46,6 +47,8 @@ export abstract class PkgInfoCSProj extends PkgInfo {
     abstract dllDir: string
     abstract dllName: string
     abstract dll: string
+
+    abstract program: string
 }
 
 export const gcPkg = new class extends PkgInfoExe {
@@ -62,7 +65,8 @@ export const gcPkg = new class extends PkgInfoExe {
     zipTorrent = `${this.zip}.torrent`
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
 
-    exe = path.join(this.dir, 'League-of-Legends-4-20', 'RADS', 'solutions', 'lol_game_client_sln', 'releases', '0.0.1.68', 'deploy', 'League of Legends.exe')
+    exeDir = path.join(this.dir, 'League-of-Legends-4-20', 'RADS', 'solutions', 'lol_game_client_sln', 'releases', '0.0.1.68', 'deploy')
+    exe = path.join(this.exeDir, 'League of Legends.exe')
 }()
 
 const sdkVer = '9.0.300'
@@ -116,6 +120,7 @@ export const sdkPkg = new class extends PkgInfoExe {
     zipTorrent = `${this.zip}.torrent`
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
 
+    exeDir = this.dir
     exeExt = (sdkPlatform == 'win') ? '.exe' : ''
     exe = path.join(this.dir, `dotnet${this.exeExt}`)
 
@@ -148,6 +153,8 @@ export const gsPkg = new class extends PkgInfoCSProj {
     
     infoDir = path.join(this.dllDir, 'Settings')
     gcDir = path.join(this.dir, 'Content', 'GameClient')
+
+    program = path.join(this.csProjDir, 'Program.cs')
 }()
 
 export async function repairTorrents() {

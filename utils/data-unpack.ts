@@ -135,18 +135,18 @@ export async function unpack(pkg: PkgInfo){
     }
 
     if(s7zs.length > 1)
-    s7zs.at(+0)!.stderr!.setEncoding('utf8').addListener('data', (chunk) => onData(+0, 'stderr', chunk))
-    s7zs.at(-1)!.stdout!.setEncoding('utf8').addListener('data', (chunk) => onData(-1, 'stdout', chunk))
-    s7zs.at(-1)!.stderr!.setEncoding('utf8').addListener('data', (chunk) => onData(-1, 'stderr', chunk))
-    function onData(i: number, src: 'stdout' | 'stderr', chunk: string){
+    s7zs.at(+0)!.stderr!.setEncoding('utf8').addListener('data', (chunk) => onData(+0, '[STDERR]', chunk))
+    s7zs.at(-1)!.stdout!.setEncoding('utf8').addListener('data', (chunk) => onData(-1, '[STDOUT]', chunk))
+    s7zs.at(-1)!.stderr!.setEncoding('utf8').addListener('data', (chunk) => onData(-1, '[STDERR]', chunk))
+    function onData(i: number, src: '[STDOUT]' | '[STDERR]', chunk: string){
         chunk = chunk.replace(/[\b]/g, '').trim()
         const args = [`7Z`, pid, i, src]
         logger.log(...args, chunk)
         if(!signal.aborted){
-            if(src === 'stdout'){
+            if(src === '[STDOUT]'){
                 const m = s7zProgressMsg.exec(chunk)
                 if(m && m[1]) bar.update(parseInt(m[1]))
-            } else if(src === 'stderr' && s7zDataErrorMsgs.some(msg => msg.test(chunk))){
+            } else if(src === '[STDERR]' && s7zDataErrorMsgs.some(msg => msg.test(chunk))){
                 //s7zs.at(i)![src]!.removeAllListeners('data')
                 controller.abort(new DataError())
                 logger.log(...args, 'abort')

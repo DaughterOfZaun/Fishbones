@@ -2,9 +2,13 @@ import { build } from "./data-build"
 import { download, repairAria2 } from "./data-download"
 import { gcPkg, gsPkg, PkgInfo, repairTorrents, sdkPkg } from "./data-packages"
 import { repairServerSettingsJsonc } from "./data-server"
-import { downloads, fs_ensure_dir, fs_exists, fs_exists_and_size_eq } from "./data-shared"
+import { downloads, fs_copyFile, fs_ensure_dir, fs_exists, fs_exists_and_size_eq } from "./data-shared"
 import { repairTorrentsTxt } from "./data-trackers"
 import { DataError, repair7z, unpack } from "./data-unpack"
+import path from 'node:path'
+
+//@ts-expect-error Cannot find module or its corresponding type declarations.
+import d3dx9_39_dll_embded from '../thirdparty/directx_Jun2010_redist/Aug2008_d3dx9_39_x64/d3dx9_39.dll' with { type: 'file' }
 
 export async function repair(){
     //console.log('Running data check and repair...')
@@ -29,6 +33,11 @@ export async function repair(){
             await fs_ensure_dir(gsPkg.infoDir)
         }),
         repairArchived(gcPkg),
+        (async () => {
+            await fs_ensure_dir(gcPkg.exeDir)
+            const d3dx9_39_dll = path.join(gcPkg.exeDir, 'd3dx9_39.dll')
+            await fs_copyFile(d3dx9_39_dll_embded, d3dx9_39_dll)
+        })()
     ] as Promise<unknown>[])
 }
 

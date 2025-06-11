@@ -13,6 +13,13 @@ export async function build(pkg: PkgInfoCSProj){
     txt = txt.replace(/(?<=<TargetFramework>)(?:.|\n)*?(?=<\/TargetFramework>)/g, pkg.netVer)
     await fs.writeFile(pkg.csProj, txt, 'utf8')
 
+    txt = await fs.readFile(pkg.program, 'utf8')
+    txt = txt.replace(`
+        [DllImport("kernel32.dll")]
+        private static extern IntPtr GetConsoleWindow();
+    `.trim(), 'private static IntPtr GetConsoleWindow(){ return IntPtr.Zero; } //HACK:')
+    await fs.writeFile(pkg.program, txt)
+
     sdkSubprocess = new SubProcess(sdkPkg.exe, ['build', pkg.csProj])
     sdkSubprocess.on('stream-line', line => logger.log('SDK', line))
     await sdkSubprocess.start()

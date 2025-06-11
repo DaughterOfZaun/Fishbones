@@ -12,14 +12,18 @@ export async function launchClient(ip: string, port: number, key: string, client
 export async function relaunchClient(){
     const [ip, port, key, clientId] = launchArgs!
 
-    const gcArgs = ['', '', '', ([ip, port.toString(), sanitize_bfkey(key), clientId.toString()]).join(' ')].map(a => `"${a}"`).join(' ')
-    
+    const gcArgs = ['', '', '', ([ip, port.toString(), sanitize_bfkey(key), clientId.toString()]).join(' ')]
+    const gcArgsStr = gcArgs.map(a => `"${a}"`).join(' ')
+    //logger.log(gcPkg.exe, gcArgsStr)
+
     await stopClient()
 
     if(process.platform == 'win32')
-        clientSubprocess = new SubProcess(gcPkg.exe, [ gcArgs ])
+        clientSubprocess = new SubProcess(gcPkg.exe, gcArgs, {
+            cwd: gcPkg.exeDir,
+        })
     else if(process.platform == 'linux')
-        clientSubprocess = new SubProcess('bottles-cli', ['run', '-b', 'Default Gaming', '-e', gcPkg.exe, gcArgs])
+        clientSubprocess = new SubProcess('bottles-cli', ['run', '-b', 'Default Gaming', '-e', gcPkg.exe, gcArgsStr]) //TODO: cwd
         //clientSubprocess = new SubProcess('bottles-cli', ['run', '-b', 'Default Gaming', '-p', 'League of Legends', '--args-replace', gcArgs])
     else throw new Error(`Unsupported platform: ${process.platform}`)
 
