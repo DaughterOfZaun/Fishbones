@@ -15,13 +15,13 @@ export class LocalGame extends Game {
 
     public get canStart(){ return true }
 
-    public static create(node: Libp2p, server: Server){
-        return ufill(new LocalGame(node, server))
+    public static create(node: Libp2p, server: Server, port: number){
+        return ufill(new LocalGame(node, server, port))
     }
     
     private readonly playerId: PlayerId
-    protected constructor(node: Libp2p, server: Server){
-        super(node, node.peerId, server)
+    protected constructor(node: Libp2p, server: Server, port: number){
+        super(node, node.peerId, server, port)
         this.playerId = this.peerIdToPlayerId(node.peerId)
     }
 

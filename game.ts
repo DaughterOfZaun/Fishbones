@@ -34,6 +34,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     protected readonly node: Libp2p
     public readonly server: Server
     public readonly ownerId: PeerId
+    private readonly port: number
     
     public readonly name = new Name(`Game`)
     public readonly map = new GameMap(1, () => this.server.maps)
@@ -64,11 +65,12 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         return this.joined ? this.players.size : this.players_count
     }
 
-    protected constructor(node: Libp2p, ownerId: PeerId, server: Server){
+    protected constructor(node: Libp2p, ownerId: PeerId, server: Server, port: number){
         super()
         this.node = node
         this.server = server
         this.ownerId = ownerId
+        this.port = port
     }
 
     public connected = false
@@ -176,8 +178,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             peersRequests: [],
         })
         
-        const port = 5119 //TODO: Unhardcode
-        const proc = await Data.launchServer(port, this.getGameInfo())
+        const proc = await Data.launchServer(this.port, this.getGameInfo())
         if(proc) proc.once('exit', this.onServerExit)
         else {
             this.onServerExit()
@@ -190,7 +191,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             to: [ player ],
             launchRequest: {
                 ip: 0n,
-                port,
+                port: this.port,
                 key: text2arr(blowfishKey),
                 clientId: i++
             },

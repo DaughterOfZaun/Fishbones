@@ -1,9 +1,9 @@
-import { GossipSub, gossipsub } from '@chainsafe/libp2p-gossipsub'
+import { GossipSub, gossipsub, type GossipSubComponents } from '@chainsafe/libp2p-gossipsub'
 import { yamux } from '@chainsafe/libp2p-yamux'
 import { tcp } from '@libp2p/tcp'
 import { createLibp2p } from 'libp2p'
 import { torrentPeerDiscovery } from './network/torrent-discovery'
-import { pubsubPeerDiscovery } from './network/pubsub-discovery'
+import { pubsubPeerDiscovery as pubsubPeerWithDataDiscovery } from './network/pubsub-discovery'
 import { hash } from 'uint8-util'
 import { identify, identifyPush } from '@libp2p/identify'
 import { ping } from '@libp2p/ping'
@@ -20,6 +20,10 @@ import { LocalServer, RemoteServer } from './server'
 import spinner from './ui/spinner'
 import * as Data from './data'
 import type { Peer as PBPeer } from './message/peer'
+import { circuitRelayServer, circuitRelayTransport } from '@libp2p/circuit-relay-v2'
+import { dcutr } from '@libp2p/dcutr'
+import { autoNAT } from '@libp2p/autonat'
+import { uPnPNAT } from '@libp2p/upnp-nat'
 
 ////@ts-expect-error Cannot find module or its corresponding type declarations.
 //import nodeDataChannel from './node_modules/node-datachannel/build/Release/node_datachannel.node'
@@ -34,25 +38,33 @@ import type { Peer as PBPeer } from './message/peer'
 await Data.repair()
 //controller.abort()
 
-const port = Number(process.argv[2]) || 5117
-const portDHT = port + 1
+const port = Number(process.argv[2]) || 5116
+const ports = {
+    tcp: port,
+    kadDHT: port + 1,
+    webRTC: port + 2,
+    game: port + 3,
+}
 const node = await createLibp2p({
     start: false,
     addresses: {
-        listen: [ `/ip4/0.0.0.0/tcp/${port}` ]
+        listen: [ `/ip4/0.0.0.0/tcp/${ports.tcp}` ]
     },
-    transports: [ tcp() ],
+    transports: [
+        //@ts-expect-error Type A is not assignable to type B.
+        circuitRelayTransport(),
+        tcp(),
+    ],
     streamMuxers: [ yamux() ],
     connectionEncrypters: [ noise() ],
     //peerDiscovery: [],
     services: {
         ping: ping(),
-        pubsub: gossipsub(),
+        pubsub: gossipsub() as (components: GossipSubComponents) => GossipSub,
         identify: identify(),
         identifyPush: identifyPush(),
         logger: defaultLogger,
-        //@ts-expect-error Types of property 'pubsub' are incompatible.
-        pubsubPeerDiscovery: pubsubPeerDiscovery({
+        pubsubPeerWithDataDiscovery: pubsubPeerWithDataDiscovery({
             enableBroadcast: false,
             interval: 10000,
         }),
@@ -61,17 +73,26 @@ const node = await createLibp2p({
             port: port,
             announce: await Data.getAnnounceAddrs(),
             dht: true,
-            dhtPort: portDHT,
+            dhtPort: ports.kadDHT,
             tracker: true,
             lsd: true,
         }),
+        //@ts-expect-error Type A is not assignable to type B.
+        dcutr: dcutr(),
+        upnpNAT: uPnPNAT(),
+        //@ts-expect-error Type A is not assignable to type B.
+        autoNAT: autoNAT(),
+        //@ts-expect-error Type A is not assignable to type B.
+        //TODO: Run only if reported available from outside?
+        relay: circuitRelayServer(),
     }
 })
 await node.start()
 //node.status = 'started'
 //await node.stop()
 
-const pspd = node.services.pubsubPeerDiscovery
+const upnp = node.services.upnpNAT
+const pspd = node.services.pubsubPeerWithDataDiscovery
 const pubsub = node.services.pubsub as GossipSub
 
 const name = 'Player'
@@ -167,13 +188,13 @@ async function main(){
         })
         if(action == 'host' && pubsub.isStarted() == false){
             const server = await LocalServer.create(node)
-            const game = await LocalGame.create(node, server)
+            const game = await LocalGame.create(node, server, ports.game)
             await game.join(name, undefined)
             await lobby(game)
         }
         if(action == 'host' && pubsub.isStarted() == true){
             const server = await LocalServer.create(node)
-            const game = await LocalGame.create(node, server)
+            const game = await LocalGame.create(node, server, ports.game)
 
             game.startListening()
             await game.join(name, undefined)
@@ -228,7 +249,7 @@ async function main(){
             game.disconnect()
         }
         if(action == 'exit'){
-            await node.services.pubsubPeerDiscovery.beforeStop()
+            await node.services.pubsubPeerWithDataDiscovery.beforeStop()
             //await node.services.pubsubPeerDiscovery.stop()
             //await node.services.torrentPeerDiscovery.beforeStop()
             await node.services.torrentPeerDiscovery.stop()

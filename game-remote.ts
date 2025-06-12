@@ -15,7 +15,7 @@ export class RemoteGame extends Game {
     public get canStart(): boolean { return false }
 
     public static create(node: Libp2p, ownerId: PeerId, server: Server, gameInfo: PBPeer.AdditionalData.GameInfo){
-        const game = new RemoteGame(node, ownerId, server)
+        const game = new RemoteGame(node, ownerId, server, 0)
         game.decodeInplace(gameInfo)
         return game
     }
