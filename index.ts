@@ -24,35 +24,30 @@ import { circuitRelayServer, circuitRelayTransport } from '@libp2p/circuit-relay
 import { dcutr } from '@libp2p/dcutr'
 import { autoNAT } from '@libp2p/autonat'
 import { uPnPNAT } from '@libp2p/upnp-nat'
+import { webRTC, webRTCDirect } from '@libp2p/webrtc'
 
-////@ts-expect-error Cannot find module or its corresponding type declarations.
-//import nodeDataChannel from './node_modules/node-datachannel/build/Release/node_datachannel.node'
-//import nodeDataChannel from 'node-datachannel'
-//console.log(nodeDataChannel)
-
-//const controller = new AbortController()
-///*await*/ spinner({ message: 'Data check and repair' }, {
-//    clearPromptOnDone: true,
-//    signal: controller.signal,
-//}).catch(() => {})
 await Data.repair()
-//controller.abort()
 
 const port = Number(process.argv[2]) || 5116
 const ports = {
-    tcp: port,
     kadDHT: port + 1,
-    webRTC: port + 2,
     game: port + 3,
 }
 const node = await createLibp2p({
     start: false,
     addresses: {
-        listen: [ `/ip4/0.0.0.0/tcp/${ports.tcp}` ]
+        listen: [
+            `/ip4/0.0.0.0/tcp/${0}`,
+            `/ip4/0.0.0.0/tcp/${0}/p2p-circuit`,
+            `/ip4/0.0.0.0/udp/${0}/webrtc`,
+            `/ip4/0.0.0.0/udp/${0}/webrtc-direct`,
+        ]
     },
     transports: [
-        //@ts-expect-error Type A is not assignable to type B.
+        ////@ts-expect-error Type A is not assignable to type B.
         circuitRelayTransport(),
+        webRTCDirect(),
+        webRTC(),
         tcp(),
     ],
     streamMuxers: [ yamux() ],
@@ -60,6 +55,7 @@ const node = await createLibp2p({
     //peerDiscovery: [],
     services: {
         ping: ping(),
+        //@ts-expect-error Type A is not assignable to type B.
         pubsub: gossipsub() as (components: GossipSubComponents) => GossipSub,
         identify: identify(),
         identifyPush: identifyPush(),
@@ -77,12 +73,12 @@ const node = await createLibp2p({
             tracker: true,
             lsd: true,
         }),
-        //@ts-expect-error Type A is not assignable to type B.
+        ////@ts-expect-error Type A is not assignable to type B.
         dcutr: dcutr(),
         upnpNAT: uPnPNAT(),
-        //@ts-expect-error Type A is not assignable to type B.
+        ////@ts-expect-error Type A is not assignable to type B.
         autoNAT: autoNAT(),
-        //@ts-expect-error Type A is not assignable to type B.
+        ////@ts-expect-error Type A is not assignable to type B.
         //TODO: Run only if reported available from outside?
         relay: circuitRelayServer(),
     }
@@ -99,10 +95,6 @@ const name = 'Player'
 //const name = node.peerId.toString().slice(-8)
 
 await main()
-
-//loop: while(true){
-//    const action = await select()
-//}
 
 async function main(){
     type Action = ['join', RemoteGame] | ['host'] | ['exit'] | ['noop']
@@ -200,7 +192,7 @@ async function main(){
             await game.join(name, undefined)
 
             const data = {
-                name: 'Player',
+                name: name,
                 serverSettings: server.encode(),
                 gameInfos: [ game.encode() ],
             } as PBPeer.AdditionalData

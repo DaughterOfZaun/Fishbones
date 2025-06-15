@@ -48,7 +48,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         return this.player
     }
     
-    protected players = new Map<PlayerId, GamePlayer>()
+    protected readonly players = new Map<PlayerId, GamePlayer>()
     protected players_count: number = 0
     protected players_add(id: PlayerId): GamePlayer {
         let player = this.players.get(id)

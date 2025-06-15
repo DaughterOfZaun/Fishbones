@@ -5,6 +5,8 @@ type CheckboxChoice<T> = Extract<Parameters<typeof checkbox<T>>[0]['choices'][nu
 export type u = undefined
 
 export const LOBBY_PROTOCOL = `/lobby/${0}`
+export const PROXY_PROTOCOL = `/proxy/${0}`
+export const LOCALHOST = '127.0.0.1'
 
 export abstract class ValueDesc<I, E> {
     public name!: string
