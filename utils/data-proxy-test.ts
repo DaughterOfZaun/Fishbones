@@ -29,6 +29,7 @@ const createNode = async () => {
   }
 
 await test1()
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function test(){
     const server = await createSocket()
     const client = await createSocket(server);
@@ -45,7 +46,7 @@ async function test(){
         }
     )
     
-    client.send("Hello!", /*server.port, "127.0.0.1"*/);
+    client.send("Hello!", server.port, server.hostname);
 
     await new Promise(res => setTimeout(res, 300))
 
@@ -53,6 +54,7 @@ async function test(){
     client.close()
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function test2(){
     const sa = await createSocket()
     console.log('sa', sa.hostname, sa.port)
@@ -104,15 +106,15 @@ async function test1(){
     const clientNode = await createNode()
     console.log('lobby client node addrs', clientNode.getMultiaddrs().map(ma => ma.toString()))
     
+    console.log('creating proxies...')
+    const proxyServer = new ProxyServer(serverNode)
+    const proxyClient = new ProxyClient(clientNode)
+
     try {
 
         console.log('patching peerStore...')
         await serverNode.peerStore.patch(clientNode.peerId, { multiaddrs: clientNode.getMultiaddrs() })
         await clientNode.peerStore.patch(serverNode.peerId, { multiaddrs: serverNode.getMultiaddrs() })
-
-        console.log('creating proxies...')
-        const proxyServer = new ProxyServer(serverNode)
-        const proxyClient = new ProxyClient(clientNode)
 
         console.log('starting proxy server...')
         await proxyServer.start(gameServerSocket.port, [ clientNode.peerId ])
@@ -135,6 +137,9 @@ async function test1(){
 
         gameServerSocket.close()
         gameClientSocket.close()
+
+        proxyServer.stop()
+        proxyClient.disconnect()
 
         serverNode.stop()
         clientNode.stop()

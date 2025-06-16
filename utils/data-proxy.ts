@@ -13,20 +13,18 @@ const log = logger('launcher:proxy')
 
 type Socket = Bun.udp.Socket<'uint8array'>
 type SocketData = Uint8Array<ArrayBufferLike>
-type SocketStream = Duplex<AsyncIterable<SocketData>, Source<Uint8ArrayList>, Promise<void>>
+type SocketStream =
+    Duplex<AsyncIterable<SocketData>, Source<Uint8ArrayList>, Promise<void>>
+    & { close: () => void }
 type SocketAddress = { hostname: string, port: number }
 type CustomizedSocket = Socket & {
     stream: SocketStream
     remoteAddr?: SocketAddress
-    //send(data: SocketData): boolean
     queue: Queue<SocketData>
 }
 
 const socketHandler = {
     data: (socket: CustomizedSocket, data: SocketData, port: number, address: string) => {
-
-        //console.log('recv', address, port, 'to', socket.hostname, socket.port, ':', data.toString())
-
         socket.remoteAddr ||= { port, hostname: address }
         if(socket.remoteAddr.port == port && socket.remoteAddr.hostname == address)
             socket.queue.push(data)
@@ -37,44 +35,38 @@ const socketHandler = {
     },
 }
 
+const socketSink = async function sink(this: CustomizedSocket, source: Source<Uint8ArrayList>){
+    for await (const list of source) {
+        if(!this.remoteAddr) continue
+        const { port, hostname: address } = this.remoteAddr
+        for(const data of list){
+            this.send(data, port, address)
+        }
+    }
+}
+
+const socketClose = async function close(this: CustomizedSocket){
+    this.queue.stop()
+}
+
 export async function createSocket(remoteAddr?: SocketAddress): Promise<CustomizedSocket> {
     
-    const opts = {
+    const socket = await Bun.udpSocket({
         binaryType: 'uint8array' as const,
         hostname: LOCALHOST, port: 0,
         //connect: remoteAddr,
         socket: socketHandler,
-    }
-    //if(!remoteAddr) delete opts.connect
-    const socket = await Bun.udpSocket(opts)
+    }) as CustomizedSocket
 
-    const originalSend = socket.send
-    const send = function send(this: CustomizedSocket, data: SocketData): boolean {
-
-        //console.log('send', 'from', this.hostname, this.port, 'to', this.remoteAddr?.hostname, this.remoteAddr?.port, ':', data.toString())
-
-        if(!this.remoteAddr) return false
-        const { port, hostname: address } = this.remoteAddr
-        return originalSend.call(this, data, port, address)
-    }
-    
     let queue!: Queue<SocketData>
-    const source = new EventIterator<SocketData>(inner_queue => {
-        queue = inner_queue
-    })
-    const sink = async (source: Source<Uint8ArrayList>) => {
-        
-        //console.log('sink')
-
-        for await (const list of source) {
-            for(const array of list){
-                send.call(socket as CustomizedSocket, array)
-            }
-        }
-    }
-    
     return Object.assign(socket, {
-        stream: { sink, source },
+        stream: {
+            source: new EventIterator<SocketData>(inner_queue => {
+                socket.queue = queue = inner_queue
+            }),
+            sink: socketSink.bind(socket),
+            close: socketClose.bind(socket),
+        },
         remoteAddr,
         //send,
         queue,
@@ -109,24 +101,12 @@ class Proxy {
         
         pipe(
             peer.stream, //!.source,
-            /*async function * (source){
-                for await (const chunk of source){
-                    console.log('recv from stream', chunk.subarray().toString())
-                    yield chunk
-                }
-            },*/
             (source) => lp.decode(source),
             peer.socket.stream, //.sink,
         ).catch(err => log.error(err))
 
         pipe(
             peer.socket.stream, //.source,
-            /*async function*(source){
-                for await(const chunk of source){
-                    console.log('recv from socket', chunk.subarray().toString())
-                    yield chunk
-                }
-            },*/
             (source) => lp.encode(source),
             peer.stream, //!.sink,
         ).catch(err => log.error(err))
@@ -135,9 +115,8 @@ class Proxy {
     protected disconnect(){
         for(const peer of this.peers.values()){
             peer.stream?.close().catch(err => log.error(err))
-            //TODO: peer.socket.stream.close()
+            peer.socket.stream.close()
             peer.socket.close()
-            //TODO: close pipes
         }
         this.peers.clear()
     }
