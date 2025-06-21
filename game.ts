@@ -1,13 +1,14 @@
-import { blowfishKey, FeaturesEnabled, GameMap as GameMap, GameMode as GameMode, Name, Password, PlayerCount, Rank, runes, talents, Team, type u } from './utils/constants'
+import { blowfishKey, FeaturesEnabled, GameMap as GameMap, GameMode as GameMode, LOCALHOST, Name, Password, PlayerCount, Rank, runes, talents, Team, type u } from './utils/constants'
 import { TypedEventEmitter, type Libp2p, type PeerId, type Stream } from '@libp2p/interface'
 import { GamePlayer, type PlayerId, type PPP } from './game-player'
 import type { Peer as PBPeer } from './message/peer'
 import type { Server } from './server'
 import { KickReason, LobbyNotificationMessage, PickRequest, State, type LobbyRequestMessage } from './message/lobby'
-import { type MessageStream } from 'it-protobuf-stream'
 import { arr2text, text2arr } from 'uint8-util'
 import type { GameInfo } from './utils/game-info'
 import * as Data from './data'
+import { ProxyClient, ProxyServer } from './utils/data-proxy'
+import type { WriteonlyMessageStream } from './utils/pb-stream'
 
 type GameEvents = {
     update: CustomEvent,
@@ -50,10 +51,10 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     
     protected readonly players = new Map<PlayerId, GamePlayer>()
     protected players_count: number = 0
-    protected players_add(id: PlayerId): GamePlayer {
+    protected players_add(id: PlayerId, peerId: u|PeerId): GamePlayer {
         let player = this.players.get(id)
         if(!player){
-            player = new GamePlayer(this, id)
+            player = new GamePlayer(this, id, peerId)
             this.players.set(id, player)
         }
         return player
@@ -91,8 +92,23 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     public abstract get canStart(): boolean
     //public abstract get canKick(): boolean
 
-    public isJoinable(){
-        return !this.started && this.getPlayersCount() < 2 * (this.playersMax.value ?? 0)
+    private proxyServer?: ProxyServer
+    private proxyClient?: ProxyClient
+
+    public isJoinable(): boolean {
+        return this.getKickReason() == KickReason.UNDEFINED
+    }
+
+    protected getKickReason(password?: string): KickReason {
+        let kickReason = KickReason.UNDEFINED
+        if(this.started){
+            kickReason = KickReason.STARTED
+        } else if(this.getPlayersCount() >= 2 * (this.playersMax.value ?? 0)){
+            kickReason = KickReason.MAX_PLAYERS
+        } else if(this.password.isSet && this.password.encode() != password){
+            kickReason = KickReason.WRONG_PASSWORD
+        }
+        return kickReason
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -185,13 +201,19 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             return false
         }
 
+        const players = this.getPlayers()
+
+        this.proxyServer = new ProxyServer(this.node)
+        await this.proxyServer.start(this.port, players.map(p => p.peerId!))
+
         let i = 1
-        for(const player of this.players.values())
+        for(const player of players)
         this.broadcast({
             to: [ player ],
             launchRequest: {
                 ip: 0n,
-                port: this.port,
+                port: 0,
+                //port: this.port,
                 key: text2arr(blowfishKey),
                 clientId: i++
             },
@@ -236,16 +258,21 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         this.launched = true
         this.safeDispatchEvent('launch')
 
-        const peer = await this.node.peerStore.get(this.ownerId)
-        const ip = peer.addresses
-            //.sort((a, b) => 0)
-            .map(({ multiaddr }) => multiaddr.toOptions())
-            .find(opts => opts.family == 4)?.host
-        
+        //const peer = await this.node.peerStore.get(this.ownerId)
+        //const ip = peer.addresses
+        //    //.sort((a, b) => 0)
+        //    .map(({ multiaddr }) => multiaddr.toOptions())
+        //    .find(opts => opts.family == 4)?.host
         const key = arr2text(res.key)
-        const { port, clientId } = res
+        //const { port, clientId } = res
+        const { clientId } = res
         
-        if(!ip) return //TODO:
+        this.proxyClient = new ProxyClient(this.node)
+        await this.proxyClient.connect(this.ownerId, this.proxyServer)
+        const port = this.proxyClient.getPort()!
+        const ip = LOCALHOST
+        
+        //if(!ip) return //TODO:
         const proc = await Data.launchClient(ip, port, key, clientId)
         if(proc) proc.once('exit', this.onClientExit)
         else {
@@ -403,9 +430,9 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         return ret
     }
 
-    protected handleRequest(playerId: PlayerId, req: LobbyRequestMessage, stream: u|MessageStream<LobbyNotificationMessage, Stream>){
+    protected handleRequest(playerId: PlayerId, req: LobbyRequestMessage, stream: u|WriteonlyMessageStream<LobbyNotificationMessage, Stream>, peerId: PeerId){
         let player: u|GamePlayer
-        if(req.joinRequest && (player = this.players_add(playerId))){
+        if(req.joinRequest && (player = this.players_add(playerId, peerId))){
             if(stream) player.stream = stream
             this.handleJoinRequest(player, req.joinRequest)
         }
@@ -421,7 +448,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             for(const res of ress.peersRequests){
                 let player: u|GamePlayer
                 const playerId = res.playerId as PlayerId
-                if(res.joinRequest && (player = this.players_add(playerId))){
+                if(res.joinRequest && (player = this.players_add(playerId, undefined))){
                     this.handleJoinResponse(player, res.joinRequest)
                 }
                 if(res.pickRequest && (player = this.players.get(playerId))){

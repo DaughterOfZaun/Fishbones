@@ -1,15 +1,23 @@
 import type { Libp2p } from "libp2p";
 import { LOCALHOST, PROXY_PROTOCOL } from "./constants";
-import type { IncomingStreamData, PeerId, Stream } from "@libp2p/interface";
+import type { IncomingStreamData, PeerId } from "@libp2p/interface";
 import { logger } from "@libp2p/logger";
 import { pipe } from "it-pipe";
 import * as lp from 'it-length-prefixed'
 import { EventIterator } from 'event-iterator'
 import type { Duplex, Source } from 'it-stream-types'
 import type { Uint8ArrayList } from 'uint8arraylist'
-import type { Queue } from "event-iterator/lib/event-iterator";
+import type { Queue } from 'event-iterator/lib/event-iterator'
+import { duplexPair } from 'it-pair/duplex'
+import type { Multiaddr, MultiaddrObject } from "@multiformats/multiaddr";
 
 const log = logger('launcher:proxy')
+
+type BaseStream = Duplex<
+    AsyncGenerator<Uint8ArrayList | Uint8Array>,
+    Source<Uint8ArrayList | Uint8Array>,
+    Promise<void>
+> & { close: () => Promise<void> }
 
 type Socket = Bun.udp.Socket<'uint8array'>
 type SocketData = Uint8Array<ArrayBufferLike>
@@ -45,7 +53,7 @@ const socketSink = async function sink(this: CustomizedSocket, source: Source<Ui
     }
 }
 
-const socketClose = async function close(this: CustomizedSocket){
+const socketClose = function close(this: CustomizedSocket){
     this.queue.stop()
 }
 
@@ -87,14 +95,20 @@ class Proxy {
         return peer?.socket.port
     }
 
-    protected async createPeer(id: PeerId, stream?: Stream, remoteAddr?: SocketAddress){
+    protected async createPeer(id: PeerId, stream?: BaseStream, remoteAddr?: SocketAddress){
         const socket = await createSocket(remoteAddr)
         const peer = { socket, stream }
         this.peers.set(id.toString(), peer)
         return peer
     }
 
-    protected handleStream(peer: PeerData, stream: Stream){
+    public handleLocal(stream: BaseStream){
+        const id = this.node.peerId
+        const peer = this.peers.get(id.toString())!
+        this.handleStream(peer, stream)
+    }
+
+    protected handleStream(peer: PeerData, stream: BaseStream){
         
         peer.stream?.close().catch(err => log.error(err))
         peer.stream = stream
@@ -124,7 +138,7 @@ class Proxy {
 
 
 type PeerIdStr = string
-type PeerData = { socket: CustomizedSocket, stream?: Stream }
+type PeerData = { socket: CustomizedSocket, stream?: BaseStream }
 export class ProxyServer extends Proxy {
 
     private readonly localAddr: SocketAddress = { hostname: LOCALHOST, port: 0, }
@@ -161,16 +175,25 @@ export class ProxyServer extends Proxy {
 
 export class ProxyClient extends Proxy {
     private serverId?: PeerId
-    public async connect(id: PeerId){
+    public async connect(id: PeerId, proxyServer: undefined|ProxyServer){
         this.serverId = id
-        const peerInfo = await this.node.peerStore.getInfo(id)
-        const addrs = peerInfo.multiaddrs
-            .filter(ma => ma.toOptions().transport == 'udp')
-            .map(ma => ma.encapsulate(`/p2p/${id}`))
-        const opts = { force: false, maxOutboundStreams: 1 } //as DialProtocolOptions & { force: boolean }
-        const stream = await this.node.dialProtocol(addrs, PROXY_PROTOCOL, opts)
+        
         const peer = await this.createPeer(id, undefined)
-        this.handleStream(peer, stream)
+        if(id.equals(this.node.peerId) && proxyServer){
+            const [d0, d1] = duplexPair<Uint8ArrayList | Uint8Array>().map(d => Object.assign(d, { close: () => Promise.resolve() }))
+            proxyServer.handleLocal(d0!)
+            this.handleStream(peer, d1!)
+        } else {
+            const peerInfo = await this.node.peerStore.getInfo(id)
+            const addrs = peerInfo.multiaddrs
+                .map(ma => [ma, ma.toOptions()] as [Multiaddr, MultiaddrObject])
+                .sort(([,a], [,b]) => +(b.transport == 'udp') - +(a.transport == 'udp'))
+                .map(([ma,]) => ma)
+                .map(ma => ma.encapsulate(`/p2p/${id}`))
+            const opts = { force: false, maxOutboundStreams: 1 } //as DialProtocolOptions & { force: boolean }
+            const stream = await this.node.dialProtocol(addrs, PROXY_PROTOCOL, opts)
+            this.handleStream(peer, stream)
+        }
     }
     public disconnect(){
         this.serverId = undefined

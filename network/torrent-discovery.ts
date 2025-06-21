@@ -35,7 +35,7 @@ export function torrentPeerDiscovery(init: DiscoveryInit): (components: Discover
 
 class DiscoveryClass extends TypedEventEmitter<PeerDiscoveryEvents> implements PeerDiscovery, PeerDiscoveryProvider, Startable {
     
-    private discovery: any
+    private discovery: any // eslint-disable-line @typescript-eslint/no-explicit-any
     private readonly init: DiscoveryInit & { peerId: string, userAgent: string }
     private readonly components: DiscoveryComponents
     private readonly log: Logger
@@ -53,7 +53,7 @@ class DiscoveryClass extends TypedEventEmitter<PeerDiscoveryEvents> implements P
     }
 
     readonly [peerDiscoverySymbol] = this
-    readonly [Symbol.toStringTag] = 'jinx/discovery'
+    readonly [Symbol.toStringTag] = '@libp2p/torrent-discovery'
     readonly [serviceCapabilities]: string[] = [
       '@libp2p/peer-discovery'
     ]
@@ -87,14 +87,14 @@ class DiscoveryClass extends TypedEventEmitter<PeerDiscoveryEvents> implements P
     }
 
     stop() {
+        const discovery = this.discovery
         if(!this.discovery) return
+        this.discovery = undefined
+
+        this.components.events.removeEventListener('peer:connect', this.onConnect)
         this.components.events.removeEventListener('peer:disconnect', this.onDisconnect)
-        return new Promise<void>((res) => {
-            this.discovery.destroy(() => {
-                this.discovery = undefined
-                res()
-            })
-        })
+
+        return new Promise<void>(res => discovery.destroy(() => res()))
     }
 
     private drain(){
@@ -116,10 +116,11 @@ class DiscoveryClass extends TypedEventEmitter<PeerDiscoveryEvents> implements P
             ps.all({ filters: [peer => peer.addresses.some(addr => addr.multiaddr.equals(peerAddr))], limit: 1 })
 
             cm.openConnection(peerAddr)
-            .then(connection => {
+            .then(connection => ps.merge(connection.remotePeer, { multiaddrs: [ connection.remoteAddr ] }))
+            .then(peer => {
                 const detail: PeerInfo = {
-                    id: connection.remotePeer,
-                    multiaddrs: [ connection.remoteAddr ]
+                    id: peer.id,
+                    multiaddrs: peer.addresses.map(({ multiaddr }) => multiaddr)
                 }
                 this.safeDispatchEvent('peer', { detail })
             })

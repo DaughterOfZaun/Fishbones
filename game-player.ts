@@ -1,8 +1,8 @@
 import { Champion, Lock, Name, PickableValue, SummonerSpell, Team, type KeysByValue } from './utils/constants'
-import { type Stream } from '@libp2p/interface'
-import { type MessageStream } from 'it-protobuf-stream'
+import { type PeerId, type Stream } from '@libp2p/interface'
 import { LobbyNotificationMessage, PickRequest } from './message/lobby'
 import type { Game } from './game'
+import type { WriteonlyMessageStream } from './utils/pb-stream'
 
 export type PlayerId = number & { readonly brand: unique symbol }
 
@@ -12,14 +12,16 @@ export type PPP = PlayerPickableProps
 export class GamePlayer {
     private readonly game: Game
     public readonly id: PlayerId
+    public readonly peerId?: PeerId
     
     name = new Name('Player')
 
-    stream?: MessageStream<LobbyNotificationMessage, Stream>
+    stream?: WriteonlyMessageStream<LobbyNotificationMessage, Stream>
     
-    constructor(game: Game, id: PlayerId){
+    constructor(game: Game, id: PlayerId, peerId?: PeerId){
         this.game = game
         this.id = id
+        this.peerId = peerId
     }
     
     public readonly team = new Team() //TODO: disallow uinput & decodeInplace

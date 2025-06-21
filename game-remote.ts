@@ -2,7 +2,7 @@ import { LOBBY_PROTOCOL } from './utils/constants'
 import { Peer as PBPeer } from './message/peer'
 import { type Libp2p, type PeerId, type Stream, type StreamHandler } from '@libp2p/interface'
 import * as lp from 'it-length-prefixed'
-import { pbStream, type MessageStream } from 'it-protobuf-stream'
+import { pbStream, type MessageStream } from './utils/pb-stream'
 import { pipe } from 'it-pipe'
 import { LobbyRequestMessage, LobbyNotificationMessage } from './message/lobby'
 import { Game } from './game'
@@ -25,7 +25,7 @@ export class RemoteGame extends Game {
         try {
             const connection = await this.node.dial(this.ownerId)
             const stream = await connection.newStream([ LOBBY_PROTOCOL ])
-            this.stream = pbStream(stream).pb(LobbyRequestMessage)
+            this.stream = pbStream(stream).pb(LobbyNotificationMessage, LobbyRequestMessage)
             this.handleOutgoingStream({ stream, connection })
             this.connected = true
             return true
@@ -35,7 +35,7 @@ export class RemoteGame extends Game {
         }
     }
 
-    private stream?: MessageStream<LobbyRequestMessage, Stream>
+    private stream?: MessageStream<LobbyNotificationMessage, LobbyRequestMessage, Stream>
     protected async stream_write(req: LobbyRequestMessage){
         try {
             await this.stream?.write(req)

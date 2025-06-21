@@ -12,6 +12,7 @@ import select, { type Choice } from './ui/dynamic-select'
 import { type Game } from './game'
 import color from 'yoctocolors-cjs'
 import { noise } from '@chainsafe/libp2p-noise'
+import { patchedCrypto } from './utils/crypto'
 import { AbortPromptError } from '@inquirer/core'
 import { RemoteGame } from './game-remote'
 import { LocalGame } from './game-local'
@@ -23,39 +24,67 @@ import type { Peer as PBPeer } from './message/peer'
 import { circuitRelayServer, circuitRelayTransport } from '@libp2p/circuit-relay-v2'
 import { dcutr } from '@libp2p/dcutr'
 import { autoNAT } from '@libp2p/autonat'
-import { uPnPNAT } from '@libp2p/upnp-nat'
+import { uPnPNAT, type UPnPNAT } from '@libp2p/upnp-nat'
 import { webRTC, webRTCDirect } from '@libp2p/webrtc'
+import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
+import { bootstrap } from '@libp2p/bootstrap'
+import { mdns } from '@libp2p/mdns'
+import type { Startable } from '@libp2p/interface'
+//TODO: rendezvous
 
 await Data.repair()
 
-const port = Number(process.argv[2]) || 5116
-const ports = {
+const ports = ((
+    port = Number(process.argv[2]) || 5116
+) => ({
+    tcp: port + 0,
     kadDHT: port + 1,
-    game: port + 3,
-}
+    game: port + 2,
+}))()
+
+const appName = ['jinx', 'launcher']
 const node = await createLibp2p({
     start: false,
     addresses: {
         listen: [
-            `/ip4/0.0.0.0/tcp/${0}`,
-            `/ip4/0.0.0.0/tcp/${0}/p2p-circuit`,
-            `/ip4/0.0.0.0/udp/${0}/webrtc`,
+            `/ip4/0.0.0.0/tcp/${ports.tcp}`,
             `/ip4/0.0.0.0/udp/${0}/webrtc-direct`,
+            `/ip4/0.0.0.0/udp/${0}/webrtc`,
+            `/p2p-circuit`,
         ]
     },
     transports: [
-        ////@ts-expect-error Type A is not assignable to type B.
         circuitRelayTransport(),
         webRTCDirect(),
         webRTC(),
         tcp(),
     ],
     streamMuxers: [ yamux() ],
-    connectionEncrypters: [ noise() ],
-    //peerDiscovery: [],
+    connectionEncrypters: [ noise({
+        // ChaCha20-Poly1305 is currently not supported in Bun.
+        //crypto: pureJsCrypto //WALKAROUND:
+        crypto: patchedCrypto //HACK:
+    }) ],
+    peerDiscovery: [
+        bootstrap({
+            list: [
+                //src: https://github.com/ipfs/kubo/blob/master/config/bootstrap_peers.go
+                //src: https://github.com/ipfs/helia/blob/main/packages/helia/src/utils/bootstrappers.ts
+                //src: https://github.com/libp2p/js-libp2p/blob/main/packages/peer-discovery-bootstrap/src/index.ts
+                "/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+                "/dnsaddr/bootstrap.libp2p.io/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa", // rust-libp2p-server
+                "/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb",
+                "/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt",
+                "/dnsaddr/va1.bootstrap.libp2p.io/p2p/12D3KooWKnDdG3iXw9eTFijk3EWSunZcFi54Zka4wmtqtt6rPxc8", // js-libp2p-amino-dht-bootstrapper
+                // va1 is not in the TXT records for _dnsaddr.bootstrap.libp2p.io yet so use the host name directly
+                "/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",           // mars.i.ipfs.io
+                "/ip4/104.131.131.82/udp/4001/quic-v1/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",   // mars.i.ipfs.io
+            ],
+        }),
+        mdns(),
+    ],
     services: {
         ping: ping(),
-        //@ts-expect-error Type A is not assignable to type B.
         pubsub: gossipsub() as (components: GossipSubComponents) => GossipSub,
         identify: identify(),
         identifyPush: identifyPush(),
@@ -63,31 +92,41 @@ const node = await createLibp2p({
         pubsubPeerWithDataDiscovery: pubsubPeerWithDataDiscovery({
             enableBroadcast: false,
             interval: 10000,
+            topics: [ `${appName.join('.')}._peer-discovery._p2p._pubsub` ]
         }),
         torrentPeerDiscovery: torrentPeerDiscovery({
-            infoHash: (await hash(`jinx/launcher/${0}`, 'hex', 'sha-1')) as string,
-            port: port,
+            infoHash: (await hash(`${appName.join('/')}/${0}`, 'hex', 'sha-1')) as string,
+            port: ports.tcp,
             announce: await Data.getAnnounceAddrs(),
             dht: true,
             dhtPort: ports.kadDHT,
             tracker: true,
             lsd: true,
         }),
-        ////@ts-expect-error Type A is not assignable to type B.
         dcutr: dcutr(),
         upnpNAT: uPnPNAT(),
-        ////@ts-expect-error Type A is not assignable to type B.
         autoNAT: autoNAT(),
-        ////@ts-expect-error Type A is not assignable to type B.
-        //TODO: Run only if reported available from outside?
+        //TODO: Run only if reported available from outside by autoNAT?
         relay: circuitRelayServer(),
-    }
+        aminoDHT: kadDHT({
+            protocol: '/ipfs/kad/1.0.0',
+            peerInfoMapper: removePrivateAddressesMapper,
+            logPrefix: 'libp2p:dht-amino',
+            datastorePrefix: '/dht-amino',
+            metricsPrefix: 'libp2p_dht_amino'
+        }),
+    },
 })
 await node.start()
 //node.status = 'started'
 //await node.stop()
 
-const upnp = node.services.upnpNAT
+//console.log('peer:', node.peerId.toString())
+//node.addEventListener('peer:connect', e => console.log('peer:connect', e.detail.toString(), e.detail))
+//node.addEventListener('peer:discovery', e => console.log('peer:discovery', e.detail.toString(), e.detail))
+//node.addEventListener('peer:disconnect', e => console.trace('peer:disconnect', e.detail.toString(), e.detail))
+
+const node_services_upnpNAT = node.services.upnpNAT as (UPnPNAT & Startable)
 const pspd = node.services.pubsubPeerWithDataDiscovery
 const pubsub = node.services.pubsub as GossipSub
 
@@ -245,6 +284,7 @@ async function main(){
             //await node.services.pubsubPeerDiscovery.stop()
             //await node.services.torrentPeerDiscovery.beforeStop()
             await node.services.torrentPeerDiscovery.stop()
+            await node_services_upnpNAT.stop()
             await node.stop()
             break loop
         }

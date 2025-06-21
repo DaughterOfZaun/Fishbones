@@ -3,7 +3,7 @@ import { TypedEventEmitter, peerDiscoverySymbol } from '@libp2p/interface'
 import { peerIdFromPublicKey } from '@libp2p/peer-id'
 import { multiaddr } from '@multiformats/multiaddr'
 import { Peer as PBPeer } from '../message/peer.js'
-import type { PeerDiscovery, PeerDiscoveryEvents, PeerId, PeerInfo, Message, Startable, ComponentLogger, Logger } from '@libp2p/interface'
+import type { PeerDiscovery, PeerDiscoveryEvents, PeerId, PeerInfo, Message, Startable, ComponentLogger, Logger, PeerStore } from '@libp2p/interface'
 import type { AddressManager } from '@libp2p/interface-internal'
 import type { GossipSub } from '@chainsafe/libp2p-gossipsub'
 
@@ -20,6 +20,7 @@ export interface PubSubPeerDiscoveryComponents {
     pubsub?: GossipSub
     addressManager: AddressManager
     logger: ComponentLogger
+    peerStore: PeerStore
 }
 
 export type PubSubPeerDiscoveryEvents = {
@@ -74,19 +75,21 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
         this.components = components
         this.interval = init.interval ?? 10000
         this.enableBroadcast = init.enableBroadcast ?? false
-        this.log = components.logger.forComponent('libp2p:discovery:pubsub')
+        this.log = components.logger.forComponent('libp2p:discovery:pubsub-with-data')
         this.topics = (Array.isArray(init.topics) && init.topics.length > 0) ? init.topics : [ TOPIC ]
     }
 
     start (): void {}
 
     afterStart (): void {
+        //this.log('afterStart')
+
         const pubsub = this.components.pubsub
         if (!pubsub) throw new Error('PubSub not configured')
 
+        pubsub.addEventListener('message', this.onMessage)
         for (const topic of this.topics) {
             pubsub.subscribe(topic)
-            pubsub.addEventListener('message', this.onMessage)
         }
 
         if(this.enableBroadcast){
@@ -96,6 +99,8 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
     }
 
     beforeStop (): void {
+        //this.log('beforeStop')
+
         const pubsub = this.components.pubsub
         //if (!pubsub) throw new Error('PubSub not configured')
             
@@ -106,17 +111,20 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
             this.broadcast(false)
         }
         
-        if(pubsub)
-        for (const topic of this.topics) {
+        if(pubsub){
             pubsub.removeEventListener('message', this.onMessage)
-            if(pubsub?.isStarted())
-            pubsub.unsubscribe(topic)
+            for (const topic of this.topics) {
+                if(pubsub?.isStarted())
+                pubsub.unsubscribe(topic)
+            }
         }
     }
 
     stop (): void {}
 
     broadcast (announce = true): void {
+        //this.log('broadcast', announce)
+
         const peerId = this.components.peerId
         const pubsub = this.components.pubsub
         const am = this.components.addressManager
@@ -143,6 +151,7 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
 
     onMessage = (event: CustomEvent<Message>): void => {
         const message = event.detail
+        //this.log('onMessage')
 
         if (!this.topics.includes(message.topic)) return
 
@@ -168,14 +177,13 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
             this.safeDispatchEvent('update')
 
             if(peer.addrs.length > 0){
-                
-                //TODO: PeerStore.merge
+                const multiaddrs = peer.addrs.map(b => multiaddr(b))
+                //console.log(multiaddrs.map(ma => ma.toString()))
+
+                this.components.peerStore.merge(peerId, { multiaddrs })
 
                 this.safeDispatchEvent<PeerInfo>('peer', {
-                    detail: {
-                        id: peerId,
-                        multiaddrs: peer.addrs.map(b => multiaddr(b)),
-                    }
+                    detail: { id: peerId, multiaddrs, }
                 })
             }
         } catch (err) {

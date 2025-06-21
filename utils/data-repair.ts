@@ -32,12 +32,11 @@ export async function repair(){
                 await build(gsPkg)
             await fs_ensure_dir(gsPkg.infoDir)
         }),
-        repairArchived(gcPkg),
-        (async () => {
-            await fs_ensure_dir(gcPkg.exeDir)
+        repairArchived(gcPkg).then(async () => {
+            //await fs_ensure_dir(gcPkg.exeDir)
             const d3dx9_39_dll = path.join(gcPkg.exeDir, 'd3dx9_39.dll')
             await fs_copyFile(d3dx9_39_dll_embded, d3dx9_39_dll)
-        })()
+        })
     ] as Promise<unknown>[])
 }
 

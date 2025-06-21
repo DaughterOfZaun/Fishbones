@@ -1,4 +1,4 @@
-import { LOBBY_PROTOCOL, ufill } from './utils/constants'
+import { LOBBY_PROTOCOL, ufill, type u } from './utils/constants'
 import { type Libp2p, type PeerId, type StreamHandler } from '@libp2p/interface'
 import * as lp from 'it-length-prefixed'
 import { pipe } from 'it-pipe'
@@ -8,7 +8,7 @@ import { logger } from '@libp2p/logger'
 import type { Server } from './server'
 import type { PlayerId } from './game-player'
 import { PeerMap } from '@libp2p/peer-collections'
-import { pbStream } from 'it-protobuf-stream'
+import { pbStream } from './utils/pb-stream'
 
 export class LocalGame extends Game {
     protected log = logger('launcher:game-local')
@@ -19,10 +19,12 @@ export class LocalGame extends Game {
         return ufill(new LocalGame(node, server, port))
     }
     
+    private readonly peerId: PeerId
     private readonly playerId: PlayerId
     protected constructor(node: Libp2p, server: Server, port: number){
         super(node, node.peerId, server, port)
         this.playerId = this.peerIdToPlayerId(node.peerId)
+        this.peerId = node.peerId
     }
 
     public startListening(){
@@ -33,10 +35,34 @@ export class LocalGame extends Game {
     }
 
     private handleIncomingStream: StreamHandler = async ({ stream, connection }) => {
+        const wrapped = pbStream(stream).pb(LobbyRequestMessage, LobbyNotificationMessage)
+
+        let kickReason = KickReason.UNDEFINED
+        let checkPassed = false
+        let firstReq: u|LobbyRequestMessage = undefined
+        try {
+            firstReq = await wrapped.read()
+            if(firstReq.joinRequest){
+                kickReason = this.getKickReason(firstReq.joinRequest.password)
+                checkPassed = kickReason === KickReason.UNDEFINED
+            }
+            if(kickReason != KickReason.UNDEFINED){
+                await wrapped.write({ kickRequest: kickReason, peersRequests: [] })
+            }
+        } catch(err) {
+            this.log.error(err)
+        }
+
+        if(!checkPassed || !firstReq){
+            stream.close().catch(err => this.log.error(err))
+            return
+        }
+
         const peerId = connection.remotePeer
         const playerId = this.peerIdToPlayerId(peerId)
-        let reason = KickReason.UNDEFINED
-        let passedCheck = false
+
+        this.handleRequest(playerId, firstReq, wrapped, peerId)
+
         try {
             await pipe(
                 stream,
@@ -44,39 +70,19 @@ export class LocalGame extends Game {
                 async (source) => {
                     for await (const data of source) {
                         const req = LobbyRequestMessage.decode(data)
-                        const wrapped = pbStream(stream).pb(LobbyNotificationMessage)
-                        if(req.joinRequest){
-                            if(!this.isJoinable()){
-                                reason = KickReason.MAX_PLAYERS
-                            } else if(this.password.isSet && this.password.encode() != req.joinRequest.password){
-                                reason = KickReason.WRONG_PASSWORD
-                            } else {
-                                passedCheck = true
-                            }
-                        }
-                        if(reason != KickReason.UNDEFINED){
-                            try { await wrapped.write({ kickRequest: reason, peersRequests: [] }) }
-                            catch(err) { this.log.error(err) }
-                        }
-                        if(passedCheck){
-                            this.handleRequest(playerId, req, wrapped)
-                        } else {
-                            try { await stream.close() }
-                            catch(err) { this.log.error(err) }
-                            break
-                        }
+                        this.handleRequest(playerId, req, wrapped, peerId)
                     }
                 }
             )
             this.freePlayerId(peerId, playerId)
-            this.handleRequest(playerId, { leaveRequest: true }, undefined)
+            this.handleRequest(playerId, { leaveRequest: true }, undefined, peerId)
         } catch(err) {
             this.log.error(err)
         }
     }
 
     protected async stream_write(req: LobbyRequestMessage){
-        this.handleRequest(this.playerId, req, undefined)
+        this.handleRequest(this.playerId, req, undefined, this.peerId)
         return true
     }
     protected broadcast(msg: LobbyNotificationMessage & BroadcastOpts){
@@ -106,7 +112,7 @@ export class LocalGame extends Game {
 
     private playerIds = new Set<PlayerId>()
     private peerIdToPlayerIdMap = new PeerMap<PlayerId>()
-    protected peerIdToPlayerId(peerId: PeerId){
+    private peerIdToPlayerId(peerId: PeerId){
         let playerId = this.peerIdToPlayerIdMap.get(peerId)
         if(!playerId){
             do {
@@ -117,7 +123,7 @@ export class LocalGame extends Game {
         }
         return playerId
     }
-    protected freePlayerId(peerId: PeerId, playerId: PlayerId){
+    private freePlayerId(peerId: PeerId, playerId: PlayerId){
         this.peerIdToPlayerIdMap.delete(peerId)
         this.playerIds.delete(playerId)
     }

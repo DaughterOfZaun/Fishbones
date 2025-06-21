@@ -12,6 +12,7 @@ enum KickReason {
     MAX_PLAYERS = 1;
     WRONG_PASSWORD = 2;
     MAKER_DECISION = 3;
+    STARTED = 5;
 }
 
 message LobbyRequestMessage {
