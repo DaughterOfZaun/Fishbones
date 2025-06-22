@@ -5,8 +5,8 @@ import { MultiBar, Presets } from 'cli-progress'
 
 //export const cwd = process.cwd()
 //export const cwd = path.dirname(process.execPath)
-export const cwd = globalThis.Deno?.build?.standalone ?
-    path.dirname(process.execPath) : process.cwd()
+const isStandaloneBuild = globalThis.Deno?.build?.standalone //TODO: Bun
+export const cwd = isStandaloneBuild ? path.dirname(process.execPath) : process.cwd()
 const cwdWin = cwd.replaceAll('/', '\\') // For Logger
 const cwdLin = cwd.replaceAll('\\', '/') // For Logger
 export const downloads = path.join(cwd, 'Fishbones_Data')

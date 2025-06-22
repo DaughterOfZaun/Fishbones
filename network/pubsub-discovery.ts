@@ -179,9 +179,7 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
             if(peer.addrs.length > 0){
                 const multiaddrs = peer.addrs.map(b => multiaddr(b))
                 //console.log(multiaddrs.map(ma => ma.toString()))
-
-                this.components.peerStore.merge(peerId, { multiaddrs })
-
+                //this.components.peerStore.merge(peerId, { multiaddrs })
                 this.safeDispatchEvent<PeerInfo>('peer', {
                     detail: { id: peerId, multiaddrs, }
                 })

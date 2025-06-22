@@ -2,9 +2,10 @@ import { GossipSub, gossipsub, type GossipSubComponents } from '@chainsafe/libp2
 import { yamux } from '@chainsafe/libp2p-yamux'
 import { tcp } from '@libp2p/tcp'
 import { createLibp2p } from 'libp2p'
-import { torrentPeerDiscovery } from './network/torrent-discovery'
+//torrent-discovery: import { torrentPeerDiscovery } from './network/torrent-discovery'
 import { pubsubPeerDiscovery as pubsubPeerWithDataDiscovery } from './network/pubsub-discovery'
-import { hash } from 'uint8-util'
+import { pubsubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
+//torrent-discovery: import { hash } from 'uint8-util'
 import { identify, identifyPush } from '@libp2p/identify'
 import { ping } from '@libp2p/ping'
 import { defaultLogger } from '@libp2p/logger'
@@ -26,10 +27,15 @@ import { dcutr } from '@libp2p/dcutr'
 import { autoNAT } from '@libp2p/autonat'
 import { uPnPNAT, type UPnPNAT } from '@libp2p/upnp-nat'
 import { webRTC, webRTCDirect } from '@libp2p/webrtc'
-import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
+import { kadDHT, removePrivateAddressesMapper, type KadDHT } from '@libp2p/kad-dht'
 import { bootstrap } from '@libp2p/bootstrap'
 import { mdns } from '@libp2p/mdns'
-import type { Startable } from '@libp2p/interface'
+import type { Libp2p, Logger, PeerData, PeerDiscoveryEvents, PeerInfo, PeerStore, Startable, TypedEventEmitter } from '@libp2p/interface'
+import { contentPeerDiscovery } from './network/content-discovery'
+import { CID } from 'multiformats/cid'
+import * as json from 'multiformats/codecs/json'
+import { sha256 } from 'multiformats/hashes/sha2'
+import type { ConnectionManager, OpenConnectionOptions } from '@libp2p/interface-internal'
 //TODO: rendezvous
 
 await Data.repair()
@@ -42,9 +48,14 @@ const ports = ((
     game: port + 2,
 }))()
 
-const appName = ['jinx', 'launcher']
+const appName = ['com', 'github', 'DaughterOfZaun', 'Fishbones']
+//const cid = 'bagaaierawchtonvxlm4szp7txp5qtrp63ncsqygzqbd6kma65nwjqg4ltila'
+const cid = CID.create(1, json.code,
+    await sha256.digest(
+        json.encode({ appName })
+    )
+)
 const node = await createLibp2p({
-    start: false,
     addresses: {
         listen: [
             `/ip4/0.0.0.0/tcp/${ports.tcp}`,
@@ -65,8 +76,10 @@ const node = await createLibp2p({
         //crypto: pureJsCrypto //WALKAROUND:
         crypto: patchedCrypto //HACK:
     }) ],
-    peerDiscovery: [
-        bootstrap({
+    //peerDiscovery: [],
+    services: {
+        contentPeerDiscovery: contentPeerDiscovery({ cid }),
+        bootstrap: bootstrap({
             list: [
                 //src: https://github.com/ipfs/kubo/blob/master/config/bootstrap_peers.go
                 //src: https://github.com/ipfs/helia/blob/main/packages/helia/src/utils/bootstrappers.ts
@@ -81,19 +94,22 @@ const node = await createLibp2p({
                 "/ip4/104.131.131.82/udp/4001/quic-v1/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",   // mars.i.ipfs.io
             ],
         }),
-        mdns(),
-    ],
-    services: {
+        mdns: mdns(),
         ping: ping(),
         pubsub: gossipsub() as (components: GossipSubComponents) => GossipSub,
         identify: identify(),
         identifyPush: identifyPush(),
         logger: defaultLogger,
+        pubsubPeerDiscovery: pubsubPeerDiscovery(
+            // Default values only.
+        ),
         pubsubPeerWithDataDiscovery: pubsubPeerWithDataDiscovery({
-            enableBroadcast: false,
             interval: 10000,
+            enableBroadcast: false,
             topics: [ `${appName.join('.')}._peer-discovery._p2p._pubsub` ]
         }),
+        /*
+        //torrent-discovery: 
         torrentPeerDiscovery: torrentPeerDiscovery({
             infoHash: (await hash(`${appName.join('/')}/${0}`, 'hex', 'sha-1')) as string,
             port: ports.tcp,
@@ -101,8 +117,9 @@ const node = await createLibp2p({
             dht: true,
             dhtPort: ports.kadDHT,
             tracker: true,
-            lsd: true,
+            lsd: false, // We use MDNS to search for peers on the local network.
         }),
+        */
         dcutr: dcutr(),
         upnpNAT: uPnPNAT(),
         autoNAT: autoNAT(),
@@ -116,19 +133,81 @@ const node = await createLibp2p({
             metricsPrefix: 'libp2p_dht_amino'
         }),
     },
+    start: false,
 })
 await node.start()
 //node.status = 'started'
 //await node.stop()
 
-//console.log('peer:', node.peerId.toString())
-//node.addEventListener('peer:connect', e => console.log('peer:connect', e.detail.toString(), e.detail))
-//node.addEventListener('peer:discovery', e => console.log('peer:discovery', e.detail.toString(), e.detail))
-//node.addEventListener('peer:disconnect', e => console.trace('peer:disconnect', e.detail.toString(), e.detail))
-
+const node_services_aminoDHT = node.services.aminoDHT as KadDHT & TypedEventEmitter<PeerDiscoveryEvents>
 const node_services_upnpNAT = node.services.upnpNAT as (UPnPNAT & Startable)
 const pspd = node.services.pubsubPeerWithDataDiscovery
 const pubsub = node.services.pubsub as GossipSub
+/*
+const cm = (node as unknown as Libp2pClass).components.connectionManager
+const cm_openConnection = cm.openConnection
+cm.openConnection = function openConnection
+(this: ConnectionManager, ...args: Parameters<ConnectionManager['openConnection']>):
+ReturnType<ConnectionManager['openConnection']> {
+    return cm_openConnection.call(this, ...args).catch()
+}
+*/
+
+process.on('uncaughtException', () => {})
+
+type Libp2pClass = Libp2p & {
+    log: Logger,
+    components: {
+        peerStore: PeerStore
+        connectionManager: ConnectionManager
+    }
+}
+const node_onDiscoveryPeer = onDiscoveryPeer.bind(node as unknown as Libp2pClass)
+
+//node_services_aminoDHT.addEventListener('peer', evt => node_onDiscoveryPeer(evt))
+//node.services.pubsubPeerDiscovery.addEventListener('peer', evt => node_onDiscoveryPeer(evt))
+node.services.pubsubPeerWithDataDiscovery.addEventListener('peer', evt => node_onDiscoveryPeer(evt, true))
+//torrent-discovery: node.services.torrentPeerDiscovery.addEventListener('peer', evt => node_onDiscoveryPeer(evt))
+node.services.contentPeerDiscovery.addEventListener('peer', evt => node_onDiscoveryPeer(evt, true))
+//node.services.bootstrap.addEventListener('peer', evt => node_onDiscoveryPeer(evt))
+//node.services.mdns.addEventListener('peer', evt => node_onDiscoveryPeer(evt))
+
+const SAME_APP_TAG_NAME = 'same-app'
+const SAME_APP_TAG_VALUE = 1
+const SAME_APP_CONNECTION_PRIORTY = 51
+
+function onDiscoveryPeer(this: Libp2pClass, evt: CustomEvent<PeerInfo>, sameApp = false): void {
+    const { detail: peer } = evt
+
+    if (peer.id.toString() === this.peerId.toString()) {
+        this.log.error('peer discovery mechanism discovered self')
+        return
+    }
+
+    const { multiaddrs } = peer
+    const data: PeerData = { multiaddrs }
+    if(sameApp) data.tags = {
+        [SAME_APP_TAG_NAME]: {
+            value: SAME_APP_TAG_VALUE
+        }
+    }
+    void this.components.peerStore.merge(peer.id, data)
+    .then(peer => {
+        const opts: OpenConnectionOptions = {}
+        if(sameApp) opts.priority = SAME_APP_CONNECTION_PRIORTY
+        if(sameApp) this.components.connectionManager.openConnection(peer.id, opts)
+        .catch(err => {
+            this.log.error('could not dial discovered peer %p', peer.id, err)
+        })
+    })
+    .catch(err => { this.log.error(err) })
+}
+
+console.log('cid:', cid.toString())
+console.log('peer:', node.peerId.toString())
+//node.addEventListener('peer:connect', e => console.log('peer:connect', e.detail.toString(), e.detail))
+//node.addEventListener('peer:discovery', e => console.log('peer:discovery', e.detail.toString(), e.detail))
+//node.addEventListener('peer:disconnect', e => console.trace('peer:disconnect', e.detail.toString(), e.detail))
 
 const name = 'Player'
 //const name = node.peerId.toString().slice(-8)
@@ -280,11 +359,11 @@ async function main(){
             game.disconnect()
         }
         if(action == 'exit'){
-            await node.services.pubsubPeerWithDataDiscovery.beforeStop()
-            //await node.services.pubsubPeerDiscovery.stop()
-            //await node.services.torrentPeerDiscovery.beforeStop()
-            await node.services.torrentPeerDiscovery.stop()
-            await node_services_upnpNAT.stop()
+            await node.services.pubsubPeerWithDataDiscovery?.beforeStop()
+            //await node.services.pubsubPeerDiscovery?.stop()
+            //torrent-discovery: await node.services.torrentPeerDiscovery?.beforeStop()
+            //torrent-discovery: await node.services.torrentPeerDiscovery?.stop()
+            await node_services_upnpNAT?.stop()
             await node.stop()
             break loop
         }

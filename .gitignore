@@ -2,13 +2,14 @@
 /message/*.ts
 
 # downloaded
-/downloads/*
-!/downloads/*.torrent
+/downloads
+/Fishbones_Data
 
 # dependencies
 node_modules
-node_modules_win_npm
-node_modules_linux_deno
+/node_modules_win_npm
+/node_modules_linux_bun
+/node_modules_linux_deno
 
 # output
 out

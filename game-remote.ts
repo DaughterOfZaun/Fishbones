@@ -23,7 +23,7 @@ export class RemoteGame extends Game {
     public async connect(){
         if(this.connected) return true
         try {
-            const connection = await this.node.dial(this.ownerId)
+            const connection = await this.node.dial(this.ownerId) //TODO: Switch to cm.openConnection?
             const stream = await connection.newStream([ LOBBY_PROTOCOL ])
             this.stream = pbStream(stream).pb(LobbyNotificationMessage, LobbyRequestMessage)
             this.handleOutgoingStream({ stream, connection })
