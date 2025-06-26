@@ -18,6 +18,7 @@ const multicodecs = [ FloodsubID, GossipsubIDv10, GossipsubIDv11, GossipsubIDv12
 */
 interface AutodialInit {
     connectionThreshold?: number
+    concurrency?: number
     timeout?: number
 }
 interface AutodialComponents {
@@ -46,9 +47,9 @@ class Autodial implements Startable {
     private readonly log: Logger
     private readonly init: Required<AutodialInit>
     private readonly components: AutodialComponents
-    private readonly queue = new PeerQueue({
-        concurrency: 5
-    })
+    // Perfectly diable but not dialed
+    private readonly queueToRediscover = new PeerMap<{ detail: PeerInfo }>
+    private readonly queue: PeerQueue
 
     private started = false
     private running = false
@@ -59,8 +60,12 @@ class Autodial implements Startable {
         this.components = components
         this.init = {
             connectionThreshold: init.connectionThreshold ?? 80,
+            concurrency: init.concurrency ?? 10,
             timeout: init.timeout ?? 10_000,
         }
+        this.queue = new PeerQueue({
+            concurrency: this.init.concurrency
+        })
         this.dialPeer = this.dialPeer.bind(this)
         this.onPeer = this.onPeer.bind(this)
         this.onPeerConnect = this.onPeerConnect.bind(this)
@@ -104,6 +109,8 @@ class Autodial implements Startable {
     onPeerConnect({ detail: peerId }: CustomEvent<PeerId>){
         const now = Date.now()
 
+        this.queueToRediscover.delete(peerId)
+
         const peerValue = this.peerValues_get(peerId)
         peerValue.connectedAt = now
         peerValue.connected = true
@@ -117,6 +124,16 @@ class Autodial implements Startable {
     }
 
     onPeerUpdate({ detail: { peer } }: CustomEvent<PeerUpdate>){
+        
+        if(this.queueToRediscover.has(peer.id)){
+            this.queueToRediscover.set(peer.id, {
+                detail: {
+                    id: peer.id,
+                    multiaddrs: peer.addresses.map(addr => addr.multiaddr)
+                }
+            })
+        }
+
         //peerValues.set(peer.id, sumPeerTags(peer))
         const peerValue = this.peerValues_get(peer.id)
         //peerValue.value = +multicodecs.some(codec => peer.protocols.includes(codec))
@@ -126,6 +143,9 @@ class Autodial implements Startable {
     }
 
     onPeerDisconnect({ detail: peerId }: CustomEvent<PeerId>){
+
+        this.queueToRediscover.delete(peerId)
+
         const peerValue = this.peerValues_get(peerId)
         peerValue.connected = false
 
@@ -140,11 +160,13 @@ class Autodial implements Startable {
         peerValue.valuable = valuable
 
         const capacity = this.hasCapacity()
-        if(reason == 'timeout'){
+        //if(reason == 'timeout' || reason == 'disconnect'){
+            const connections = this.components.connectionManager.getConnections()
+            const currentConnectionCount = connections.length 
             const valuableConnections = 240 - this.getConnectionCapacity()
             //this.log('reevaluatePeer %p', peerId, 'reason', reason, 'value', peerValue.value, 'valuable', valuable, 'capacity', capacity)
-            this.log('reevaluatePeer %p', peerId, 'reason', reason, 'value', peerValue.value, 'valuable connections', valuableConnections, 'of', 240, capacity)
-        }
+            this.log('reevaluatePeer %p', peerId, 'reason', reason, 'value', peerValue.value, 'valuable connections', valuableConnections, 'of', 240, 'of', currentConnectionCount, capacity)
+        //}
         if(this.running && !capacity) this.stopAutodial()
         if(!this.running && capacity) this.startAutodial()
     }
@@ -167,6 +189,10 @@ class Autodial implements Startable {
         this.components.events.addEventListener('peer:discovery', this.onPeer)
 
         //Promise.resolve().then(this.startAutodialAsync)
+        for(const [id, evt] of [...this.queueToRediscover.entries()]){
+            this.queueToRediscover.delete(id)
+            this.onPeer(evt)
+        }
     }
 
     /*
@@ -217,7 +243,7 @@ class Autodial implements Startable {
         this.queue.clear()
     }
 
-    onPeer({ detail: peer }: CustomEvent<PeerInfo>): void {
+    onPeer({ detail: peer }: { detail: PeerInfo }): void {
         //this.log('maybe dialing discovered peer %p', peer.id)
         this.maybeDialPeer(peer).catch(err => {
             this.log('error dialing discovered peer %p - %e', peer.id, err)
@@ -232,10 +258,10 @@ class Autodial implements Startable {
         } else if (this.components.connectionManager.getConnections(peerId)?.length > 0) {
             this.log('discovered peer %p was already connected', peerId)
         } else if (!(await this.components.connectionManager.isDialable(multiaddrs))) {
-            this.log('discovered peer %p was not dialable', peerId)
+            this.log('discovered peer %p was not dialable', peerId, multiaddrs.map(ma => ma.toString()))
         } else if (!this.hasCapacity(info.id)) {
             this.log('discovered peer %p is skipped because we are too close to the connection limit', peerId)
-            //TODO: Rediscover them later.
+            this.queueToRediscover.set(info.id, { detail: info })
         } else {
             this.queue.add(this.dialPeer, {
                 peerId: peerId,

@@ -35,10 +35,10 @@ import { contentPeerDiscovery } from './network/content-discovery'
 import { CID } from 'multiformats/cid'
 import * as json from 'multiformats/codecs/json'
 import { sha256 } from 'multiformats/hashes/sha2'
-import type { ConnectionManager, OpenConnectionOptions } from '@libp2p/interface-internal'
+import type { ConnectionManager } from '@libp2p/interface-internal'
 import { autodial } from './network/autodial'
-import { ipnsSelector } from 'ipns/selector'
-import { ipnsValidator } from 'ipns/validator'
+//import { webSockets } from '@libp2p/websockets'
+//import { webTransport } from '@libp2p/webtransport'
 //TODO: rendezvous
 
 await Data.repair()
@@ -62,7 +62,7 @@ const node = await createLibp2p({
     addresses: {
         listen: [
             `/ip4/0.0.0.0/tcp/${ports.tcp}`,
-            //`/ip4/0.0.0.0/tcp/${ports.tcp}/ws`,
+            //`/ip4/0.0.0.0/tcp/${0}/ws`,
             `/ip4/0.0.0.0/udp/${0}/webrtc-direct`,
             `/p2p-circuit`,
             `/webrtc`,
@@ -73,6 +73,8 @@ const node = await createLibp2p({
         webRTCDirect(),
         webRTC(),
         tcp(),
+        //webSockets(),
+        //webTransport(),
     ],
     streamMuxers: [ yamux() ],
     connectionEncrypters: [ noise({
@@ -149,7 +151,7 @@ const node = await createLibp2p({
         //TODO: Run only if reported available from outside by autoNAT?
         relay: circuitRelayServer(), // Default relay+keepalive-tag.value = 1 + 1
         aminoDHT: kadDHT({
-            //protocol: '/ipfs/kad/1.0.0',
+            protocol: '/ipfs/kad/1.0.0',
             peerInfoMapper: removePrivateAddressesMapper,
             //logPrefix: 'libp2p:dht-amino',
             //datastorePrefix: '/dht-amino',

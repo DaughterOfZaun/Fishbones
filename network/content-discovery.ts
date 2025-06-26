@@ -48,7 +48,9 @@ class DiscoveryClass extends TypedEventEmitter<PeerDiscoveryEvents> implements P
         this.abortController = new AbortController()
         const abortOpts = { signal: this.abortController.signal }
 
-        /*await*/ this.components.contentRouting.provide(this.init.cid, abortOpts)
+        await new Promise(res => setTimeout(res, 60_000))
+
+        await this.components.contentRouting.provide(this.init.cid, abortOpts)
             .then(() => this.log('done announcing self as a provider'))
             .catch(err => this.log.error('error announcing self as provider - %e', err))
         
@@ -59,6 +61,7 @@ class DiscoveryClass extends TypedEventEmitter<PeerDiscoveryEvents> implements P
                 this.safeDispatchEvent('peer', { detail: provider })
             }
             this.log('providers search ended')
+            await new Promise(res => setTimeout(res, 10_000))
         }
     }
     beforeStop?(): void | Promise<void> {}
