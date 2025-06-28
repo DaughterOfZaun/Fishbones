@@ -24,7 +24,7 @@ import * as Data from './data'
 import type { Peer as PBPeer } from './message/peer'
 import { circuitRelayServer, circuitRelayTransport } from '@libp2p/circuit-relay-v2'
 import { dcutr } from '@libp2p/dcutr'
-import { autoNAT } from '@libp2p/autonat'
+import { autoNATv2 } from '@libp2p/autonat-v2'
 import { uPnPNAT, type UPnPNAT } from '@libp2p/upnp-nat'
 import { webRTC, webRTCDirect } from '@libp2p/webrtc'
 import { kadDHT, removePrivateAddressesMapper, type KadDHT } from '@libp2p/kad-dht'
@@ -147,7 +147,7 @@ const node = await createLibp2p({
         */
         dcutr: dcutr(),
         upnpNAT: uPnPNAT(),
-        autoNAT: autoNAT(),
+        autoNAT: autoNATv2(),
         //TODO: Run only if reported available from outside by autoNAT?
         relay: circuitRelayServer(), // Default relay+keepalive-tag.value = 1 + 1
         aminoDHT: kadDHT({
