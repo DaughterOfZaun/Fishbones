@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /**
@@ -31,14 +32,43 @@
 
 import type { ComponentLogger, Connection, CounterGroup, CreateListenerOptions, DialTransportOptions, Listener, ListenerEvents, Logger, MetricGroup, Metrics, MultiaddrConnection, OutboundConnectionUpgradeEvents, Transport, Upgrader } from '@libp2p/interface'
 import { AbortError, AlreadyStartedError, InvalidParametersError, NotStartedError, TimeoutError, serviceCapabilities, transportSymbol } from '@libp2p/interface'
-import { getThinWaistAddresses } from '@libp2p/utils/get-thin-waist-addresses'
+
+import { getThinWaistAddresses as getThinWaistAddressesOriginal } from '@libp2p/utils/get-thin-waist-addresses'
+const utpMultiaddress = multiaddr('/utp')
+function getThinWaistAddresses (ma?: Multiaddr, port?: number): Multiaddr[] {
+  return getThinWaistAddressesOriginal(ma, port).map(ma => ma.encapsulate(utpMultiaddress))
+}
+
 import { ipPortToMultiaddr as toMultiaddr } from '@libp2p/utils/ip-port-to-multiaddr'
 import type { AbortOptions, Multiaddr } from '@multiformats/multiaddr'
 import { multiaddr } from '@multiformats/multiaddr'
-import { TCP as TCPMatcher } from '@multiformats/multiaddr-matcher'
+
+//import { TCP as TCPMatcher } from '@multiformats/multiaddr-matcher'
+import { IP_OR_DOMAIN, UDP } from '@multiformats/multiaddr-matcher'
+import { and, literal, fmt, number, optional, peerId } from '@multiformats/multiaddr-matcher/utils'
+//const _IP_OR_DOMAIN = IP_OR_DOMAIN.matchers[0]!
+//const _UTP = and(_IP_OR_DOMAIN, literal('utp'), number())
+const _UDP = UDP.matchers[0]!
+const _UTP = and(_UDP, literal('utp'))
+const TCPMatcher = fmt(and(_UTP, optional(peerId())))
+
 import { TypedEventEmitter, setMaxListeners } from 'main-event'
-import type { IpcSocketConnectOpts, ListenOptions, Socket, TcpSocketConnectOpts } from 'net'
+import type { IpcSocketConnectOpts, ListenOptions, Socket, SocketConnectOpts, TcpSocketConnectOpts } from 'net'
+
 //import net from 'net'
+//@ts-expect-error Could not find a declaration file for module 'utp-native'.
+import net from 'utp-native'
+const net_prototype_listen = net.prototype.listen
+net.prototype.listen = function listen(options: ListenOptions, callback: () => void){
+  const { port, host } = options
+  return net_prototype_listen.call(this, port, host, callback)
+}
+const net_prototype_connect = net.prototype.connect
+net.prototype.connect = function connect(options: TcpSocketConnectOpts){
+  const { port, host } = options
+  return net_prototype_connect.call(this, port, host, options)
+}
+
 import os from 'os'
 import type { DeferredPromise } from 'p-defer'
 import pDefer from 'p-defer'
@@ -48,8 +78,6 @@ import type { ProgressEvent } from 'progress-events'
 import { CustomProgressEvent } from 'progress-events'
 import { raceEvent } from 'race-event'
 import { duplex } from 'stream-to-it'
-//@ts-expect-error Could not find a declaration file for module 'utp-native'.
-import net from 'utp-native'
 
 interface CloseServerOnMaxConnectionsOpts {
   /**
@@ -140,7 +168,7 @@ interface TCPSocketOptions {
 
 type TCPDialEvents =
   OutboundConnectionUpgradeEvents |
-  ProgressEvent<'tcp:open-connection'>
+  ProgressEvent<'utp:open-connection'>
 
 interface TCPDialOptions extends DialTransportOptions<TCPDialEvents>, TCPSocketOptions {
 
@@ -160,7 +188,7 @@ interface TCPMetrics {
   errors: CounterGroup<'outbound_to_connection' | 'outbound_upgrade'>
 }
 
-export function tcp (init: TCPOptions = {}): (components: TCPComponents) => Transport {
+export function utp (init: TCPOptions = {}): (components: TCPComponents) => Transport {
   return (components: TCPComponents) => {
     return new TCP(components, init)
   }
@@ -203,7 +231,7 @@ class TCP implements Transport<TCPDialEvents> {
   private readonly log: Logger
 
   constructor (components: TCPComponents, options: TCPOptions = {}) {
-    this.log = components.logger.forComponent('libp2p:tcp')
+    this.log = components.logger.forComponent('libp2p:utp')
     this.opts = options
     this.components = components
 
@@ -223,7 +251,7 @@ class TCP implements Transport<TCPDialEvents> {
 
   readonly [transportSymbol] = true
 
-  readonly [Symbol.toStringTag] = '@libp2p/tcp'
+  readonly [Symbol.toStringTag] = '@libp2p/utp'
 
   readonly [serviceCapabilities]: string[] = [
     '@libp2p/transport'
@@ -266,7 +294,7 @@ class TCP implements Transport<TCPDialEvents> {
 
   async _connect (ma: Multiaddr, options: TCPDialOptions): Promise<Socket> {
     options.signal.throwIfAborted()
-    options.onProgress?.(new CustomProgressEvent('tcp:open-connection'))
+    options.onProgress?.(new CustomProgressEvent('utp:open-connection'))
 
     let rawSocket: Socket
 
@@ -426,7 +454,7 @@ class TCPListener extends TypedEventEmitter<ListenerEvents> implements Listener 
     this.shutdownController = new AbortController()
     setMaxListeners(Infinity, this.shutdownController.signal)
 
-    this.log = context.logger.forComponent('libp2p:tcp:listener')
+    this.log = context.logger.forComponent('libp2p:utp:listener')
     this.addr = 'unknown'
     this.server = net.createServer(context, this.onSocket.bind(this))
 
@@ -490,7 +518,7 @@ class TCPListener extends TypedEventEmitter<ListenerEvents> implements Listener 
 
         this.safeDispatchEvent('listening')
       })
-      .on('error', err => {
+      .on('error', (err: any) => {
         this.metrics.errors?.increment({ [`${this.addr} listen_error`]: true })
         this.safeDispatchEvent('error', { detail: err })
       })
@@ -727,7 +755,7 @@ interface ToConnectionOptions {
  */
 const toMultiaddrConnection = (socket: Socket, options: ToConnectionOptions): MultiaddrConnection => {
   let closePromise: DeferredPromise<void>
-  const log = options.logger.forComponent('libp2p:tcp:socket')
+  const log = options.logger.forComponent('libp2p:utp:socket')
   const direction = options.direction
   const metrics = options.metrics
   const metricPrefix = options.metricPrefix ?? ''
