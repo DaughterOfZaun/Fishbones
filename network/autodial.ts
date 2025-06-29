@@ -163,9 +163,15 @@ class Autodial implements Startable {
         //if(reason == 'timeout' || reason == 'disconnect'){
             const connections = this.components.connectionManager.getConnections()
             const currentConnectionCount = connections.length 
-            const valuableConnections = 240 - this.getConnectionCapacity()
+            const maxConnections = this.components.connectionManager.getMaxConnections()
+            const connectionsAllowed = maxConnections * this.init.connectionThreshold * 0.01
+            const valuableConnections = connectionsAllowed - this.getConnectionCapacity()
             //this.log('reevaluatePeer %p', peerId, 'reason', reason, 'value', peerValue.value, 'valuable', valuable, 'capacity', capacity)
-            this.log('reevaluatePeer %p', peerId, 'reason', reason, 'value', peerValue.value, 'valuable connections', valuableConnections, 'of', 240, 'of', currentConnectionCount, capacity)
+            this.log(
+                'reevaluatePeer %p', peerId, 'reason', reason, 'value', peerValue.value,
+                'valuable connections', valuableConnections, 'of', currentConnectionCount, 'of', maxConnections,
+                capacity
+            )
         //}
         if(this.running && !capacity) this.stopAutodial()
         if(!this.running && capacity) this.startAutodial()
