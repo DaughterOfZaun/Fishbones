@@ -1,6 +1,6 @@
 import os from 'node:os'
 
-import { dlopen, JSCallback } from "bun:ffi";
+import { dlopen, JSCallback, read, toArrayBuffer, toBuffer, type Pointer } from "bun:ffi";
 const int = 'int' as const
 const ptr_t = 'ptr' as const
 const void_t = 'void' as const
@@ -139,40 +139,172 @@ enum UTPCallback {
     SENDTO,
 }
 
-const callback_log = new JSCallback(() => {
+/*
+typedef struct {
+	utp_context *context;
+	utp_socket *socket;
+	size_t len;
+	uint32 flags;
+	int callback_type;
+	const byte *buf;
+
+	union {
+		const struct sockaddr *address;
+		int send;
+		int sample_ms;
+		int error_code;
+		int state;
+	};
+
+	union {
+		socklen_t address_len;
+		int type;
+	};
+} utp_callback_arguments;
+*/
+
+const bits = 64 as const
+const sizeof_ptr_t = bits / 8
+const sizeof_uint32 = 32 / 8
+const sizeof_int = 32 / 8
+const utp_callback_arguments = {
+    get_context(args: Pointer) { return UTPContext.fromHandle(read.ptr(args, 0) as Pointer) }, // sizeof_ptr_t
+    get_socket(args: Pointer) { return UTPSocket.fromHandle(read.ptr(args, sizeof_ptr_t) as Pointer) }, // sizeof_ptr_t
+    //get_len(args: Pointer) { return read[`i${bits}`](args, sizeof_ptr_t * 2) }, // sizeof_ptr_t
+    get_flags(args: Pointer) { return read.u32(args, sizeof_ptr_t * 3) }, // sizeof_uint32
+    get_callback_type(args: Pointer) { return read.i32(args, sizeof_ptr_t * 3 + sizeof_uint32) }, // sizeof_int
+    get_buf(args: Pointer) {
+        const ptr = read.ptr(args, sizeof_ptr_t * 3 + sizeof_uint32 + sizeof_int) as Pointer
+        const len = read[`i${bits}`](args, sizeof_ptr_t * 2) //get_len(args)
+        return toBuffer(ptr, 0, Number(len))
+    }, // sizeof_ptr_t
+
+    get_state(args: Pointer){ return read.i32(args, sizeof_ptr_t * 3 + sizeof_uint32 + sizeof_int + sizeof_ptr_t) },
+    get_error_code(args: Pointer){ return read.i32(args, sizeof_ptr_t * 3 + sizeof_uint32 + sizeof_int + sizeof_ptr_t) },
+    get_address(args: Pointer){ return read.ptr(args, sizeof_ptr_t * 3 + sizeof_uint32 + sizeof_int + sizeof_ptr_t) as Pointer },
+}
+
+const contexts = new Map<Pointer, UTPContext>()
+const sockets = new Map<Pointer, UTPSocket>()
+
+const callback_log = new JSCallback((args: Pointer) => {
     console.log('callback_log')
-}, { args: [], returns: void_t })
-const callback_sendto = new JSCallback(() => {
+}, { args: [ ptr_t /*args*/ ], returns: void_t })
+
+const callback_sendto = new JSCallback((args: Pointer) => {
     console.log('callback_sendto')
-}, { args: [], returns: void_t })
-const callback_on_error = new JSCallback(() => {
+    const socket = utp_callback_arguments.get_socket(args)
+    const buf = utp_callback_arguments.get_buf(args)
+    const address = utp_callback_arguments.get_address(args)
+    const flags = utp_callback_arguments.get_flags(args)
+    socket.handler?.send?.(buf, address, flags)
+}, { args: [ ptr_t /*args*/ ], returns: void_t })
+
+const callback_on_error = new JSCallback((args: Pointer) => {
     console.log('callback_on_error')
-}, { args: [], returns: void_t })
-const callback_on_state_change = new JSCallback(() => {
+    const socket = utp_callback_arguments.get_socket(args)
+    const error_code = utp_callback_arguments.get_error_code(args)
+    socket.handler?.error?.(error_code)
+}, { args: [ ptr_t /*args*/ ], returns: void_t })
+
+const callback_on_state_change = new JSCallback((args: Pointer) => {
     console.log('callback_on_state_change')
-}, { args: [], returns: void_t })
-const callback_on_read = new JSCallback(() => {
+    const socket = utp_callback_arguments.get_socket(args)
+    const state = utp_callback_arguments.get_state(args)
+    socket.handler?.state_change?.(state)
+}, { args: [ ptr_t /*args*/ ], returns: void_t })
+
+const callback_on_read = new JSCallback((args: Pointer) => {
     console.log('callback_on_read')
-}, { args: [], returns: void_t })
-const callback_on_firewall = new JSCallback(() => {
+    const socket = utp_callback_arguments.get_socket(args)
+    const buf = utp_callback_arguments.get_buf(args)
+    socket.handler?.read?.(buf)
+}, { args: [ ptr_t /*args*/ ], returns: void_t })
+
+const callback_on_firewall = new JSCallback((args: Pointer) => {
     console.log('callback_on_firewall')
-}, { args: [], returns: void_t })
-const callback_on_accept = new JSCallback(() => {
+    const context = utp_callback_arguments.get_context(args)
+    const address = utp_callback_arguments.get_address(args)
+    context.handler?.firewall?.(address)
+}, { args: [ ptr_t /*args*/ ], returns: void_t })
+
+const callback_on_accept = new JSCallback((args: Pointer) => {
     console.log('callback_on_accept')
-}, { args: [], returns: void_t })
+    const context = utp_callback_arguments.get_context(args)
+    const socket = utp_callback_arguments.get_socket(args)
+    const address = utp_callback_arguments.get_address(args)
+    context.handler?.accept?.(socket, address)
+}, { args: [ ptr_t /*args*/ ], returns: void_t })
+
+export const init = (version = 2) => {
+    const handle = utp_init(version)!
+    const context = UTPContext.fromHandle(handle)
+    
+    utp_set_callback(handle, UTPCallback.LOG, callback_log.ptr);
+    utp_set_callback(handle, UTPCallback.SENDTO, callback_sendto.ptr);
+    utp_set_callback(handle, UTPCallback.ON_ERROR, callback_on_error.ptr);
+    utp_set_callback(handle, UTPCallback.ON_STATE_CHANGE, callback_on_state_change.ptr);
+    utp_set_callback(handle, UTPCallback.ON_READ, callback_on_read.ptr);
+    utp_set_callback(handle, UTPCallback.ON_FIREWALL, callback_on_firewall.ptr);
+    utp_set_callback(handle, UTPCallback.ON_ACCEPT, callback_on_accept.ptr);
+    
+    return context
+}
+
+class UTPAddress {
+
+}
+
+class UTPContext {
+    public handler?: {
+        accept?: (socket: UTPSocket) => void
+        firewall?: (address: UTPAddress) => void
+    }
+    private constructor(private readonly handle: Pointer){}
+    static fromHandle(handle: Pointer){
+        let context = contexts.get(handle)
+        if(!context){
+            context = new UTPContext(handle)
+            contexts.set(handle, context)
+        }
+        return context
+    }
+}
+
+enum UTPError {
+	CONNREFUSED = 0,
+	CONNRESET,
+	TIMEDOUT,
+}
+
+enum UTPState {
+    CONNECT = 1,
+    WRITABLE = 2,
+    EOF = 3,
+    DESTROYING = 4,
+}
+
+class UTPSocket {
+    public handler?: {
+        read?: (buf: Buffer) => void
+        state_change?: (state: UTPState) => void
+        error?: (err: UTPError) => void
+        send?: (buf: Buffer, address: UTPAddress, flags: UTPFlags) => void
+    }
+    private constructor(private readonly handle: Pointer){}
+    static fromHandle(handle: Pointer){
+        let socket = sockets.get(handle)
+        if(!socket){
+            socket = new UTPSocket(handle)
+            sockets.set(handle, socket)
+        }
+        return socket
+    }
+}
 
 console.log('begin')
 
-const ctx = utp_init(2)
-utp_set_callback(ctx, UTPCallback.LOG, callback_log.ptr);
-utp_set_callback(ctx, UTPCallback.SENDTO, callback_sendto.ptr);
-utp_set_callback(ctx, UTPCallback.ON_ERROR, callback_on_error.ptr);
-utp_set_callback(ctx, UTPCallback.ON_STATE_CHANGE, callback_on_state_change.ptr);
-utp_set_callback(ctx, UTPCallback.ON_READ, callback_on_read.ptr);
-utp_set_callback(ctx, UTPCallback.ON_FIREWALL, callback_on_firewall.ptr);
-utp_set_callback(ctx, UTPCallback.ON_ACCEPT, callback_on_accept.ptr);
-
-const socket = utp_create_socket(ctx);
+const ctx = init()
 
 enum AddressFamily {
     INET = 2,
