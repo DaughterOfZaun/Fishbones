@@ -1,19 +1,14 @@
 import { type Pointer } from "bun:ffi";
-import type { UTPError, UTPFlags, UTPState } from "./enums";
 import type { UTPAddress } from "./address";
-import { utp_connect, utp_getsockopt, utp_read_drained, utp_setsockopt, utp_shutdown, utp_write } from "./symbols";
+import { utp_close, utp_connect, utp_getsockopt, utp_read_drained, utp_setsockopt, utp_shutdown, utp_write } from "./symbols";
+import type { UTPOptions, UTPShutdown } from "./enums";
 
 const sockets = new Map<Pointer, UTPSocket>()
 
 export class UTPSocket {
-    public handler?: {
-        read?: (buf: Buffer) => void
-        state_change?: (state: UTPState) => void
-        error?: (err: UTPError) => void
-        send?: (buf: Buffer, address: UTPAddress, flags: UTPFlags) => void
-        log?: (buf: string) => void
-    }
+    
     private constructor(private readonly handle: Pointer){}
+
     static fromHandle(handle: Pointer){
         let socket = sockets.get(handle)
         if(!socket){
@@ -25,10 +20,10 @@ export class UTPSocket {
 
     //set_userdata(userdata: unknown){}
     //get_userdata(){}
-    setsockopt(opt: number, val: number){
+    setsockopt(opt: UTPOptions, val: number){
         return utp_setsockopt(this.handle, opt, val)
     }
-    getsockopt(opt: number){
+    getsockopt(opt: UTPOptions){
         return utp_getsockopt(this.handle, opt)
     }
     connect(to: UTPAddress){
@@ -45,8 +40,10 @@ export class UTPSocket {
     //get_delays(): { ours: number, theirs: number, age: number } {}
     //get_stats(){}
     //get_context(){}
-    shutdown(how: number){
+    shutdown(how: UTPShutdown){
         return utp_shutdown(this.handle, how)
     }
-    close(){}
+    close(){
+        return utp_close(this.handle)
+    }
 }

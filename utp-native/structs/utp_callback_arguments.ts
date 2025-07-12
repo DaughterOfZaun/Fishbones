@@ -24,7 +24,9 @@ typedef struct {
 } utp_callback_arguments;
 */
 
-const bits = 64 as const
+const is64Bit = () => ['arm64', 'ppc64', 'x64', 's390x'].includes(process.arch)
+
+const bits = is64Bit() ? 64 : 32
 const sizeof_ptr_t = bits / 8
 const sizeof_size_t = bits / 8
 const sizeof_uint32 = 32 / 8

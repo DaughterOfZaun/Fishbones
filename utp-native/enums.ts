@@ -17,6 +17,15 @@ export enum UTPCallback {
     SENDTO,
 }
 
+export enum UTPOptions {
+    UTP_LOG_NORMAL = 16,
+    UTP_LOG_MTU,
+    UTP_LOG_DEBUG,
+	UTP_SNDBUF,
+	UTP_RCVBUF,
+	UTP_TARGET_DELAY,
+}
+
 export enum UTPError {
     CONNREFUSED = 0,
     CONNRESET,
@@ -33,3 +42,10 @@ export enum UTPState {
 export enum UTPFlags {
     DONTFRAG = 2,
 }
+
+export enum UTPShutdown
+{
+    SHUT_RD = 0, // No more receptions.
+    SHUT_WR, // No more transmissions.
+    SHUT_RDWR, // No more receptions or transmissions.
+};

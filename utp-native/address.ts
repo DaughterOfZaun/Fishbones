@@ -1,7 +1,7 @@
 import { read, type Pointer } from 'bun:ffi'
 import os from 'node:os'
 
-enum AddressFamily {
+export enum AddressFamily {
     INET = 2,
     INET6 = 10,
 }
@@ -58,7 +58,7 @@ export class UTPAddress {
             }
         }
     }
-    
+
     static fromPointer(ptr: Pointer) {
         const family = read.u16(ptr, 0)
         const port = read.u16(ptr, 2) //TODO: BE

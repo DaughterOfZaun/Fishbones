@@ -9,6 +9,7 @@ export const size_t = 'uint32_t' as const
 export const socklen_t = 'uint32_t' as const
 export const uint16 = 'uint16_t' as const
 export const callback = 'callback' as const
+export const uint64 = 'uint64_t' as const
 
 let src = `
 utp_context*	utp_init						(int version);

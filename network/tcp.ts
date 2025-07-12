@@ -79,58 +79,7 @@ import { CustomProgressEvent } from 'progress-events'
 import { raceEvent } from 'race-event'
 import { duplex } from 'stream-to-it'
 
-class Server {
-  maxConnections!: number
-  on(arg0: string, arg1: () => void) {
-    throw new Error('Method not implemented.')
-    return this
-  }
-  address() {
-    throw new Error('Method not implemented.')
-  }
-  listening: any
-  once(arg0: string, reject: (reason?: any) => void) {
-    throw new Error('Method not implemented.')
-    return this
-  }
-  listen(netConfig: NetConfig, resolve: (value: void | PromiseLike<void>) => void) {
-    throw new Error('Method not implemented.')
-  }
-  close() {
-    throw new Error('Method not implemented.')
-  }
-}
-class Socket {
-  destroy(err?: any) {
-    throw new Error('Method not implemented.')
-  }
-  emit(arg0: string, err: TimeoutError) {
-    throw new Error('Method not implemented.')
-  }
-  removeListener(arg0: string, onError: (err: Error) => void) {
-    throw new Error('Method not implemented.')
-  }
-  on(arg0: string, onError: (err: Error) => void) {
-    throw new Error('Method not implemented.')
-    return this
-  }
-  once(arg0: string, arg1: () => void) {
-    throw new Error('Method not implemented.')
-    return this
-  }
-  readable: any
-  remoteAddress!: null
-  remotePort!: null
-  setTimeout(inactivityTimeout: number) {
-    throw new Error('Method not implemented.')
-  }
-  end() {
-    throw new Error('Method not implemented.')
-  }
-  closed: any
-  destroyed: any
-  writableLength!: number
-}
+import { createServer, Server, connect, Socket } from '../test-utp-2'
 
 interface CloseServerOnMaxConnectionsOpts {
   /**
@@ -359,7 +308,7 @@ class TCP implements Transport<TCPDialEvents> {
       }) as (IpcSocketConnectOpts & TcpSocketConnectOpts)
 
       this.log('dialing %a', ma)
-      rawSocket = net.connect(cOpts)
+      rawSocket = connect(cOpts)
 
       const onError = (err: Error): void => {
         this.log.error('dial to %a errored - %e', ma, err)
@@ -509,7 +458,7 @@ class TCPListener extends TypedEventEmitter<ListenerEvents> implements Listener 
 
     this.log = context.logger.forComponent('libp2p:utp:listener')
     this.addr = 'unknown'
-    this.server = net.createServer(context, this.onSocket.bind(this))
+    this.server = createServer(context, this.onSocket.bind(this))
 
     // https://nodejs.org/api/net.html#servermaxconnections
     // If set reject connections when the server's connection count gets high
@@ -710,6 +659,7 @@ class TCPListener extends TypedEventEmitter<ListenerEvents> implements Listener 
     const events: Array<Promise<void>> = []
 
     if (this.server.listening) {
+      //@ts-expect-error ...
       events.push(pEvent(this.server, 'close'))
     }
 
@@ -723,6 +673,7 @@ class TCPListener extends TypedEventEmitter<ListenerEvents> implements Listener 
     // the server socket in case new sockets are opened during the shutdown
     this.sockets.forEach(socket => {
       if (socket.readable) {
+        //@ts-expect-error ...
         events.push(pEvent(socket, 'close'))
         socket.destroy()
       }
