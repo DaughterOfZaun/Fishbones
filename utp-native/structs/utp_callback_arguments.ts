@@ -1,3 +1,5 @@
+import { type Pointer, read } from 'bun:ffi'
+
 /*
 typedef struct {
     utp_context *context;

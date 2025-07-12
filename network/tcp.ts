@@ -53,7 +53,7 @@ const _UTP = and(_UDP, literal('utp'))
 const TCPMatcher = fmt(and(_UTP, optional(peerId())))
 
 import { TypedEventEmitter, setMaxListeners } from 'main-event'
-import type { IpcSocketConnectOpts, ListenOptions, Socket, SocketConnectOpts, TcpSocketConnectOpts } from 'net'
+import type { IpcSocketConnectOpts, ListenOptions, /*Server, Socket,*/ SocketConnectOpts, TcpSocketConnectOpts } from 'net'
 
 //import net from 'net'
 //@ts-expect-error Could not find a declaration file for module 'utp-native'.
@@ -78,6 +78,59 @@ import type { ProgressEvent } from 'progress-events'
 import { CustomProgressEvent } from 'progress-events'
 import { raceEvent } from 'race-event'
 import { duplex } from 'stream-to-it'
+
+class Server {
+  maxConnections!: number
+  on(arg0: string, arg1: () => void) {
+    throw new Error('Method not implemented.')
+    return this
+  }
+  address() {
+    throw new Error('Method not implemented.')
+  }
+  listening: any
+  once(arg0: string, reject: (reason?: any) => void) {
+    throw new Error('Method not implemented.')
+    return this
+  }
+  listen(netConfig: NetConfig, resolve: (value: void | PromiseLike<void>) => void) {
+    throw new Error('Method not implemented.')
+  }
+  close() {
+    throw new Error('Method not implemented.')
+  }
+}
+class Socket {
+  destroy(err?: any) {
+    throw new Error('Method not implemented.')
+  }
+  emit(arg0: string, err: TimeoutError) {
+    throw new Error('Method not implemented.')
+  }
+  removeListener(arg0: string, onError: (err: Error) => void) {
+    throw new Error('Method not implemented.')
+  }
+  on(arg0: string, onError: (err: Error) => void) {
+    throw new Error('Method not implemented.')
+    return this
+  }
+  once(arg0: string, arg1: () => void) {
+    throw new Error('Method not implemented.')
+    return this
+  }
+  readable: any
+  remoteAddress!: null
+  remotePort!: null
+  setTimeout(inactivityTimeout: number) {
+    throw new Error('Method not implemented.')
+  }
+  end() {
+    throw new Error('Method not implemented.')
+  }
+  closed: any
+  destroyed: any
+  writableLength!: number
+}
 
 interface CloseServerOnMaxConnectionsOpts {
   /**
@@ -436,9 +489,9 @@ type Status = { code: TCPListenerStatusCode.INACTIVE } | {
 }
 
 class TCPListener extends TypedEventEmitter<ListenerEvents> implements Listener {
-  private readonly server: net.Server
+  private readonly server: Server
   /** Keep track of open sockets to destroy in case of timeout */
-  private readonly sockets = new Set<net.Socket>()
+  private readonly sockets = new Set<Socket>()
   private status: Status = { code: TCPListenerStatusCode.INACTIVE }
   private metrics: TCPListenerMetrics
   private addr: string
@@ -540,7 +593,7 @@ class TCPListener extends TypedEventEmitter<ListenerEvents> implements Listener 
       })
   }
 
-  private onSocket (socket: net.Socket): void {
+  private onSocket (socket: Socket): void {
     this.metrics.events?.increment({ [`${this.addr} connection`]: true })
 
     if (this.status.code !== TCPListenerStatusCode.ACTIVE) {

@@ -1,6 +1,7 @@
 import { type Pointer } from "bun:ffi";
 import type { UTPError, UTPFlags, UTPState } from "./enums";
 import type { UTPAddress } from "./address";
+import { utp_connect, utp_getsockopt, utp_read_drained, utp_setsockopt, utp_shutdown, utp_write } from "./symbols";
 
 const sockets = new Map<Pointer, UTPSocket>()
 
@@ -24,16 +25,28 @@ export class UTPSocket {
 
     //set_userdata(userdata: unknown){}
     //get_userdata(){}
-    setsockopt(opt: number, val: number){}
-    getsockopt(opt: number){}
-    connect(to: UTPAddress){}
-    write(buf: Buffer){}
-    writev(bufs: Buffer[]){}
+    setsockopt(opt: number, val: number){
+        return utp_setsockopt(this.handle, opt, val)
+    }
+    getsockopt(opt: number){
+        return utp_getsockopt(this.handle, opt)
+    }
+    connect(to: UTPAddress){
+        return utp_connect(this.handle, to.buffer, to.buffer.length)
+    }
+    write(buf: Buffer){
+        return utp_write(this.handle, buf, buf.length)
+    }
+    //writev(bufs: Buffer[]){}
     //getpeername(): UTPAddress {}
-    read_drained(){}
+    read_drained(){
+        return utp_read_drained(this.handle)
+    }
     //get_delays(): { ours: number, theirs: number, age: number } {}
-    get_stats(){}
+    //get_stats(){}
     //get_context(){}
-    shutdown(how: number){}
+    shutdown(how: number){
+        return utp_shutdown(this.handle, how)
+    }
     close(){}
 }
