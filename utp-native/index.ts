@@ -10,7 +10,15 @@ import { UTPAddress } from "./address";
 
 const utp_callback_arguments_get_context = (args: Pointer) => UTPContext.fromHandle(utp_callback_arguments.get_context(args))
 const utp_callback_arguments_get_socket = (args: Pointer) => UTPSocket.fromHandle(utp_callback_arguments.get_socket(args))
-const utp_callback_arguments_get_buf = (args: Pointer) => toBuffer(utp_callback_arguments.get_buf(args), 0, Number(utp_callback_arguments.get_len(args)))
+const utp_callback_arguments_get_buf = (args: Pointer) => {
+    const buf_ptr = utp_callback_arguments.get_buf(args)
+    //console.log('utp_callback_arguments_get_buf', 'ptr', buf_ptr)
+    const len = utp_callback_arguments.get_len(args)
+    //console.log('utp_callback_arguments_get_buf', 'len', len)
+    const buf = toBuffer(buf_ptr, 0, Number(len))
+    //console.log('utp_callback_arguments_get_buf', 'buf', buf)
+    return buf
+}
 const utp_callback_arguments_get_address = (args: Pointer) => UTPAddress.fromPointer(utp_callback_arguments.get_address(args))
 
 const callback_definition = { args: [ptr_t /*args*/], returns: uint64 }
@@ -73,10 +81,12 @@ const callback_on_accept = new JSCallback((args: Pointer) => {
 }, callback_definition)
 
 export const init = (version = 2, handler: UTPContext['handler']) => {
+    console.log('utp_init', version)
     const handle = utp_init(version)!
     const context = UTPContext.fromHandle(handle)
     context.handler = handler
 
+    console.log('utp_set_callback', handle)
     utp_set_callback(handle, UTPCallback.LOG, callback_log.ptr);
     utp_set_callback(handle, UTPCallback.SENDTO, callback_sendto.ptr);
     utp_set_callback(handle, UTPCallback.ON_ERROR, callback_on_error.ptr);

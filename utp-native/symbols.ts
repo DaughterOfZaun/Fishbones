@@ -1,11 +1,12 @@
-
 import { dlopen } from "bun:ffi"
+
+const is64Bit = ['arm64', 'ppc64', 'x64', 's390x'].includes(process.arch)
 
 export const int = 'int' as const
 export const ptr_t = 'ptr' as const
 export const void_t = 'void' as const
-export const ssize_t = 'int32_t' as const
-export const size_t = 'uint32_t' as const
+export const ssize_t = is64Bit ? 'int64_t' : 'int32_t'
+export const size_t = is64Bit ? 'uint64_t' : 'uint32_t'
 export const socklen_t = 'uint32_t' as const
 export const uint16 = 'uint16_t' as const
 export const callback = 'callback' as const
@@ -86,7 +87,7 @@ export const {
         utp_shutdown,
         utp_close,
     },
-    close
+    //close
 } = dlopen(
     `./node_modules/utp-native/prebuilds/linux-x64/node.napi.node`,
     {

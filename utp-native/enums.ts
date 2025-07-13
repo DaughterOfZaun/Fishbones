@@ -18,12 +18,12 @@ export enum UTPCallback {
 }
 
 export enum UTPOptions {
-    UTP_LOG_NORMAL = 16,
-    UTP_LOG_MTU,
-    UTP_LOG_DEBUG,
-	UTP_SNDBUF,
-	UTP_RCVBUF,
-	UTP_TARGET_DELAY,
+    LOG_NORMAL = 16,
+    LOG_MTU,
+    LOG_DEBUG,
+	SNDBUF,
+	RCVBUF,
+	TARGET_DELAY,
 }
 
 export enum UTPError {

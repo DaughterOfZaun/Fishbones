@@ -41,16 +41,15 @@ function getThinWaistAddresses (ma?: Multiaddr, port?: number): Multiaddr[] {
 
 import { ipPortToMultiaddr as toMultiaddr } from '@libp2p/utils/ip-port-to-multiaddr'
 import type { AbortOptions, Multiaddr } from '@multiformats/multiaddr'
-import { multiaddr } from '@multiformats/multiaddr'
+import { CODE_P2P, CODE_UTP, multiaddr } from '@multiformats/multiaddr'
 
 //import { TCP as TCPMatcher } from '@multiformats/multiaddr-matcher'
 import { IP_OR_DOMAIN, UDP } from '@multiformats/multiaddr-matcher'
-import { and, literal, fmt, number, optional, peerId } from '@multiformats/multiaddr-matcher/utils'
+import { and, code, fmt, optional, value } from '@multiformats/multiaddr-matcher/utils'
 //const _IP_OR_DOMAIN = IP_OR_DOMAIN.matchers[0]!
 //const _UTP = and(_IP_OR_DOMAIN, literal('utp'), number())
 const _UDP = UDP.matchers[0]!
-const _UTP = and(_UDP, literal('utp'))
-const TCPMatcher = fmt(and(_UTP, optional(peerId())))
+const TCPMatcher = fmt(and(_UDP, code(CODE_UTP), optional(value(CODE_P2P))))
 
 import { TypedEventEmitter, setMaxListeners } from 'main-event'
 import type { IpcSocketConnectOpts, ListenOptions, /*Server, Socket,*/ SocketConnectOpts, TcpSocketConnectOpts } from 'net'
@@ -77,9 +76,10 @@ import path from 'path'
 import type { ProgressEvent } from 'progress-events'
 import { CustomProgressEvent } from 'progress-events'
 import { raceEvent } from 'race-event'
-import { duplex } from 'stream-to-it'
+//import { duplex } from 'stream-to-it'
+const duplex = (socket: Socket) => socket
 
-import { createServer, Server, connect, Socket } from '../test-utp-2'
+import { createServer, type Server, connect, type Socket } from '../utp-over-udp'
 
 interface CloseServerOnMaxConnectionsOpts {
   /**

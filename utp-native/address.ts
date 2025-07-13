@@ -1,9 +1,17 @@
+import { isIPv4, isIPv6 } from '@chainsafe/is-ip'
 import { read, type Pointer } from 'bun:ffi'
 import os from 'node:os'
 
 export enum AddressFamily {
     INET = 2,
     INET6 = 10,
+}
+
+export const determineAddressFamily = (host: string) => {
+    const ipv4 = isIPv4(host)
+    const ipv6 = ipv4 ? false : isIPv6(host)
+    console.assert(ipv4 || ipv6)
+    return ipv4 ? AddressFamily.INET : AddressFamily.INET6
 }
 
 type BELE = 'BE' | 'LE'
@@ -16,6 +24,11 @@ declare global {
         writeUint16: BufferType[`writeUint16${BELE}`]
         writeUint32: BufferType[`writeUint32${BELE}`]
     }
+}
+
+//TODO: namespace
+function read_u16BE(ptr: Pointer, byteOffset: number): number {
+    return (read.u8(ptr, byteOffset) << 8) | (read.u8(ptr, byteOffset + 1))
 }
 
 export class UTPAddress {
@@ -33,7 +46,7 @@ export class UTPAddress {
         const { family, host, port } = this
         switch(family){
             case AddressFamily.INET: {
-                this.buf = buf = Buffer.allocUnsafe(16)
+                this.buf = buf = Buffer.alloc/*Unsafe*/(16)
                 buf.writeUint16(AddressFamily.INET, 0)
                 buf.writeUint16BE(port, 2)
                 const parts = host.split('.')
@@ -45,7 +58,7 @@ export class UTPAddress {
                 return buf //break;
             }
             case AddressFamily.INET6: {
-                this.buf = buf = Buffer.allocUnsafe(28)
+                this.buf = buf = Buffer.alloc/*Unsafe*/(28)
                 buf.writeUint16(AddressFamily.INET6, 0)
                 buf.writeUint16BE(port, 2)
                 //buf.writeUint32(0, 4) // flowinfo
@@ -61,7 +74,7 @@ export class UTPAddress {
 
     static fromPointer(ptr: Pointer) {
         const family = read.u16(ptr, 0)
-        const port = read.u16(ptr, 2) //TODO: BE
+        const port = read_u16BE(ptr, 2)
         const host = (family == AddressFamily.INET) ? [
             read.u8(ptr, 4 + 0),
             read.u8(ptr, 4 + 1),
