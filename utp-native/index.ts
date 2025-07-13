@@ -24,7 +24,8 @@ const utp_callback_arguments_get_address = (args: Pointer) => UTPAddress.fromPoi
 const callback_definition = { args: [ptr_t /*args*/], returns: uint64 }
 
 const callback_log = new JSCallback((args: Pointer) => {
-    console.log('callback_log')
+    args = Number(args) as Pointer
+    //console.log('callback_log')
     const context = utp_callback_arguments_get_context(args)
     const socket = utp_callback_arguments_get_socket(args)
     const buf = toBuffer(utp_callback_arguments.get_buf(args)).toString('utf8')
@@ -32,7 +33,8 @@ const callback_log = new JSCallback((args: Pointer) => {
 }, callback_definition)
 
 const callback_sendto = new JSCallback((args: Pointer) => {
-    console.log('callback_sendto')
+    args = Number(args) as Pointer
+    //console.log('callback_sendto')
     const context = utp_callback_arguments_get_context(args)
     const socket = utp_callback_arguments_get_socket(args)
     const buf = utp_callback_arguments_get_buf(args)
@@ -42,7 +44,8 @@ const callback_sendto = new JSCallback((args: Pointer) => {
 }, callback_definition)
 
 const callback_on_error = new JSCallback((args: Pointer) => {
-    console.log('callback_on_error')
+    args = Number(args) as Pointer
+    //console.log('callback_on_error')
     const context = utp_callback_arguments_get_context(args)
     const socket = utp_callback_arguments_get_socket(args)
     const error_code = utp_callback_arguments.get_error_code(args)
@@ -50,7 +53,8 @@ const callback_on_error = new JSCallback((args: Pointer) => {
 }, callback_definition)
 
 const callback_on_state_change = new JSCallback((args: Pointer) => {
-    console.log('callback_on_state_change')
+    args = Number(args) as Pointer
+    //console.log('callback_on_state_change')
     const context = utp_callback_arguments_get_context(args)
     const socket = utp_callback_arguments_get_socket(args)
     const state = utp_callback_arguments.get_state(args)
@@ -58,7 +62,8 @@ const callback_on_state_change = new JSCallback((args: Pointer) => {
 }, callback_definition)
 
 const callback_on_read = new JSCallback((args: Pointer) => {
-    console.log('callback_on_read')
+    args = Number(args) as Pointer
+    //console.log('callback_on_read')
     const context = utp_callback_arguments_get_context(args)
     const socket = utp_callback_arguments_get_socket(args)
     const buf = utp_callback_arguments_get_buf(args)
@@ -66,14 +71,16 @@ const callback_on_read = new JSCallback((args: Pointer) => {
 }, callback_definition)
 
 const callback_on_firewall = new JSCallback((args: Pointer) => {
-    console.log('callback_on_firewall')
+    args = Number(args) as Pointer
+    //console.log('callback_on_firewall')
     const context = utp_callback_arguments_get_context(args)
     const address = utp_callback_arguments_get_address(args)
     return context.handler?.firewall?.(address) ?? 0
 }, callback_definition)
 
 const callback_on_accept = new JSCallback((args: Pointer) => {
-    console.log('callback_on_accept')
+    args = Number(args) as Pointer
+    //console.log('callback_on_accept')
     const context = utp_callback_arguments_get_context(args)
     const socket = utp_callback_arguments_get_socket(args)
     const address = utp_callback_arguments_get_address(args)
@@ -81,12 +88,12 @@ const callback_on_accept = new JSCallback((args: Pointer) => {
 }, callback_definition)
 
 export const init = (version = 2, handler: UTPContext['handler']) => {
-    console.log('utp_init', version)
-    const handle = utp_init(version)!
+    //console.log('utp_init', version)
+    const handle = utp_init(version)
     const context = UTPContext.fromHandle(handle)
     context.handler = handler
 
-    console.log('utp_set_callback', handle)
+    //console.log('utp_set_callback', handle)
     utp_set_callback(handle, UTPCallback.LOG, callback_log.ptr);
     utp_set_callback(handle, UTPCallback.SENDTO, callback_sendto.ptr);
     utp_set_callback(handle, UTPCallback.ON_ERROR, callback_on_error.ptr);

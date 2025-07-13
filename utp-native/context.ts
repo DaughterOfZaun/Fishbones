@@ -30,44 +30,44 @@ export class UTPContext {
     }
 
     destroy(){
-        console.log('utp_destroy', this.handle)
+        //console.log('utp_destroy', this.handle)
         return utp_destroy(this.handle)
     }
     //set_callback(callback_name: UTPCallback, proc: unknown){}
     //set_userdata(userdata: unknown){}
     //get_userdata(){}
     set_option(opt: UTPOptions, val: number){
-        console.log('utp_context_set_option', this.handle, opt, val)
+        //console.log('utp_context_set_option', this.handle, opt, val)
         return utp_context_set_option(this.handle, opt, val)
     }
     get_option(opt: UTPOptions){
-        console.log('utp_context_get_option', this.handle, opt)
+        //console.log('utp_context_get_option', this.handle, opt)
         return utp_context_get_option(this.handle, opt)
     }
     process_udp(buf: Uint8Array, to: UTPAddress){
-        console.log('process_udp', this.handle, buf, buf.length, to.buffer, to.buffer.length)
+        //console.log('process_udp', this.handle, buf, buf.length, to.buffer, to.buffer.length)
         return utp_process_udp(this.handle, ptr(buf), buf.length, ptr(to.buffer), to.buffer.length)
     }
     process_icmp_error(buf: Uint8Array, to: UTPAddress){
-        console.log('utp_process_icmp_error', this.handle, buf, buf.length, to.buffer, to.buffer.length)
+        //console.log('utp_process_icmp_error', this.handle, buf, buf.length, to.buffer, to.buffer.length)
         return utp_process_icmp_error(this.handle, ptr(buf), buf.length, ptr(to.buffer), to.buffer.length)
     }
     process_icmp_fragmentation(buf: Uint8Array, to: UTPAddress, next_hop_mtu: number){
-        console.log('utp_process_icmp_fragmentation', this.handle, buf, buf.length, to.buffer, to.buffer.length, next_hop_mtu)
+        //console.log('utp_process_icmp_fragmentation', this.handle, buf, buf.length, to.buffer, to.buffer.length, next_hop_mtu)
         return utp_process_icmp_fragmentation(this.handle, ptr(buf), buf.length, ptr(to.buffer), to.buffer.length, next_hop_mtu)
     }
     check_timeouts(){
-        console.log('utp_check_timeouts', this.handle)
+        //console.log('utp_check_timeouts', this.handle)
         return utp_check_timeouts(this.handle)
     }
     issue_deferred_acks(){
-        console.log('utp_issue_deferred_acks', this.handle)
+        //console.log('utp_issue_deferred_acks', this.handle)
         return utp_issue_deferred_acks(this.handle)
     }
     //get_context_stats(){}
     create_socket(){
-        console.log('utp_create_socket', this.handle)
+        //console.log('utp_create_socket', this.handle)
         const socket = utp_create_socket(this.handle)
-        return UTPSocket.fromHandle(socket!)
+        return UTPSocket.fromHandle(socket)
     }
 }

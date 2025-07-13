@@ -37,16 +37,17 @@ export class Server extends TypedEventEmitter<ServerEvents> {
             port: opts.port,
             socket: {
                 data: (socket, data, port, address) => {
-                    console.log('udp socket', 'data')
+                    //console.log('udp socket', 'data')
                     this.ctx.process_udp(data, new UTPAddress(determineAddressFamily(address), address, port))
                     this.ctx.issue_deferred_acks() //TODO:
                 },
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 drain: (socket) => {
-                    console.log('udp socket', 'drain')
+                    //console.log('udp socket', 'drain')
                 },
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 error: (socket, error) => {
-                    console.log('udp socket', 'error', error)
+                    //console.log('udp socket', 'error', error)
                 },
             }
         })
@@ -77,11 +78,12 @@ export class Server extends TypedEventEmitter<ServerEvents> {
             },
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             send: (socket: UTPSocketExt, buf, address, flags) => {
-                console.log('send', address.host, address.port, buf)
+                //console.log('send', address.host, address.port, buf)
                 this.udp.send(buf, address.port, address.host)
             },
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             log: (socket: UTPSocketExt, buf) => {
-                console.log('log', buf)
+                //TODO: console.log('log', buf)
             },
         })
 
