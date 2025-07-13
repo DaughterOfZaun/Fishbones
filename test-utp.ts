@@ -14,18 +14,17 @@ import { multiaddr } from '@multiformats/multiaddr'
 import { peerIdFromString } from '@libp2p/peer-id'
 import { ping } from '@libp2p/ping'
 
-/*
 //@ts-expect-error Could not find a declaration file for module 'bittorrent-dht'. 
 import { Client as DHT } from 'bittorrent-dht'
+import { createSocket } from './network/umplex'
 
-const dht = new DHT({})
-      dht.on('warning', (err: Error) => console.log('dht', 'warning', err))
-      dht.on('error', (err: Error) => console.log('dht', 'error', err))
-      dht.listen(5002)
+const
+dht = new DHT({ socket: createSocket('udp4') })
+dht.on('warning', (err: Error) => console.log('dht', 'warning', err))
+dht.on('error', (err: Error) => console.log('dht', 'error', err))
+dht.listen(5002)
 
 await new Promise<void>(res => setTimeout(() => res(), 1000))
-
-*/
 
 const createNode = async (port: number) => {
   const node = await createLibp2p({
