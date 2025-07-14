@@ -7,6 +7,8 @@ export type { Socket, Server }
 let globalServer: Server
 
 export function createServer(opts: object, onConnection?: (socket: Socket) => void): Server {
+    console.assert(!globalServer)
+
     const server = new Server()
     if(onConnection) server.on('connection', onConnection.bind(server))
     globalServer ??= server
@@ -14,6 +16,8 @@ export function createServer(opts: object, onConnection?: (socket: Socket) => vo
 }
 
 export function connect(opts: { host?: string, port?: number }): Socket {
+    console.assert(globalServer)
+
     const { host, port } = opts
     const { ctx } = globalServer
 

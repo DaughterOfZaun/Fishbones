@@ -4,6 +4,7 @@ import { determineAddressFamily, UTPAddress } from "../utp-native/address"
 import { TypedEventEmitter } from "./emitter"
 import { Socket, type UTPSocketExt } from "./socket"
 import type { UTPContext } from '../utp-native/context'
+import { isUTP, udpSocket } from '../network/umplex'
 
 type ServerEvents = {
     listening: [],
@@ -24,18 +25,19 @@ export class Server extends TypedEventEmitter<ServerEvents> {
     int!: ReturnType<typeof setInterval>
 
     address() {
-        return { address: this.udp!.hostname, port: this.udp!.port }
+        return { address: this.udp.hostname, port: this.udp.port }
     }
     
     async listen(opts: { host?: string, port?: number }, onListening?: () => void) {
 
         //if(onListening) this.once('listening', onListening.bind(this))
 
-        this.udp = await Bun.udpSocket({
+        this.udp = await udpSocket({
             binaryType: 'buffer',
             hostname: opts.host,
             port: opts.port,
             socket: {
+                filter: isUTP,
                 data: (socket, data, port, address) => {
                     //console.log('udp socket', 'data')
                     this.ctx.process_udp(data, new UTPAddress(determineAddressFamily(address), address, port))
