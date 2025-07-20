@@ -176,6 +176,7 @@ type SocketEvents = {
     close: [],
 }
 
+export type { Socket }
 class Socket extends TypedEventEmitter<SocketEvents> {
 
     constructor(

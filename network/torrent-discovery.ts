@@ -1,6 +1,6 @@
 import { privateKeyFromRaw, publicKeyFromRaw } from '@libp2p/crypto/keys'
 import { TypedEventEmitter, peerDiscoverySymbol, serviceCapabilities } from '@libp2p/interface'
-import type { AbortOptions, ComponentLogger, IdentifyResult, Libp2pEvents, Logger, PeerDiscovery, PeerDiscoveryEvents, PeerDiscoveryProvider, PeerId, PeerStore, PrivateKey, PublicKey, Startable, TypedEventTarget } from '@libp2p/interface'
+import type { AbortOptions, ComponentLogger, Libp2pEvents, Logger, PeerDiscovery, PeerDiscoveryEvents, PeerDiscoveryProvider, PeerId, PeerStore, PrivateKey, PublicKey, Startable, TypedEventTarget } from '@libp2p/interface'
 import type { AddressManager, ConnectionManager } from '@libp2p/interface-internal'
 import { ipPortToMultiaddr } from '@libp2p/utils/ip-port-to-multiaddr'
 import { multiaddr, type Multiaddr } from '@multiformats/multiaddr'
@@ -34,7 +34,7 @@ import type { BinaryLike } from 'node:crypto'
 import type KRPC from 'k-rpc'
 //@ts-expect-error: Could not find a declaration file for module 'k-rpc-socket'
 import type KRPCSocket from 'k-rpc-socket'
-import type { Socket } from '../network/umplex'
+import { createSocket, isDHT, type Socket } from '../network/umplex'
 
 interface KRPCSocketInit {
     timeout?: number //= 2000
@@ -83,9 +83,10 @@ interface DiscoveryInit {
 
 interface DiscoveryServiceInit {
     infoHash: string | Buffer
-    startupDelay?: number
     findSelfInterval?: number
-    //observationsCount?: number
+    republishInterval?: number
+    observationLifetime?: number
+    observationsCount?: number
 }
 
 interface DiscoveryComponents {
@@ -119,14 +120,21 @@ const sign = (data: Uint8Array, publicKeyRaw: Uint8Array, privateKeyRaw: Uint8Ar
 }
 */
 
-type RPCPeer = ({ host: string } | { address: string }) & { port: number }
+type RPCPeer = { host?: string, address?: string, port: number }
 type RPCResponse = { r: { nodes?: Buffer } }
 type RPCVisitCallback = (res: RPCResponse, peer: RPCPeer) => void
+
+type HostPort = { host: string, port: number }
+type ExternalAddress = HostPort & {
+    reportedBy: Map<string, number>
+    publishedItShouldBe: boolean
+    published: boolean
+}
 
 class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerDiscovery, PeerDiscoveryProvider, Startable {
     
     private discovery: Discovery
-    private readonly init: DiscoveryServiceInit
+    private readonly init: Required<DiscoveryServiceInit>
     private readonly components: DiscoveryComponents
     private readonly log: Logger
 
@@ -138,16 +146,14 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
     
     constructor(init: DiscoveryServiceInit, components: DiscoveryComponents){
         super()
-        
-        this.components = components
-
         this.init = {
-            startupDelay: 60 * 1000,
-            findSelfInterval: 1 * 60 * 1000,
-            //observationsCount: 3,
+            findSelfInterval: 1/*m*/ * 60/*s*/ * 1000/*ms*/,
+            republishInterval: 1/*h*/ * 60/*m*/ * 60/*s*/ * 1000/*ms*/,
+            observationLifetime: 30/*m*/ * 60/*s*/ * 1000/*ms*/,
+            observationsCount: 3,
             ...init,
         }
-
+        this.components = components
         this.log = components.logger.forComponent('libp2p:torrent-discovery')
         this.privateKey = privateKeyFromRaw(uint8ArrayFromString(KEY, 'base64pad'))
         this.publicKey = this.privateKey.publicKey
@@ -162,7 +168,6 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
     public start() {
         if(this.discovery) return
 
-
         const init: DiscoveryInit = {
             port: 0,
             dhtPort: 0,
@@ -173,6 +178,7 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
             peerId: this.components.peerId.toString(),
             userAgent: USER_AGENT,
             dht: {
+                socket: createSocket({ type: 'udp4', filter: isDHT }),
                 //bootstrap: false,
                 verify,
             },
@@ -186,9 +192,9 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
         const rpc = discovery.dht._rpc
         const rpc__closest = rpc._closest
         rpc._closest = (target: unknown, message: unknown, background: unknown, visit: RPCVisitCallback, cb: unknown) => {
-            const patchedVisit = (!visit || visit === this.onreply) ? this.onreply : (res: RPCResponse, peer: RPCPeer) => {
+            const patchedVisit = (!visit || visit === this.onReply) ? this.onReply : (res: RPCResponse, peer: RPCPeer) => {
                 const ret = visit(res, peer)
-                this.onreply(res, peer)
+                this.onReply(res, peer)
                 return ret
             }
             rpc__closest.call(rpc, target, message, background, patchedVisit, cb)
@@ -198,10 +204,29 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
         discovery.addListener('warning', this.onWarning)
         discovery.addListener('error', this.onError)
 
-        this.components.events.addEventListener('self:peer:update', this.maybeUpdate)
+        this.components.events.addEventListener('self:peer:update', this.onUpdate)
 
-        //this.findSelfTimeout = setTimeout(() => this.findSelf(), this.init.startupDelay)
-        //this.maybeUpdateTimeout = setTimeout(() => this.maybeUpdate(), this.init.startupDelay)
+        discovery.dht.once('ready', () => {
+            this.findSelfTimeout = setTimeout(this.findSelf, this.init.findSelfInterval)
+            this.publish(true)
+        })
+    }
+
+    public stop() {
+        if(!this.discovery) return
+        const discovery = this.discovery
+        this.discovery = undefined
+
+        discovery.removeListener('peer', this.onPeer)
+        discovery.removeListener('warning', this.onWarning)
+        discovery.removeListener('error', this.onError)
+
+        this.components.events.removeEventListener('self:peer:update', this.onUpdate)
+        
+        clearTimeout(this.publishTimeout)
+        clearTimeout(this.findSelfTimeout)
+        
+        return new Promise<void>(res => discovery.destroy(() => res()))
     }
 
     private findSelfTimeout?: ReturnType<typeof setTimeout>
@@ -221,9 +246,9 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
         
         this.log('begin finding self')
 
-        //rpc._closest(rpc.id, msg, true, this.onreply, done)
+        rpc._closest(rpc.id, msg, true, this.onReply, done)
         //rpc.populate(rpc.id, msg, done)
-        rpc.closest(rpc.id, msg, this.onreply, done.bind(this))
+        //rpc.closest(rpc.id, msg, this.onreply, done.bind(this))
         //rpc.queryAll()
         
         function done(this: DiscoveryClass, err?: Error){
@@ -233,9 +258,7 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
         }
     }
 
-    //let observations = 0
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    onreply = (res: RPCResponse, peer: RPCPeer) => {
+    private onReply = (res: RPCResponse, peer: RPCPeer) => {
         const rpc = this.discovery.dht._rpc
 
         const r = res && res.r
@@ -244,15 +267,14 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
         for(const node of nodes){
             //this.log('onreply', `${node.host}:${node.port}`, node.id.toString('hex'), 'vs', rpc.id.toString('hex'))
             if(node.id.equals(rpc.id)){
-                foundNewExtAddr ||= this.maybeAddExternalAddress(node, 'dht', res)
+                foundNewExtAddr ||= this.maybeAddExternalAddress(node, 'dht', res, peer)
             }
         }
         if(foundNewExtAddr)
             this.publish(false)
-        //return !(foundSelf && ++observations > 3)
     }
 
-    private onPeer = async (ipport: string /*| { id: string, ip: string, port: string }*/, source: 'tracker'|'dht'|'lsd') => {
+    private onPeer = async (ipport: string, source: 'tracker'|'dht'|'lsd') => {
         
         if(this.externalAddresses.has(ipport)){
             this.log('discovered self %s from %s', ipport, source)
@@ -297,66 +319,47 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
     private onError = (err: Error) => {
         this.log.error('error', err)
     }
-
-    public stop() {
-        if(!this.discovery) return
-        const discovery = this.discovery
-        this.discovery = undefined
-
-        discovery.removeListener('peer', this.onPeer)
-        discovery.removeListener('warning', this.onWarning)
-        discovery.removeListener('error', this.onError)
-
-        this.components.events.removeEventListener('self:peer:update', this.maybeUpdate)
-        
-        clearTimeout(this.maybeUpdateTimeout)
-        clearTimeout(this.findSelfTimeout)
-        
-        return new Promise<void>(res => discovery.destroy(() => res()))
-    }
-
-    //private isUpdating = false
-    private maybeUpdateTimeout?: ReturnType<typeof setTimeout>
-    private maybeUpdate = () => {
-        clearTimeout(this.maybeUpdateTimeout)
-        /*
-        if(this.isUpdating){
-            this.log('already being updated. update request rejected')
-            //TODO: Abort current update instead.
-            return
-        }
-        //this.isUpdating = true
-        */
-        this.update()
-        .catch(err => this.log('error updating DHT records - %e', err))
-        //.then(() => this.isUpdating = false)
-    }
     
     private multiaddrs: Multiaddr[] = []
     private multiaddrs_eq(to: Multiaddr[]){
         return this.multiaddrs.length === to.length && !this.multiaddrs.some(ma => !to.some(mb => ma.equals(mb)))
     }
     
-    private readonly externalAddresses = new Map<string, {
-        host: string
-        port: number
-        announced: boolean
-    }>()
-    private maybeAddExternalAddress(info: { host: string, port: number }, source: string, desc?: object): boolean {
+    private readonly externalAddresses = new Map<string, ExternalAddress>()
+    private maybeAddExternalAddress(info: HostPort, source: string, res: object, peer: RPCPeer): boolean {
+        const now = Date.now()
         const { host, port } = info
         const hostport = `${host}:${port}`
-        if(!this.externalAddresses.has(hostport)){
-            this.log('discovered new external address %s from %s', hostport, source, desc)
-            this.externalAddresses.set(hostport, { host, port, announced: false })
-            return true
+        const reporter = `${(peer.address || peer.host)!}:${peer.port}`
+        
+        let external = this.externalAddresses.get(hostport)
+        if(!external){
+            this.log('discovered new external address %s from %s', hostport, source, res)
+            this.externalAddresses.set(hostport, external = {
+                host, port,
+                published: false,
+                publishedItShouldBe: false,
+                reportedBy: new Map([[ reporter, now ]]),
+            })
+        } else {
+            external.reportedBy.set(reporter, now)
         }
-        return false
+        return this.reevaluateExternalAddress(external)
+    }
+    private reevaluateExternalAddress(external: ExternalAddress): boolean {
+        const now = Date.now()
+        const reportsCount = external.reportedBy.values()
+            .reduce((accum, reportedAt) => accum + +((now - reportedAt) <= this.init.observationLifetime), 0)
+        return !external.publishedItShouldBe && (external.publishedItShouldBe = (
+            reportsCount >= this.init.observationsCount
+        ))
     }
     
     private peerRecord?: PeerRecord
     private signedPeerRecord?: RecordEnvelope
+    private onUpdate = async (/*{ detail: { peer } }: CustomEvent<PeerUpdate>*/) => {
 
-    async update(options?: AbortOptions){
+        const options: AbortOptions | undefined = undefined
         const peerId = this.components.peerId
         const am = this.components.addressManager
 
@@ -367,9 +370,9 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
                 return ma.decapsulate(multiaddr(`/p2p/${peerId.toString()}`))
             })
         })
-        const multiaddrsChanged = !this.multiaddrs_eq(multiaddrs)
         //this.log(this.multiaddrs.map(ma => ma.toString()), 'vs', multiaddrs.map(ma => ma.toString()))
-        if(multiaddrsChanged){
+        if(!this.multiaddrs_eq(multiaddrs)){
+            this.multiaddrs = multiaddrs
             this.peerRecord = new PeerRecord({ peerId, multiaddrs, })
             this.signedPeerRecord = await RecordEnvelope.seal(this.peerRecord, this.privateKey, options)
             this.log('listening addresses have changed', multiaddrs.map(ma => ma.toString()))
@@ -377,16 +380,18 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
         }
     }
 
+    private publishTimeout?: ReturnType<typeof setTimeout>
     private publish(all: boolean){
+        clearTimeout(this.publishTimeout)
+        this.publishTimeout = setTimeout(this.publish, this.init.republishInterval)
+
         if(!this.peerRecord || !this.signedPeerRecord){
-            this.log('no addresses to announce')
+            this.log('no addresses to publish')
             return
         }
-        const recordsToUpdate = [...(all ?
-            this.externalAddresses.entries() :
-            this.externalAddresses.entries().filter(([, { announced }]) => !announced)
-        )]
-        
+        const recordsToUpdate = this.externalAddresses.entries()
+            .filter(([, external]) => external.publishedItShouldBe && (all || !external.published)).toArray()        
+
         if(recordsToUpdate.length > 0){
             this.log('begin putting records for', recordsToUpdate.map(([hostport,]) => hostport))
         } else return
@@ -394,7 +399,7 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
         for(const [hostport, info] of recordsToUpdate){
             const { host, port } = info
             
-            info.announced = true
+            info.published = true
 
             this.discovery.dht.put({
                 k: this.publicKey.raw,
