@@ -35,6 +35,7 @@ import type KRPC from 'k-rpc'
 //@ts-expect-error: Could not find a declaration file for module 'k-rpc-socket'
 import type KRPCSocket from 'k-rpc-socket'
 import { createSocket, isDHT, type Socket } from '../network/umplex'
+import { Queue } from '@libp2p/utils/queue'
 
 interface KRPCSocketInit {
     timeout?: number //= 2000
@@ -83,10 +84,15 @@ interface DiscoveryInit {
 
 interface DiscoveryServiceInit {
     infoHash: string | Buffer
+    announce?: string[]
+    
     findSelfInterval?: number
-    republishInterval?: number
-    observationLifetime?: number
     observationsCount?: number
+    observationLifetime?: number
+    republishInterval?: number
+
+    resolutionConcurrency?: number
+    resolutionLifetime?: number
 }
 
 interface DiscoveryComponents {
@@ -111,24 +117,24 @@ const verify = (signature: Uint8Array, data: Uint8Array, publicKeyRaw: Uint8Arra
     return publicKey.verify(data, signature)
         == true //HACK:
 }
-/*
-const sign = (data: Uint8Array, publicKeyRaw: Uint8Array, privateKeyRaw: Uint8Array) => {
-    const privateKey = privateKeyFromRaw(uint8ArrayConcat([
-        privateKeyRaw, publicKeyRaw,
-    ]))
-    return privateKey.sign(data)
-}
-*/
 
 type RPCPeer = { host?: string, address?: string, port: number }
-type RPCResponse = { r: { nodes?: Buffer } }
+type RPCResponse = { r: { nodes?: Buffer }, ip?: Buffer }
 type RPCVisitCallback = (res: RPCResponse, peer: RPCPeer) => void
+
+type BencodedPrimitive = Buffer | string | number
+type Bencoded = BencodedPrimitive | BencodedPrimitive[] | Record<string, BencodedPrimitive>
+type DHTGetReturnType = { v: Bencoded }
 
 type HostPort = { host: string, port: number }
 type ExternalAddress = HostPort & {
     reportedBy: Map<string, number>
     publishedItShouldBe: boolean
     published: boolean
+}
+type ResolutionJobOptions = AbortOptions & {
+    ipport: string
+    detail: Multiaddr
 }
 
 class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerDiscovery, PeerDiscoveryProvider, Startable {
@@ -140,23 +146,35 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
 
     private readonly publicKey: PublicKey
     private readonly privateKey: PrivateKey
-    private sign = (data: Uint8Array) => {
+    private readonly sign = (data: Uint8Array) => {
         return this.privateKey.sign(data)
     }
+
+    private readonly resolutionQueue: Queue<void, ResolutionJobOptions>
+    private readonly resolved = new Map<string, number>()
     
     constructor(init: DiscoveryServiceInit, components: DiscoveryComponents){
         super()
         this.init = {
+            announce: [],
+
             findSelfInterval: 1/*m*/ * 60/*s*/ * 1000/*ms*/,
-            republishInterval: 1/*h*/ * 60/*m*/ * 60/*s*/ * 1000/*ms*/,
-            observationLifetime: 30/*m*/ * 60/*s*/ * 1000/*ms*/,
             observationsCount: 3,
+            observationLifetime: 30/*m*/ * 60/*s*/ * 1000/*ms*/,
+            republishInterval: 1/*h*/ * 60/*m*/ * 60/*s*/ * 1000/*ms*/,
+
+            resolutionConcurrency: 3,
+            resolutionLifetime: 15/*m*/ * 60/*s*/ * 1000/*ms*/,
+            
             ...init,
         }
         this.components = components
         this.log = components.logger.forComponent('libp2p:torrent-discovery')
         this.privateKey = privateKeyFromRaw(uint8ArrayFromString(KEY, 'base64pad'))
         this.publicKey = this.privateKey.publicKey
+        this.resolutionQueue = new Queue({
+            concurrency: this.init.resolutionConcurrency
+        })
     }
 
     public readonly [peerDiscoverySymbol] = this
@@ -212,8 +230,9 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
         })
     }
 
-    public stop() {
+    public async stop() {
         if(!this.discovery) return
+
         const discovery = this.discovery
         this.discovery = undefined
 
@@ -226,13 +245,13 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
         clearTimeout(this.publishTimeout)
         clearTimeout(this.findSelfTimeout)
         
-        return new Promise<void>(res => discovery.destroy(() => res()))
+        await new Promise<void>(res => discovery.destroy(() => res()))
+
+        discovery.dht._rpc.socket.close()
     }
 
     private findSelfTimeout?: ReturnType<typeof setTimeout>
-    private findSelf = () => {
-        if(!this.discovery) return
-        
+    private readonly findSelf = () => {
         clearTimeout(this.findSelfTimeout)
         
         const rpc = this.discovery.dht._rpc
@@ -246,7 +265,7 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
         
         this.log('begin finding self')
 
-        rpc._closest(rpc.id, msg, true, this.onReply, done)
+        rpc._closest(rpc.id, msg, true, this.onReply, done.bind(this))
         //rpc.populate(rpc.id, msg, done)
         //rpc.closest(rpc.id, msg, this.onreply, done.bind(this))
         //rpc.queryAll()
@@ -258,11 +277,11 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
         }
     }
 
-    private onReply = (res: RPCResponse, peer: RPCPeer) => {
+    private readonly onReply = (res: RPCResponse, peer: RPCPeer) => {
         const rpc = this.discovery.dht._rpc
 
-        const r = res && res.r
-        const nodes = r.nodes ? parseNodes(r.nodes, rpc._idLength) : []
+        const r = res?.r
+        const nodes = Buffer.isBuffer(r.nodes) ? parseNodes(r.nodes, rpc._idLength) : []
         let foundNewExtAddr = false
         for(const node of nodes){
             //this.log('onreply', `${node.host}:${node.port}`, node.id.toString('hex'), 'vs', rpc.id.toString('hex'))
@@ -274,49 +293,75 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
             this.publish(false)
     }
 
-    private onPeer = async (ipport: string, source: 'tracker'|'dht'|'lsd') => {
+    private readonly onPeer = async (ipport: string, source: 'tracker'|'dht'|'lsd') => {
         
         if(this.externalAddresses.has(ipport)){
             this.log('discovered self %s from %s', ipport, source)
             return
         } else {
-            this.log('discovered peer %s from %s', ipport, source)
-        }
+            const now = Date.now()
+            const resolvedAt = this.resolved.get(ipport)
+            if(resolvedAt !== undefined){
+                if((now - resolvedAt) <= this.init.resolutionLifetime){
+                    this.log('discovered already resolved peer %s from %s', ipport, source)
+                    return
+                } else {
+                    this.log('discovered already resolved but expired peer %s from %s', ipport, source)
+                }
+            } else {
+                const resolving = this.resolutionQueue.queue.find(job => job.options.ipport === ipport)
+                if(resolving){
+                    this.log('discovered already resolving peer %s from %s', ipport, source)
+                } else {
+                    this.log('discovered peer %s from %s', ipport, source)
+                }
+            }
+        }        
 
         const [ip, port]: [string, number] = addrToIPPort(ipport)
         const detail = ipPortToMultiaddr(ip, port)
         this.safeDispatchEvent('addr', { detail })
 
+        this.resolutionQueue.add(this.resolveAddress, {
+            ipport, detail,
+        })
+        .catch(err => this.log.error(err))
+    }
+    private readonly resolveAddress = async ({ ipport, detail }: ResolutionJobOptions) => {
         const opts = {
             k: this.publicKey.raw,
             salt: detail.bytes,
         }
         const hash = this.discovery.dht._hash(Buffer.concat([opts.k, opts.salt]))
-        this.discovery.dht.get(hash, { cache: true }, async (err: Error, value?: { v: unknown }) => {
-            if(err){
-                this.log('error getting record for %s - %e', ipport, err)
-                return
-            }
-            if(!value || !Buffer.isBuffer(value.v)){
+        try {
+            const value = await new Promise<DHTGetReturnType>((resolve, reject) => {
+                this.discovery.dht.get(hash, { cache: false }, (err: Error, value: DHTGetReturnType) => {
+                    if(err) reject(err)
+                    else resolve(value)
+                })
+            })
+            if(value && Buffer.isBuffer(value.v)){
+                this.resolved.set(ipport, Date.now())
+                
+                const buf = value.v
+                if(await this.components.peerStore.consumePeerRecord(buf))
+                    this.log('consumed peer record for %s', ipport)
+                else
+                    this.log('received invalid peer record for %s', ipport)
+            } else {
                 this.log('error getting record for %s - no value provided or its not a buffer', ipport)
                 return
             }
-            const buf = value.v
-            /*
-            //src: @libp2p/peer-store/src/index.ts
-            const options = {}
-            const envelope = await RecordEnvelope.openAndCertify(buf, PeerRecord.DOMAIN, options)
-            const peerId = peerIdFromCID(envelope.publicKey.toCID())
-            const peerRecord = PeerRecord.createFromProtobuf(envelope.payload)
-            this.log('discovered %p listening on', peerId, peerRecord.multiaddrs)
-            */
-            this.components.peerStore.consumePeerRecord(buf)
-        })
+        } catch (err){
+            this.log('error getting record for %s - %e', ipport, err)
+            return
+        }
     }
-    private onWarning = (err: Error) => {
+
+    private readonly onWarning = (err: Error) => {
         this.log.error('warning', err)
     }
-    private onError = (err: Error) => {
+    private readonly onError = (err: Error) => {
         this.log.error('error', err)
     }
     
@@ -342,6 +387,8 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
                 reportedBy: new Map([[ reporter, now ]]),
             })
         } else {
+            if(!external.reportedBy.has(reporter))
+                this.log('received confirmation for external address %s from %s', hostport, source, res)
             external.reportedBy.set(reporter, now)
         }
         return this.reevaluateExternalAddress(external)
@@ -357,7 +404,7 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
     
     private peerRecord?: PeerRecord
     private signedPeerRecord?: RecordEnvelope
-    private onUpdate = async (/*{ detail: { peer } }: CustomEvent<PeerUpdate>*/) => {
+    private readonly onUpdate = async (/*{ detail: { peer } }: CustomEvent<PeerUpdate>*/) => {
 
         const options: AbortOptions | undefined = undefined
         const peerId = this.components.peerId
@@ -437,6 +484,6 @@ function parseNodes(buf: Buffer, idLength: number){
     return contacts
 }
 
-function parseIp(buf: Buffer, offset: number){
+function parseIp(buf: Buffer, offset: number = 0){
     return buf[offset++] + '.' + buf[offset++] + '.' + buf[offset++] + '.' + buf[offset++]
 }
