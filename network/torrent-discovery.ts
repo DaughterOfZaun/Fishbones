@@ -122,8 +122,9 @@ const verify = (signature: Uint8Array, data: Uint8Array, publicKeyRaw: Uint8Arra
 }
 
 type RPCPeer = { id: Buffer, host?: string, address?: string, port: number }
-type RPCResponse = { r?: { nodes?: Buffer }, ip?: Buffer }
+type RPCResponse = { ip?: Buffer, r?: { nodes?: Buffer, p?: number } }
 type RPCVisitCallback = (res: RPCResponse, peer: RPCPeer) => void
+type RPCQueryCallback = (err: undefined | Error & { code: string }, res: RPCResponse, peer: RPCPeer) => void
 
 type Bencoded = Buffer | string | number | { [key: number]: Bencoded } | { [key: string]: Bencoded }
 type DHTGetReturnType = { v: Bencoded }
@@ -171,8 +172,8 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
             // bittorrent.org/beps/bep_0044.html#expiration
             republishInterval: 1/*h*/ * 60/*m*/ * 60/*s*/ * 1000/*ms*/,
 
-            resolutionConcurrency: 3,
-            resolutionLifetime: 10/*m*/ * 60/*s*/ * 1000/*ms*/,
+            resolutionConcurrency: 3, //TODO: Deprecate.
+            resolutionLifetime: 10/*m*/ * 60/*s*/ * 1000/*ms*/, //TODO: Deprecate.
             
             ...init,
         }
@@ -216,36 +217,46 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
         }
 
         const rpc = optsDHT.krpc = new KRPC({ idLength: hashLength, ...opts } as KRPCInit)
-        
-        const rpc__closest = rpc._closest
-        rpc._closest = (target: unknown, message: unknown, background: unknown, visit: RPCVisitCallback, cb: unknown) => {
-            const patchedVisit = (!visit || visit === this.onReply) ? this.onReply : (res: RPCResponse, peer: RPCPeer) => {
-                const ret = visit(res, peer)
-                this.onReply(res, peer)
-                return ret
+        const findSelfQuery = {
+            q: 'find_node',
+            a: {
+                id: rpc.id,
+                target: rpc.id
             }
-            return rpc__closest.call(rpc, target, message, background, patchedVisit, cb)
         }
-        /*
-        const rpc_query = rpc.query
-        rpc.query = (node: unknown, message: Record<string, Bencoded>, cb: (err: Error, res: RPCResponse, peer: RPCPeer) => void) => {
-            if(message.q === 'ping'){
-                this.log('replaced ping with find_node')
-                message = {
-                    q: 'find_node',
-                    a: {
-                        id: rpc.id,
-                        target: rpc.id
+        const queried = new Set<string>()
+        const socket = rpc.socket
+        const socket_query = socket.query
+        socket.query = (peer: RPCPeer, query: Record<string, Bencoded>, cb?: RPCQueryCallback) => {
+            const ipport = `${peer.host || peer.address}:${peer.port}`
+            if(!queried.has(ipport)){
+                queried.add(ipport)
+                const query_a = query.a as Record<string, Bencoded>
+                if(query.q === 'ping' || (query.q === 'find_node' && query_a.target === rpc.id)){
+                    if(query.q === 'ping'){
+                        //this.log('replacing ping with find_self query')
+                        query = findSelfQuery
+                    } else {
+                        //this.log('sending single find_self query')
                     }
+                    return socket_query.call(socket, peer, query, ((err, res, peer) => {
+                        const ret = cb?.(err, res, peer)
+                        if(!err) this.onReply(res, peer)
+                        return ret
+                    }) as RPCQueryCallback)
+                } else {
+                    //this.log('sending second find_self query')
+                    const ret = socket_query.call(socket, peer, query, cb)
+                    socket_query.call(socket, peer, findSelfQuery, ((err, res, peer) => {
+                        if(!err) this.onReply(res, peer)
+                    }) as RPCQueryCallback)
+                    return ret
                 }
+            } else {
+                return socket_query.call(socket, peer, query, cb)
             }
-            return rpc_query.call(rpc, node, message, (err: Error, res: RPCResponse, peer: RPCPeer) => {
-                const ret = cb?.(err, res, peer)
-                this.onReply(res, peer)
-                return ret
-            })
         }
-        */
+        
         process.browser = true //HACK: To bypass opts.port check
         const discovery = new Discovery(opts)
         process.browser = false
@@ -258,15 +269,11 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
                 return dht__debug.apply(this, args)
         }
 
-        dht.on('node', this.onNode)
-
         discovery.addListener('peer', this.onPeer)
         discovery.addListener('warning', this.onWarning)
         discovery.addListener('error', this.onError)
 
         this.components.events.addEventListener('self:peer:update', this.onUpdate)
-
-        //this.findSelfTimeout = setTimeout(this.findSelf, this.init.findSelfInterval)
     }
 
     public async stop() {
@@ -274,9 +281,6 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
 
         const discovery = this.discovery
         this.discovery = undefined
-        
-        const { dht } = discovery
-        dht.removeListener('node', this.onNode)
 
         discovery.removeListener('peer', this.onPeer)
         discovery.removeListener('warning', this.onWarning)
@@ -284,140 +288,25 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
 
         this.components.events.removeEventListener('self:peer:update', this.onUpdate)
         
-        clearTimeout(this.publishTimeout)
-        clearTimeout(this.findSelfTimeout)
-        
         await new Promise<void>(res => discovery.destroy(() => res()))
-    }
-
-    private readonly onNode = (node: RPCPeer) => {
-        const dht = this.discovery.dht
-        const rpc = this.discovery.dht._rpc
-        
-        const requiresNewObservations = !!this.externalAddresses.values().find(addr => addr.publishedItShouldBe)
-        if(!requiresNewObservations){
-            dht.removeListener('node', this.onNode)
-            return
-        }
-
-        rpc.query(node, {
-            q: 'find_node',
-            a: {
-                id: rpc.id,
-                target: rpc.id
-            }
-        }, (err: undefined | Error & { code: string }, res: RPCResponse, peer: RPCPeer) => {
-            if(this.afterQuery(err, res, peer)){
-                this.onReply(res, peer)
-            }
-        })
-    }
-
-    private afterQuery(err: undefined | Error & { code: string }, res: RPCResponse, peer: RPCPeer){
-        const rpc = this.discovery.dht._rpc
-
-        if(err){
-            if (err.code === 'EUNEXPECTEDNODE' || err.code === 'ETIMEDOUT') {
-                if (peer?.id && rpc.nodes.get(peer.id)) {
-                    rpc.nodes.remove(peer.id)
-                }
-            } else if(err.message != 'Query was cancelled'){
-                this.log('error querying node %s - %e', peer.id.toString('hex'), err)
-            }
-            return false
-        }
-        return true
-    }
-
-    private findSelfTimeout?: ReturnType<typeof setTimeout>
-    private readonly findSelf = (foreground = false) => {
-        clearTimeout(this.findSelfTimeout)
-        
-        //const dht = this.discovery.dht
-        const rpc = this.discovery.dht._rpc
-        const msg = {
-            q: 'find_node',
-            a: {
-                id: rpc.id,
-                target: rpc.id
-            }
-        }
-        
-        this.log('begin finding self')
-
-        Promise.resolve().then(async () => {
-            let n = 0
-            let pending = 0
-            let stop = false
-
-            const queried = new Set<string>()
-            
-            //const nodes = rpc.nodes.closest(infoHash)
-            //const nodes = shuffleInplace(rpc.nodes.toArray())
-            //for(const node of nodes){
-            while(true){
-                
-                const evt = foreground ? 'update' : 'postupdate'
-                const otherInflight = rpc.pending.length + rpc.socket.inflight - pending
-                const concurrency = foreground ? rpc.concurrency : rpc.backgroundConcurrency
-                while (!stop && rpc.socket.inflight >= concurrency && (foreground || !otherInflight))
-                    await new Promise(resolve => rpc.socket.once(evt, resolve))
-                if(stop) break
-
-                //TODO: Optimize.
-                const nodes = rpc.nodes.toArray().filter((peer: RPCPeer) => {
-                    const ipport = `${peer.host || peer.address}:${peer.port}`
-                    return !queried.has(ipport)
-                })
-                const node = nodes[Math.floor(Math.random() * nodes.length)]
-                if(!node) break
-
-                pending++
-                rpc.socket.query(node, msg, (err: undefined | Error & { code: string }, res: RPCResponse, peer: RPCPeer) => {
-                    pending--
-                    
-                    const ipport = `${peer.host || peer.address}:${peer.port}`
-                    queried.add(ipport)
-
-                    if(this.afterQuery(err, res, peer)){
-                        this.onReply(res, peer)
-                        stop ||= !!this.externalAddresses.values().find(addr => addr.publishedItShouldBe)
-                        n++
-                    }
-
-                    if(!pending){
-                        this.log('visited %d nodes', n)
-                        done.call(this)
-                    }
-                })
-            }
-            if(!pending){
-                this.log('visited %d nodes', n)
-                done.call(this)
-            }
-        })
-        //.then(() => done.call(this))
-        //.catch((err) => done.call(this, err))
-
-        function done(this: DiscoveryClass, err?: Error){
-            if(err) this.log('error finding self - %e', err)
-            else this.log('done finding self')
-            this.findSelfTimeout = setTimeout(this.findSelf, this.init.findSelfInterval)
-        }
     }
 
     private readonly onReply = (res: RPCResponse, peer: RPCPeer) => {
         //this.log('onReply', `${peer.host || peer.address}:${peer.port}`, res)
-        
-        if(!res?.r?.nodes) return
-        
         const rpc = this.discovery.dht._rpc
-        const nodes = Buffer.isBuffer(res.r.nodes) ? parseNodes(res.r.nodes, rpc._idLength) : []
+        
         let foundNewExtAddr = false
-        for(const node of nodes){
-            //this.log('onReply', `${node.host}:${node.port}`, node.id.toString('hex'), 'vs', rpc.id.toString('hex'))
-            if(node.id.equals(rpc.id)){
-                foundNewExtAddr ||= this.maybeAddExternalAddress(node, 'dht', res, peer)
+        if(Buffer.isBuffer(res?.ip) && typeof res?.r?.p === 'number'){
+            const node = { host: parseIp(res.ip), port: res.r.p }
+            foundNewExtAddr ||= this.maybeAddExternalAddress(node, 'dht', res, peer)
+        }
+        if(Buffer.isBuffer(res?.r?.nodes)){
+            const nodes = parseNodes(res.r.nodes, rpc._idLength)
+            for(const node of nodes){
+                //this.log('onReply', `${node.host}:${node.port}`, node.id.toString('hex'), 'vs', rpc.id.toString('hex'))
+                if(node.id.equals(rpc.id)){
+                    foundNewExtAddr ||= this.maybeAddExternalAddress(node, 'dht', res, peer)
+                }
             }
         }
         if(foundNewExtAddr)
@@ -510,7 +399,7 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
         
         let external = this.externalAddresses.get(hostport)
         if(!external){
-            this.log('discovered new external address %s from %s', hostport, source, res)
+            this.log('discovered new external address %s from %s', hostport, source)
             this.externalAddresses.set(hostport, external = {
                 host, port,
                 published: false,
@@ -519,7 +408,7 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
             })
         } else {
             if(!external.reportedBy.has(reporter))
-                this.log('received confirmation for external address %s from %s', hostport, source, res)
+                this.log('received confirmation for external address %s from %s', hostport, source)
             external.reportedBy.set(reporter, now)
         }
         return this.reevaluateExternalAddress(external)
@@ -622,14 +511,4 @@ function parseNodes(buf: Buffer, idLength: number){
 }
 function parseIp(buf: Buffer, offset: number = 0){
     return buf[offset++] + '.' + buf[offset++] + '.' + buf[offset++] + '.' + buf[offset++]
-}
-
-function shuffleInplace(array: unknown[]) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1))
-        const temp = array[i]
-        array[i] = array[j]
-        array[j] = temp
-    }
-    return array
 }
