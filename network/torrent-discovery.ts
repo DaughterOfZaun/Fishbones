@@ -36,7 +36,6 @@ import KRPC from 'k-rpc'
 //@ts-expect-error: Could not find a declaration file for module 'k-rpc-socket'
 import type KRPCSocket from 'k-rpc-socket'
 import { createSocket, isDHT, type Socket } from '../network/umplex'
-import { Queue } from '@libp2p/utils/queue'
 
 interface KRPCSocketInit {
     timeout?: number //= 2000
@@ -83,19 +82,26 @@ interface DiscoveryInit {
     lsd?: boolean
 }
 
-interface DiscoveryServiceInit {
-    infoHash: string | Buffer
-    announce?: string[]
-    
-    findSelfInterval?: number
-    observationsCount?: number
-    observationLifetime?: number
-    //observationRetryTime?: number
-    republishInterval?: number
+const ms = 1
+const s = 1000*ms
+const m = 60*s
+const h = 60*m
 
+class DiscoveryServiceInit {
+    infoHash!: string | Buffer
+
+    // @libp2p/autonat-v2/src/client.ts:REQUIRED_SUCCESSFUL_DIALS
+    observationsCount?: number = 4
+    // libp2p/src/address-manager/index.ts:addressVerificationTTL
+    observationLifetime?: number = 10*m
+    // bittorrent.org/beps/bep_0044.html#expiration
+    republishInterval?: number = 1*h
+    //announce?: string[] = []
+    
     //lookupInterval?: number
-    resolutionConcurrency?: number
-    resolutionLifetime?: number
+    resolutionLifetime?: number = Infinity
+    resolutionRetriesMax?: number = 1
+    resolutionRetryTimeout?: number = 1*m
 }
 
 interface DiscoveryComponents {
@@ -120,24 +126,33 @@ const verify = (signature: Uint8Array, data: Uint8Array, publicKeyRaw: Uint8Arra
     return publicKey.verify(data, signature)
         === true //HACK:
 }
+const sign = (key: PrivateKey, data: Uint8Array) => {
+    return key.sign(data)
+}
 
 type RPCPeer = { id: Buffer, host?: string, address?: string, port: number }
 type RPCResponse = { ip?: Buffer, r?: { nodes?: Buffer, p?: number } }
-type RPCVisitCallback = (res: RPCResponse, peer: RPCPeer) => void
+//type RPCVisitCallback = (res: RPCResponse, peer: RPCPeer) => void
 type RPCQueryCallback = (err: undefined | Error & { code: string }, res: RPCResponse, peer: RPCPeer) => void
 
 type Bencoded = Buffer | string | number | { [key: number]: Bencoded } | { [key: string]: Bencoded }
 type DHTGetReturnType = { v: Bencoded }
 
 type HostPort = { host: string, port: number }
-type ExternalAddress = HostPort & {
+type ExternalAddress = {
+    ipport: string // For debug log
+    key: PrivateKey
+    salt?: Uint8Array
     reportedBy: Map<string, number>
-    publishedItShouldBe: boolean
-    published: boolean
+    shouldBePublished?: boolean
+    publicationTimeout?: ReturnType<typeof setTimeout>
 }
-type ResolutionJobOptions = AbortOptions & {
-    ipport: string
-    detail: Multiaddr
+type ResolutionResult = {
+    ipport: string // For debug log
+    hash: Uint8Array
+    retries?: number
+    resolvedAt?: number
+    retryTimeout?: ReturnType<typeof setTimeout>
 }
 
 class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerDiscovery, PeerDiscoveryProvider, Startable {
@@ -149,48 +164,35 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
 
     private readonly publicKey: PublicKey
     private readonly privateKey: PrivateKey
-    private readonly sign = (data: Uint8Array) => {
-        return this.privateKey.sign(data)
-    }
-
-    private readonly resolutionQueue: Queue<void, ResolutionJobOptions>
-    private readonly resolved = new Map<string, number>()
     
-    constructor(init: DiscoveryServiceInit, components: DiscoveryComponents){
-        super()
-        this.init = {
-            announce: [],
-
-            findSelfInterval: 1/*m*/ * 60/*s*/ * 1000/*ms*/,
-            
-            // @libp2p/autonat-v2/src/client.ts
-            observationsCount: 4, // REQUIRED_SUCCESSFUL_DIALS
-            // libp2p/src/address-manager/index.ts
-            observationLifetime: 10/*m*/ * 60/*s*/ * 1000/*ms*/, //defaultValues.addressVerificationTTL
-            //observationRetryTime: 5/*m*/ * 60/*s*/ * 1000/*ms*/, //defaultValues.addressVerificationRetry
-
-            // bittorrent.org/beps/bep_0044.html#expiration
-            republishInterval: 1/*h*/ * 60/*m*/ * 60/*s*/ * 1000/*ms*/,
-
-            resolutionConcurrency: 3, //TODO: Deprecate.
-            resolutionLifetime: 10/*m*/ * 60/*s*/ * 1000/*ms*/, //TODO: Deprecate.
-            
-            ...init,
-        }
-        this.components = components
-        this.log = components.logger.forComponent('libp2p:torrent-discovery')
-        this.privateKey = privateKeyFromRaw(uint8ArrayFromString(KEY, 'base64pad'))
-        this.publicKey = this.privateKey.publicKey
-        this.resolutionQueue = new Queue({
-            concurrency: this.init.resolutionConcurrency
-        })
+    private readonly externalAddresses = new Map<string, ExternalAddress>()
+    private readonly resolutionResults = new Map<string, ResolutionResult>()
+    private readonly resolutionQueue: ResolutionResult[] = []
+    
+    private multiaddrs: Multiaddr[] = []
+    private multiaddrs_eq(to: Multiaddr[]){
+        return this.multiaddrs.length === to.length && !this.multiaddrs.some(ma => !to.some(mb => ma.equals(mb)))
     }
+
+    private peerRecord?: PeerRecord
+    private signedPeerRecord?: RecordEnvelope
 
     public readonly [peerDiscoverySymbol] = this
     public readonly [Symbol.toStringTag] = '@libp2p/torrent-discovery'
     public readonly [serviceCapabilities]: string[] = [
       '@libp2p/peer-discovery'
     ]
+
+    constructor(init: DiscoveryServiceInit, components: DiscoveryComponents){
+        super()
+        this.init = {
+            ...new DiscoveryServiceInit(), ...init,
+        } as Required<DiscoveryServiceInit>
+        this.components = components
+        this.log = components.logger.forComponent('libp2p:torrent-discovery')
+        this.privateKey = privateKeyFromRaw(uint8ArrayFromString(KEY, 'base64pad'))
+        this.publicKey = this.privateKey.publicKey
+    }
 
     public start() {
         if(this.discovery) return
@@ -269,6 +271,10 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
                 return dht__debug.apply(this, args)
         }
 
+        rpc.addListener('query', this.onReply)
+
+        socket.addListener('update', this.resolutionQueue_kick)
+
         discovery.addListener('peer', this.onPeer)
         discovery.addListener('warning', this.onWarning)
         discovery.addListener('error', this.onError)
@@ -278,9 +284,14 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
 
     public async stop() {
         if(!this.discovery) return
-
         const discovery = this.discovery
         this.discovery = undefined
+
+        const rpc = discovery.dht._rpc
+        rpc.removeListener('query', this.onReply)
+
+        const socket = discovery.dht._rpc.socket
+        socket.removeListener('update', this.resolutionQueue_kick)
 
         discovery.removeListener('peer', this.onPeer)
         discovery.removeListener('warning', this.onWarning)
@@ -295,22 +306,21 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
         //this.log('onReply', `${peer.host || peer.address}:${peer.port}`, res)
         const rpc = this.discovery.dht._rpc
         
-        let foundNewExtAddr = false
-        if(Buffer.isBuffer(res?.ip) && typeof res?.r?.p === 'number'){
-            const node = { host: parseIp(res.ip), port: res.r.p }
-            foundNewExtAddr ||= this.maybeAddExternalAddress(node, 'dht', res, peer)
+        if(Buffer.isBuffer(res?.ip)){
+            const node = parseIpPort(res.ip)
+            const external = this.maybeAddExternalAddress(node, 'dht', res, peer)
+            if(external) this.publish(external)
         }
         if(Buffer.isBuffer(res?.r?.nodes)){
             const nodes = parseNodes(res.r.nodes, rpc._idLength)
             for(const node of nodes){
                 //this.log('onReply', `${node.host}:${node.port}`, node.id.toString('hex'), 'vs', rpc.id.toString('hex'))
                 if(node.id.equals(rpc.id)){
-                    foundNewExtAddr ||= this.maybeAddExternalAddress(node, 'dht', res, peer)
+                   const external = this.maybeAddExternalAddress(node, 'dht', res, peer)
+                   if(external) this.publish(external)
                 }
             }
         }
-        if(foundNewExtAddr)
-            this.publish(false)
     }
 
     private readonly onPeer = async (ipport: string, source: 'tracker'|'dht'|'lsd') => {
@@ -320,22 +330,20 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
             return
         } else {
             const now = Date.now()
-            const resolvedAt = this.resolved.get(ipport)
-            if(resolvedAt !== undefined){
-                if((now - resolvedAt) <= this.init.resolutionLifetime){
+            const result = this.resolutionResults.get(ipport)
+            const resolvedAt = result?.resolvedAt
+            if(result){
+                if(resolvedAt === undefined){
+                    this.log('discovered already resolving peer %s from %s', ipport, source)
+                    return
+                } else if((now - resolvedAt) <= this.init.resolutionLifetime){
                     this.log('discovered already resolved peer %s from %s', ipport, source)
                     return
                 } else {
-                    this.log('discovered already resolved but expired peer %s from %s', ipport, source)
+                    this.log('discovered expired peer %s from %s', ipport, source)
                 }
             } else {
-                const resolving = this.resolutionQueue.queue.find(job => job.options.ipport == ipport)
-                if(resolving){
-                    this.log('discovered already resolving peer %s from %s', ipport, source)
-                    return
-                } else {
-                    this.log('discovered peer %s from %s', ipport, source)
-                }
+                this.log('discovered peer %s from %s', ipport, source)
             }
         }        
 
@@ -343,39 +351,61 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
         const detail = ipPortToMultiaddr(ip, port)
         this.safeDispatchEvent('addr', { detail })
 
-        this.resolutionQueue.add(this.resolveAddress, {
-            ipport, detail,
-        })
-        .catch(err => this.log.error(err))
-    }
-    private readonly resolveAddress = async ({ ipport, detail }: ResolutionJobOptions) => {
         const opts = {
             k: this.publicKey.raw,
             salt: detail.bytes,
         }
         const hash = this.discovery.dht._hash(Buffer.concat([opts.k, opts.salt]))
-        try {
-            const value = await new Promise<DHTGetReturnType>((resolve, reject) => {
-                this.discovery.dht.get(hash, { cache: false }, (err: Error, value: DHTGetReturnType) => {
-                    if(err) reject(err)
-                    else resolve(value)
-                })
-            })
+        
+        const result: ResolutionResult = { ipport, hash }
+        this.resolutionResults.set(ipport, result)
+        this.resolutionQueue.push(result)
+        this.resolutionQueue_kick()
+    }
+    private readonly resolutionQueue_kick = () => {
+        const dht = this.discovery.dht
+        const rpc = this.discovery.dht._rpc
+        
+        if(rpc.socket.inflight >= rpc.concurrency) return
+        
+        const result = this.resolutionQueue.pop()
+        if(!result) return
 
-            this.resolved.set(ipport, Date.now())
+        const { ipport, hash } = result
+
+        dht.get(hash, { cache: false }, (err: Error, value: DHTGetReturnType) => {
             
-            if(value && Buffer.isBuffer(value.v)){
+            const fail = () => {
+                result.retries ??= 0
+                if(result.retries < this.init.resolutionRetriesMax){
+                    this.log('setting retry timer')
+                    result.retries++
+                    result.retryTimeout = setTimeout(() => {
+                        this.resolutionQueue.unshift(result)
+                    }, this.init.resolutionRetryTimeout)
+                } else {
+                    this.log('max retries reached - forcefully resolving')
+                    result.resolvedAt = Date.now()
+                }
+            }
+            
+            if(err){
+                this.log('error getting record for %s - %e', ipport, err)
+                return fail()
+            } else if(value && Buffer.isBuffer(value.v)){
                 const buf = value.v
-                if(await this.components.peerStore.consumePeerRecord(buf))
+                this.components.peerStore.consumePeerRecord(buf).then(() => {
                     this.log('consumed peer record for %s', ipport)
-                else
-                    this.log('received invalid peer record for %s', ipport)
+                    result.resolvedAt = Date.now()
+                }).catch((reason) => {
+                    this.log('received invalid peer record for %s - %e', ipport, reason)
+                    return fail()
+                })
             } else {
                 this.log('error getting record for %s - no value provided or its not a buffer', ipport)
+                return fail()
             }
-        } catch (err){
-            this.log('error getting record for %s - %e', ipport, err)
-        }
+        })
     }
 
     private readonly onWarning = (err: Error) => {
@@ -385,48 +415,41 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
         this.log.error('error', err)
     }
     
-    private multiaddrs: Multiaddr[] = []
-    private multiaddrs_eq(to: Multiaddr[]){
-        return this.multiaddrs.length === to.length && !this.multiaddrs.some(ma => !to.some(mb => ma.equals(mb)))
-    }
-    
-    private readonly externalAddresses = new Map<string, ExternalAddress>()
-    private maybeAddExternalAddress(info: HostPort, source: string, res: object, peer: RPCPeer): boolean {
+    private maybeAddExternalAddress(info: HostPort, source: string, res: object, peer: RPCPeer){
         const now = Date.now()
         const { host, port } = info
-        const hostport = `${host}:${port}`
+        const ipport = `${host}:${port}`
         const reporter = `${(peer.address || peer.host)!}:${peer.port}`
         
-        let external = this.externalAddresses.get(hostport)
+        let external = this.externalAddresses.get(ipport)
         if(!external){
-            this.log('discovered new external address %s from %s', hostport, source)
-            this.externalAddresses.set(hostport, external = {
-                host, port,
-                published: false,
-                publishedItShouldBe: false,
+            this.log('discovered new external address %s from %s', ipport, source)
+            external = {
+                ipport,
+                key: this.privateKey,
+                salt: ipPortToMultiaddr(host, port).bytes,
                 reportedBy: new Map([[ reporter, now ]]),
-            })
+            }
+            this.externalAddresses.set(ipport, external)
         } else {
             if(!external.reportedBy.has(reporter))
-                this.log('received confirmation for external address %s from %s', hostport, source)
+                this.log('received confirmation for external address %s from %s', ipport, source)
             external.reportedBy.set(reporter, now)
         }
-        return this.reevaluateExternalAddress(external)
+        return this.reevaluateExternalAddress(external) ? external : undefined
     }
     private reevaluateExternalAddress(external: ExternalAddress): boolean {
         const now = Date.now()
         
-        const reportedAtLast = external.reportedBy.values().reduce((accum, reportedAt) => Math.max(accum, reportedAt), 0)
+        //const reportedAtLast = external.reportedBy.values().reduce((accum, reportedAt) => Math.max(accum, reportedAt), 0)
         const reportsCount = 
-            //external.reportedBy.values().reduce((accum, reportedAt) => accum + +((now - reportedAt) <= this.init.observationLifetime), 0)
-            ((now - reportedAtLast) <= this.init.observationLifetime) ? external.reportedBy.size : 0
-        return !external.publishedItShouldBe && (external.publishedItShouldBe = (
+            external.reportedBy.values().reduce((accum, reportedAt) => accum + +((now - reportedAt) <= this.init.observationLifetime), 0)
+            //((now - reportedAtLast) <= this.init.observationLifetime) ? external.reportedBy.size : 0
+        return !external.shouldBePublished && (external.shouldBePublished = (
             reportsCount >= this.init.observationsCount
         ))
     }
     
-    private peerRecord?: PeerRecord
-    private signedPeerRecord?: RecordEnvelope
     private readonly onUpdate = async (/*{ detail: { peer } }: CustomEvent<PeerUpdate>*/) => {
 
         const options: AbortOptions | undefined = undefined
@@ -446,45 +469,35 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
             this.peerRecord = new PeerRecord({ peerId, multiaddrs, })
             this.signedPeerRecord = await RecordEnvelope.seal(this.peerRecord, this.privateKey, options)
             this.log('listening addresses have changed', multiaddrs.map(ma => ma.toString()))
-            this.publish(true)
+            for(const external of this.externalAddresses.values())
+                this.publish(external)
         }
     }
 
-    private publishTimeout?: ReturnType<typeof setTimeout>
-    private publish(all: boolean){
-        clearTimeout(this.publishTimeout)
-        this.publishTimeout = setTimeout(this.publish, this.init.republishInterval)
-
+    private publish(external: ExternalAddress){
+        const { ipport } = external
+        
+        clearTimeout(external.publicationTimeout)
+        
         if(!this.peerRecord || !this.signedPeerRecord){
             this.log('no addresses to publish')
             return
-        }
-        const recordsToUpdate = this.externalAddresses.entries()
-            .filter(([, external]) => external.publishedItShouldBe && (all || !external.published)).toArray()        
+        }       
+        
+        this.log('begin putting records for', ipport)
+        
+        external.publicationTimeout = setTimeout(() => this.publish(external), this.init.republishInterval)
 
-        if(recordsToUpdate.length > 0){
-            this.log('begin putting records for', recordsToUpdate.map(([hostport,]) => hostport))
-        } else {
-            this.log('no records to update')
-            return
-        }
-
-        for(const [hostport, info] of recordsToUpdate){
-            const { host, port } = info
-            
-            info.published = true
-
-            this.discovery.dht.put({
-                k: this.publicKey.raw,
-                salt: ipPortToMultiaddr(host, port).bytes,
-                seq: Number(this.peerRecord.seqNumber),
-                v: this.signedPeerRecord.marshal(),
-                sign: this.sign,
-            }, (err: null|Error, hash: Buffer, n: number) => {
-                if(n > 0) this.log('put record for %s on %d nodes', hostport, n)
-                if(err) this.log.error('error putting record for %s - %e', hostport, err)
-            })
-        }
+        this.discovery.dht.put({
+            k: external.key.publicKey.raw,
+            salt: external.salt,
+            seq: Number(this.peerRecord.seqNumber),
+            v: this.signedPeerRecord.marshal(),
+            sign: sign.bind(null, external.key),
+        }, (err: null|Error, hash: Buffer, n: number) => {
+            if(n > 0) this.log('put record for %s on %d nodes', ipport, n)
+            if(err) this.log.error('error putting record for %s - %e', ipport, err)
+        })
     }
 }
 
@@ -511,4 +524,7 @@ function parseNodes(buf: Buffer, idLength: number){
 }
 function parseIp(buf: Buffer, offset: number = 0){
     return buf[offset++] + '.' + buf[offset++] + '.' + buf[offset++] + '.' + buf[offset++]
+}
+function parseIpPort(buf: Buffer): HostPort {
+    return { host: parseIp(buf, 0), port: buf.readUInt16BE(4) }
 }
