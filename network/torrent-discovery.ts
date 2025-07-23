@@ -32,6 +32,7 @@ const USER_AGENT = `WebTorrent/${VERSION} (https://webtorrent.io)`
 const KEY_STRING = 'Z3z1776YR5Mz+EkkZOZ2VB7kUNSCm6syviHz1++589Vz4+INeC6EKD2RaDmaP9uVr5FssMaHKed7KlC5wE/+GA=='
 const STATIC_KEY = privateKeyFromRaw(uint8ArrayFromString(KEY_STRING, 'base64pad'))
 const STATIC_SALT = Buffer.from([0, 0, 0, 0, 0, 0])
+const OK = new Error('OK')
 
 //@ts-expect-error: Could not find a declaration file for module 'k-rpc'
 import KRPC from 'k-rpc'
@@ -142,7 +143,7 @@ type RPCResponse = {
     a?: { id?: Buffer }
 }
 //type RPCVisitCallback = (res: RPCResponse, peer: RPCPeer) => void
-type RPCQueryCallback = (err: undefined | Error & { code: string }, res: RPCResponse, peer: RPCPeer) => void
+type RPCQueryCallback = (err: null | Error & { code: string }, res: RPCResponse, peer: RPCPeer) => void
 
 type Bencoded = Uint8Array | string | number | { [key: number]: Bencoded } | { [key: string]: Bencoded }
 type DHTGetReturnType = { v: Bencoded }
@@ -151,14 +152,14 @@ type HostPort = { host: string, port: number }
 type ExternalAddress = {
     ipport: string // For debug log
     key: PrivateKey
-    salt?: Uint8Array
+    salt: Uint8Array
     reportedBy: Map<string, number>
     publicationTimeout?: ReturnType<typeof setTimeout>
 }
 type ResolutionResult = {
     ipport: string // For debug log
     hash: Uint8Array
-    salt?: Uint8Array
+    salt: Uint8Array
     retries?: number
     resolvedAt?: number
     retryTimeout?: ReturnType<typeof setTimeout>
@@ -253,6 +254,9 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
         const socket_query = socket.query
         socket.query = (peer: RPCPeer, query: Record<string, Bencoded>, cb?: RPCQueryCallback) => {
             const ipport = `${peer.host || peer.address}:${peer.port}`
+            
+            //console.log('query', query.q, ipport)
+
             if(!queried.has(ipport)){
                 queried.add(ipport)
                 const query_a = query.a as Record<string, Bencoded>
@@ -288,15 +292,42 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
 
         const { dht } = discovery
         const dht__debug = dht._debug
-        dht._debug = function(...args: unknown[]){
+        dht._debug = (...args: unknown[]) => {
             if(args[0] !== 'received ping')
-                return dht__debug.apply(this, args)
+                return dht__debug.apply(dht, args)
+        }
+
+        const dht__closest = dht._closest
+        dht._closest = (
+            target: Buffer,
+            message: Record<string, Bencoded>,
+            onmessage?: null | ((message: Record<string, Bencoded>, peer: RPCPeer) => boolean),
+            cb?: null | ((err: null | Error, n: number) => void)
+        ) => {
+            let onMessagePatched = onmessage
+            let cbPatched = cb
+            if(message.q === 'get' && onmessage && cb){
+                onMessagePatched = function(this: unknown, message, peer){
+                    const ret = onmessage.call(this, message, peer)
+                    cb.call(this, null, 0)
+                    return ret
+                }
+                cbPatched = function(this: unknown, err, n){
+                    if(err){
+                        cb.call(this, err, n)
+                    } else {
+                        cb.call(this, null, n)
+                        cb.call(this, OK, n)
+                    }
+                }
+            }
+            return dht__closest.call(dht, target, message, onMessagePatched, cbPatched)
         }
 
         //rpc.addListener('node', this.onNode)
         rpc.addListener('query', this.onReply)
 
-        socket.addListener('update', this.resolutionQueue_kick)
+        //socket.addListener('update', this.resolutionQueue_kick)
 
         discovery.addListener('peer', this.onPeer)
         discovery.addListener('warning', this.onWarning)
@@ -304,7 +335,7 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
 
         this.components.events.addEventListener('self:peer:update', this.onUpdate)
 
-        this.onUpdate()
+        //this.onUpdate()
     }
 
     public async stop() {
@@ -316,14 +347,17 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
         //rpc.removeListener('node', this.onNode)
         rpc.removeListener('query', this.onReply)
 
-        const socket = discovery.dht._rpc.socket
-        socket.removeListener('update', this.resolutionQueue_kick)
+        //const socket = discovery.dht._rpc.socket
+        //socket.removeListener('update', this.resolutionQueue_kick)
 
         discovery.removeListener('peer', this.onPeer)
         discovery.removeListener('warning', this.onWarning)
         discovery.removeListener('error', this.onError)
 
         this.components.events.removeEventListener('self:peer:update', this.onUpdate)
+
+        for(const external of this.externalAddresses.values())
+            clearTimeout(external.publicationTimeout)
         
         await new Promise<void>(res => discovery.destroy(() => res()))
     }
@@ -369,7 +403,8 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
     }
 
     private readonly onPeer = async (ipport: string, source: 'tracker'|'dht'|'lsd') => {
-        
+        const dht = this.discovery.dht
+
         if(this.externalAddresses.has(ipport)){
             this.log('discovered self %s from %s', ipport, source)
             return
@@ -398,15 +433,15 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
 
         let result: ResolutionResult
         const hash = this.knownIds.get(ipport)
-        if(hash){
-            this.log('using strategy B against %s', ipport)
-            result = { ipport, hash, salt: STATIC_SALT }
-        } else {
+        if(!hash){
             this.log('using strategy A against %s', ipport)
             const salt = detail.bytes
             const opts = { salt, k: STATIC_KEY.publicKey.raw }
-            const hash = this.discovery.dht._hash(Buffer.concat([opts.k, opts.salt]))
+            const hash = dht._hash(Buffer.concat([opts.k, opts.salt]))
             result = { ipport, hash, salt }
+        } else {
+            this.log('using strategy B against %s', ipport)
+            result = { ipport, hash, salt: STATIC_SALT }
         }
         
         this.resolutionResults.set(ipport, result)
@@ -415,46 +450,64 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
     }
     private readonly resolutionQueue_kick = () => {
         const dht = this.discovery.dht
-        const rpc = this.discovery.dht._rpc
-        
-        if(rpc.socket.inflight >= rpc.concurrency) return
+        //const rpc = this.discovery.dht._rpc
+        //if(rpc.socket.inflight >= rpc.concurrency) return
         
         const result = this.resolutionQueue.pop()
         if(!result) return
 
         const { ipport, hash, salt } = result
 
-        dht.get(hash, { salt, cache: false }, (err: Error, value: DHTGetReturnType) => {
-            
-            const fail = () => {
-                result.retries ??= 0
-                if(result.retries < this.init.resolutionRetriesMax){
-                    this.log('setting retry timer')
-                    result.retries++
-                    result.retryTimeout = setTimeout(() => {
-                        this.resolutionQueue.unshift(result)
-                    }, this.init.resolutionRetryTimeout)
-                } else {
-                    this.log('max retries reached - forcefully resolving')
-                    result.resolvedAt = Date.now()
-                }
+        const fail = () => {
+            result.retries ??= 0
+            if(result.retries < this.init.resolutionRetriesMax){
+                this.log('setting retry timer')
+                result.retries++
+                result.retryTimeout = setTimeout(() => {
+                    this.resolutionQueue.unshift(result)
+                }, this.init.resolutionRetryTimeout)
+            } else {
+                this.log('max retries reached - forcefully resolving')
+                result.resolvedAt = Date.now()
             }
-            
+        }
+
+        let foundValueBuffer = false
+        let foundValidRecord = false
+        const consumingErrors: unknown[] = []
+        let prevValue: null | DHTGetReturnType = null
+        dht.get(hash, { salt, cache: false }, (err: null | Error, value: DHTGetReturnType) => {
+            /*
+            this.log(
+                'get', ipport,
+                err ? (err === OK) ? 'OK' : 'Error' : 'None',
+                value ? (value === prevValue) ? 'Prev' : 'New' : 'None',
+                foundValueBuffer, foundValidRecord, consumingErrors.length === 0
+            )
+            */
             if(err){
-                this.log('error getting record for %s - %e', ipport, err)
-                return fail()
+                if(err !== OK){
+                    this.log('error getting record for %s - %e', ipport, err)
+                    return fail()
+                } else if(!foundValueBuffer){
+                    this.log('error getting record for %s - no value provided or its not a buffer', ipport)
+                    return fail()
+                } else if(!foundValidRecord){
+                    this.log('received invalid peer record for %s - %e', ipport, consumingErrors[0])
+                    return fail()
+                }
+            } else if(prevValue === (prevValue = value)){
+                // Do nothing.
             } else if(value && ArrayBuffer.isView(value.v)){
+                foundValueBuffer = true
                 const buf = value.v
                 this.components.peerStore.consumePeerRecord(buf).then(() => {
-                    this.log('consumed peer record for %s', ipport)
+                    foundValidRecord = true
                     result.resolvedAt = Date.now()
+                    this.log('consumed peer record for %s', ipport)
                 }).catch((reason) => {
-                    this.log('received invalid peer record for %s - %e', ipport, reason)
-                    return fail()
+                    consumingErrors.push(reason)
                 })
-            } else {
-                this.log('error getting record for %s - no value provided or its not a buffer', ipport)
-                return fail()
             }
         })
     }
@@ -531,6 +584,7 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
     }
 
     private maybePublishExternalAddress(external: ExternalAddress){
+        const dht = this.discovery.dht
         const { ipport } = external
         
         clearTimeout(external.publicationTimeout)
@@ -551,7 +605,7 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
             this.init.republishInterval
         )
 
-        this.discovery.dht.put({
+        dht.put({
             k: external.key.publicKey.raw,
             salt: external.salt,
             seq: Number(this.peerRecord.seqNumber),
