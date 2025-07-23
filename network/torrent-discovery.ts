@@ -1,6 +1,6 @@
 import { privateKeyFromRaw, publicKeyFromRaw } from '@libp2p/crypto/keys'
 import { TypedEventEmitter, peerDiscoverySymbol, serviceCapabilities } from '@libp2p/interface'
-import type { AbortOptions, ComponentLogger, Libp2pEvents, Logger, PeerDiscovery, PeerDiscoveryEvents, PeerDiscoveryProvider, PeerId, PeerStore, PrivateKey, PublicKey, Startable, TypedEventTarget } from '@libp2p/interface'
+import type { ComponentLogger, Libp2pEvents, Logger, PeerDiscovery, PeerDiscoveryEvents, PeerDiscoveryProvider, PeerId, PeerStore, PrivateKey, Startable, TypedEventTarget } from '@libp2p/interface'
 import type { AddressManager, ConnectionManager } from '@libp2p/interface-internal'
 import { ipPortToMultiaddr } from '@libp2p/utils/ip-port-to-multiaddr'
 import { multiaddr, type Multiaddr } from '@multiformats/multiaddr'
@@ -29,13 +29,18 @@ const VERSION = '2.6.7'
 //import { version as VERSION } from 'webtorrent/package.json'
 const USER_AGENT = `WebTorrent/${VERSION} (https://webtorrent.io)`
 //TODO: Pass via Init
-const KEY = 'Z3z1776YR5Mz+EkkZOZ2VB7kUNSCm6syviHz1++589Vz4+INeC6EKD2RaDmaP9uVr5FssMaHKed7KlC5wE/+GA=='
+const KEY_STRING = 'Z3z1776YR5Mz+EkkZOZ2VB7kUNSCm6syviHz1++589Vz4+INeC6EKD2RaDmaP9uVr5FssMaHKed7KlC5wE/+GA=='
+const STATIC_KEY = privateKeyFromRaw(uint8ArrayFromString(KEY_STRING, 'base64pad'))
+const STATIC_SALT = Buffer.from([0, 0, 0, 0, 0, 0])
 
 //@ts-expect-error: Could not find a declaration file for module 'k-rpc'
 import KRPC from 'k-rpc'
 //@ts-expect-error: Could not find a declaration file for module 'k-rpc-socket'
 import type KRPCSocket from 'k-rpc-socket'
+
 import { createSocket, isDHT, type Socket } from '../network/umplex'
+//import { TCP as TCPMatcher } from '@multiformats/multiaddr-matcher'
+//import { UTPMatcher } from '../network/tcp'
 
 interface KRPCSocketInit {
     timeout?: number //= 2000
@@ -106,11 +111,13 @@ class DiscoveryServiceInit {
 
 interface DiscoveryComponents {
     peerId: PeerId
+    privateKey: PrivateKey
     logger: ComponentLogger
     connectionManager: ConnectionManager
     events: TypedEventTarget<Libp2pEvents>
     peerStore: PeerStore
     addressManager: AddressManager
+    //transportManager: TransportManager
 }
 
 interface DiscoveryEvents extends PeerDiscoveryEvents {
@@ -123,19 +130,21 @@ export function torrentPeerDiscovery(init: DiscoveryServiceInit): (components: D
 
 const verify = (signature: Uint8Array, data: Uint8Array, publicKeyRaw: Uint8Array) => {
     const publicKey = publicKeyFromRaw(publicKeyRaw)
-    return publicKey.verify(data, signature)
-        === true //HACK:
-}
-const sign = (key: PrivateKey, data: Uint8Array) => {
-    return key.sign(data)
+    const ret = publicKey.verify(data, signature)
+    //console.log('verify', signature, data, publicKeyRaw, ret)
+    return ret === true //HACK:
 }
 
 type RPCPeer = { id: Buffer, host?: string, address?: string, port: number }
-type RPCResponse = { ip?: Buffer, r?: { nodes?: Buffer, p?: number } }
+type RPCResponse = {
+    ip?: Buffer,
+    r?: { id?: Buffer, nodes?: Buffer, p?: number },
+    a?: { id?: Buffer }
+}
 //type RPCVisitCallback = (res: RPCResponse, peer: RPCPeer) => void
 type RPCQueryCallback = (err: undefined | Error & { code: string }, res: RPCResponse, peer: RPCPeer) => void
 
-type Bencoded = Buffer | string | number | { [key: number]: Bencoded } | { [key: string]: Bencoded }
+type Bencoded = Uint8Array | string | number | { [key: number]: Bencoded } | { [key: string]: Bencoded }
 type DHTGetReturnType = { v: Bencoded }
 
 type HostPort = { host: string, port: number }
@@ -144,12 +153,12 @@ type ExternalAddress = {
     key: PrivateKey
     salt?: Uint8Array
     reportedBy: Map<string, number>
-    shouldBePublished?: boolean
     publicationTimeout?: ReturnType<typeof setTimeout>
 }
 type ResolutionResult = {
     ipport: string // For debug log
     hash: Uint8Array
+    salt?: Uint8Array
     retries?: number
     resolvedAt?: number
     retryTimeout?: ReturnType<typeof setTimeout>
@@ -162,12 +171,11 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
     private readonly components: DiscoveryComponents
     private readonly log: Logger
 
-    private readonly publicKey: PublicKey
-    private readonly privateKey: PrivateKey
-    
+    private readonly externalAddress: ExternalAddress
     private readonly externalAddresses = new Map<string, ExternalAddress>()
     private readonly resolutionResults = new Map<string, ResolutionResult>()
     private readonly resolutionQueue: ResolutionResult[] = []
+    private readonly knownIds = new Map<string, Uint8Array>()
     
     private multiaddrs: Multiaddr[] = []
     private multiaddrs_eq(to: Multiaddr[]){
@@ -190,8 +198,15 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
         } as Required<DiscoveryServiceInit>
         this.components = components
         this.log = components.logger.forComponent('libp2p:torrent-discovery')
-        this.privateKey = privateKeyFromRaw(uint8ArrayFromString(KEY, 'base64pad'))
-        this.publicKey = this.privateKey.publicKey
+        
+        const zeroedIP = '000.000.000.000:0000'
+        this.externalAddress = {
+            ipport: zeroedIP,
+            key: this.components.privateKey,
+            salt: STATIC_SALT,
+            reportedBy: new Map(),
+        }
+        this.externalAddresses.set(zeroedIP, this.externalAddress)
     }
 
     public start() {
@@ -199,26 +214,33 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
 
         const hash = sha1
         const hashLength = hash(Buffer.from('')).length
+        const opts = {
+            k: this.components.privateKey.publicKey.raw,
+            salt: STATIC_SALT,
+        }
+        const publicKeyHash = hash(Buffer.concat([opts.k, opts.salt]))
 
         const optsDHT: DHTInit = {
             socket: createSocket({ type: 'udp4', filter: isDHT }),
+            nodeId: publicKeyHash,
+            id: publicKeyHash,
             bootstrap: true,
             verify,
             hash,
         }
-        const opts: DiscoveryInit = {
+        const optsDiscovery: DiscoveryInit = {
             port: 0,
             dhtPort: 0,
             tracker: false,
             lsd: false,
 
             infoHash: this.init.infoHash,
-            peerId: hash(this.components.peerId.publicKey!.raw),
+            peerId: publicKeyHash,
             userAgent: USER_AGENT,
             dht: optsDHT,
         }
 
-        const rpc = optsDHT.krpc = new KRPC({ idLength: hashLength, ...opts } as KRPCInit)
+        const rpc = optsDHT.krpc = new KRPC({ idLength: hashLength, ...optsDiscovery } as KRPCInit)
         const findSelfQuery = {
             q: 'find_node',
             a: {
@@ -260,7 +282,7 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
         }
         
         process.browser = true //HACK: To bypass opts.port check
-        const discovery = new Discovery(opts)
+        const discovery = new Discovery(optsDiscovery)
         process.browser = false
         this.discovery = discovery
 
@@ -271,6 +293,7 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
                 return dht__debug.apply(this, args)
         }
 
+        //rpc.addListener('node', this.onNode)
         rpc.addListener('query', this.onReply)
 
         socket.addListener('update', this.resolutionQueue_kick)
@@ -280,6 +303,8 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
         discovery.addListener('error', this.onError)
 
         this.components.events.addEventListener('self:peer:update', this.onUpdate)
+
+        this.onUpdate()
     }
 
     public async stop() {
@@ -288,6 +313,7 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
         this.discovery = undefined
 
         const rpc = discovery.dht._rpc
+        //rpc.removeListener('node', this.onNode)
         rpc.removeListener('query', this.onReply)
 
         const socket = discovery.dht._rpc.socket
@@ -302,22 +328,41 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
         await new Promise<void>(res => discovery.destroy(() => res()))
     }
 
+    private readonly onNode = (peer: RPCPeer, res?: RPCResponse) => {
+        
+        peer.id ||= (res?.r?.id || res?.a?.id)!
+        if(!peer.id || (!peer.address && !peer.host) || !peer.port) return
+
+        const ipport = `${peer.host || peer.address}:${peer.port}`
+        //this.log('onNode', !!res, ipport, Buffer.from(peer.id).toString('hex'))
+        this.knownIds.set(ipport, peer.id)
+
+        const result = this.resolutionResults.get(ipport)
+        if(result && result.salt !== STATIC_SALT){
+            this.log('switching %s to strategy B', ipport)
+            result.salt = STATIC_SALT
+            result.hash = peer.id
+        }
+    }
+
     private readonly onReply = (res: RPCResponse, peer: RPCPeer) => {
         //this.log('onReply', `${peer.host || peer.address}:${peer.port}`, res)
         const rpc = this.discovery.dht._rpc
         
-        if(Buffer.isBuffer(res?.ip)){
+        this.onNode(peer, res)
+
+        if(ArrayBuffer.isView(res?.ip)){
             const node = parseIpPort(res.ip)
-            const external = this.maybeAddExternalAddress(node, 'dht', res, peer)
-            if(external) this.publish(external)
+            this.maybeAddAndPublishExternalAddress(node, 'dht', res, peer)
         }
-        if(Buffer.isBuffer(res?.r?.nodes)){
+        if(ArrayBuffer.isView(res?.r?.nodes)){
             const nodes = parseNodes(res.r.nodes, rpc._idLength)
             for(const node of nodes){
                 //this.log('onReply', `${node.host}:${node.port}`, node.id.toString('hex'), 'vs', rpc.id.toString('hex'))
                 if(node.id.equals(rpc.id)){
-                   const external = this.maybeAddExternalAddress(node, 'dht', res, peer)
-                   if(external) this.publish(external)
+                    this.maybeAddAndPublishExternalAddress(node, 'dht', res, peer)
+                } else {
+                    this.onNode(node)
                 }
             }
         }
@@ -351,13 +396,19 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
         const detail = ipPortToMultiaddr(ip, port)
         this.safeDispatchEvent('addr', { detail })
 
-        const opts = {
-            k: this.publicKey.raw,
-            salt: detail.bytes,
+        let result: ResolutionResult
+        const hash = this.knownIds.get(ipport)
+        if(hash){
+            this.log('using strategy B against %s', ipport)
+            result = { ipport, hash, salt: STATIC_SALT }
+        } else {
+            this.log('using strategy A against %s', ipport)
+            const salt = detail.bytes
+            const opts = { salt, k: STATIC_KEY.publicKey.raw }
+            const hash = this.discovery.dht._hash(Buffer.concat([opts.k, opts.salt]))
+            result = { ipport, hash, salt }
         }
-        const hash = this.discovery.dht._hash(Buffer.concat([opts.k, opts.salt]))
         
-        const result: ResolutionResult = { ipport, hash }
         this.resolutionResults.set(ipport, result)
         this.resolutionQueue.push(result)
         this.resolutionQueue_kick()
@@ -371,9 +422,9 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
         const result = this.resolutionQueue.pop()
         if(!result) return
 
-        const { ipport, hash } = result
+        const { ipport, hash, salt } = result
 
-        dht.get(hash, { cache: false }, (err: Error, value: DHTGetReturnType) => {
+        dht.get(hash, { salt, cache: false }, (err: Error, value: DHTGetReturnType) => {
             
             const fail = () => {
                 result.retries ??= 0
@@ -392,7 +443,7 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
             if(err){
                 this.log('error getting record for %s - %e', ipport, err)
                 return fail()
-            } else if(value && Buffer.isBuffer(value.v)){
+            } else if(value && ArrayBuffer.isView(value.v)){
                 const buf = value.v
                 this.components.peerStore.consumePeerRecord(buf).then(() => {
                     this.log('consumed peer record for %s', ipport)
@@ -415,7 +466,7 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
         this.log.error('error', err)
     }
     
-    private maybeAddExternalAddress(info: HostPort, source: string, res: object, peer: RPCPeer){
+    private maybeAddAndPublishExternalAddress(info: HostPort, source: string, res: object, peer: RPCPeer){
         const now = Date.now()
         const { host, port } = info
         const ipport = `${host}:${port}`
@@ -426,7 +477,7 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
             this.log('discovered new external address %s from %s', ipport, source)
             external = {
                 ipport,
-                key: this.privateKey,
+                key: STATIC_KEY,
                 salt: ipPortToMultiaddr(host, port).bytes,
                 reportedBy: new Map([[ reporter, now ]]),
             }
@@ -436,49 +487,58 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
                 this.log('received confirmation for external address %s from %s', ipport, source)
             external.reportedBy.set(reporter, now)
         }
-        return this.reevaluateExternalAddress(external) ? external : undefined
+        if(!external.publicationTimeout){
+            this.maybePublishExternalAddress(external)
+        }
     }
-    private reevaluateExternalAddress(external: ExternalAddress): boolean {
+
+    private shouldPublishExternalAddress(external: ExternalAddress): boolean {
+
+        if(external === this.externalAddress) return true
+
         const now = Date.now()
-        
         //const reportedAtLast = external.reportedBy.values().reduce((accum, reportedAt) => Math.max(accum, reportedAt), 0)
         const reportsCount = 
             external.reportedBy.values().reduce((accum, reportedAt) => accum + +((now - reportedAt) <= this.init.observationLifetime), 0)
             //((now - reportedAtLast) <= this.init.observationLifetime) ? external.reportedBy.size : 0
-        return !external.shouldBePublished && (external.shouldBePublished = (
-            reportsCount >= this.init.observationsCount
-        ))
+        return reportsCount >= this.init.observationsCount
     }
     
     private readonly onUpdate = async (/*{ detail: { peer } }: CustomEvent<PeerUpdate>*/) => {
 
-        const options: AbortOptions | undefined = undefined
+        const options = undefined
         const peerId = this.components.peerId
         const am = this.components.addressManager
+        //const cm = this.components.connectionManager
 
+        const p2p = multiaddr(`/p2p/${peerId.toString()}`)
+        //const transports = this.components.transportManager.getTransports()
         const { multiaddrs } = removePrivateAddressesMapper({
             id: peerId,
-            multiaddrs: am.getAddresses().map(ma => {
-                //return ma.decapsulateCode(protocols('p2p').code)
-                return ma.decapsulate(multiaddr(`/p2p/${peerId.toString()}`))
-            })
+            multiaddrs: am.getAddresses().map(ma => ma.decapsulate(p2p))
+                //.filter(ma => transports.some(transport => transport.dialFilter([ ma ]).length))
+                //.filter(ma => TCPMatcher.matches(ma) || UTPMatcher.matches(ma))
         })
         //this.log(this.multiaddrs.map(ma => ma.toString()), 'vs', multiaddrs.map(ma => ma.toString()))
-        if(!this.multiaddrs_eq(multiaddrs)){
+        if(!this.multiaddrs_eq(multiaddrs) || !this.peerRecord || !this.signedPeerRecord){
             this.multiaddrs = multiaddrs
             this.peerRecord = new PeerRecord({ peerId, multiaddrs, })
-            this.signedPeerRecord = await RecordEnvelope.seal(this.peerRecord, this.privateKey, options)
+            this.signedPeerRecord = await RecordEnvelope.seal(this.peerRecord, this.components.privateKey, options)
             this.log('listening addresses have changed', multiaddrs.map(ma => ma.toString()))
             for(const external of this.externalAddresses.values())
-                this.publish(external)
+                this.maybePublishExternalAddress(external)
         }
     }
 
-    private publish(external: ExternalAddress){
+    private maybePublishExternalAddress(external: ExternalAddress){
         const { ipport } = external
         
         clearTimeout(external.publicationTimeout)
-        
+        external.publicationTimeout = undefined
+
+        if(!this.shouldPublishExternalAddress(external)){
+            return
+        }        
         if(!this.peerRecord || !this.signedPeerRecord){
             this.log('no addresses to publish')
             return
@@ -486,17 +546,24 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
         
         this.log('begin putting records for', ipport)
         
-        external.publicationTimeout = setTimeout(() => this.publish(external), this.init.republishInterval)
+        external.publicationTimeout = setTimeout(
+            () => this.maybePublishExternalAddress(external),
+            this.init.republishInterval
+        )
 
         this.discovery.dht.put({
             k: external.key.publicKey.raw,
             salt: external.salt,
             seq: Number(this.peerRecord.seqNumber),
             v: this.signedPeerRecord.marshal(),
-            sign: sign.bind(null, external.key),
+            sign: (data: Uint8Array) => {
+                const ret = external.key.sign(data) as Uint8Array
+                //console.log('sign', Buffer.from(data).toString('hex'), Buffer.from(ret).toString('hex'))
+                return ret
+            },
         }, (err: null|Error, hash: Buffer, n: number) => {
-            if(n > 0) this.log('put record for %s on %d nodes', ipport, n)
             if(err) this.log.error('error putting record for %s - %e', ipport, err)
+            else this.log('put record for %s on %d nodes', ipport, n)
         })
     }
 }

@@ -14,8 +14,8 @@ import { defaultLogger } from '@libp2p/logger'
 import { noise } from '@chainsafe/libp2p-noise'
 import { patchedCrypto } from './utils/crypto'
 //import { circuitRelayServer, circuitRelayTransport } from '@libp2p/circuit-relay-v2'
-import { dcutr } from '@libp2p/dcutr'
-import { autoNATv2 } from '@libp2p/autonat-v2'
+//import { dcutr } from '@libp2p/dcutr'
+//import { autoNATv2 } from '@libp2p/autonat-v2'
 //import { uPnPNAT } from '@libp2p/upnp-nat'
 //import { webRTC, webRTCDirect } from '@libp2p/webrtc'
 //import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
@@ -28,7 +28,7 @@ import { autoNATv2 } from '@libp2p/autonat-v2'
 //import { autodial } from './network/autodial'
 //import { webSockets } from '@libp2p/websockets'
 //import { webTransport } from '@libp2p/webtransport'
-import * as Data from './data'
+//import * as Data from './data'
 import { utp } from './network/tcp'
 //TODO: rendezvous
 
@@ -47,7 +47,7 @@ const node = await createLibp2p({
         listen: [
             `/ip4/0.0.0.0/udp/${port}/utp`,
             `/ip4/0.0.0.0/tcp/${port}`,
-            `/p2p-circuit`,            
+            //`/p2p-circuit`,
             //`/ip4/0.0.0.0/tcp/${0}/ws`,
             //`/ip4/0.0.0.0/udp/${0}/webrtc-direct`,
             //`/webrtc`,
@@ -80,6 +80,14 @@ const node = await createLibp2p({
         bootstrap: bootstrap({
             list: [
                 //src: https://github.com/ipfs/kubo/blob/master/config/bootstrap_peers.go
+                "/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+                "/dnsaddr/bootstrap.libp2p.io/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa", // rust-libp2p-server
+                "/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb",
+                "/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt",
+                "/dnsaddr/va1.bootstrap.libp2p.io/p2p/12D3KooWKnDdG3iXw9eTFijk3EWSunZcFi54Zka4wmtqtt6rPxc8", // js-libp2p-amino-dht-bootstrapper
+                "/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",           // mars.i.ipfs.io
+                "/ip4/104.131.131.82/udp/4001/quic-v1/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",   // mars.i.ipfs.io
+
                 //src: https://github.com/ipfs/helia/blob/main/packages/helia/src/utils/bootstrappers.ts
                 //src: https://github.com/libp2p/js-libp2p/blob/main/packages/peer-discovery-bootstrap/src/index.ts
                 //src: https://github.com/libp2p/cpp-libp2p/blob/master/example/02-kademlia/rendezvous_chat.cpp
@@ -89,9 +97,8 @@ const node = await createLibp2p({
                 "/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt",
                 "/dnsaddr/va1.bootstrap.libp2p.io/p2p/12D3KooWKnDdG3iXw9eTFijk3EWSunZcFi54Zka4wmtqtt6rPxc8", // js-libp2p-amino-dht-bootstrapper
                 // va1 is not in the TXT records for _dnsaddr.bootstrap.libp2p.io yet so use the host name directly
-                "/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",           // mars.i.ipfs.io
-                "/ip4/104.131.131.82/udp/4001/quic-v1/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",   // mars.i.ipfs.io
-                
+                "/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",            // mars.i.ipfs.io
+                "/ip4/104.131.131.82/udp/4001/quic-v1/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",    // mars.i.ipfs.io
                 "/dnsaddr/bootstrap.libp2p.io/ipfs/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
                 "/dnsaddr/bootstrap.libp2p.io/ipfs/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa",
                 "/dnsaddr/bootstrap.libp2p.io/ipfs/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb",
@@ -133,25 +140,16 @@ const node = await createLibp2p({
         //torrent-discovery: 
         torrentPeerDiscovery: torrentPeerDiscovery({
             infoHash: (await hash(`${appName.join('/')}/${0}`, 'hex', 'sha-1')) as string,
-            announce: await Data.getAnnounceAddrs(),
+            //announce: await Data.getAnnounceAddrs(),
         }),
-        dcutr: dcutr(),
-        //upnpNAT: uPnPNAT(),
-        autoNAT: autoNATv2(),
-        //TODO: Run only if reported available from outside by autoNAT?
+        // dcutr: dcutr(),
+        // upnpNAT: uPnPNAT(),
+        // autoNAT: autoNATv2(),
         //relay: circuitRelayServer(), // Default relay+keepalive-tag.value = 1 + 1
-        /*
-        aminoDHT: kadDHT({
-            protocol: '/ipfs/kad/1.0.0',
-            peerInfoMapper: removePrivateAddressesMapper,
-            //logPrefix: 'libp2p:dht-amino',
-            //datastorePrefix: '/dht-amino',
-            //metricsPrefix: 'libp2p_dht_amino',
-            //validators: { ipns: ipnsValidator },
-            //selectors: { ipns: ipnsSelector }
-        }), // Default close-tag.value = 50; peer-tag.value = 1
-        */
-        //autodial: autodial({})
+        //aminoDHT: kadDHT({
+        //    peerInfoMapper: removePrivateAddressesMapper,
+        //}), // Default close-tag.value = 50; peer-tag.value = 1
+        //autodial: autodial({}),
     },
     start: true,
     connectionManager: {
@@ -161,6 +159,11 @@ const node = await createLibp2p({
 
 let sigints = 0
 process.on('SIGINT', () => {
-    if(++sigints == 2) throw new Error()
+    if(++sigints == 2) process.exit()
     node.stop()
+})
+
+process.on('uncaughtException', (/*err*/) => {
+    //if(err.name !== 'AbortError')
+    //    console.log('uncaughtException', err)
 })
