@@ -24,6 +24,9 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false,
+    
+    "strictNullChecks": true,
+    "exactOptionalPropertyTypes": true,
   },
   "exclude": [
     "node_modules",

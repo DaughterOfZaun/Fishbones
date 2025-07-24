@@ -9,7 +9,7 @@ import { torrentPeerDiscovery } from './network/torrent-discovery'
 import { pubsubPeerDiscovery as pubsubPeerWithDataDiscovery } from './network/pubsub-discovery'
 import { pubsubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
 //torrent-discovery: 
-import { hash } from 'uint8-util'
+//import { hash } from 'uint8-util'
 import { identify, identifyPush } from '@libp2p/identify'
 import { ping } from '@libp2p/ping'
 import { defaultLogger } from '@libp2p/logger'
@@ -31,7 +31,7 @@ import { autodial } from './network/autodial'
 //import { webSockets } from '@libp2p/websockets'
 //import { webTransport } from '@libp2p/webtransport'
 //import * as Data from './data'
-import { utp } from './network/tcp'
+//import { utp } from './network/tcp'
 //TODO: rendezvous
 
 const port = Number(process.argv[2]) || 5116
@@ -47,7 +47,7 @@ const cid = CID.create(1, json.code,
 const node = await createLibp2p({
     addresses: {
         listen: [
-            `/ip4/0.0.0.0/udp/${port}/utp`,
+            //`/ip4/0.0.0.0/udp/${port}/utp`,
             `/ip4/0.0.0.0/tcp/${port}`,
             `/p2p-circuit`,
             //`/ip4/0.0.0.0/tcp/${0}/ws`,
@@ -57,12 +57,14 @@ const node = await createLibp2p({
     },
     transports: [
         tcp(),
+        /*
         utp({
             outboundSocketInactivityTimeout: Infinity,
             inboundSocketInactivityTimeout: Infinity,
             maxConnections: Infinity,
             //closeServerOnMaxConnections: null,
         }),
+        */
         circuitRelayTransport(), // Default relay-tag.value = 1
         //webSockets(),
         //webRTCDirect(),
@@ -162,9 +164,21 @@ process.on('SIGINT', () => {
     if(++sigints == 2) process.exit()
     node.stop()
 })
-/*
-process.on('uncaughtException', (err) => {
-    //if(err.name !== 'AbortError')
-    //    console.log('uncaughtException', err)
+
+const ABORT_ERR = 20
+const ERR_UNHANDLED_ERROR = 'ERR_UNHANDLED_ERROR'
+process.on('uncaughtException', (err: Error & { code?: string, context?: Error & { code?: number } }) => {
+    if(
+        //err.message.startsWith('Unhandled error. (') &&
+        //err.message.endsWith(')') &&
+        err.code === ERR_UNHANDLED_ERROR &&
+        err.context?.code === ABORT_ERR//&&
+        //err.context?.name === 'AbortError' &&
+        //err.context?.message === 'The operation was aborted.'
+    ){
+        // Ignore.
+    } else {
+        //console.log('UNCAUGHT EXCEPTION', err)
+        throw err
+    }
 })
-*/

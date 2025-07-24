@@ -3,7 +3,7 @@ import { TypedEventEmitter, peerDiscoverySymbol, serviceCapabilities } from '@li
 import type { ComponentLogger, Libp2pEvents, Logger, PeerDiscovery, PeerDiscoveryEvents, PeerDiscoveryProvider, PeerId, PeerStore, PrivateKey, Startable, TypedEventTarget } from '@libp2p/interface'
 import type { AddressManager, ConnectionManager } from '@libp2p/interface-internal'
 import { ipPortToMultiaddr } from '@libp2p/utils/ip-port-to-multiaddr'
-import { multiaddr, type Multiaddr } from '@multiformats/multiaddr'
+import { CODE_P2P, type Multiaddr } from '@multiformats/multiaddr'
 //@ts-expect-error: Could not find a declaration file for module 'addr-to-ip-port'
 import addrToIPPort from 'addr-to-ip-port'
 //@ts-expect-error: Could not find a declaration file for module 'torrent-discovery'
@@ -93,7 +93,7 @@ const s = 1000*ms
 const m = 60*s
 const h = 60*m
 
-class DiscoveryServiceInit {
+class TorrentPeerDiscoveryInit {
     infoHash!: string | Buffer
 
     // @libp2p/autonat-v2/src/client.ts:REQUIRED_SUCCESSFUL_DIALS
@@ -110,7 +110,7 @@ class DiscoveryServiceInit {
     resolutionRetryTimeout?: number = 1*m
 }
 
-interface DiscoveryComponents {
+interface TorrentPeerDiscoveryComponents {
     peerId: PeerId
     privateKey: PrivateKey
     logger: ComponentLogger
@@ -121,12 +121,12 @@ interface DiscoveryComponents {
     //transportManager: TransportManager
 }
 
-interface DiscoveryEvents extends PeerDiscoveryEvents {
+interface TorrentPeerDiscoveryEvents extends PeerDiscoveryEvents {
     addr: CustomEvent<Multiaddr>
 }
 
-export function torrentPeerDiscovery(init: DiscoveryServiceInit): (components: DiscoveryComponents) => DiscoveryClass {
-    return (components: DiscoveryComponents) => new DiscoveryClass(init, components)
+export function torrentPeerDiscovery(init: TorrentPeerDiscoveryInit): (components: TorrentPeerDiscoveryComponents) => TorrentPeerDiscovery {
+    return (components: TorrentPeerDiscoveryComponents) => new TorrentPeerDiscovery(init, components)
 }
 
 const verify = (signature: Uint8Array, data: Uint8Array, publicKeyRaw: Uint8Array) => {
@@ -148,13 +148,14 @@ type RPCQueryCallback = (err: null | Error & { code: string }, res: RPCResponse,
 type Bencoded = Uint8Array | string | number | { [key: number]: Bencoded } | { [key: string]: Bencoded }
 type DHTGetReturnType = { v: Bencoded }
 
+type u = undefined
 type HostPort = { host: string, port: number }
 type ExternalAddress = {
     ipport: string // For debug log
     key: PrivateKey
     salt: Uint8Array
     reportedBy: Map<string, number>
-    publicationTimeout?: ReturnType<typeof setTimeout>
+    publicationTimeout?: u|ReturnType<typeof setTimeout>
 }
 type ResolutionResult = {
     ipport: string // For debug log
@@ -162,14 +163,15 @@ type ResolutionResult = {
     salt: Uint8Array
     retries?: number
     resolvedAt?: number
-    retryTimeout?: ReturnType<typeof setTimeout>
+    retryTimeout?: u|ReturnType<typeof setTimeout>
 }
 
-class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerDiscovery, PeerDiscoveryProvider, Startable {
+export type { TorrentPeerDiscovery }
+class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscoveryEvents> implements PeerDiscovery, PeerDiscoveryProvider, Startable {
     
     private discovery: Discovery
-    private readonly init: Required<DiscoveryServiceInit>
-    private readonly components: DiscoveryComponents
+    private readonly init: Required<TorrentPeerDiscoveryInit>
+    private readonly components: TorrentPeerDiscoveryComponents
     private readonly log: Logger
 
     private readonly externalAddress: ExternalAddress
@@ -192,11 +194,11 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
       '@libp2p/peer-discovery'
     ]
 
-    constructor(init: DiscoveryServiceInit, components: DiscoveryComponents){
+    constructor(init: TorrentPeerDiscoveryInit, components: TorrentPeerDiscoveryComponents){
         super()
         this.init = {
-            ...new DiscoveryServiceInit(), ...init,
-        } as Required<DiscoveryServiceInit>
+            ...new TorrentPeerDiscoveryInit(), ...init,
+        } as Required<TorrentPeerDiscoveryInit>
         this.components = components
         this.log = components.logger.forComponent('libp2p:torrent-discovery')
         
@@ -356,8 +358,10 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
 
         this.components.events.removeEventListener('self:peer:update', this.onUpdate)
 
-        for(const external of this.externalAddresses.values())
+        for(const external of this.externalAddresses.values()){
             clearTimeout(external.publicationTimeout)
+            external.publicationTimeout = undefined
+        }
         
         await new Promise<void>(res => discovery.destroy(() => res()))
     }
@@ -464,6 +468,7 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
                 this.log('setting retry timer')
                 result.retries++
                 result.retryTimeout = setTimeout(() => {
+                    result.retryTimeout = undefined
                     this.resolutionQueue.unshift(result)
                 }, this.init.resolutionRetryTimeout)
             } else {
@@ -564,11 +569,10 @@ class DiscoveryClass extends TypedEventEmitter<DiscoveryEvents> implements PeerD
         const am = this.components.addressManager
         //const cm = this.components.connectionManager
 
-        const p2p = multiaddr(`/p2p/${peerId.toString()}`)
         //const transports = this.components.transportManager.getTransports()
         const { multiaddrs } = removePrivateAddressesMapper({
             id: peerId,
-            multiaddrs: am.getAddresses().map(ma => ma.decapsulate(p2p))
+            multiaddrs: am.getAddresses().map(ma => ma.decapsulateCode(CODE_P2P))
                 //.filter(ma => transports.some(transport => transport.dialFilter([ ma ]).length))
                 //.filter(ma => TCPMatcher.matches(ma) || UTPMatcher.matches(ma))
         })
