@@ -3,13 +3,13 @@
 //src: libp2p/src/connection-manager/connection-pruner.ts
 //src: libp2p/src/connection-manager/dial-queue.ts
 
-import type { ComponentLogger, Libp2pEvents, Logger, PeerId, PeerInfo, PeerStore, PeerUpdate, Startable, TypedEventTarget } from "@libp2p/interface"
+import type { ComponentLogger, Connection, Libp2pEvents, Logger, PeerId, PeerInfo, PeerStore, PeerUpdate, Startable, TypedEventTarget } from "@libp2p/interface"
 import type { ConnectionManager, TransportManager } from "@libp2p/interface-internal"
-import { setMaxListeners } from 'main-event'
-import { anySignal } from 'any-signal'
+//import { setMaxListeners } from 'main-event'
+//import { anySignal } from 'any-signal'
 import { PeerMap } from "@libp2p/peer-collections"
 import { type AbortOptions, type Multiaddr } from "@multiformats/multiaddr"
-import { Queue, type QueueInit } from "@libp2p/utils/queue"
+import { Queue, type Job, type QueueInit } from "@libp2p/utils/queue"
 
 interface AutodialInit {
     connectionThreshold?: number
@@ -24,7 +24,7 @@ interface AutodialComponents {
     transportManager: TransportManager
 }
 
-export function autodial(init: AutodialInit): (components: AutodialComponents) => Autodial {
+export function autodial(init: AutodialInit = {}): (components: AutodialComponents) => Autodial {
     return (components: AutodialComponents) => new Autodial(init, components)
 }
 
@@ -35,6 +35,8 @@ class AutodialPeerInfo {
     pinned: boolean = false
     unpinTimeout: undefined | ReturnType<typeof setTimeout>
     multiaddrs: Multiaddr[] = []
+    connection?: Connection
+    connectionToReplace?: Connection
     constructor(id: PeerId){
         this.id = id
     }
@@ -57,25 +59,29 @@ class AutodialPeerInfo {
     }
 }
 
-class PausableQueue<JobReturnType = unknown, JobOptions extends AbortOptions = AbortOptions> extends Queue<JobReturnType, JobOptions> {
-    autoStart: boolean
-    constructor (init: QueueInit<JobReturnType, JobOptions> & { autoStart?: boolean } = {}) {
+type JobChecker<JobOptions extends AbortOptions, JobReturnType> = (job: Job<JobOptions, JobReturnType>) => boolean
+class CheckingQueue<JobReturnType = unknown, JobOptions extends AbortOptions = AbortOptions> extends Queue<JobReturnType, JobOptions> {
+    private readonly check: JobChecker<JobOptions, JobReturnType>
+    constructor (init: QueueInit<JobReturnType, JobOptions> & {
+        check?: JobChecker<JobOptions, JobReturnType>
+    }) {
         super(init)
-        this.autoStart = init.autoStart ?? true
-        const tryToStartAnother = this['tryToStartAnother']
+        this.check = init.check ?? (() => true)
+        const tryToStartAnother = this['tryToStartAnother'] as () => boolean
         this['tryToStartAnother'] = () => {
-            return this.autoStart ?
-                tryToStartAnother.call(this) :
-                false
+            let allowed = true
+            if(this.size !== 0 && this.running < this.concurrency){
+                const job = this.queue.find(j => j.status === 'queued')
+                if (job != null){
+                    allowed = this.check(job)
+                }
+            }
+            return allowed && tryToStartAnother.call(this)
         }
     }
-    start (): void {
-        if (this.autoStart) return
-        this.autoStart = true
-        this['tryToStartAnother']()
-    }
-    pause (): void {
-        this.autoStart = false
+    public kick(){
+        const tryToStartAnother = this['tryToStartAnother']
+        return tryToStartAnother.call(this)
     }
 }
 
@@ -88,9 +94,8 @@ class Autodial implements Startable {
     private readonly components: AutodialComponents
 
     private started = false
-    private running = false
 
-    private readonly queue: PausableQueue<void, DialJobOptions>
+    private readonly queue: CheckingQueue<void, DialJobOptions>
     private readonly queue_has = (peerId: PeerId): boolean => {
         return this.queue_find(peerId) != null
     }
@@ -104,12 +109,6 @@ class Autodial implements Startable {
             return true
         }
         return false
-    }
-    private readonly queue_sort = () => {
-        const this_queue_sort = this.queue['sort']
-        if (this_queue_sort != null) {
-            this.queue.queue.sort(this_queue_sort)
-        }
     }
 
     private readonly peerInfos = new PeerMap<AutodialPeerInfo>()
@@ -130,10 +129,9 @@ class Autodial implements Startable {
             concurrency: init.concurrency ?? 10,
             unpinTimeout: init.unpinTimeout ?? 30_000,
         }
-        this.queue = new PausableQueue({
+        this.queue = new CheckingQueue({
             concurrency: this.init.concurrency,
             maxSize: Infinity,
-            autoStart: false,
             sort: (a, b) => {
                 if(a.status !== b.status){
                     if(a.status === 'running') return -1
@@ -142,7 +140,8 @@ class Autodial implements Startable {
                 if(a.options.value > b.options.value) return -1
                 if(a.options.value < b.options.value) return +1
                 return 0
-            }
+            },
+            check: job => this.checkCapacity(job.options)
         })
     }
 
@@ -157,7 +156,7 @@ class Autodial implements Startable {
         this.components.events.addEventListener('peer:update', this.onPeerUpdate)
         this.components.events.addEventListener('peer:disconnect', this.onPeerDisconnect)
 
-        this.startAutodial()
+        this.queue.kick()
     }
 
     stop() {
@@ -171,23 +170,7 @@ class Autodial implements Startable {
         this.components.events.removeEventListener('peer:update', this.onPeerUpdate)
         this.components.events.removeEventListener('peer:disconnect', this.onPeerDisconnect)
 
-        this.stopAutodial()
-    }
-
-    private startAutodial() {
-        if (this.running) return
-        this.running = true
-        
-        this.log('starting autodial')
-        this.queue.start()
-    }
-
-    private stopAutodial() {
-        if (!this.running) return
-        this.running = false
-
-        this.log('stopping autodial')
-        this.queue.pause()
+        this.queue.abort()
     }
 
     private readonly onPeerDiscovery = ({ detail: peer }: CustomEvent<PeerInfo>) => {
@@ -197,17 +180,15 @@ class Autodial implements Startable {
         info.multiaddrs = peer.multiaddrs
         
         this.maybeQueuePeer(info)
-
-        this.checkCapacity()
+        this.queue.kick()
     }
     private readonly onPeerConnect = ({ detail: peerId }: CustomEvent<PeerId>) => {
         
         const info = this.peerInfos_get(peerId)
-        info.pin(this.init.unpinTimeout, () => this.checkCapacity())
+        info.pin(this.init.unpinTimeout, () => this.queue.kick())
         
         this.queue_delete(peerId)
-        
-        this.checkCapacity()
+        this.queue.kick()
     }
     private readonly onPeerUpdate = ({ detail: { peer } }: CustomEvent<PeerUpdate>) => {
         const { id: peerId } = peer
@@ -220,30 +201,28 @@ class Autodial implements Startable {
         
         // If the peer has changed its address and is now dialable.
         this.maybeQueuePeer(info)
-        // If the peer is already in the queue.
-        this.queue_sort()
-
-        this.checkCapacity()
+        this.queue.kick()
     }
     private readonly onPeerDisconnect = ({ detail: peerId }: CustomEvent<PeerId>) => {
         
         const info = this.peerInfos_get(peerId)
+        info.connection = undefined
         info.unpin()
 
-        this.checkCapacity()
+        this.queue.kick()
     }
 
     private maybeQueuePeer(info: AutodialPeerInfo){
         const { id: peerId, multiaddrs } = info
         try {
             if (this.queue_has(peerId)) {
-                this.log.trace('peer %p was already in queue', peerId)
+                //this.log.trace('peer %p was already in queue', peerId)
                 return false
             } else if (this.components.connectionManager.getConnections(peerId)?.length > 0) {
-                this.log.trace('peer %p was already connected', peerId)
+                //this.log.trace('peer %p was already connected', peerId)
                 return false
             } else if (!this.components_connectionManager_isDialableSync(multiaddrs)) {
-                this.log.trace('peer %p was not dialable', peerId)
+                //this.log.trace('peer %p was not dialable', peerId)
                 return false
             } else {
                 this.log.trace('adding peer %p to dial queue', peerId)
@@ -258,16 +237,21 @@ class Autodial implements Startable {
         return false
     }
 
-    private readonly dialPeer = async ({ id: peerId, signal }: DialJobOptions): Promise<void> => {
-        const combinedSignal = anySignal([AbortSignal.timeout(5_000), signal])
-        setMaxListeners(Infinity, combinedSignal)
+    private readonly dialPeer = async (info: DialJobOptions): Promise<void> => {
+        const { id: peerId, /*signal,*/ connectionToReplace } = info
+        //const combinedSignal = anySignal([AbortSignal.timeout(5_000), signal])
+        //setMaxListeners(Infinity, combinedSignal)
         try {
+            if(connectionToReplace){
+                info.connectionToReplace = undefined
+                const peerId = connectionToReplace.remotePeer
+                this.log.trace('closing connection to peer %p', peerId)
+                await connectionToReplace.close()
+            }
             this.log.trace('opening connection to peer %p', peerId)
-            await this.components.connectionManager.openConnection(peerId, {
-                signal: combinedSignal
-            })
+            await this.components.connectionManager.openConnection(peerId, /*{ signal: combinedSignal }*/)
         } finally {
-            combinedSignal.clear()
+            //combinedSignal.clear()
         }
     }
 
@@ -286,26 +270,39 @@ class Autodial implements Startable {
         return false
     }
 
-    private checkCapacity(){
-        const hasCapacity = this.hasCapacity()
-        if(this.running && !hasCapacity) this.stopAutodial()
-        if(!this.running && hasCapacity) this.startAutodial()
-    }
-
-    private hasCapacity(){
+    private checkCapacity(queued: AutodialPeerInfo): boolean {
+        
         const connections = this.components.connectionManager.getConnections()
         const maxConnections = this.components.connectionManager.getMaxConnections()
         const connectionsAllowed = maxConnections * this.init.connectionThreshold * 0.01
-        const currentConnectionCount = connections.length
+        const currentConnectionCount = connections.length + this.queue.running
+
+        this.log.trace(`capacity ${currentConnectionCount}/${connectionsAllowed}/${maxConnections}`)
+
         if(currentConnectionCount < connectionsAllowed){
             return true
         }
-        const queued = this.queue.queue.find(job => job.status === 'queued')
-        return connections.some(connection => {
+        
+        const info = connections
+        .map(connection => {
             const peerId = connection.remotePeer
             const info = this.peerInfos.get(peerId)!
-            const queued_options_value = queued?.options.value ?? 0
-            return !info.pinned && (info.value === 0 || info.value < queued_options_value)
+            info.connection = connection
+            return info
         })
+        .filter(info => {
+            return !info.pinned
+        })
+        .reduce((accum: undefined | AutodialPeerInfo, info) => {
+            return (accum && accum.value < info.value) ? accum : info
+        }, undefined)
+
+        if(info && (info.value === 0 || info.value < queued.value)){
+            this.log.trace('connection to peer %p will be replaced with', info.id)
+            this.log.trace('connection to peer %p', queued.id)
+            queued.connectionToReplace = info.connection
+            return true
+        }
+        return false
     }
 }
