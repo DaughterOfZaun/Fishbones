@@ -31,6 +31,11 @@ export enum UTPError {
     CONNRESET,
     TIMEDOUT,
 }
+export const UTP_ERROR_NAMES = [
+    'CONNREFUSED',
+    'CONNRESET',
+    'TIMEDOUT',
+] as const
 
 export enum UTPState {
     CONNECT = 1,

@@ -50,6 +50,9 @@ const createNode = async (port: number) => {
     streamMuxers: [ yamux() ],
     services: {
       ping: ping()
+    },
+    connectionManager: {
+      dialTimeout: 60_000
     }
   })
 
@@ -86,12 +89,23 @@ node.handle('/print', async ({ stream }) => {
 const [targetAddrStr, targetPeerIdStr] = [ process.argv[2], process.argv[3] ]
 if(targetAddrStr && targetPeerIdStr){
   const [targetAddr, targetPeerId] = [ multiaddr(targetAddrStr), peerIdFromString(targetPeerIdStr) ]
-  await node.peerStore.patch(targetPeerId, {
-    multiaddrs: [ targetAddr ]
-  })
-  const stream = await node.dialProtocol(targetPeerId, '/print')
-  await pipe(
-    ['Hello', ' ', 'p2p', ' ', 'world', '!'].map(str => uint8ArrayFromString(str)),
-    stream
-  )
+  try {
+    await node.peerStore.patch(targetPeerId, {
+      multiaddrs: [ targetAddr ]
+    })
+    const stream = await node.dialProtocol(targetPeerId, '/print')
+    await pipe(
+      ['Hello', ' ', 'p2p', ' ', 'world', '!'].map(str => uint8ArrayFromString(str)),
+      stream
+    )
+  } catch(err) {
+    console.error(err)
+    node.stop()
+  }
 }
+
+let sigints = 0
+process.on('SIGINT', () => {
+  if(node.status === 'started') node.stop()
+  if(node.status === 'stopped' || ++sigints == 2) process.exit()
+})

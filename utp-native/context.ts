@@ -8,7 +8,7 @@ const contexts = new Map<Pointer, UTPContext>()
 
 export class UTPContext {
     
-    public handler?: {
+    public handler: undefined | {
         accept?: (socket: UTPSocket, address: UTPAddress) => void | number
         firewall?: (address: UTPAddress) => void | number
         read?: (socket: UTPSocket, buf: Uint8Array) => void | number

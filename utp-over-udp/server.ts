@@ -1,7 +1,7 @@
 import UTP from '../utp-native'
-import { UTPError, UTPOptions, UTPState } from '../utp-native/enums'
+import { UTPOptions } from '../utp-native/enums'
 import { determineAddressFamily, UTPAddress } from "../utp-native/address"
-import { TypedEventEmitter } from "./emitter"
+import { EventEmitter as TypedEventEmitter } from 'node:events'
 import { Socket, type UTPSocketExt } from "./socket"
 import type { UTPContext } from '../utp-native/context'
 import { isUTP, udpSocket } from '../network/umplex'
@@ -15,27 +15,49 @@ type ServerEvents = {
     drop: [],
 }
 
+type HostPort = { host: string, port: number }
+
 export class Server extends TypedEventEmitter<ServerEvents> {
     
-    listening!: boolean
-    maxConnections: number = Infinity
+    public listening: boolean = false
+    public maxConnections: number = Infinity
     
-    udp!: Bun.udp.Socket<'buffer'>
-    ctx!: UTPContext
-    int!: ReturnType<typeof setInterval>
-
-    address() {
+    private udp!: Bun.udp.Socket<'buffer'>
+    public ctx!: UTPContext //TODO: Make private.
+    private int!: ReturnType<typeof setInterval>
+    
+    public address() {
         return { address: this.udp.hostname, port: this.udp.port }
     }
     
-    async listen(opts: { host?: string, port?: number }, onListening?: () => void) {
+    private listeningRequested: boolean = false
+    public async listen(options: Partial<HostPort>, onListening?: () => void) {
+
+        if(this.listening || this.listeningRequested){
+            //TODO: Reverse engineer proper error.
+            throw new Error('ERR_SERVER_ALREADY_LISTEN')
+        }
+        this.listeningRequested = true
 
         //if(onListening) this.once('listening', onListening.bind(this))
 
+        try {
+            await this._listen(options)
+        } finally {
+            this.listeningRequested = false
+        }
+
+        this.listening = true
+        if(onListening) onListening.call(this)
+        this.emit('listening')
+    }
+
+    private async _listen({ host: hostname, port }: Partial<HostPort>){
+
         this.udp = await udpSocket({
             binaryType: 'buffer',
-            hostname: opts.host,
-            port: opts.port,
+            ...(hostname ? { hostname } : {}),
+            ...(port ? { port } : {}),
             socket: {
                 filter: isUTP,
                 data: (socket, data, port, address) => {
@@ -46,37 +68,29 @@ export class Server extends TypedEventEmitter<ServerEvents> {
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 drain: (socket) => {
                     //console.log('udp socket', 'drain')
+                    //TODO: Handle pressure.
                 },
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 error: (socket, error) => {
                     //console.log('udp socket', 'error', error)
+                    //TODO: Handle errors.
                 },
             }
         })
         
         this.ctx = UTP.init(2, {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            firewall: (address) => 0,
             accept: (socket: UTPSocketExt, address) => {
                 const wrapper = socket.wrapper = new Socket(socket, address)
                 this.emit('connection', wrapper)
             },
             read: (socket: UTPSocketExt, buf) => {
-                socket.wrapper?.source.push(buf)
-                socket.read_drained()
+                socket.wrapper?._read(buf)
             },
             state_change: (socket: UTPSocketExt, state) => {
-                if(state === UTPState.CONNECT)
-                    socket.wrapper?.emit('connect')
-                if(state === UTPState.EOF)
-                    socket.wrapper?.emit('end')
+                socket.wrapper?._state_change(state)
             },
             error: (socket: UTPSocketExt, err) => {
-                let msg = 'UNKNOWN'
-                if(err == UTPError.CONNREFUSED) msg = 'CONNREFUSED'
-                if(err == UTPError.CONNRESET) msg = 'CONNRESET'
-                if(err == UTPError.TIMEDOUT) msg = 'TIMEDOUT'
-                socket.wrapper?.emit('error', new Error(msg))
+                socket.wrapper?._error(err)
             },
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             send: (socket: UTPSocketExt, buf, address, flags) => {
@@ -94,13 +108,15 @@ export class Server extends TypedEventEmitter<ServerEvents> {
 		this.ctx.set_option(UTPOptions.LOG_DEBUG,  1)
 
         this.int = setInterval(() => this.ctx.check_timeouts(), 500)
-
-        this.listening = true
-        if(onListening) onListening.call(this)
-        this.emit('listening')
     }
 
-    close() {
-        //throw new Error('Method not implemented.')
+    public close() {
+        if(!this.listening) return
+        this.listening = false
+
+        clearInterval(this.int)
+        this.ctx.destroy()
+
+        this.emit('close')
     }
 }

@@ -1,9 +1,10 @@
 import { UTPAddress } from '../utp-native/address'
-import { UTPShutdown } from '../utp-native/enums'
+//import { UTPShutdown } from '../utp-native/enums'
 import type { UTPSocket } from '../utp-native/socket'
 import { pushable } from 'it-pushable'
-import { TypedEventEmitter } from './emitter'
+import { EventEmitter as TypedEventEmitter } from 'node:events'
 import type { Duplex, Source } from 'it-stream-types'
+import { UTP_ERROR_NAMES, UTPError, UTPState } from '../utp-native/enums'
 
 export type UTPSocketExt = UTPSocket & {
     wrapper?: Socket
@@ -13,24 +14,23 @@ type SocketEvents = {
     error: [Error],
     close: [boolean],
     end: [],
-    timeout: [],
+    timeout: [], //TODO: Implement.
     connect: [],
-
     drain: [],
 }
 
 export class Socket extends TypedEventEmitter<SocketEvents> implements Duplex<AsyncGenerator<Uint8Array>, Source<Uint8Array>, Promise<void>> {
 
-    public closed: boolean = false
     public destroyed: boolean = false
     public readable: boolean = false
+    public closed: boolean = false
     
-    public readonly writableLength: number = 0
+    public readonly writableLength: number = 0 //TODO: Implement.
     
     public readonly remoteAddress: string
     public readonly remotePort: number
-
-    constructor(
+    
+    public constructor(
         private readonly wrapped: UTPSocket,
         address: UTPAddress
     ){
@@ -40,27 +40,85 @@ export class Socket extends TypedEventEmitter<SocketEvents> implements Duplex<As
         this.remotePort = address.port
     }
     
-    source = pushable<Uint8Array>()
-    sink = async (source: Source<Uint8Array>) => {
+    public source = pushable<Uint8Array>({
+        objectMode: false,
+        onEnd: (/*err*/) => {
+            this.wrapped.read_drained()
+        },
+    })
+    _read(buf: Uint8Array){
+        this.source.push(buf)
+    }
+
+    public sink = async (source: Source<Uint8Array>) => {
+        if(this.destroyed) return
+        
         for await(const data of source){
             this.wrapped.write(data)
         }
     }
     
-    setTimeout(inactivityTimeout: number) {
+    public setTimeout(inactivityTimeout: number) {
+        if(this.destroyed) return
+
         if(isFinite(inactivityTimeout))
             throw new Error('Method not implemented.')
     }
 
-    end() {
-        //TODO: Finish sink.
-        this.wrapped.shutdown(UTPShutdown.SHUT_WR)
+    _state_change(state: UTPState){
+        switch(state){
+            case UTPState.CONNECT:
+                this.readable = true
+                this.emit('connect')
+            break
+            case UTPState.WRITABLE:
+                this.emit('drain')
+            break
+            case UTPState.EOF:
+                this.readable = false
+                this.emit('end')
+                this.end()
+            break
+            case UTPState.DESTROYING:
+                //TODO: Free UTPSocket & wrapper.
+                /*
+                if(!this.destroyed){
+                    this.destroyed = true
+                    this.readable = false
+                    this.closed = true
+                    this.emit('close' , false)
+                }
+                */
+            break
+        }
     }
 
-    destroy(err?: Error) {
+    _error(err: UTPError){
+        this.destroyed = true
+        this.readable = false
+        this.closed = true
+        this.emit('error', new Error(UTP_ERROR_NAMES[err]))
+        //TODO: Call utp_close if conn->state == CS_RESET
+        this.emit('close' , true)
+    }
+
+    public end() {
+        //if(this.destroyed) return
+        //TODO: Finish sink.
+        //this.wrapped.shutdown(UTPShutdown.SHUT_WR)
+
+        this.destroy()
+    }
+    
+    public destroy(err?: Error) {
+        if(this.destroyed) return
+        this.destroyed = true
+        this.readable = false
+        this.closed = true
+
         //TODO: Finish sink.
         this.source.end(err)
         this.wrapped.close()
-        this.emit('close', err !== undefined)
+        this.emit('close', !!err)
     }
 }

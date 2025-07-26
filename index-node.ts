@@ -157,8 +157,8 @@ const node = await createLibp2p({
 
 let sigints = 0
 process.on('SIGINT', () => {
-    if(++sigints == 2) process.exit()
-    node.stop()
+    if(node.status === 'started') node.stop()
+    if(node.status === 'stopped' || ++sigints == 2) process.exit()
 })
 
 const ABORT_ERR = 20

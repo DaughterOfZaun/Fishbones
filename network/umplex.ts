@@ -63,14 +63,14 @@ const container = new class BunSocketContainer {
 }
 
 export async function udpSocket(options: BunSocketOptions): Promise<BunSocket> {
-    const { socket: handler } = options
+    const { hostname, port, socket: handler } = options
 
     console.assert(options.binaryType === binaryType)
 
     container.socket = await (container.promise ??= Bun.udpSocket({
         binaryType: binaryType,
-        hostname: options.hostname,
-        port: options.port,
+        ...(hostname ? { hostname } : {}),
+        ...(port ? { port } : {}),
         socket: {
             data: (socket, data, port, address) => {
                 for(const handler of container.handlers){
@@ -191,15 +191,15 @@ class Socket extends TypedEventEmitter<SocketEvents> {
 
     //public filter: DataFilter = defaultFilter
 
-    bind(port?: number, address?: string, onListening?: () => void): this {
+    bind(port?: number, hostname?: string, onListening?: () => void): this {
         Promise.resolve().then(async () => {
 
             //if(onListening) this.once('listening', onListening.bind(this))
             
             this.socket = await (this.promise ??= udpSocket({
                 binaryType: binaryType,
-                hostname: address,
-                port: port,
+                ...(hostname ? { hostname } : {}),
+                ...(port ? { port } : {}),
                 socket: {
                     data: (socket, data, port, address) => {
                         this.emit('message', data, { address, port })

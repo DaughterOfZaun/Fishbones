@@ -87,7 +87,7 @@ const callback_on_accept = new JSCallback((args: Pointer) => {
     return context.handler?.accept?.(socket, address) ?? 0
 }, callback_definition)
 
-export const init = (version = 2, handler: UTPContext['handler']) => {
+export const init = (version = 2, handler?: UTPContext['handler']) => {
     //console.log('utp_init', version)
     const handle = utp_init(version)
     const context = UTPContext.fromHandle(handle)
