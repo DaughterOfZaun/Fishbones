@@ -7,9 +7,9 @@ import { createLibp2p } from 'libp2p'
 //torrent-discovery:
 import { torrentPeerDiscovery } from './network/torrent-discovery'
 import { pubsubPeerDiscovery as pubsubPeerWithDataDiscovery } from './network/pubsub-discovery'
-import { pubsubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
+//import { pubsubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
 //torrent-discovery: 
-//import { hash } from 'uint8-util'
+import { hash } from 'uint8-util'
 import { identify, identifyPush } from '@libp2p/identify'
 import { ping } from '@libp2p/ping'
 import { defaultLogger } from '@libp2p/logger'
@@ -31,7 +31,7 @@ import { autodial } from './network/autodial'
 //import { webSockets } from '@libp2p/websockets'
 //import { webTransport } from '@libp2p/webtransport'
 //import * as Data from './data'
-//import { utp } from './network/tcp'
+import { utp } from './network/tcp'
 //TODO: rendezvous
 
 const port = Number(process.argv[2]) || 5116
@@ -47,7 +47,7 @@ const cid = CID.create(1, json.code,
 const node = await createLibp2p({
     addresses: {
         listen: [
-            //`/ip4/0.0.0.0/udp/${port}/utp`,
+            `/ip4/0.0.0.0/udp/${port}/utp`,
             `/ip4/0.0.0.0/tcp/${port}`,
             `/p2p-circuit`,
             //`/ip4/0.0.0.0/tcp/${0}/ws`,
@@ -57,14 +57,12 @@ const node = await createLibp2p({
     },
     transports: [
         tcp(),
-        /*
         utp({
             outboundSocketInactivityTimeout: Infinity,
             inboundSocketInactivityTimeout: Infinity,
             maxConnections: Infinity,
             //closeServerOnMaxConnections: null,
         }),
-        */
         circuitRelayTransport(), // Default relay-tag.value = 1
         //webSockets(),
         //webRTCDirect(),
@@ -137,13 +135,11 @@ const node = await createLibp2p({
             enableBroadcast: false,
             topics: [ `${appName.join('.')}._peer-discovery._p2p._pubsub` ]
         }),
-        /*
         //torrent-discovery: 
         torrentPeerDiscovery: torrentPeerDiscovery({
             infoHash: (await hash(`${appName.join('/')}/${0}`, 'hex', 'sha-1')) as string,
             //announce: await Data.getAnnounceAddrs(),
         }),
-        */
         dcutr: dcutr(),
         upnpNAT: uPnPNAT(),
         autoNAT: autoNATv2(),
