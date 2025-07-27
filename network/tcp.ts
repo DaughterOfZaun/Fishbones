@@ -33,6 +33,7 @@
 import type { ComponentLogger, Connection, CounterGroup, CreateListenerOptions, DialTransportOptions, Listener, ListenerEvents, Logger, MetricGroup, Metrics, MultiaddrConnection, OutboundConnectionUpgradeEvents, Transport, Upgrader } from '@libp2p/interface'
 import { AbortError, AlreadyStartedError, InvalidParametersError, NotStartedError, TimeoutError, serviceCapabilities, transportSymbol } from '@libp2p/interface'
 
+//import { getThinWaistAddresses } from '@libp2p/utils/get-thin-waist-addresses'
 import { getThinWaistAddresses as getThinWaistAddressesOriginal } from '@libp2p/utils/get-thin-waist-addresses'
 const utpMultiaddress = multiaddr('/utp')
 function getThinWaistAddresses (ma?: Multiaddr, port?: number): Multiaddr[] {
@@ -44,16 +45,17 @@ import type { AbortOptions, Multiaddr } from '@multiformats/multiaddr'
 import { CODE_P2P, CODE_UTP, multiaddr } from '@multiformats/multiaddr'
 
 //import { TCP as TCPMatcher } from '@multiformats/multiaddr-matcher'
-import { IP_OR_DOMAIN, UDP } from '@multiformats/multiaddr-matcher'
+import { IP_OR_DOMAIN, UDP as UDPMatcher } from '@multiformats/multiaddr-matcher'
 import { and, code, fmt, optional, value } from '@multiformats/multiaddr-matcher/utils'
 //const _IP_OR_DOMAIN = IP_OR_DOMAIN.matchers[0]!
 //const _UTP = and(_IP_OR_DOMAIN, literal('utp'), number())
-const _UDP = UDP.matchers[0]!
+const _UDP = UDPMatcher.matchers[0]!
 const TCPMatcher = fmt(and(_UDP, code(CODE_UTP), optional(value(CODE_P2P))))
+//const TCPMatcher = fmt(and(_UDP, optional(value(CODE_P2P))))
 
 import { TypedEventEmitter, setMaxListeners } from 'main-event'
 import type { IpcSocketConnectOpts, ListenOptions, /*Server, Socket,*/ SocketConnectOpts, TcpSocketConnectOpts } from 'net'
-
+/*
 //import net from 'net'
 //@ts-expect-error Could not find a declaration file for module 'utp-native'.
 import net from 'utp-native'
@@ -67,7 +69,7 @@ net.prototype.connect = function connect(options: TcpSocketConnectOpts){
   const { port, host } = options
   return net_prototype_connect.call(this, port, host, options)
 }
-
+*/
 import os from 'os'
 import type { DeferredPromise } from 'p-defer'
 import pDefer from 'p-defer'

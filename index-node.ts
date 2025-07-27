@@ -22,7 +22,7 @@ import { uPnPNAT } from '@libp2p/upnp-nat'
 //import { webRTC, webRTCDirect } from '@libp2p/webrtc'
 import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
 import { bootstrap } from '@libp2p/bootstrap'
-//import { mdns } from '@libp2p/mdns'
+import { mdns } from '@libp2p/mdns'
 //import { contentPeerDiscovery } from './network/content-discovery'
 //import { CID } from 'multiformats/cid'
 //import * as json from 'multiformats/codecs/json'
@@ -49,7 +49,7 @@ const node = await createLibp2p({
         listen: [
             `/ip4/0.0.0.0/udp/${port}/utp`,
             `/ip4/0.0.0.0/tcp/${port}`,
-            `/p2p-circuit`,
+            ...Array(1).fill(`/p2p-circuit`),
             //`/ip4/0.0.0.0/tcp/${0}/ws`,
             //`/ip4/0.0.0.0/udp/${0}/webrtc-direct`,
             //`/webrtc`,
@@ -152,6 +152,7 @@ const node = await createLibp2p({
     start: true,
     connectionManager: {
         //maxConnections: 500,
+        dialTimeout: 10_000,
     }
 })
 

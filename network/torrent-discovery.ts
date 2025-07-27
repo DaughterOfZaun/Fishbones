@@ -2,8 +2,7 @@ import { privateKeyFromRaw, publicKeyFromRaw } from '@libp2p/crypto/keys'
 import { AbortError, TypedEventEmitter, peerDiscoverySymbol, serviceCapabilities } from '@libp2p/interface'
 import type { ComponentLogger, Libp2pEvents, Logger, PeerDiscovery, PeerDiscoveryEvents, PeerDiscoveryProvider, PeerId, PeerStore, PrivateKey, Startable, TypedEventTarget } from '@libp2p/interface'
 import type { AddressManager, TransportManager } from '@libp2p/interface-internal'
-import { ipPortToMultiaddr } from '@libp2p/utils/ip-port-to-multiaddr'
-import { CODE_P2P, CODE_P2P_CIRCUIT, multiaddr, type Multiaddr } from '@multiformats/multiaddr'
+import { CODE_P2P, multiaddr, type Multiaddr } from '@multiformats/multiaddr'
 
 //@ts-expect-error: Could not find a declaration file for module 'addr-to-ip-port'
 import addrToIPPort from 'addr-to-ip-port'
@@ -35,6 +34,7 @@ const STATIC_KEY = privateKeyFromRaw(uint8ArrayFromString(KEY_STRING, 'base64pad
 const STATIC_SALT = Buffer.from([0, 0, 0, 0, 0, 0])
 const ABORT_ERROR = new AbortError()
 const OK = new Error('OK')
+const MAX_DATE = 8_640_000_000_000_000
 
 import { isIPv4, isIPv6 } from '@chainsafe/is-ip'
 const derive = ({ host: ip, port }: HostPort) => {
@@ -44,7 +44,7 @@ const derive = ({ host: ip, port }: HostPort) => {
     else throw new Error(`invalid ip provided: ${ip}`)
     return [
         multiaddr(`/ip${v}/${ip}/udp/${port}/utp`),
-        multiaddr(`/ip${v}/${ip}/tcp/${port}`),
+        //multiaddr(`/ip${v}/${ip}/tcp/${port}`),
     ]
 }
 
@@ -56,6 +56,8 @@ import type KRPCSocket from 'k-rpc-socket'
 import { createSocket, isDHT, type Socket } from '../network/umplex'
 import { equals as uint8ArrayEquals } from 'uint8arrays'
 import { peerIdFromCID } from '@libp2p/peer-id'
+import { getThinWaistAddresses } from '@libp2p/utils/get-thin-waist-addresses'
+//import { isPrivateIp } from '@libp2p/utils/private-ip'
 
 interface KRPCSocketInit {
     timeout?: number //= 2000
@@ -135,9 +137,7 @@ interface TorrentPeerDiscoveryComponents {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-interface TorrentPeerDiscoveryEvents extends PeerDiscoveryEvents {
-    //addr: CustomEvent<Multiaddr>
-}
+interface TorrentPeerDiscoveryEvents extends PeerDiscoveryEvents {}
 
 export function torrentPeerDiscovery(init: TorrentPeerDiscoveryInit): (components: TorrentPeerDiscoveryComponents) => TorrentPeerDiscovery {
     return (components: TorrentPeerDiscoveryComponents) => new TorrentPeerDiscovery(init, components)
@@ -169,12 +169,14 @@ type ExternalAddress = {
     key: PrivateKey
     salt: Uint8Array
     reportedBy: Map<string, number>
-
+    
     shouldBePublished?: boolean
-    publicationTimeout?: u|ReturnType<typeof setTimeout>
+    recheckTimeout?: u|ReturnType<typeof setTimeout>
+    republishTimeout?: u|ReturnType<typeof setTimeout>
     
     hostport?: Parameters<typeof derive>[0]
     derived?: ReturnType<typeof derive>
+    multiaddr?: Multiaddr
 }
 type ResolutionResult = {
     ipport: string // For debug log
@@ -228,6 +230,7 @@ class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscoveryEvents>
             key: this.components.privateKey,
             salt: STATIC_SALT,
             reportedBy: new Map(),
+            shouldBePublished: true,
         }
         this.externalAddresses.set(zeroedIP, this.externalAddress)
     }
@@ -263,7 +266,7 @@ class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscoveryEvents>
             dht: optsDHT,
         }
 
-        const rpc = optsDHT.krpc = new KRPC({ idLength: hashLength, ...optsDiscovery } as KRPCInit)
+        const rpc = optsDHT.krpc = new KRPC({ idLength: hashLength, ...optsDHT } as KRPCInit)
         const findSelfQuery = {
             q: 'find_node',
             a: {
@@ -394,8 +397,8 @@ class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscoveryEvents>
         this.components.events.removeEventListener('self:peer:update', this.onUpdate)
 
         for(const external of this.externalAddresses.values()){
-            clearTimeout(external.publicationTimeout)
-            external.publicationTimeout = undefined
+            clearTimeout(external.republishTimeout)
+            external.republishTimeout = undefined
         }
         
         await new Promise<void>(res => discovery.destroy(() => res()))
@@ -469,19 +472,18 @@ class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscoveryEvents>
             }
         }        
 
-        const [ip, port]: [string, number] = addrToIPPort(ipport)
-        const multiaddr = ipPortToMultiaddr(ip, port)
-        //this.safeDispatchEvent('addr', { detail: multiaddr })
+        const [host, port]: [string, number] = addrToIPPort(ipport)
+        const derived = derive({ host, port })
         //@ts-expect-error Argument of type A is not assignable to parameter of type B.
         this.components.events.safeDispatchEvent('addr:discovery', {
-            detail: { multiaddr, derived: derive({ host: ip, port }) }
+            detail: { multiaddr: derived[0], derived }
         })
 
         let result: ResolutionResult
         const hash = this.knownIds.get(ipport)
         if(!hash){
             this.log('using strategy A against %s', ipport)
-            const salt = multiaddr.bytes
+            const salt = encodePeer(host, port)
             const opts = { salt, k: STATIC_KEY.publicKey.raw }
             const hash = dht._hash(Buffer.concat([opts.k, opts.salt]))
             result = { ipport, hash, salt }
@@ -512,6 +514,7 @@ class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscoveryEvents>
                 result.retryTimeout = setTimeout(() => {
                     result.retryTimeout = undefined
                     this.resolutionQueue.unshift(result)
+                    this.resolutionQueue_kick()
                 }, this.init.resolutionRetryTimeout)
             } else {
                 this.log('max retries reached - forcefully resolving')
@@ -591,15 +594,16 @@ class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscoveryEvents>
         const { host, port } = hostport
         const ipport = `${host}:${port}`
         const reporter = `${(peer.address || peer.host)!}:${peer.port}`
-        
+
+        //if(isPrivateIp(host) === true) return
+
         let external = this.externalAddresses.get(ipport)
         if(!external){
             this.log('discovered new external address %s from %s', ipport, source)
-            const multiaddr = ipPortToMultiaddr(host, port)
             external = {
                 ipport,
                 key: STATIC_KEY,
-                salt: multiaddr.bytes,
+                salt: encodePeer(host, port),
                 reportedBy: new Map([[ reporter, now ]]),
                 hostport: hostport,
             }
@@ -609,25 +613,109 @@ class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscoveryEvents>
                 this.log.trace('received confirmation for external address %s from %s', ipport, source)
             external.reportedBy.set(reporter, now)
         }
-        //if(!external.publicationTimeout)
-        //    this.maybePublishExternalAddress(external)
-        if(
-            (external.shouldBePublished ?? false) !=
-            (external.shouldBePublished = this.shouldPublishExternalAddress(external))
-        )
-            this.onUpdate()
+
+        this.check(external)
     }
 
-    private shouldPublishExternalAddress(external: ExternalAddress): boolean {
-
-        if(external === this.externalAddress) return true
-
+    private check(external: ExternalAddress){
+        const am = this.components.addressManager
         const now = Date.now()
-        //const reportedAtLast = external.reportedBy.values().reduce((accum, reportedAt) => Math.max(accum, reportedAt), 0)
-        const reportsCount = 
-            external.reportedBy.values().reduce((accum, reportedAt) => accum + +((now - reportedAt) <= this.init.observationLifetime), 0)
-            //((now - reportedAtLast) <= this.init.observationLifetime) ? external.reportedBy.size : 0
-        return reportsCount >= this.init.observationsCount
+
+        let reportsCount = 0
+        let lastReportedAt = 0
+        for(const reportedAt of external.reportedBy.values()){
+            if((now - reportedAt) <= this.init.observationLifetime){
+                lastReportedAt = Math.max(lastReportedAt, reportedAt)
+                reportsCount++
+            }
+        }
+
+        const prevShouldBePublished = external.shouldBePublished
+        const newShouldBePublished = external.shouldBePublished
+            = reportsCount >= this.init.observationsCount
+
+        if(newShouldBePublished && !prevShouldBePublished){ // new & !prev - Add.
+
+            this.log.trace('setting addr %s for publication', external.ipport)
+
+            //ref: @libp2p/tcp/src/listener.ts/getAddrs
+            const socket: Socket = this.discovery.dht._rpc.socket.socket
+            const { address: lhost, port: lport } = socket.address()
+            const listeningMultiaddr = multiaddr(`/ip4/${lhost}/udp/${lport}`)
+            const listeningAddrs = getThinWaistAddresses(listeningMultiaddr)
+            
+            const { host: ehost, port: eport } = external.hostport!
+            external.multiaddr ??= multiaddr(`/ip4/${ehost}/udp/${eport}`)
+            
+            //ref: libp2p/src/address-manager/index.ts/confirmObservedAddr
+            //ref: libp2p/src/address-manager/index.ts/maybeUpgradeToIPMapping
+            const filteredListeningAddrs = listeningAddrs
+                .map(ma => ma.toOptions())
+                .filter(opts => opts.host !== '127.0.0.1')
+            
+            //this.log('external:', external.multiaddr)
+            //this.log('listening:', listeningMultiaddr)
+            //this.log('listening:', listeningAddrs)
+            //this.log('filtered:', filteredListeningAddrs)
+            
+            if(filteredListeningAddrs.length === 1){
+                this.log('adding public addr mapping')
+
+                const internalAddr = filteredListeningAddrs[0]!
+                const { host: ihost, port: iport } = internalAddr
+
+                //am['ipMappings']['add'](ihost, iport, ehost, eport, 'udp')
+                //am['ipMappings']['confirm'](external.multiaddr, MAX_DATE - now)
+                //am['_updatePeerStoreAddresses']()
+                //console.log('addresses with metadata:', am.getAddressesWithMetadata())
+
+                am.addPublicAddressMapping(ihost, iport, ehost, eport, 'udp')
+                am.confirmObservedAddr(external.multiaddr, {
+                    type: 'ip-mapping', ttl: MAX_DATE - now
+                })
+            } else if(external.hostport){
+                this.log('adding observed addr')
+
+                external.derived ??= derive(external.hostport)
+                for(const derivedMultiaddr of external.derived){
+                    am.addObservedAddr(derivedMultiaddr)
+                    am.confirmObservedAddr(derivedMultiaddr, {
+                        type: 'observed', ttl: MAX_DATE - now
+                    })
+                }
+            }
+
+            external.recheckTimeout = setTimeout(
+                () => this.check(external),
+                this.init.observationLifetime
+            )
+        } else if(newShouldBePublished){ // new & prev - Update.
+            
+            this.log.trace('updating addr %s publication timer', external.ipport)
+
+            clearTimeout(external.recheckTimeout)
+            external.recheckTimeout = setTimeout(
+                () => this.check(external),
+                this.init.observationLifetime - (now - lastReportedAt),
+            )
+        } else if(prevShouldBePublished) { // !new & prev - Remove.
+            
+            this.log.trace('removing addr %s from publication', external.ipport)
+
+            const { host: ehost, port: eport } = external.hostport!
+            //external.multiaddr ??= multiaddr(`/ip4/${ehost}/udp/${eport}`)
+
+            am.removePublicAddressMapping('undefined', NaN, ehost, eport, 'udp')
+            if(external.hostport){
+                external.derived ??= derive(external.hostport)
+                for(const derivedMultiaddr of external.derived){
+                    am.removeObservedAddr(derivedMultiaddr)
+                }
+            }
+
+            clearTimeout(external.recheckTimeout)
+            external.recheckTimeout = undefined
+        }
     }
     
     //TODO: Split into three functions: onSelfUpdate(), onExternalUpdate(external, force), publishAll().
@@ -636,33 +724,31 @@ class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscoveryEvents>
         const options = undefined
         const peerId = this.components.peerId
         const am = this.components.addressManager
-        const tm = this.components.transportManager
+        //const tm = this.components.transportManager
 
-        const transports = tm.getTransports().filter(transport => transport.constructor.name !== 'CircuitRelayTransport')
-        
+        //const transports = tm.getTransports().filter(transport => transport.constructor.name !== 'CircuitRelayTransport')
         const multiaddrs = removePrivateAddressesMapper({ id: peerId, multiaddrs: am.getAddresses() }).multiaddrs
-        .filter(ma => {
-            const decapsulated = ma.decapsulateCode(CODE_P2P_CIRCUIT)
-            return transports.some(transport => transport.dialFilter([ decapsulated ]).length)
-        })
+        //.filter(ma => {
+        //    const decapsulated = ma.decapsulateCode(CODE_P2P_CIRCUIT)
+        //    return transports.some(transport => transport.dialFilter([ decapsulated ]).length)
+        //})
         .map(ma => ma.decapsulateCode(CODE_P2P))
         
         const filteredExternalAddresses = this.externalAddresses.values()
-        .filter(external => this.shouldPublishExternalAddress(external))
+        .filter(external => external.shouldBePublished)
         .toArray()
-
+        /*
         for(const external of filteredExternalAddresses){
             const { hostport } = external
             if(!external.derived && hostport){
                 external.derived = derive(hostport)
             }
         }
-        
         const derived = filteredExternalAddresses
         .flatMap(external => external.derived ?? [])
         multiaddrs.unshift(...derived) //TODO: Deduplicate.
-        
-        //this.log(this.multiaddrs.map(ma => ma.toString()), 'vs', multiaddrs.map(ma => ma.toString()))
+        */
+        //this.log('self:peer:update', am.getAddresses().map(ma => ma.toString()), 'vs', multiaddrs.map(ma => ma.toString()), 'vs', this.multiaddrs.map(ma => ma.toString()),)
         if(!this.multiaddrs_eq(multiaddrs) || !this.peerRecord || !this.signedPeerRecord){
             this.multiaddrs = multiaddrs
             
@@ -672,21 +758,21 @@ class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscoveryEvents>
             RecordEnvelope.seal(this.peerRecord, this.components.privateKey, options).then(signedPeerRecord => {
                 this.signedPeerRecord = signedPeerRecord
                 for(const external of filteredExternalAddresses)
-                    this.maybePublishExternalAddress(external, true)
+                    this.maybePublishExternalAddress(external)
             }).catch(err => {
                 this.log.error('error sealing record - %e', err)
             })
         }
     }
 
-    private maybePublishExternalAddress(external: ExternalAddress, force = false){
+    private maybePublishExternalAddress(external: ExternalAddress){
         const dht = this.discovery.dht
         const { ipport } = external
         
-        clearTimeout(external.publicationTimeout)
-        external.publicationTimeout = undefined
+        clearTimeout(external.republishTimeout)
+        external.republishTimeout = undefined
 
-        if(!force && !this.shouldPublishExternalAddress(external)){
+        if(!external.shouldBePublished){
             return
         }
         if(!this.peerRecord || !this.signedPeerRecord){
@@ -696,7 +782,7 @@ class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscoveryEvents>
         
         this.log('begin putting records for', ipport)
         
-        external.publicationTimeout = setTimeout(
+        external.republishTimeout = setTimeout(
             () => this.maybePublishExternalAddress(external),
             this.init.republishInterval
         )
@@ -770,6 +856,8 @@ class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscoveryEvents>
     }
 }
 
+//TODO: parseNodes6
+
 //src: k-rpc/index.js
 function parseNodes(buf: Buffer, idLength: number){
     const contacts = []
@@ -796,4 +884,14 @@ function parseIp(buf: Buffer, offset: number = 0){
 }
 function parseIpPort(buf: Buffer): HostPort {
     return { host: parseIp(buf, 0), port: buf.readUInt16BE(4) }
+}
+
+//src: bittorrent-dht/client.js
+function encodePeer(host: string, port: number){
+    const buf = Buffer.allocUnsafe(6)
+    const ip = host.split('.')
+    for (let i = 0; i < 4; i++)
+        buf[i] = parseInt(ip[i] || '0', 10)
+    buf.writeUInt16BE(port, 4)
+    return buf
 }

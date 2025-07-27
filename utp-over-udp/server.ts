@@ -35,7 +35,8 @@ export class Server extends TypedEventEmitter<ServerEvents> {
 
         if(this.listening || this.listeningRequested){
             //TODO: Reverse engineer proper error.
-            throw new Error('ERR_SERVER_ALREADY_LISTEN')
+            //throw new Error('ERR_SERVER_ALREADY_LISTEN')
+            this.emit('error', new Error('ERR_SERVER_ALREADY_LISTEN'))
         }
         this.listeningRequested = true
 

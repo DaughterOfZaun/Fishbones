@@ -43,8 +43,13 @@ class DialTargetInfo {
     public constructor(target: DialTarget){
         this.target = target
     }
+    private string: u|string
     public toString(){
-        return `${isPeerId(this.target) ? 'peer' : 'addr'} ${this.target.toString()}`
+        return this.string ?? (
+            this.string = isPeerId(this.target) ?
+            `peer ${this.target.toString()}` :
+            `addr ${this.target.toString()}`
+        )
     }
 }
 class AutodialPeerInfo {
@@ -133,7 +138,6 @@ class Autodial implements Startable {
     private readonly targetInfos = new PeerMap<DialTargetInfo>() as unknown as Map<DialTarget, DialTargetInfo>
     private targetInfos_getset(id: PeerId): DialTargetInfoPeerId
     private targetInfos_getset(id: AddrId): DialTargetInfoMultiaddr
-    //private targetInfos_getset(id: DialTarget): DialTargetInfo
     private targetInfos_getset(id: DialTarget): DialTargetInfo {
         let tinfo = this.targetInfos.get(id)
         if(!tinfo){
@@ -345,7 +349,8 @@ class Autodial implements Startable {
                 const peerId = connection.remotePeer
                 const multiaddr = connection.remoteAddr.decapsulateCode(CODE_P2P)
                 this.merge(peerId, multiaddr)
-                this.merge(peerId, target)
+                if(target.toString() !== multiaddr.toString())
+                    this.merge(peerId, target)
 
                 ps.merge(peerId, { multiaddrs: [ multiaddr ] }).catch(err => {
                     this.log.error('failed merge peer %p with addr %a - %e', peerId, target, err)
@@ -362,14 +367,13 @@ class Autodial implements Startable {
 
         const tinfo1 = this.targetInfos_getset(peerId)
         const tinfo2 = this.targetInfos_getset(multiaddr)
-        const target = tinfo2.target
         
         tinfo1.beenInQueue = true
         tinfo2.beenInQueue = true
         tinfo2.info = tinfo1.info
         
-        this.queue_delete(peerId)
-        this.queue_delete(target)
+        this.queue_delete(tinfo1.target)
+        this.queue_delete(tinfo2.target)
     }
 
     private components_connectionManager_isDialableSync(multiaddrs: Multiaddr[]): boolean {
