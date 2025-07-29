@@ -17,9 +17,22 @@ import nodeDataChannel from "../../../build/Release/node_datachannel.node";
 `.trim())
 await fs.writeFile(file, js, 'utf8')
 
-file = './node_modules/@achingbrain/ssdp/dist/src/default-ssdp-options.js'
+file = './node_modules/webrtc-polyfill/node_modules/node-datachannel/lib/node-datachannel.js'
 js = await fs.readFile(file, 'utf8')
-js = js.replace(`import { createRequire } from 'module';`, '')
+js = js.replace(`
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+`.trim(), '')
+js = js.replace(`
+const nodeDataChannel = require('../build/Release/node_datachannel.node');
+`.trim(), `
+import nodeDataChannel from "../build/Release/node_datachannel.node";
+`.trim())
+await fs.writeFile(file, js, 'utf8')
+
+file = './node_modules/@achingbrain/ssdp/dist/src/ssdp.js'
+js = await fs.readFile(file, 'utf8')
+js = js.replace(`import { createRequire } from 'node:module';`, '')
 js = js.replace(`
 const req = createRequire(import.meta.url);
 const { name, version } = req('../../package.json');

@@ -121,7 +121,7 @@ async function startAria2(){
         await aria2procPromise
     
     if(!aria2connPromise){
-        aria2connPromise = open(createWebSocket('ws://localhost:6800/jsonrpc'), { secret: aria2secret })
+        aria2connPromise = open(createWebSocket(`ws://127.0.0.1:${6800}/jsonrpc`), { secret: aria2secret! })
         aria2conn = await aria2connPromise
     } else
         await aria2connPromise
@@ -168,54 +168,72 @@ export async function download(pkg: PkgInfo, type: 'magnet' | 'torrent'){
 
 function forCompletion(gid: string, isMetadata: boolean, cb: (progress: number) => void){
     
+    let resolve: () => void
+    let reject: (err?: unknown) => void
+
     const delay = 100 //TODO: Unhardcode. delay = 1000 / bar.fps
-    let timeout: ReturnType<typeof setTimeout>
+    const interval = setInterval(update, delay)
     async function update(){
         try {
-            const status = await aria2.tellStatus(aria2conn, gid, ['completedLength'])
+            const status = await aria2.tellStatus(aria2conn, gid, ['status', 'completedLength'])
+            //if(status.status === 'complete') onComplete({ gid, status: status.status })
+            //if(status.status === 'error') onError({ gid, status: status.status })
             cb(Number(status.completedLength))
-        } catch(err) {}
-        timeout = setTimeout(update, delay)
+        } catch(err) {
+            reject(err)
+        }
     }
 
-    /*if(!isMetadata)*/ timeout = setTimeout(update, delay)
-
-    return new Promise<void>((resolve, reject) => {
-        const cbs = [
-            aria2.onDownloadComplete(aria2conn, onComplete),
-            aria2.onBtDownloadComplete(aria2conn, onComplete),
-            aria2.onDownloadError(aria2conn, onError),
-        ]
-        async function onComplete(notification: { gid: string }){
-            if(notification.gid == gid){
-                if(isMetadata){
-                    try {
-                        const status = await aria2.tellStatus(aria2conn, gid, [ 'followedBy' ])
-                        //console.assert(status.followedBy?.length == 1)
-                        if(status.followedBy && status.followedBy.length > 0){
-                            gid = status.followedBy[0]!
-                            isMetadata = false
-                            //timeout = setTimeout(update, delay)
-                        }
-                    } catch(err) {
-                        cbs.forEach(cb => cb.dispose())
-                        clearTimeout(timeout)
-                        reject(err)
-                    }
-                } else {
-                    cbs.forEach(cb => cb.dispose())
-                    clearTimeout(timeout)
-                    resolve()
-                }
-            }
-        }
-        function onError(notification: { gid: string }) {
-            if(notification.gid == gid){
-                cbs.forEach(cb => cb.dispose())
-                clearTimeout(timeout)
-                reject()
-            }
-        }
-        
+    const promise = new Promise<void>((res, rej) => {
+        resolve = () => _finally() && res()
+        reject = (err) => _finally() && rej(err)
     })
+
+    const cbs = [
+        aria2.onDownloadComplete(aria2conn, onComplete),
+        aria2.onBtDownloadComplete(aria2conn, onComplete),
+        aria2.onDownloadError(aria2conn, onError),
+    ]
+
+    async function onComplete(notification: { gid: string, status?: string }){
+        
+        //logger.log('DATA-DOWNLOAD', 'onComplete', JSON.stringify(notification, null, 4), 'vs', gid)
+
+        if(notification.gid == gid){
+            if(isMetadata){
+                try {
+                    const status = await aria2.tellStatus(aria2conn, gid, [ 'followedBy' ])
+                    //console.assert(status.followedBy?.length == 1)
+                    if(status.followedBy && status.followedBy.length > 0){
+                        gid = status.followedBy[0]!
+                        isMetadata = false
+                        //timeout = setTimeout(update, delay)
+                    } else {
+                        resolve()
+                    }
+                } catch(err) {
+                    reject(err)
+                }
+            } else {
+                resolve()
+            }
+        }
+    }
+    
+    function onError(notification: { gid: string, status?: string }) {
+
+        //logger.log('DATA-DOWNLOAD', 'onError', JSON.stringify(notification, null, 4), 'vs', gid)
+
+        if(notification.gid == gid){
+            reject()
+        }
+    }
+
+    function _finally(){
+        cbs.forEach(cb => cb.dispose())
+        clearInterval(interval)
+        return true
+    }
+
+    return promise
 }

@@ -1,19 +1,6 @@
-import { GossipSub, gossipsub, type GossipSubComponents } from '@chainsafe/libp2p-gossipsub'
-import { yamux } from '@chainsafe/libp2p-yamux'
-import { tcp } from '@libp2p/tcp'
-import { createLibp2p } from 'libp2p'
-//torrent-discovery: import { torrentPeerDiscovery } from './network/torrent-discovery'
-import { pubsubPeerDiscovery as pubsubPeerWithDataDiscovery } from './network/pubsub-discovery'
-import { pubsubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
-//torrent-discovery: import { hash } from 'uint8-util'
-import { identify, identifyPush } from '@libp2p/identify'
-import { ping } from '@libp2p/ping'
-import { defaultLogger } from '@libp2p/logger'
 import select, { type Choice } from './ui/dynamic-select'
 import { type Game } from './game'
 import color from 'yoctocolors-cjs'
-import { noise } from '@chainsafe/libp2p-noise'
-import { patchedCrypto } from './utils/crypto'
 import { AbortPromptError } from '@inquirer/core'
 import { RemoteGame } from './game-remote'
 import { LocalGame } from './game-local'
@@ -22,222 +9,14 @@ import { LocalServer, RemoteServer } from './server'
 import spinner from './ui/spinner'
 import * as Data from './data'
 import type { Peer as PBPeer } from './message/peer'
-import { circuitRelayServer, circuitRelayTransport } from '@libp2p/circuit-relay-v2'
-import { dcutr } from '@libp2p/dcutr'
-import { autoNATv2 } from '@libp2p/autonat-v2'
-import { uPnPNAT, type UPnPNAT } from '@libp2p/upnp-nat'
-import { webRTC, webRTCDirect } from '@libp2p/webrtc'
-import { kadDHT, removePrivateAddressesMapper, type KadDHT } from '@libp2p/kad-dht'
-import { bootstrap } from '@libp2p/bootstrap'
-//import { mdns } from '@libp2p/mdns'
-import type { Libp2p, Logger, PeerData, PeerDiscoveryEvents, PeerInfo, PeerStore, Startable, TypedEventEmitter } from '@libp2p/interface'
-import { contentPeerDiscovery } from './network/content-discovery'
-import { CID } from 'multiformats/cid'
-import * as json from 'multiformats/codecs/json'
-import { sha256 } from 'multiformats/hashes/sha2'
-import type { ConnectionManager } from '@libp2p/interface-internal'
-import { autodial } from './network/autodial'
-//import { webSockets } from '@libp2p/websockets'
-//import { webTransport } from '@libp2p/webtransport'
-//TODO: rendezvous
+import { createNode } from './index-node'
 
 await Data.repair()
 
-const ports = ((
-    port = Number(process.argv[2]) || 5116
-) => ({
-    tcp: port + 0,
-    kadDHT: port + 1,
-    game: port + 2,
-}))()
-
-const appName = ['com', 'github', 'DaughterOfZaun', 'Fishbones']
-//const cid = 'bagaaierawchtonvxlm4szp7txp5qtrp63ncsqygzqbd6kma65nwjqg4ltila'
-const cid = CID.create(1, json.code,
-    await sha256.digest(
-        json.encode({ appName })
-    )
-)
-const node = await createLibp2p({
-    addresses: {
-        listen: [
-            `/ip4/0.0.0.0/tcp/${ports.tcp}`,
-            //`/ip4/0.0.0.0/tcp/${0}/ws`,
-            `/ip4/0.0.0.0/udp/${0}/webrtc-direct`,
-            `/p2p-circuit`,
-            `/webrtc`,
-        ]
-    },
-    transports: [
-        circuitRelayTransport(), // Default relay-tag.value = 1
-        webRTCDirect(),
-        webRTC(),
-        tcp(),
-        //webSockets(),
-        //webTransport(),
-    ],
-    streamMuxers: [ yamux() ],
-    connectionEncrypters: [ noise({
-        // ChaCha20-Poly1305 is currently not supported in Bun.
-        //crypto: pureJsCrypto //WALKAROUND:
-        crypto: patchedCrypto //HACK:
-    }) ],
-    //peerDiscovery: [],
-    services: {
-        contentPeerDiscovery: contentPeerDiscovery({ cid }),
-        bootstrap: bootstrap({
-            list: [
-                //src: https://github.com/ipfs/kubo/blob/master/config/bootstrap_peers.go
-                //src: https://github.com/ipfs/helia/blob/main/packages/helia/src/utils/bootstrappers.ts
-                //src: https://github.com/libp2p/js-libp2p/blob/main/packages/peer-discovery-bootstrap/src/index.ts
-                //src: https://github.com/libp2p/cpp-libp2p/blob/master/example/02-kademlia/rendezvous_chat.cpp
-                "/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
-                "/dnsaddr/bootstrap.libp2p.io/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa", // rust-libp2p-server
-                "/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb",
-                "/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt",
-                "/dnsaddr/va1.bootstrap.libp2p.io/p2p/12D3KooWKnDdG3iXw9eTFijk3EWSunZcFi54Zka4wmtqtt6rPxc8", // js-libp2p-amino-dht-bootstrapper
-                // va1 is not in the TXT records for _dnsaddr.bootstrap.libp2p.io yet so use the host name directly
-                "/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",           // mars.i.ipfs.io
-                "/ip4/104.131.131.82/udp/4001/quic-v1/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",   // mars.i.ipfs.io
-                
-                "/dnsaddr/bootstrap.libp2p.io/ipfs/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
-                "/dnsaddr/bootstrap.libp2p.io/ipfs/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa",
-                "/dnsaddr/bootstrap.libp2p.io/ipfs/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb",
-                "/dnsaddr/bootstrap.libp2p.io/ipfs/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt",
-                "/ip4/104.131.131.82/tcp/4001/ipfs/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",            // mars.i.ipfs.io
-                "/ip4/104.236.179.241/tcp/4001/ipfs/QmSoLPppuBtQSGwKDZT2M73ULpjvfd3aZ6ha4oFGL1KrGM",           // pluto.i.ipfs.io
-                "/ip4/128.199.219.111/tcp/4001/ipfs/QmSoLSafTMBsPKadTEgaXctDQVcqN88CNLHXMkTNwMKPnu",           // saturn.i.ipfs.io
-                "/ip4/104.236.76.40/tcp/4001/ipfs/QmSoLV4Bbm51jM9C4gDYZQ9Cy3U6aXMJDAbzgu2fzaDs64",             // venus.i.ipfs.io
-                "/ip4/178.62.158.247/tcp/4001/ipfs/QmSoLer265NRgSp2LA3dPaeykiS1J6DifTC88f5uVQKNAd",            // earth.i.ipfs.io
-                "/ip6/2604:a880:1:20::203:d001/tcp/4001/ipfs/QmSoLPppuBtQSGwKDZT2M73ULpjvfd3aZ6ha4oFGL1KrGM",  // pluto.i.ipfs.io
-                "/ip6/2400:6180:0:d0::151:6001/tcp/4001/ipfs/QmSoLSafTMBsPKadTEgaXctDQVcqN88CNLHXMkTNwMKPnu",  // saturn.i.ipfs.io
-                "/ip6/2604:a880:800:10::4a:5001/tcp/4001/ipfs/QmSoLV4Bbm51jM9C4gDYZQ9Cy3U6aXMJDAbzgu2fzaDs64", // venus.i.ipfs.io
-                "/ip6/2a03:b0c0:0:1010::23:1001/tcp/4001/ipfs/QmSoLer265NRgSp2LA3dPaeykiS1J6DifTC88f5uVQKNAd", // earth.i.ipfs.io
-            ],
-        }), // Default tag.value = 50
-        //mdns: mdns(),
-        ping: ping(),
-        pubsub: gossipsub({
-            tagMeshPeers: true, // Default [topic]tag.value = 100
-            //batchPublish: true,
-            //doPX: true,
-        }) as (components: GossipSubComponents) => GossipSub,
-        identify: identify(),
-        identifyPush: identifyPush(),
-        logger: defaultLogger,
-        pubsubPeerDiscovery: pubsubPeerDiscovery(
-            // Default values only.
-        ),
-        pubsubPeerWithDataDiscovery: pubsubPeerWithDataDiscovery({
-            interval: 10000,
-            enableBroadcast: false,
-            topics: [ `${appName.join('.')}._peer-discovery._p2p._pubsub` ]
-        }),
-        /*
-        //torrent-discovery: 
-        torrentPeerDiscovery: torrentPeerDiscovery({
-            infoHash: (await hash(`${appName.join('/')}/${0}`, 'hex', 'sha-1')) as string,
-            port: ports.tcp,
-            announce: await Data.getAnnounceAddrs(),
-            dht: true,
-            dhtPort: ports.kadDHT,
-            tracker: true,
-            lsd: false, // We use MDNS to search for peers on the local network.
-        }),
-        */
-        dcutr: dcutr(),
-        upnpNAT: uPnPNAT(),
-        autoNAT: autoNATv2(),
-        //TODO: Run only if reported available from outside by autoNAT?
-        relay: circuitRelayServer(), // Default relay+keepalive-tag.value = 1 + 1
-        aminoDHT: kadDHT({
-            protocol: '/ipfs/kad/1.0.0',
-            peerInfoMapper: removePrivateAddressesMapper,
-            //logPrefix: 'libp2p:dht-amino',
-            //datastorePrefix: '/dht-amino',
-            //metricsPrefix: 'libp2p_dht_amino',
-            //validators: { ipns: ipnsValidator },
-            //selectors: { ipns: ipnsSelector }
-        }), // Default close-tag.value = 50; peer-tag.value = 1
-        autodial: autodial({})
-    },
-    start: false,
-})
-await node.start()
-//node.status = 'started'
-//await node.stop()
-
-const node_services_aminoDHT = node.services.aminoDHT as KadDHT & TypedEventEmitter<PeerDiscoveryEvents>
-const node_services_upnpNAT = node.services.upnpNAT as (UPnPNAT & Startable)
+const port = Number(process.argv[2]) || 5116
+const node = await createNode(port)
+const pubsub = node.services.pubsub //TODO: Replace with "pspd".
 const pspd = node.services.pubsubPeerWithDataDiscovery
-const pubsub = node.services.pubsub as GossipSub
-/*
-const cm = (node as unknown as Libp2pClass).components.connectionManager
-const cm_openConnection = cm.openConnection
-cm.openConnection = function openConnection
-(this: ConnectionManager, ...args: Parameters<ConnectionManager['openConnection']>):
-ReturnType<ConnectionManager['openConnection']> {
-    return cm_openConnection.call(this, ...args).catch()
-}
-*/
-
-process.on('uncaughtException', () => {})
-
-type Libp2pClass = Libp2p & {
-    log: Logger,
-    components: {
-        peerStore: PeerStore
-        connectionManager: ConnectionManager
-    }
-}
-const node_onDiscoveryPeer = onDiscoveryPeer.bind(node as unknown as Libp2pClass)
-
-node.services.contentPeerDiscovery.addEventListener('peer', evt => node_onDiscoveryPeer(evt, true))
-node.services.bootstrap.addEventListener('peer', evt => node_onDiscoveryPeer(evt))
-//node.services.mdns.addEventListener('peer', evt => node_onDiscoveryPeer(evt))
-node.services.pubsubPeerDiscovery.addEventListener('peer', evt => node_onDiscoveryPeer(evt))
-node.services.pubsubPeerWithDataDiscovery.addEventListener('peer', evt => node_onDiscoveryPeer(evt, true))
-//torrent-discovery: node.services.torrentPeerDiscovery.addEventListener('peer', evt => node_onDiscoveryPeer(evt))
-node_services_aminoDHT.addEventListener('peer', evt => node_onDiscoveryPeer(evt))
-
-const SAME_APP_TAG_NAME = 'same-app'
-const SAME_APP_TAG_VALUE = 1
-//const SAME_APP_CONNECTION_PRIORTY = 51
-
-function onDiscoveryPeer(this: Libp2pClass, evt: CustomEvent<PeerInfo>, sameApp = false): void {
-    const { detail: peer } = evt
-
-    if (peer.id.toString() === this.peerId.toString()) {
-        this.log.error('peer discovery mechanism discovered self')
-        return
-    }
-
-    const { multiaddrs } = peer
-    const data: PeerData = { multiaddrs }
-    if(sameApp) data.tags = {
-        [SAME_APP_TAG_NAME]: {
-            value: SAME_APP_TAG_VALUE
-        }
-    }
-    void this.components.peerStore.merge(peer.id, data)
-    /*
-    .then(peer => {
-        const opts: OpenConnectionOptions = {}
-        if(sameApp) opts.priority = SAME_APP_CONNECTION_PRIORTY
-        if(sameApp) this.components.connectionManager.openConnection(peer.id, opts)
-        .catch(err => {
-            this.log.error('could not dial discovered peer %p', peer.id, err)
-        })
-    })
-    */
-    .catch(err => { this.log.error(err) })
-}
-
-console.log('cid:', cid.toString())
-console.log('peer:', node.peerId.toString())
-//node.addEventListener('peer:connect', e => console.log('peer:connect', e.detail.toString(), e.detail))
-//node.addEventListener('peer:discovery', e => console.log('peer:discovery', e.detail.toString(), e.detail))
-//node.addEventListener('peer:disconnect', e => console.log('peer:disconnect', e.detail.toString(), e.detail))
 
 const name = 'Player'
 //const name = node.peerId.toString().slice(-8)
@@ -328,13 +107,13 @@ async function main(){
         })
         if(action == 'host' && pubsub.isStarted() == false){
             const server = await LocalServer.create(node)
-            const game = await LocalGame.create(node, server, ports.game)
+            const game = await LocalGame.create(node, server, port)
             await game.join(name, undefined)
             await lobby(game)
         }
         if(action == 'host' && pubsub.isStarted() == true){
             const server = await LocalServer.create(node)
-            const game = await LocalGame.create(node, server, ports.game)
+            const game = await LocalGame.create(node, server, port)
 
             game.startListening()
             await game.join(name, undefined)
@@ -389,11 +168,11 @@ async function main(){
             game.disconnect()
         }
         if(action == 'exit'){
-            await node.services.pubsubPeerWithDataDiscovery?.beforeStop()
+            //await node.services.pubsubPeerWithDataDiscovery?.beforeStop()
             //await node.services.pubsubPeerDiscovery?.stop()
-            //torrent-discovery: await node.services.torrentPeerDiscovery?.beforeStop()
-            //torrent-discovery: await node.services.torrentPeerDiscovery?.stop()
-            await node_services_upnpNAT?.stop()
+            //await node.services.torrentPeerDiscovery?.beforeStop()
+            //await node.services.torrentPeerDiscovery?.stop()
+            //await node_services_upnpNAT?.stop()
             await node.stop()
             break loop
         }

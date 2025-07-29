@@ -10,3 +10,4 @@ bun run build.ts
 bun build --compile --target=bun-windows-x64 --sourcemap=inline --outfile=./dist/Fishbones.exe ./index.ts
 mv node_modules node_modules_win_npm
 mv node_modules_linux_npm node_modules
+chmod 666 ./dist/Fishbones.exe

@@ -2,7 +2,7 @@ import { privateKeyFromRaw, publicKeyFromRaw } from '@libp2p/crypto/keys'
 import { AbortError, TypedEventEmitter, peerDiscoverySymbol, serviceCapabilities } from '@libp2p/interface'
 import type { ComponentLogger, Libp2pEvents, Logger, PeerDiscovery, PeerDiscoveryEvents, PeerDiscoveryProvider, PeerId, PeerStore, PrivateKey, Startable, TypedEventTarget } from '@libp2p/interface'
 import type { AddressManager, TransportManager } from '@libp2p/interface-internal'
-import { CODE_P2P, multiaddr, type Multiaddr } from '@multiformats/multiaddr'
+import { CODE_P2P, CODE_P2P_CIRCUIT, multiaddr, type Multiaddr } from '@multiformats/multiaddr'
 
 //@ts-expect-error: Could not find a declaration file for module 'addr-to-ip-port'
 import addrToIPPort from 'addr-to-ip-port'
@@ -124,6 +124,8 @@ class TorrentPeerDiscoveryInit {
     resolutionLifetime?: number = Infinity
     resolutionRetriesMax?: number = 1
     resolutionRetryTimeout?: number = 1*m
+
+    filterCircuits?: boolean = true
 }
 
 interface TorrentPeerDiscoveryComponents {
@@ -724,15 +726,17 @@ class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscoveryEvents>
         const options = undefined
         const peerId = this.components.peerId
         const am = this.components.addressManager
-        //const tm = this.components.transportManager
+        const tm = this.components.transportManager
 
-        //const transports = tm.getTransports().filter(transport => transport.constructor.name !== 'CircuitRelayTransport')
-        const multiaddrs = removePrivateAddressesMapper({ id: peerId, multiaddrs: am.getAddresses() }).multiaddrs
-        //.filter(ma => {
-        //    const decapsulated = ma.decapsulateCode(CODE_P2P_CIRCUIT)
-        //    return transports.some(transport => transport.dialFilter([ decapsulated ]).length)
-        //})
-        .map(ma => ma.decapsulateCode(CODE_P2P))
+        let { multiaddrs } = removePrivateAddressesMapper({ id: peerId, multiaddrs: am.getAddresses() })
+        if(this.init.filterCircuits){
+            const transports = tm.getTransports().filter(transport => transport.constructor.name !== 'CircuitRelayTransport')
+            multiaddrs = multiaddrs.filter(ma => {
+                const decapsulated = ma.decapsulateCode(CODE_P2P_CIRCUIT)
+                return transports.some(transport => transport.dialFilter([ decapsulated ]).length)
+            })
+        }
+        multiaddrs = multiaddrs.map(ma => ma.decapsulateCode(CODE_P2P))
         
         const filteredExternalAddresses = this.externalAddresses.values()
         .filter(external => external.shouldBePublished)
