@@ -96,6 +96,10 @@ async function startAria2(){
     if(!aria2procPromise){
         aria2secret = uint8ArrayToString(randomBytes(8), 'base32')
         aria2proc = new SubProcess(ariaExe, [
+            `--enable-dht=${true}`,
+            `--enable-dht6=${true}`,
+            `--enable-peer-exchange=${true}`,
+            `--dht-listen-port=${6881}`,
             `--conf-path=${ariaConf}`,
             `--enable-rpc=${true}`,
             `--rpc-listen-port=${6800}`,
@@ -196,9 +200,6 @@ function forCompletion(gid: string, isMetadata: boolean, cb: (progress: number) 
     ]
 
     async function onComplete(notification: { gid: string, status?: string }){
-        
-        //logger.log('DATA-DOWNLOAD', 'onComplete', JSON.stringify(notification, null, 4), 'vs', gid)
-
         if(notification.gid == gid){
             if(isMetadata){
                 try {
@@ -221,9 +222,6 @@ function forCompletion(gid: string, isMetadata: boolean, cb: (progress: number) 
     }
     
     function onError(notification: { gid: string, status?: string }) {
-
-        //logger.log('DATA-DOWNLOAD', 'onError', JSON.stringify(notification, null, 4), 'vs', gid)
-
         if(notification.gid == gid){
             reject()
         }

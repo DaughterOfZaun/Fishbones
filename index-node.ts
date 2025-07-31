@@ -32,6 +32,8 @@ import { sha256 } from 'multiformats/hashes/sha2'
 //import { webTransport } from '@libp2p/webtransport'
 //import * as Data from './data'
 //import { utp } from './network/tcp'
+import { isIPv4, isIPv6 } from '@chainsafe/is-ip'
+import { multiaddr } from '@multiformats/multiaddr'
 
 const appName = ['com', 'github', 'DaughterOfZaun', 'Fishbones']
 /*
@@ -42,6 +44,17 @@ const cid = CID.create(1, json.code,
     )
 )
 */
+type HostPort = { host: string, port: number }
+const derive = ({ host: ip, port }: HostPort) => {
+    let v = 0
+    if(isIPv4(ip)) v = 4
+    else if(isIPv6(ip)) v = 6
+    else throw new Error(`invalid ip provided: ${ip}`)
+    return [
+        multiaddr(`/ip${v}/${ip}/udp/${port}/utp`),
+        //multiaddr(`/ip${v}/${ip}/tcp/${port}`),
+    ]
+}
 export async function createNode(port: number){
     return await createLibp2p({
         addresses: {
@@ -140,6 +153,7 @@ export async function createNode(port: number){
             torrentPeerDiscovery: torrentPeerDiscovery({
                 infoHash: (await hash(`${appName.join('/')}/${0}`, 'hex', 'sha-1')) as string,
                 //announce: await Data.getAnnounceAddrs(),
+                derive,
             }),
             dcutr: dcutr(),
             upnpNAT: uPnPNAT(),

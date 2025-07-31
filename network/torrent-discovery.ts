@@ -36,18 +36,6 @@ const ABORT_ERROR = new AbortError()
 const OK = new Error('OK')
 const MAX_DATE = 8_640_000_000_000_000
 
-import { isIPv4, isIPv6 } from '@chainsafe/is-ip'
-const derive = ({ host: ip, port }: HostPort) => {
-    let v = 0
-    if(isIPv4(ip)) v = 4
-    else if(isIPv6(ip)) v = 6
-    else throw new Error(`invalid ip provided: ${ip}`)
-    return [
-        multiaddr(`/ip${v}/${ip}/udp/${port}/utp`),
-        //multiaddr(`/ip${v}/${ip}/tcp/${port}`),
-    ]
-}
-
 //@ts-expect-error: Could not find a declaration file for module 'k-rpc'
 import KRPC from 'k-rpc'
 //@ts-expect-error: Could not find a declaration file for module 'k-rpc-socket'
@@ -126,6 +114,7 @@ class TorrentPeerDiscoveryInit {
     resolutionRetryTimeout?: number = 1*m
 
     filterCircuits?: boolean = true
+    derive!: DeriveFunc
 }
 
 interface TorrentPeerDiscoveryComponents {
@@ -166,6 +155,7 @@ type DHTGetReturnType = { v: Bencoded }
 
 type u = undefined
 type HostPort = { host: string, port: number }
+type DeriveFunc = ({ host, port }: HostPort) => Multiaddr[]
 type ExternalAddress = {
     ipport: string // For debug log
     key: PrivateKey
@@ -176,8 +166,8 @@ type ExternalAddress = {
     recheckTimeout?: u|ReturnType<typeof setTimeout>
     republishTimeout?: u|ReturnType<typeof setTimeout>
     
-    hostport?: Parameters<typeof derive>[0]
-    derived?: ReturnType<typeof derive>
+    hostport?: Parameters<DeriveFunc>[0]
+    derived?: ReturnType<DeriveFunc>
     multiaddr?: Multiaddr
 }
 type ResolutionResult = {
@@ -256,8 +246,9 @@ class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscoveryEvents>
             verify,
             hash,
         }
+        let portGetsCount = 0 //HACK: To bypass opts.port check
         const optsDiscovery: DiscoveryInit = {
-            port: 0,
+            get port(){ return (portGetsCount++) ? 0 : 5116 },
             dhtPort: 0,
             tracker: false,
             lsd: false,
@@ -312,9 +303,7 @@ class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscoveryEvents>
             }
         }
         
-        process.browser = true //HACK: To bypass opts.port check
         const discovery = new Discovery(optsDiscovery)
-        process.browser = false
         this.discovery = discovery
 
         const { dht } = discovery
@@ -475,10 +464,10 @@ class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscoveryEvents>
         }        
 
         const [host, port]: [string, number] = addrToIPPort(ipport)
-        const derived = derive({ host, port })
+        const derived = this.init.derive({ host, port })
         //@ts-expect-error Argument of type A is not assignable to parameter of type B.
         this.components.events.safeDispatchEvent('addr:discovery', {
-            detail: { multiaddr: derived[0], derived }
+            detail: derived
         })
 
         let result: ResolutionResult
@@ -678,7 +667,7 @@ class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscoveryEvents>
             } else if(external.hostport){
                 this.log('adding observed addr')
 
-                external.derived ??= derive(external.hostport)
+                external.derived ??= this.init.derive(external.hostport)
                 for(const derivedMultiaddr of external.derived){
                     am.addObservedAddr(derivedMultiaddr)
                     am.confirmObservedAddr(derivedMultiaddr, {
@@ -709,7 +698,7 @@ class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscoveryEvents>
 
             am.removePublicAddressMapping('undefined', NaN, ehost, eport, 'udp')
             if(external.hostport){
-                external.derived ??= derive(external.hostport)
+                external.derived ??= this.init.derive(external.hostport)
                 for(const derivedMultiaddr of external.derived){
                     am.removeObservedAddr(derivedMultiaddr)
                 }

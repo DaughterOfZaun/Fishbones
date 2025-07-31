@@ -7,14 +7,15 @@ import { isPeerId, type ComponentLogger, type Connection, type Libp2pEvents, typ
 import type { ConnectionManager, TransportManager } from "@libp2p/interface-internal"
 //import { setMaxListeners } from 'main-event'
 //import { anySignal } from 'any-signal'
-import { PeerMap } from "@libp2p/peer-collections"
-import { CODE_P2P, type AbortOptions, type Multiaddr } from "@multiformats/multiaddr"
+import { PeerMap, PeerSet } from "@libp2p/peer-collections"
+import { type AbortOptions, type Multiaddr } from "@multiformats/multiaddr"
 import { Queue, type Job, type QueueInit } from "@libp2p/utils/queue"
 
 interface AutodialInit {
     connectionThreshold?: number
     concurrency?: number
     unpinTimeout?: number
+    //derive: DeriveFunc
 }
 interface AutodialComponents {
     logger: ComponentLogger
@@ -24,19 +25,27 @@ interface AutodialComponents {
     transportManager: TransportManager
 }
 
-export function autodial(init: AutodialInit = {}): (components: AutodialComponents) => Autodial {
+export function autodial(init: AutodialInit): (components: AutodialComponents) => Autodial {
     return (components: AutodialComponents) => new Autodial(init, components)
 }
 
 type u = undefined
-type AddrId = Multiaddr //& { __brand: 'addr-id' }
+//type HostPort = { host: string, port: number }
+//type DeriveFunc = ({ host, port }: HostPort) => Multiaddr[]
+type AddrId = string & { __brand: 'addr-id' }
+const idFromMultiaddr = (ma: Multiaddr): AddrId => {
+    // It may not be compatible with all transports.
+    // In fact, this is a cheap version of ip mapping, but for other peers.
+    const { host, port, transport, family: v } = ma.toOptions()
+    return `/ip${v}/${host}/${transport}/${port}` as AddrId
+}
 type DialTarget = PeerId | AddrId
 type DialJobOptions = AbortOptions & DialTargetInfo
 type DialTargetInfoMultiaddr = DialTargetInfo & { target: AddrId }
 type DialTargetInfoPeerId = DialTargetInfo & { target: PeerId, info: AutodialPeerInfo }
 class DialTargetInfo {
     public readonly target: DialTarget
-    public multiaddrs!: Multiaddr[]
+    public multiaddrs = new PeerSet() as unknown as Set<Multiaddr>
     public beenInQueue: boolean = false
     public info?: AutodialPeerInfo
     public connectionToReplace?: Connection // Temporary value holder.
@@ -167,6 +176,7 @@ class Autodial implements Startable {
             connectionThreshold: init.connectionThreshold ?? 80,
             concurrency: init.concurrency ?? 10,
             unpinTimeout: init.unpinTimeout ?? 30_000,
+            //derive: init.derive,
         }
         this.queue = new CheckingQueue({
             concurrency: this.init.concurrency,
@@ -218,21 +228,26 @@ class Autodial implements Startable {
         this.queue.abort()
     }
 
-    private readonly onAddressDiscovery = ({ detail: { multiaddr, derived } }: CustomEvent<{ multiaddr: Multiaddr, derived: Multiaddr[] }>) => {
+    private readonly onAddressDiscovery = ({ detail: derived }: CustomEvent<Multiaddr[]>) => {
         
-        this.log.trace('peer:discovery:address', multiaddr)
+        this.log.trace('peer:discovery:address', derived.map(ma => ma.toString()))
 
         // It is assumed that the Multiaddr does not contain a PeerId.
         // Otherwise, the discovery mechanism would have announced PeerInfo.
-        
-        const info = this.targetInfos_getset(multiaddr)
-        //for(const multiaddr of info.multiaddrs){
-        //    this.targetInfos.delete(multiaddr)
-        //}
-        info.multiaddrs = derived
-        for(const multiaddr of info.multiaddrs){
-            this.targetInfos.set(multiaddr, info)
+        /*
+        for(const multiaddr of derived){
+            const addrId = idFromMultiaddr(multiaddr)
+            const info = this.targetInfos_getset(addrId)
+            info.multiaddrs.add(multiaddr)
+            this.maybeQueueTarget(info)
         }
+        */
+        if(derived.length === 0) return
+        const addrId = idFromMultiaddr(derived[0]!)
+        //console.assert(derived.every(ma => idFromMultiaddr(ma) === addrId))
+        const info = this.targetInfos_getset(addrId)
+        for(const multiaddr of derived)
+            info.multiaddrs.add(multiaddr)
         
         this.maybeQueueTarget(info)
         this.queue.kick()
@@ -244,7 +259,8 @@ class Autodial implements Startable {
         this.log.trace('peer:discovery', peerId)
 
         const info = this.targetInfos_getset(peerId)
-        info.multiaddrs = peer.multiaddrs.map(ma => ma.decapsulateCode(CODE_P2P))
+        for(const multiaddr of peer.multiaddrs)
+            info.multiaddrs.add(multiaddr)
         
         this.maybeQueueTarget(info)
         this.queue.kick()
@@ -266,7 +282,8 @@ class Autodial implements Startable {
         this.log.trace('peer:update', peerId)
 
         const tinfo = this.targetInfos_getset(peerId)
-        tinfo.multiaddrs = peer.addresses.map(addr => addr.multiaddr)
+        for(const multiaddr of peer.addresses.map(addr => addr.multiaddr))
+            tinfo.multiaddrs.add(multiaddr)
 
         //const pinfo = this.peerInfos_getset(peerId)
         const pinfo = tinfo.info
@@ -292,7 +309,7 @@ class Autodial implements Startable {
 
     private maybeQueueTarget(/*peerId: u|PeerId,*/ info: DialTargetInfo, /*multiaddrs: Multiaddr[]*/){
         //const cm = this.components.connectionManager
-        const { multiaddrs } = info
+        const multiaddrs = [...info.multiaddrs.values()]
         try {
             //if(peerId && this.queue_has(peerId)){
             if(info.beenInQueue){
@@ -320,7 +337,8 @@ class Autodial implements Startable {
     }
 
     private readonly dialPeer = async (info: DialJobOptions): Promise<void> => {
-        const { target, multiaddrs, connectionToReplace } = info
+        const { target, connectionToReplace } = info
+        const multiaddrs = [...info.multiaddrs.values()]
         const cm = this.components.connectionManager
         const ps = this.components.peerStore
 
@@ -338,8 +356,9 @@ class Autodial implements Startable {
                 this.log('opening connection to peer %p', peerId)
                 const connection = await cm.openConnection(peerId, /*{ signal: combinedSignal }*/)
                 
-                const multiaddr = connection.remoteAddr.decapsulateCode(CODE_P2P)
-                this.merge(peerId, multiaddr)
+                const multiaddr = connection.remoteAddr//.decapsulateCode(CODE_P2P)
+                const addrId = idFromMultiaddr(multiaddr)
+                this.merge(peerId, addrId)
             } else {
                 this.log('opening connection to addr %a', target)
                 const connection = await cm.openConnection(multiaddrs, /*{ signal: combinedSignal }*/)
@@ -347,10 +366,11 @@ class Autodial implements Startable {
                 //TODO: Close if already have connection to that peer.
                 
                 const peerId = connection.remotePeer
-                const multiaddr = connection.remoteAddr.decapsulateCode(CODE_P2P)
-                this.merge(peerId, multiaddr)
-                if(target.toString() !== multiaddr.toString())
-                    this.merge(peerId, target)
+                const multiaddr = connection.remoteAddr//.decapsulateCode(CODE_P2P)
+                const addrId = idFromMultiaddr(multiaddr)
+                this.merge(peerId, addrId)
+                //if(target.toString() !== multiaddr.toString())
+                //    this.merge(peerId, target)
 
                 ps.merge(peerId, { multiaddrs: [ multiaddr ] }).catch(err => {
                     this.log.error('failed merge peer %p with addr %a - %e', peerId, target, err)
@@ -361,12 +381,12 @@ class Autodial implements Startable {
         //}
     }
 
-    private merge(peerId: PeerId, multiaddr: Multiaddr){
+    private merge(peerId: PeerId, addrId: AddrId){
         
-        this.log('merging peer %p with addr %a', peerId, multiaddr)
+        this.log('merging peer %p with addr %a', peerId, addrId)
 
         const tinfo1 = this.targetInfos_getset(peerId)
-        const tinfo2 = this.targetInfos_getset(multiaddr)
+        const tinfo2 = this.targetInfos_getset(addrId)
         
         tinfo1.beenInQueue = true
         tinfo2.beenInQueue = true
