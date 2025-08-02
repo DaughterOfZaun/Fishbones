@@ -27,7 +27,7 @@ import { mdns } from '@libp2p/mdns'
 import { CID } from 'multiformats/cid'
 import * as json from 'multiformats/codecs/json'
 import { sha256 } from 'multiformats/hashes/sha2'
-//import { autodial } from './network/autodial'
+import { autodial } from './network/autodial'
 //import { webSockets } from '@libp2p/websockets'
 //import { webTransport } from '@libp2p/webtransport'
 //import * as Data from './data'
@@ -56,7 +56,7 @@ const derive = ({ host: ip, port }: HostPort) => {
     ]
 }
 export async function createNode(port: number){
-    return await createLibp2p({
+    const node = await createLibp2p({
         addresses: {
             listen: [
                 //`/ip4/0.0.0.0/udp/${port}/utp`,
@@ -168,7 +168,7 @@ export async function createNode(port: number){
                 //validators: { ipns: ipnsValidator },
                 //selectors: { ipns: ipnsSelector }
             }), // Default close-tag.value = 50; peer-tag.value = 1
-            //autodial: autodial(),
+            autodial: autodial(),
         },
         start: true,
         connectionManager: {
@@ -176,7 +176,13 @@ export async function createNode(port: number){
             dialTimeout: 10_000,
         }
     })
+    const ns = node.services
+    ns.mdns.addEventListener('peer', ns.autodial.onPeerDiscovery)
+    ns.torrentPeerDiscovery.addEventListener('peer', ns.autodial.onPeerDiscovery)
+    ns.torrentPeerDiscovery.addEventListener('addr', ns.autodial.onAddressDiscovery)
+    return node
 }
+
 /*
 let sigints = 0
 process.on('SIGINT', () => {

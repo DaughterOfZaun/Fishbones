@@ -128,7 +128,9 @@ interface TorrentPeerDiscoveryComponents {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-interface TorrentPeerDiscoveryEvents extends PeerDiscoveryEvents {}
+interface TorrentPeerDiscoveryEvents extends PeerDiscoveryEvents {
+    addr: CustomEvent<Multiaddr[]>
+}
 
 export function torrentPeerDiscovery(init: TorrentPeerDiscoveryInit): (components: TorrentPeerDiscoveryComponents) => TorrentPeerDiscovery {
     return (components: TorrentPeerDiscoveryComponents) => new TorrentPeerDiscovery(init, components)
@@ -465,10 +467,10 @@ class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscoveryEvents>
 
         const [host, port]: [string, number] = addrToIPPort(ipport)
         const derived = this.init.derive({ host, port })
-        //@ts-expect-error Argument of type A is not assignable to parameter of type B.
-        this.components.events.safeDispatchEvent('addr:discovery', {
-            detail: derived
-        })
+
+        ////@ts-expect-error Argument of type A is not assignable to parameter of type B.
+        //this.components.events.safeDispatchEvent('addr:discovery', { detail: derived })
+        this.safeDispatchEvent('addr', { detail: derived })
 
         let result: ResolutionResult
         const hash = this.knownIds.get(ipport)
