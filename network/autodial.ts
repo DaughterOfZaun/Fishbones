@@ -7,8 +7,8 @@ import { isPeerId, type ComponentLogger, type Connection, type Libp2pEvents, typ
 import type { ConnectionManager, TransportManager } from "@libp2p/interface-internal"
 //import { setMaxListeners } from 'main-event'
 //import { anySignal } from 'any-signal'
-import { PeerMap, PeerSet } from "@libp2p/peer-collections"
-import { CODE_P2P_CIRCUIT, type AbortOptions, type Multiaddr } from "@multiformats/multiaddr"
+import { PeerMap } from "@libp2p/peer-collections"
+import { CODE_P2P, CODE_P2P_CIRCUIT, multiaddr, type AbortOptions, type Multiaddr } from "@multiformats/multiaddr"
 import { Queue, type Job, type QueueInit } from "@libp2p/utils/queue"
 import { peerIdFromString } from "@libp2p/peer-id"
 
@@ -39,7 +39,9 @@ const idFromMultiaddr = (ma: Multiaddr): DialTarget => {
     // It may not be compatible with all transports.
     if(ma.getComponents().some(c => c.code === CODE_P2P_CIRCUIT)){
         const peerIdStr = ma.getPeerId()
-        console.assert(peerIdStr != null)
+        if(peerIdStr == null){
+            throw new Error('Circuit address does not contain the end PeerID.')
+        }
         return peerIdFromString(peerIdStr!)
     }
     const { host, port, transport, family: v } = ma.toOptions()
@@ -51,7 +53,7 @@ type DialTargetInfoMultiaddr = DialTargetInfo & { target: AddrId }
 type DialTargetInfoPeerId = DialTargetInfo & { target: PeerId, info: AutodialPeerInfo }
 class DialTargetInfo {
     public readonly target: DialTarget
-    public multiaddrs = new PeerSet() as unknown as Set<Multiaddr>
+    public multiaddrs = new Set<string>()
     public beenInQueue: boolean = false
     public info?: AutodialPeerInfo
     public connected: number = 0
@@ -102,14 +104,14 @@ class AutodialPeerInfo {
 type JobChecker<JobOptions extends AbortOptions, JobReturnType> = (job: Job<JobOptions, JobReturnType>) => boolean
 type JobFilter<JobOptions extends AbortOptions, JobReturnType> = (job: Job<JobOptions, JobReturnType>, running: Job<JobOptions, JobReturnType>[]) => boolean
 class CheckingQueue<JobReturnType = unknown, JobOptions extends AbortOptions = AbortOptions> extends Queue<JobReturnType, JobOptions> {
-    private readonly check: JobChecker<JobOptions, JobReturnType>
     private readonly filter: JobFilter<JobOptions, JobReturnType>
+    private readonly check: JobChecker<JobOptions, JobReturnType>
     constructor (init: QueueInit<JobReturnType, JobOptions> & {
         filter?: JobFilter<JobOptions, JobReturnType>
         check?: JobChecker<JobOptions, JobReturnType>
     }){
         super(init)
-        this.filter = init.check ?? (() => true)
+        this.filter = init.filter ?? (() => true)
         this.check = init.check ?? (() => true)
         const tryToStartAnother = this['tryToStartAnother'] as () => boolean
         this['tryToStartAnother'] = () => {
@@ -126,7 +128,7 @@ class CheckingQueue<JobReturnType = unknown, JobOptions extends AbortOptions = A
                             break
                         } else {
                             job.status = 'queued-x2' as 'queued'
-                            continue
+                            //continue
                         }
                     }
                 }
@@ -146,6 +148,15 @@ const sort = <T>(acc: -1 | 0 | 1, a: T, b: T, dir: 'asc' | 'dsc', by: (x: T) => 
     return +(av != bv)
         * ((av > bv) ? +1 : -1)
         * (+(dir == 'asc') * 2 - 1) as -1 | 0 | 1
+}
+
+const decapsulate = (ma: Multiaddr) => {
+    const components = ma.getComponents()
+    const components_last = components.at(-1)
+    if(components_last?.code === CODE_P2P){
+        return multiaddr(components.slice(0, -1))
+    }
+    return ma
 }
 
 class Autodial implements Startable {
@@ -220,9 +231,29 @@ class Autodial implements Startable {
                 return acc
             },
             filter: (job, running) => {
-                return !running.some(j => j.options.multiaddrs.intersection(job.options.multiaddrs))
+                //const ret = running.every(j => j.options.multiaddrs.isDisjointFrom(job.options.multiaddrs))
+                //this.log('filter', job.options.target, running.map(job => job.options.target), ret)
+                const ret = true
+                for(const ma of job.options.multiaddrs){
+                    for(const j of running){
+                        if(j.options.multiaddrs.has(ma)){
+                            this.log(
+                                'delaying %s because of intersection with %s at %s',
+                                job.options.target.toString(),
+                                j.options.target.toString(),
+                                ma.toString(),
+                            )
+                            return false
+                        }
+                    }
+                }
+                return ret
             },
-            check: (job) => this.checkCapacity(job.options),
+            check: (job) => {
+                const ret = this.checkCapacity(job.options)
+                //this.log('check', job.options.target, ret)
+                return ret
+            },
         })
     }
 
@@ -264,7 +295,7 @@ class Autodial implements Startable {
 
     public readonly onAddressDiscovery = ({ detail: derived }: CustomEvent<Multiaddr[]>) => {
         
-        this.log.trace('peer:discovery:address', derived.map(ma => ma.toString()))
+        this.log('peer:discovery:address', derived.map(ma => ma.toString()))
 
         // It is assumed that the Multiaddr does not contain a PeerId.
         // Otherwise, the discovery mechanism would have announced PeerInfo.
@@ -278,10 +309,10 @@ class Autodial implements Startable {
         */
         if(derived.length === 0) return
         const addrId = idFromMultiaddr(derived[0]!)
-        //console.assert(derived.every(ma => idFromMultiaddr(ma) === addrId))
+        //console.assert(derived.every(ma => idFromMultiaddr(ma) === addrId), 'derived.every(ma => idFromMultiaddr(ma) === addrId)')
         const info = this.targetInfos_getset(addrId)
         for(const multiaddr of derived)
-            info.multiaddrs.add(multiaddr)
+            info.multiaddrs.add(decapsulate(multiaddr).toString())
         
         if(this.maybeQueueTarget(info))
             this.queue.kick()
@@ -290,18 +321,18 @@ class Autodial implements Startable {
     public readonly onPeerDiscovery = ({ detail: peer }: CustomEvent<PeerInfo>) => {
         const { id: peerId } = peer
 
-        this.log.trace('peer:discovery', peerId)
+        this.log('peer:discovery', peerId)
 
         const info = this.targetInfos_getset(peerId)
         for(const multiaddr of peer.multiaddrs)
-            info.multiaddrs.add(multiaddr)
+            info.multiaddrs.add(decapsulate(multiaddr).toString())
         
         if(this.maybeQueueTarget(info))
             this.queue.kick()
     }
     private readonly onPeerConnect = ({ detail: peerId }: CustomEvent<PeerId>) => {
 
-        this.log.trace('peer:connect', peerId)
+        //this.log.trace('peer:connect', peerId)
         
         const info = this.peerInfos_getset(peerId)
         info.pin(this.init.unpinTimeout, () => this.queue.kick())
@@ -313,11 +344,11 @@ class Autodial implements Startable {
     private readonly onPeerUpdate = ({ detail: { peer } }: CustomEvent<PeerUpdate>) => {
         const { id: peerId } = peer
 
-        this.log.trace('peer:update', peerId)
+        //this.log.trace('peer:update', peerId)
 
         const tinfo = this.targetInfos_getset(peerId)
         for(const multiaddr of peer.addresses.map(addr => addr.multiaddr))
-            tinfo.multiaddrs.add(multiaddr)
+            tinfo.multiaddrs.add(decapsulate(multiaddr).toString())
 
         //const pinfo = this.peerInfos_getset(peerId)
         const pinfo = tinfo.info
@@ -331,7 +362,7 @@ class Autodial implements Startable {
     }
     private readonly onPeerDisconnect = ({ detail: peerId }: CustomEvent<PeerId>) => {
         
-        this.log.trace('peer:disconnect', peerId)
+        //this.log.trace('peer:disconnect', peerId)
 
         const info = this.peerInfos_getset(peerId)
         info.connected = false
@@ -343,36 +374,41 @@ class Autodial implements Startable {
 
     private maybeQueueTarget(/*peerId: u|PeerId,*/ info: DialTargetInfo, /*multiaddrs: Multiaddr[]*/){
         //const cm = this.components.connectionManager
-        const multiaddrs = [...info.multiaddrs.values()]
+        const multiaddrs = [...info.multiaddrs.values().map(ma => multiaddr(ma))]
         try {
             //if(peerId && this.queue_has(peerId)){
             if(info.beenInQueue){
-                this.log.trace(`${info.toString()} was already in queue`)
+                //this.log.trace(`${info.toString()} was already in queue`)
                 return false
             //} else if(peerId && cm.getConnections(peerId)?.length > 0){
             } else if(info.connected || info.info?.connected){
-                this.log.trace(`${info.toString()} was already connected`)
+                //this.log.trace(`${info.toString()} was already connected`)
                 return false
             } else if(!this.components_connectionManager_isDialableSync(multiaddrs)){
-                this.log.trace(`${info.toString()} was not dialable`)
+                //this.log.trace(`${info.toString()} was not dialable`)
                 return false
             } else {
                 info.beenInQueue = true
-                this.log.trace(`adding ${info.toString()} to dial queue`)
+                this.log(`adding ${info.toString()} to dial queue`)
                 this.queue.add(this.dialPeer, info).catch(err => {
-                    this.log.error(`error opening connection to ${info.toString()} - %e`, err)
+                    this.log.error('error opening connection to %s:', info.toString())
+                    this.log.error('%e', err)
+                    if(err instanceof AggregateError){
+                        for(const suberr of err.errors)
+                            this.log.error('%e', suberr)
+                    }
                 })
                 return true
             }
         } catch(err){
-            this.log.error(`error adding ${info.toString()} to queue - %e`, err)
+            this.log.error(`error adding %s to queue - %e`, info.toString(), err)
         }
         return false
     }
 
     private readonly dialPeer = async (info: DialJobOptions): Promise<void> => {
         const { target, connectionToReplace } = info
-        const multiaddrs = [...info.multiaddrs.values()]
+        const multiaddrs = [...info.multiaddrs.values().map(ma => multiaddr(ma))]
         const cm = this.components.connectionManager
         const ps = this.components.peerStore
 
@@ -382,17 +418,28 @@ class Autodial implements Startable {
             if(connectionToReplace){
                 //info.connectionToReplace = undefined
                 const peerId = connectionToReplace.remotePeer
-                this.log('closing connection to peer %p', peerId)
+                const multiaddr = connectionToReplace.remoteAddr
+                this.log('closing connection to peer %p at %a', peerId, multiaddr)
                 await connectionToReplace.close()
             }
             if(isPeerId(target)){
                 const peerId = target
-                this.log('opening connection to peer %p', peerId)
+                this.log('opening connection to peer %p', peerId, Date.now() / 1000, multiaddrs.map(ma => ma.toString()))
+                //try {
                 /*const connection =*/ await cm.openConnection(peerId, /*{ signal: combinedSignal }*/)
+                //} catch(err) {
+                //    await new Promise((res) => setTimeout(res, 1000))
+                //    throw err
+                //}
             } else {
-                this.log('opening connection to addr %a', target)
-                const connection = await cm.openConnection(multiaddrs, /*{ signal: combinedSignal }*/)
-
+                this.log('opening connection to addr %a', target, Date.now() / 1000, multiaddrs.map(ma => ma.toString()))
+                let connection: Connection
+                //try {
+                    connection = await cm.openConnection(multiaddrs, /*{ signal: combinedSignal }*/)
+                //} catch(err) {
+                //    await new Promise((res) => setTimeout(res, 1000))
+                //    throw err
+                //}
                 //TODO: Close if already have connection to that peer.
                 
                 const peerId = connection.remotePeer
@@ -408,7 +455,7 @@ class Autodial implements Startable {
 
     private readonly onConnectionOpen = ({ detail: connection }: CustomEvent<Connection>) => {
         
-        this.log.trace('connection:open', connection.remoteAddr)
+        //this.log.trace('connection:open', connection.remoteAddr)
 
         const peerId = connection.remotePeer
         const multiaddr = connection.remoteAddr//.decapsulateCode(CODE_P2P)
@@ -421,7 +468,7 @@ class Autodial implements Startable {
         
         if(peerId.toString() != addrId.toString()){
             
-            this.log('merging peer %p with addr %a', peerId, addrId)
+            //this.log.trace('merging peer %p with addr %a', peerId, addrId)
 
             const tinfo2 = this.targetInfos_getset(addrId)
             tinfo2.beenInQueue = true
@@ -435,7 +482,7 @@ class Autodial implements Startable {
 
     private readonly onConnectionClose = ({ detail: connection }: CustomEvent<Connection>) => {
 
-        this.log.trace('connection:close', connection.remoteAddr)
+        //this.log.trace('connection:close', connection.remoteAddr)
 
         const peerId = connection.remotePeer
         const multiaddr = connection.remoteAddr//.decapsulateCode(CODE_P2P)
@@ -481,15 +528,34 @@ class Autodial implements Startable {
             return true
         }
         
-        const info = [...cm.getConnectionsMap().entries()]
+        let filtered = [...cm.getConnectionsMap().entries()]
         .map(([peerId, connections]) => {
             const info = this.peerInfos.get(peerId)!
             info.connections = connections
             return info
         })
-        .filter(info => {
-            return !info.pinned
-        })
+        .filter(info => !info.pinned)
+
+        const circuits = [
+            ...queued.multiaddrs.values()
+            .filter(ma => ma.includes('/p2p-circuit'))
+            .map(ma => ma.split('/p2p-circuit')[0]!)
+        ]
+        if(circuits.length){
+            const isConnectionToOneOfCircuits = (connection: Connection) => {
+                return circuits.some(circuit => {
+                    return connection.remoteAddr.toString().startsWith(circuit)
+                })
+            }
+            if(filtered.some(info => info.connections!.some(isConnectionToOneOfCircuits))){
+                filtered = filtered.filter(info => {
+                    info.connections = info.connections!.filter(isConnectionToOneOfCircuits)
+                    return info.connections!.length > 0
+                })
+            }
+        }
+
+        const info = filtered
         .reduce((accum: u|AutodialPeerInfo, info) => {
             return (accum && accum.value < info.value) ? accum : info
         }, undefined)
@@ -497,10 +563,10 @@ class Autodial implements Startable {
         const { target } = queued // For log output only.
         const queued_value = queued.info?.value ?? 0
         if(info && (info.value === 0 || info.value < queued_value)){
-            this.log('connection to peer %p will be replaced with', info.id)
-            if(isPeerId(target)) this.log('connection to peer %p', target)
-            else                 this.log('connection to addr %a', target)
             queued.connectionToReplace = info.connections![0]!
+            this.log('connection to peer %p at %a will be replaced with', info.id, queued.connectionToReplace)
+            if(isPeerId(target)) this.log('connection to peer %p at', target, [...queued.multiaddrs.values()])
+            else                 this.log('connection to addr %s at', target, [...queued.multiaddrs.values()])
             return true
         }
         return false

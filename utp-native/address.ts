@@ -10,7 +10,7 @@ export enum AddressFamily {
 export const determineAddressFamily = (host: string) => {
     const ipv4 = isIPv4(host)
     const ipv6 = ipv4 ? false : isIPv6(host)
-    console.assert(ipv4 || ipv6)
+    console.assert(ipv4 || ipv6, 'ipv4 || ipv6')
     return ipv4 ? AddressFamily.INET : AddressFamily.INET6
 }
 

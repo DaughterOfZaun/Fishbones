@@ -45,6 +45,7 @@ import { createSocket, isDHT, type Socket } from '../network/umplex'
 import { equals as uint8ArrayEquals } from 'uint8arrays'
 import { peerIdFromCID } from '@libp2p/peer-id'
 import { getThinWaistAddresses } from '@libp2p/utils/get-thin-waist-addresses'
+import { isUint8Array } from 'node:util/types'
 //import { isPrivateIp } from '@libp2p/utils/private-ip'
 
 interface KRPCSocketInit {
@@ -127,9 +128,9 @@ interface TorrentPeerDiscoveryComponents {
     transportManager: TransportManager
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface TorrentPeerDiscoveryEvents extends PeerDiscoveryEvents {
     addr: CustomEvent<Multiaddr[]>
+    record: CustomEvent<PeerId>
 }
 
 export function torrentPeerDiscovery(init: TorrentPeerDiscoveryInit): (components: TorrentPeerDiscoveryComponents) => TorrentPeerDiscovery {
@@ -418,6 +419,8 @@ class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscoveryEvents>
     }
 
     private readonly onReply = (res: RPCResponse, peer: RPCPeer) => {
+        if(!this.discovery) return
+
         //this.log('onReply', `${peer.host || peer.address}:${peer.port}`, res)
         const rpc = this.discovery.dht._rpc
         
@@ -441,6 +444,8 @@ class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscoveryEvents>
     }
 
     private readonly onPeer = (ipport: string, source: 'tracker'|'dht'|'lsd') => {
+        if(!this.discovery) return
+        
         const dht = this.discovery.dht
 
         if(this.externalAddresses.has(ipport)){
@@ -490,6 +495,8 @@ class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscoveryEvents>
         this.resolutionQueue_kick()
     }
     private readonly resolutionQueue_kick = () => {
+        if(!this.discovery) return
+
         const dht = this.discovery.dht
         //const rpc = this.discovery.dht._rpc
         //if(rpc.socket.inflight >= rpc.concurrency) return
@@ -558,10 +565,16 @@ class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscoveryEvents>
                         this.log('peer record public key hash mismatch')
                         return false
                     }
+
+                    const peerId = peerIdFromCID(envelope.publicKey.toCID())    
+                    this.safeDispatchEvent('record', { detail: peerId })
+
                     const success = await this.components.peerStore.consumePeerRecord(buf)
                     if(success){
-                        const peerId = peerIdFromCID(envelope.publicKey.toCID())
                         this.log('consumed peer record for %s %p', ipport, peerId)
+                        //const peerRecord = PeerRecord.createFromProtobuf(envelope.payload) //TODO: Optimize.
+                        //const info: PeerInfo = { id: peerId, multiaddrs: peerRecord.multiaddrs }
+                        //this.safeDispatchEvent('record', { detail: info })
                     }
                     return success
                 }).then(success => {
@@ -611,6 +624,8 @@ class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscoveryEvents>
     }
 
     private check(external: ExternalAddress){
+        if(!this.discovery) return
+
         const am = this.components.addressManager
         const now = Date.now()
 
@@ -761,6 +776,8 @@ class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscoveryEvents>
     }
 
     private maybePublishExternalAddress(external: ExternalAddress){
+        if(!this.discovery) return
+        
         const dht = this.discovery.dht
         const { ipport } = external
         
@@ -805,6 +822,8 @@ class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscoveryEvents>
     }
 
     private abortQueries(q: string, hash: Buffer){
+        if(!this.discovery) return
+
         const rpc = this.discovery.dht._rpc
 
         let abortedPending = 0
@@ -812,7 +831,7 @@ class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscoveryEvents>
         for(let i = pending.length - 1; i >= 0; i--){
             const [/*node*/, message, cb] = pending[i]!
             //@ts-expect-error Property A does not exist on type B.
-            if(message.q === q && uint8ArrayEquals(message.a.target, hash)){
+            if(message.q === q && message.a?.target && isUint8Array(message.a.target) && uint8ArrayEquals(message.a.target, hash)){
                 cb(ABORT_ERROR, null!, null!)
                 pending.splice(i, 1)
                 abortedPending++
@@ -831,7 +850,7 @@ class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscoveryEvents>
             if(!req) continue
             const { message } = req
             //@ts-expect-error Property A does not exist on type B.
-            if(message.q === q && uint8ArrayEquals(message.a.target, hash)){
+            if(message.q === q && message.a?.target && isUint8Array(message.a.target) && uint8ArrayEquals(message.a.target, hash)){
                 //socket._ids[index] = 0
                 //socket._reqs[index] = null
                 //socket.inflight--
@@ -846,7 +865,7 @@ class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscoveryEvents>
             socket.emit('postupdate')
         }
 
-        if(abortedPending + abortedInflight > 0)
+        if(abortedPending > 0 || abortedInflight > 0)
             this.log('aborted %d pending %d inflight %s queries', abortedPending, abortedInflight, q)
     }
 }

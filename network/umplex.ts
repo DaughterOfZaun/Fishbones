@@ -65,7 +65,7 @@ const container = new class BunSocketContainer {
 export async function udpSocket(options: BunSocketOptions): Promise<BunSocket> {
     const { hostname, port, socket: handler } = options
 
-    console.assert(options.binaryType === binaryType)
+    console.assert(options.binaryType === binaryType, 'options.binaryType === binaryType')
 
     container.socket = await (container.promise ??= Bun.udpSocket({
         binaryType: binaryType,
@@ -232,7 +232,7 @@ class Socket extends TypedEventEmitter<SocketEvents> {
         port?: number, address?: string,
         callback?: (error: Error | null, bytes: number) => void
     ): void {
-        console.assert(offset == 0 && length == msg.length)
+        console.assert(offset == 0 && length == msg.length, 'offset == 0 && length == msg.length')
         const success = port && address && this.socket.send(msg, port, address)
         if(callback){
             if(success) callback.call(this, null, msg.length)

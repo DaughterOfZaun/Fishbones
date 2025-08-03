@@ -200,7 +200,7 @@ export class ProxyClient extends Proxy {
         super.disconnect()
     }
     public getPort(id = this.serverId){
-        console.assert(!id || id.equals(this.serverId))
+        console.assert(!id || id.equals(this.serverId), '!id || id.equals(this.serverId)')
         return id && super.getPort(id)
     }
 }

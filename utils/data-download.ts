@@ -204,7 +204,7 @@ function forCompletion(gid: string, isMetadata: boolean, cb: (progress: number) 
             if(isMetadata){
                 try {
                     const status = await aria2.tellStatus(aria2conn, gid, [ 'followedBy' ])
-                    //console.assert(status.followedBy?.length == 1)
+                    //console.assert(status.followedBy?.length == 1, 'status.followedBy?.length == 1')
                     if(status.followedBy && status.followedBy.length > 0){
                         gid = status.followedBy[0]!
                         isMetadata = false

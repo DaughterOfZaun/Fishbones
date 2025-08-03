@@ -8,7 +8,6 @@ import { createLibp2p } from 'libp2p'
 import { torrentPeerDiscovery } from './network/torrent-discovery'
 import { pubsubPeerDiscovery as pubsubPeerWithDataDiscovery } from './network/pubsub-discovery'
 //import { pubsubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
-//torrent-discovery: 
 import { hash } from 'uint8-util'
 import { identify, identifyPush } from '@libp2p/identify'
 import { ping } from '@libp2p/ping'
@@ -31,9 +30,13 @@ import { autodial } from './network/autodial'
 //import { webSockets } from '@libp2p/websockets'
 //import { webTransport } from '@libp2p/webtransport'
 //import * as Data from './data'
-//import { utp } from './network/tcp'
+import { utp } from './network/tcp'
 import { isIPv4, isIPv6 } from '@chainsafe/is-ip'
-import { multiaddr } from '@multiformats/multiaddr'
+import { multiaddr, type Multiaddr } from '@multiformats/multiaddr'
+import type { TransportManager } from '@libp2p/interface-internal'
+import { anySignal } from 'any-signal'
+import { setMaxListeners } from 'main-event'
+import { AbortError, TimeoutError, type PeerId, type PeerInfo } from '@libp2p/interface'
 
 const appName = ['com', 'github', 'DaughterOfZaun', 'Fishbones']
 /*
@@ -55,13 +58,22 @@ const derive = ({ host: ip, port }: HostPort) => {
         //multiaddr(`/ip${v}/${ip}/tcp/${port}`),
     ]
 }
+
+const MAX_PEER_ADDRS_TO_DIAL = 25
+const PER_ADDR_DIAL_TIMEOUT = 10_000
+
+const DISABLE_UTP = false
+const DISABLE_MDNS = true
+const DISABLE_TORRENT = false
+const DISABLE_AUTODIAL = false
+
 export async function createNode(port: number){
     const node = await createLibp2p({
         addresses: {
             listen: [
-                //`/ip4/0.0.0.0/udp/${port}/utp`,
+                ...(DISABLE_UTP ? [] : [`/ip4/0.0.0.0/udp/${port}/utp`]),
                 `/ip4/0.0.0.0/tcp/${port}`,
-                ...Array(1).fill(`/p2p-circuit`),
+                ...Array(10).fill(`/p2p-circuit`),
                 //`/ip4/0.0.0.0/tcp/${0}/ws`,
                 //`/ip4/0.0.0.0/udp/${0}/webrtc-direct`,
                 //`/webrtc`,
@@ -69,14 +81,14 @@ export async function createNode(port: number){
         },
         transports: [
             tcp(),
-            /*
-            utp({
-                outboundSocketInactivityTimeout: Infinity,
-                inboundSocketInactivityTimeout: Infinity,
-                maxConnections: Infinity,
-                //closeServerOnMaxConnections: null,
-            }),
-            */
+            ...(DISABLE_UTP ? [] : [
+                utp({
+                    outboundSocketInactivityTimeout: Infinity,
+                    inboundSocketInactivityTimeout: Infinity,
+                    maxConnections: Infinity,
+                    //closeServerOnMaxConnections: null,
+                }),
+            ]),
             circuitRelayTransport(), // Default relay-tag.value = 1
             //webSockets(),
             //webRTCDirect(),
@@ -133,27 +145,28 @@ export async function createNode(port: number){
                     "/ip6/2a03:b0c0:0:1010::23:1001/tcp/4001/ipfs/QmSoLer265NRgSp2LA3dPaeykiS1J6DifTC88f5uVQKNAd", // earth.i.ipfs.io
                 ])],
             }), // Default tag.value = 50
-            mdns: mdns(),
+            ...(DISABLE_MDNS? {} : { mdns: mdns() }),
             ping: ping(),
+            identify: identify(),
+            identifyPush: identifyPush(),
+            logger: defaultLogger,
             pubsub: gossipsub({
                 tagMeshPeers: true, // Default [topic]tag.value = 100
                 //batchPublish: true,
                 //doPX: true,
             }) as (components: GossipSubComponents) => GossipSub,
-            identify: identify(),
-            identifyPush: identifyPush(),
-            logger: defaultLogger,
             //pubsubPeerDiscovery: pubsubPeerDiscovery(), // Default values only.
             pubsubPeerWithDataDiscovery: pubsubPeerWithDataDiscovery({
                 interval: 10000,
                 enableBroadcast: false,
                 topics: [ `${appName.join('.')}._peer-discovery._p2p._pubsub` ]
             }),
-            //torrent-discovery: 
-            torrentPeerDiscovery: torrentPeerDiscovery({
-                infoHash: (await hash(`${appName.join('/')}/${0}`, 'hex', 'sha-1')) as string,
-                //announce: await Data.getAnnounceAddrs(),
-                derive,
+            ...(DISABLE_TORRENT ? {} : {
+                torrentPeerDiscovery: torrentPeerDiscovery({
+                    infoHash: (await hash(`${appName.join('/')}/${0}`, 'hex', 'sha-1')) as string,
+                    //announce: await Data.getAnnounceAddrs(),
+                    derive,
+                }),
             }),
             dcutr: dcutr(),
             upnpNAT: uPnPNAT(),
@@ -168,28 +181,84 @@ export async function createNode(port: number){
                 //validators: { ipns: ipnsValidator },
                 //selectors: { ipns: ipnsSelector }
             }), // Default close-tag.value = 50; peer-tag.value = 1
-            autodial: autodial(),
+            ...(DISABLE_AUTODIAL? {} : { autodial: autodial() }),
         },
-        start: true,
+        //start: true,
         connectionManager: {
             //maxConnections: 500,
-            dialTimeout: 10_000,
+            maxPeerAddrsToDial: MAX_PEER_ADDRS_TO_DIAL,
+            dialTimeout: PER_ADDR_DIAL_TIMEOUT * MAX_PEER_ADDRS_TO_DIAL + 1000,
         }
     })
-    const ns = node.services
-    ns.mdns.addEventListener('peer', ns.autodial.onPeerDiscovery)
-    ns.torrentPeerDiscovery.addEventListener('peer', ns.autodial.onPeerDiscovery)
-    ns.torrentPeerDiscovery.addEventListener('addr', ns.autodial.onAddressDiscovery)
+
+    const nc = (
+        node as unknown as {
+            components: typeof node.services & {
+                transportManager: TransportManager
+            }
+        }
+    ).components
+    
+    if(!DISABLE_AUTODIAL && (!DISABLE_MDNS || !DISABLE_TORRENT)){
+        const peersToDial = new Set<string>()
+        if(!DISABLE_MDNS){
+            nc.mdns.addEventListener('peer', ({ detail: info }: CustomEvent<PeerInfo>) => {
+                peersToDial.add(info.id.toString())
+            })
+        }
+        if(!DISABLE_TORRENT){
+            nc.torrentPeerDiscovery.addEventListener('record', ({ detail: info_id }: CustomEvent<PeerId>) => {
+                peersToDial.add(info_id.toString())
+            })
+            nc.torrentPeerDiscovery.addEventListener('addr', (evt: CustomEvent<Multiaddr[]>) => {
+                nc.autodial.onAddressDiscovery(evt)
+            })
+        }
+        node.addEventListener('peer:discovery', (evt) => {
+            const { detail: peer } = evt
+            if(peersToDial.has(peer.id.toString())){
+                nc.autodial.onPeerDiscovery(evt)
+            }
+        })
+    }
+
+    const transports = nc.transportManager.getTransports()
+    for(const transport of transports){
+        const transport_dial = transport.dial
+        transport.dial = async (ma, options) => {
+            
+            const signalTimeout = AbortSignal.timeout(PER_ADDR_DIAL_TIMEOUT)
+            const signal = anySignal([ options.signal, signalTimeout ])
+            setMaxListeners(Infinity, signal)
+
+            try {
+                return await transport_dial.call(transport, ma, { ...options, signal })
+            } catch(unk_err) {
+                if(signalTimeout.aborted){
+                    //const err = unk_err as AbortError
+                    //throw new TimeoutError(err.message)
+                    throw new TimeoutError(`The connection to ${ma.toString()} has timed out.`)
+                } else {
+                    throw unk_err
+                }
+            } finally {
+                signal.clear()
+            }
+        }
+    }
     return node
 }
 
-/*
+const port = Number(process.argv[2]) || 5116
+const node = await createNode(port)
+console.log('node.peerId is', node.peerId.toString())
+
 let sigints = 0
 process.on('SIGINT', () => {
     if(node.status === 'started') node.stop()
     if(node.status === 'stopped' || ++sigints == 2) process.exit()
 })
-*/
+
 const ABORT_ERR = 20
 const ERR_UNHANDLED_ERROR = 'ERR_UNHANDLED_ERROR'
 process.on('uncaughtException', (err: Error & { code?: string, context?: Error & { code?: number } }) => {
