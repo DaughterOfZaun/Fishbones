@@ -7,7 +7,7 @@ import { KickReason, LobbyNotificationMessage, PickRequest, State, type LobbyReq
 import { arr2text, text2arr } from 'uint8-util'
 import type { GameInfo } from './utils/game-info'
 import * as Data from './data'
-import { ProxyClient, ProxyServer } from './utils/data-proxy'
+import { ProxyClient, ProxyServer } from './utils/data-proxy-umplex'
 import type { WriteonlyMessageStream } from './utils/pb-stream'
 
 type GameEvents = {

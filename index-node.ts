@@ -16,13 +16,14 @@ import { noise } from '@chainsafe/libp2p-noise'
 import { patchedCrypto } from './utils/crypto'
 import { circuitRelayServer, circuitRelayTransport } from '@libp2p/circuit-relay-v2'
 import { dcutr } from '@libp2p/dcutr'
+import { autoNAT } from '@libp2p/autonat'
 import { autoNATv2 } from '@libp2p/autonat-v2'
 import { uPnPNAT } from '@libp2p/upnp-nat'
 //import { webRTC, webRTCDirect } from '@libp2p/webrtc'
 import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
 import { bootstrap } from '@libp2p/bootstrap'
 import { mdns } from '@libp2p/mdns'
-//import { contentPeerDiscovery } from './network/content-discovery'
+import { contentPeerDiscovery } from './network/content-discovery'
 import { CID } from 'multiformats/cid'
 import * as json from 'multiformats/codecs/json'
 import { sha256 } from 'multiformats/hashes/sha2'
@@ -39,14 +40,14 @@ import { setMaxListeners } from 'main-event'
 import { AbortError, TimeoutError, type PeerId, type PeerInfo } from '@libp2p/interface'
 
 const appName = ['com', 'github', 'DaughterOfZaun', 'Fishbones']
-/*
+
 //const cid = 'bagaaierawchtonvxlm4szp7txp5qtrp63ncsqygzqbd6kma65nwjqg4ltila'
 const cid = CID.create(1, json.code,
     await sha256.digest(
         json.encode({ appName })
     )
 )
-*/
+
 type HostPort = { host: string, port: number }
 const derive = ({ host: ip, port }: HostPort) => {
     let v = 0
@@ -61,11 +62,18 @@ const derive = ({ host: ip, port }: HostPort) => {
 
 const MAX_PEER_ADDRS_TO_DIAL = 25
 const PER_ADDR_DIAL_TIMEOUT = 10_000
+const DIAL_TIMEOUT = PER_ADDR_DIAL_TIMEOUT * MAX_PEER_ADDRS_TO_DIAL + 1000
 
 const DISABLE_UTP = false
-const DISABLE_MDNS = true
-const DISABLE_TORRENT = false
+const DISABLE_MDNS = false
 const DISABLE_AUTODIAL = false
+
+const DISABLE_TORRENT = true
+
+const DISABLE_DHT = true
+const DISABLE_BOOTSTRAP = true
+const DISABLE_NAT_MIGITATION = true
+const DISABLE_CONTENT_DISCOVERY = true
 
 export async function createNode(port: number){
     const node = await createLibp2p({
@@ -73,14 +81,13 @@ export async function createNode(port: number){
             listen: [
                 ...(DISABLE_UTP ? [] : [`/ip4/0.0.0.0/udp/${port}/utp`]),
                 `/ip4/0.0.0.0/tcp/${port}`,
-                ...Array(10).fill(`/p2p-circuit`),
-                //`/ip4/0.0.0.0/tcp/${0}/ws`,
+                ...(DISABLE_NAT_MIGITATION ? [] : Array(10).fill(`/p2p-circuit`))
                 //`/ip4/0.0.0.0/udp/${0}/webrtc-direct`,
+                //`/ip4/0.0.0.0/tcp/${0}/ws`,
                 //`/webrtc`,
             ]
         },
         transports: [
-            tcp(),
             ...(DISABLE_UTP ? [] : [
                 utp({
                     outboundSocketInactivityTimeout: Infinity,
@@ -89,11 +96,12 @@ export async function createNode(port: number){
                     //closeServerOnMaxConnections: null,
                 }),
             ]),
+            tcp(),
             circuitRelayTransport(), // Default relay-tag.value = 1
-            //webSockets(),
-            //webRTCDirect(),
-            //webRTC(),
             //webTransport(),
+            //webRTCDirect(),
+            //webSockets(),
+            //webRTC(),
         ],
         streamMuxers: [ yamux() ],
         connectionEncrypters: [ noise({
@@ -103,48 +111,52 @@ export async function createNode(port: number){
         }) ],
         //peerDiscovery: [],
         services: {
-            //contentPeerDiscovery: contentPeerDiscovery({ cid }),
-            bootstrap: bootstrap({
-                list: [...new Set([
-                    //src: https://github.com/ipfs/kubo/blob/master/config/bootstrap_peers.go
-                    "/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
-                    "/dnsaddr/bootstrap.libp2p.io/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa", // rust-libp2p-server
-                    "/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb",
-                    "/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt",
-                    "/dnsaddr/va1.bootstrap.libp2p.io/p2p/12D3KooWKnDdG3iXw9eTFijk3EWSunZcFi54Zka4wmtqtt6rPxc8", // js-libp2p-amino-dht-bootstrapper
-                    "/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",           // mars.i.ipfs.io
-                    "/ip4/104.131.131.82/udp/4001/quic-v1/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",   // mars.i.ipfs.io
+            ...(DISABLE_CONTENT_DISCOVERY ? {} : {
+                contentPeerDiscovery: contentPeerDiscovery({ cid })
+            }),
+            ...(DISABLE_BOOTSTRAP ? {} : {
+                bootstrap: bootstrap({
+                    list: [...new Set([
+                        //src: https://github.com/ipfs/kubo/blob/master/config/bootstrap_peers.go
+                        "/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+                        "/dnsaddr/bootstrap.libp2p.io/p2p/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa", // rust-libp2p-server
+                        "/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb",
+                        "/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt",
+                        "/dnsaddr/va1.bootstrap.libp2p.io/p2p/12D3KooWKnDdG3iXw9eTFijk3EWSunZcFi54Zka4wmtqtt6rPxc8", // js-libp2p-amino-dht-bootstrapper
+                        "/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",           // mars.i.ipfs.io
+                        "/ip4/104.131.131.82/udp/4001/quic-v1/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",   // mars.i.ipfs.io
 
-                    //src: https://github.com/ipfs/helia/blob/main/packages/helia/src/utils/bootstrappers.ts
-                    "/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
-                    "/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb",
-                    "/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt",
-                    // va1 is not in the TXT records for _dnsaddr.bootstrap.libp2p.io yet
-                    // so use the host name directly
-                    "/dnsaddr/va1.bootstrap.libp2p.io/p2p/12D3KooWKnDdG3iXw9eTFijk3EWSunZcFi54Zka4wmtqtt6rPxc8",
-                    "/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",
+                        //src: https://github.com/ipfs/helia/blob/main/packages/helia/src/utils/bootstrappers.ts
+                        "/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+                        "/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb",
+                        "/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt",
+                        // va1 is not in the TXT records for _dnsaddr.bootstrap.libp2p.io yet
+                        // so use the host name directly
+                        "/dnsaddr/va1.bootstrap.libp2p.io/p2p/12D3KooWKnDdG3iXw9eTFijk3EWSunZcFi54Zka4wmtqtt6rPxc8",
+                        "/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",
 
-                    //src: https://github.com/libp2p/js-libp2p/blob/main/packages/peer-discovery-bootstrap/src/index.ts
-                    "/ip4/104.131.131.82/tcp/4001/ipfs/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",
-                    "/dnsaddr/bootstrap.libp2p.io/ipfs/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
-                    "/dnsaddr/bootstrap.libp2p.io/ipfs/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa",
+                        //src: https://github.com/libp2p/js-libp2p/blob/main/packages/peer-discovery-bootstrap/src/index.ts
+                        "/ip4/104.131.131.82/tcp/4001/ipfs/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",
+                        "/dnsaddr/bootstrap.libp2p.io/ipfs/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+                        "/dnsaddr/bootstrap.libp2p.io/ipfs/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa",
 
-                    //src: https://github.com/libp2p/cpp-libp2p/blob/master/example/02-kademlia/rendezvous_chat.cpp
-                    "/dnsaddr/bootstrap.libp2p.io/ipfs/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
-                    "/dnsaddr/bootstrap.libp2p.io/ipfs/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa",
-                    "/dnsaddr/bootstrap.libp2p.io/ipfs/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb",
-                    "/dnsaddr/bootstrap.libp2p.io/ipfs/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt",
-                    "/ip4/104.131.131.82/tcp/4001/ipfs/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",            // mars.i.ipfs.io
-                    "/ip4/104.236.179.241/tcp/4001/ipfs/QmSoLPppuBtQSGwKDZT2M73ULpjvfd3aZ6ha4oFGL1KrGM",           // pluto.i.ipfs.io
-                    "/ip4/128.199.219.111/tcp/4001/ipfs/QmSoLSafTMBsPKadTEgaXctDQVcqN88CNLHXMkTNwMKPnu",           // saturn.i.ipfs.io
-                    "/ip4/104.236.76.40/tcp/4001/ipfs/QmSoLV4Bbm51jM9C4gDYZQ9Cy3U6aXMJDAbzgu2fzaDs64",             // venus.i.ipfs.io
-                    "/ip4/178.62.158.247/tcp/4001/ipfs/QmSoLer265NRgSp2LA3dPaeykiS1J6DifTC88f5uVQKNAd",            // earth.i.ipfs.io
-                    "/ip6/2604:a880:1:20::203:d001/tcp/4001/ipfs/QmSoLPppuBtQSGwKDZT2M73ULpjvfd3aZ6ha4oFGL1KrGM",  // pluto.i.ipfs.io
-                    "/ip6/2400:6180:0:d0::151:6001/tcp/4001/ipfs/QmSoLSafTMBsPKadTEgaXctDQVcqN88CNLHXMkTNwMKPnu",  // saturn.i.ipfs.io
-                    "/ip6/2604:a880:800:10::4a:5001/tcp/4001/ipfs/QmSoLV4Bbm51jM9C4gDYZQ9Cy3U6aXMJDAbzgu2fzaDs64", // venus.i.ipfs.io
-                    "/ip6/2a03:b0c0:0:1010::23:1001/tcp/4001/ipfs/QmSoLer265NRgSp2LA3dPaeykiS1J6DifTC88f5uVQKNAd", // earth.i.ipfs.io
-                ])],
-            }), // Default tag.value = 50
+                        //src: https://github.com/libp2p/cpp-libp2p/blob/master/example/02-kademlia/rendezvous_chat.cpp
+                        "/dnsaddr/bootstrap.libp2p.io/ipfs/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN",
+                        "/dnsaddr/bootstrap.libp2p.io/ipfs/QmQCU2EcMqAqQPR2i9bChDtGNJchTbq5TbXJJ16u19uLTa",
+                        "/dnsaddr/bootstrap.libp2p.io/ipfs/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb",
+                        "/dnsaddr/bootstrap.libp2p.io/ipfs/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt",
+                        "/ip4/104.131.131.82/tcp/4001/ipfs/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ",            // mars.i.ipfs.io
+                        "/ip4/104.236.179.241/tcp/4001/ipfs/QmSoLPppuBtQSGwKDZT2M73ULpjvfd3aZ6ha4oFGL1KrGM",           // pluto.i.ipfs.io
+                        "/ip4/128.199.219.111/tcp/4001/ipfs/QmSoLSafTMBsPKadTEgaXctDQVcqN88CNLHXMkTNwMKPnu",           // saturn.i.ipfs.io
+                        "/ip4/104.236.76.40/tcp/4001/ipfs/QmSoLV4Bbm51jM9C4gDYZQ9Cy3U6aXMJDAbzgu2fzaDs64",             // venus.i.ipfs.io
+                        "/ip4/178.62.158.247/tcp/4001/ipfs/QmSoLer265NRgSp2LA3dPaeykiS1J6DifTC88f5uVQKNAd",            // earth.i.ipfs.io
+                        "/ip6/2604:a880:1:20::203:d001/tcp/4001/ipfs/QmSoLPppuBtQSGwKDZT2M73ULpjvfd3aZ6ha4oFGL1KrGM",  // pluto.i.ipfs.io
+                        "/ip6/2400:6180:0:d0::151:6001/tcp/4001/ipfs/QmSoLSafTMBsPKadTEgaXctDQVcqN88CNLHXMkTNwMKPnu",  // saturn.i.ipfs.io
+                        "/ip6/2604:a880:800:10::4a:5001/tcp/4001/ipfs/QmSoLV4Bbm51jM9C4gDYZQ9Cy3U6aXMJDAbzgu2fzaDs64", // venus.i.ipfs.io
+                        "/ip6/2a03:b0c0:0:1010::23:1001/tcp/4001/ipfs/QmSoLer265NRgSp2LA3dPaeykiS1J6DifTC88f5uVQKNAd", // earth.i.ipfs.io
+                    ])],
+                }), // Default tag.value = 50
+            }),
             ...(DISABLE_MDNS? {} : { mdns: mdns() }),
             ping: ping(),
             identify: identify(),
@@ -153,7 +165,7 @@ export async function createNode(port: number){
             pubsub: gossipsub({
                 tagMeshPeers: true, // Default [topic]tag.value = 100
                 //batchPublish: true,
-                //doPX: true,
+                doPX: true,
             }) as (components: GossipSubComponents) => GossipSub,
             //pubsubPeerDiscovery: pubsubPeerDiscovery(), // Default values only.
             pubsubPeerWithDataDiscovery: pubsubPeerWithDataDiscovery({
@@ -168,26 +180,34 @@ export async function createNode(port: number){
                     derive,
                 }),
             }),
-            dcutr: dcutr(),
-            upnpNAT: uPnPNAT(),
-            autoNAT: autoNATv2(),
-            relay: circuitRelayServer(), // Default relay+keepalive-tag.value = 1 + 1
-            aminoDHT: kadDHT({
-                //protocol: '/ipfs/kad/1.0.0',
-                peerInfoMapper: removePrivateAddressesMapper,
-                //logPrefix: 'libp2p:dht-amino',
-                //datastorePrefix: '/dht-amino',
-                //metricsPrefix: 'libp2p_dht_amino',
-                //validators: { ipns: ipnsValidator },
-                //selectors: { ipns: ipnsSelector }
-            }), // Default close-tag.value = 50; peer-tag.value = 1
+            ...(DISABLE_NAT_MIGITATION ? {} : {
+                dcutr: dcutr({
+                    timeout: DIAL_TIMEOUT,
+                    retries: 3,
+                }),
+                upnpNAT: uPnPNAT(),
+                autoNAT: autoNAT(),
+                autoNATv2: autoNATv2(),
+                relay: circuitRelayServer(), // Default relay+keepalive-tag.value = 1 + 1
+            }),
+            ...(DISABLE_DHT ? {} : {
+                aminoDHT: kadDHT({
+                    //protocol: '/ipfs/kad/1.0.0',
+                    peerInfoMapper: removePrivateAddressesMapper,
+                    //logPrefix: 'libp2p:dht-amino',
+                    //datastorePrefix: '/dht-amino',
+                    //metricsPrefix: 'libp2p_dht_amino',
+                    //validators: { ipns: ipnsValidator },
+                    //selectors: { ipns: ipnsSelector }
+                }), // Default close-tag.value = 50; peer-tag.value = 1
+            }),
             ...(DISABLE_AUTODIAL? {} : { autodial: autodial() }),
         },
         //start: true,
         connectionManager: {
             //maxConnections: 500,
             maxPeerAddrsToDial: MAX_PEER_ADDRS_TO_DIAL,
-            dialTimeout: PER_ADDR_DIAL_TIMEOUT * MAX_PEER_ADDRS_TO_DIAL + 1000,
+            dialTimeout: DIAL_TIMEOUT,
         }
     })
 

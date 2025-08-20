@@ -23,7 +23,7 @@ export class Server extends TypedEventEmitter<ServerEvents> {
     public maxConnections: number = Infinity
     
     private udp!: Bun.udp.Socket<'buffer'>
-    public ctx!: UTPContext //TODO: Make private.
+    private ctx!: UTPContext
     private int!: ReturnType<typeof setInterval>
     
     public address() {
@@ -119,5 +119,16 @@ export class Server extends TypedEventEmitter<ServerEvents> {
         this.ctx.destroy()
 
         this.emit('close')
+    }
+
+    public connect({ host, port }: Partial<HostPort>): Socket {
+        if(!host || !port) throw new Error('!host || !port')
+    
+        const socket = this.ctx.create_socket() as UTPSocketExt
+        const address = new UTPAddress(determineAddressFamily(host), host, port)
+        const wrapper = socket.wrapper = new Socket(socket, address)
+        socket.connect(address)
+    
+        return wrapper
     }
 }

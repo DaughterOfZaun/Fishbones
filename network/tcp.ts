@@ -40,7 +40,14 @@ function getThinWaistAddresses (ma?: Multiaddr, port?: number): Multiaddr[] {
   return getThinWaistAddressesOriginal(ma, port).map(ma => ma.encapsulate(utpMultiaddress))
 }
 
-import { ipPortToMultiaddr as toMultiaddr } from '@libp2p/utils/ip-port-to-multiaddr'
+//import { ipPortToMultiaddr as toMultiaddr } from '@libp2p/utils/ip-port-to-multiaddr'
+import { isIPv4, isIPv6 } from '@chainsafe/is-ip'
+export function toMultiaddr(ip: string, port: number): Multiaddr {
+  if (isIPv4(ip)) return multiaddr(`/ip4/${ip}/udp/${port}/utp`)
+  if (isIPv6(ip)) return multiaddr(`/ip6/${ip}/udp/${port}/utp`)
+  throw new InvalidParametersError(`invalid ip:port for creating a multiaddr: ${ip}:${port}`)
+}
+
 import type { AbortOptions, Multiaddr } from '@multiformats/multiaddr'
 import { CODE_P2P, CODE_UTP, multiaddr } from '@multiformats/multiaddr'
 
@@ -52,6 +59,7 @@ import { and, code, fmt, optional, value } from '@multiformats/multiaddr-matcher
 const _UDP = UDPMatcher.matchers[0]!
 const TCPMatcher = fmt(and(_UDP, code(CODE_UTP), optional(value(CODE_P2P))))
 //const TCPMatcher = fmt(and(_UDP, optional(value(CODE_P2P))))
+export { TCPMatcher as UTPMatcher }
 
 import { TypedEventEmitter, setMaxListeners } from 'main-event'
 import type { IpcSocketConnectOpts, ListenOptions, /*Server, Socket,*/ SocketConnectOpts, TcpSocketConnectOpts } from 'net'
@@ -233,6 +241,7 @@ class TCP implements Transport<TCPDialEvents> {
   private readonly metrics?: TCPMetrics
   private readonly components: TCPComponents
   private readonly log: Logger
+  //private listener?: TCPListener
 
   constructor (components: TCPComponents, options: TCPOptions = {}) {
     this.log = components.logger.forComponent('libp2p:utp')
@@ -310,6 +319,7 @@ class TCP implements Transport<TCPDialEvents> {
       }) as (IpcSocketConnectOpts & TcpSocketConnectOpts)
 
       this.log('dialing %a', ma)
+      //rawSocket = this.listener!['server'].connect(cOpts)
       rawSocket = connect(cOpts)
 
       const onError = (err: Error): void => {
@@ -375,6 +385,7 @@ class TCP implements Transport<TCPDialEvents> {
    * `upgrader.upgradeInbound`.
    */
   createListener (options: TCPCreateListenerOptions): Listener {
+    //return this.listener = new TCPListener({
     return new TCPListener({
       ...(this.opts.listenOpts ?? {}),
       ...options,

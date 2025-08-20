@@ -24,8 +24,10 @@ export const isDHT = (msg: Buffer) => {
     return result
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const isENet = (msg: Buffer) => {
-    if(msg) throw new Error() //TODO:
+    //if(msg) throw new Error() //TODO:
+    return true
 }
 
 interface RemoteInfo {
@@ -41,11 +43,12 @@ interface AddressInfo {
     port: number;
 }
 
-const binaryType = 'buffer' as const
-type BinaryType = typeof binaryType
+const BINARY_TYPE = 'buffer' as const
+type BinaryType = typeof BINARY_TYPE
 
-type BunSocket = Bun.udp.Socket<BinaryType>
+export type BunSocket = Bun.udp.Socket<BinaryType>
 type BunSocketOptions = Bun.udp.SocketOptions<BinaryType> & {
+    binaryType: BinaryType
     socket: BunSocketHandler
 }
 type BunSocketHandler = Bun.udp.SocketHandler<BinaryType> & {
@@ -65,10 +68,10 @@ const container = new class BunSocketContainer {
 export async function udpSocket(options: BunSocketOptions): Promise<BunSocket> {
     const { hostname, port, socket: handler } = options
 
-    console.assert(options.binaryType === binaryType, 'options.binaryType === binaryType')
+    console.assert(options.binaryType === BINARY_TYPE, 'options.binaryType === BINARY_TYPE')
 
     container.socket = await (container.promise ??= Bun.udpSocket({
-        binaryType: binaryType,
+        binaryType: BINARY_TYPE,
         ...(hostname ? { hostname } : {}),
         ...(port ? { port } : {}),
         socket: {
@@ -197,7 +200,7 @@ class Socket extends TypedEventEmitter<SocketEvents> {
             //if(onListening) this.once('listening', onListening.bind(this))
             
             this.socket = await (this.promise ??= udpSocket({
-                binaryType: binaryType,
+                binaryType: BINARY_TYPE,
                 ...(hostname ? { hostname } : {}),
                 ...(port ? { port } : {}),
                 socket: {

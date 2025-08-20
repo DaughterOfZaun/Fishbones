@@ -1,8 +1,10 @@
-import { AbortError, peerDiscoverySymbol, serviceCapabilities, TypedEventEmitter, type ComponentLogger, type ContentRouting, type Logger, type PeerDiscovery, type PeerDiscoveryEvents, type PeerDiscoveryProvider, type Startable } from "@libp2p/interface";
+import { AbortError, peerDiscoverySymbol, serviceCapabilities, TypedEventEmitter, type AbortOptions, type ComponentLogger, type ContentRouting, type Logger, type PeerDiscovery, type PeerDiscoveryEvents, type PeerDiscoveryProvider, type Startable } from "@libp2p/interface";
 import { CID } from 'multiformats/cid';
 
 interface DiscoveryInit {
     cid: CID
+    startupDelay?: number
+    lookupInterval?: number
 }
 interface DiscoveryComponents {
     contentRouting: ContentRouting
@@ -22,52 +24,61 @@ class DiscoveryClass extends TypedEventEmitter<PeerDiscoveryEvents> implements P
     ]
 
     private readonly log: Logger
-    private readonly init: DiscoveryInit
+    private readonly init: Required<DiscoveryInit>
     private readonly components: DiscoveryComponents
     constructor(init: DiscoveryInit, components: DiscoveryComponents){
         super()
-        this.init = init
+        this.init = {
+            startupDelay: 5_000,
+            lookupInterval: 60_000,
+            ...init
+        }
         this.components = components
         this.log = components.logger.forComponent('libp2p:content-discovery')
     }
 
-    private abortController?: AbortController
+    private abortController: undefined | AbortController
 
-    beforeStart?(): void | Promise<void> {}
-    start(): void | Promise<void> {}
-    afterStart?(): void | Promise<void> {
+    beforeStart?(){}
+    start(){}
+    async afterStart?() {
         if(this.abortController) return
-        this.discover().catch(err => {
+
+        this.abortController = new AbortController()
+        const abortOpts = { signal: this.abortController.signal }
+        
+        await new Promise(res => setTimeout(res, this.init.startupDelay))
+        
+        this.log('content discovery started')
+
+        this.components.contentRouting.provide(this.init.cid, abortOpts)
+        .then(() => this.log('done announcing self as a provider'))
+        .catch(err => {
+            if(err.name !== AbortError.name)
+                this.log.error('error announcing self as provider - %e', err)
+        })
+
+        this.discover(abortOpts).catch(err => {
             if(err.name !== AbortError.name)
                 this.log.error('error in content discovery - %e', err)
         })
     }
-    async discover(){
-        this.log('content discovery started')
-        
-        this.abortController = new AbortController()
-        const abortOpts = { signal: this.abortController.signal }
-
-        await new Promise(res => setTimeout(res, 60_000))
-
-        await this.components.contentRouting.provide(this.init.cid, abortOpts)
-            .then(() => this.log('done announcing self as a provider'))
-            .catch(err => this.log.error('error announcing self as provider - %e', err))
-        
-        while(!this.abortController.signal.aborted){
+    async discover(abortOpts: Required<AbortOptions>){
+        while(!abortOpts.signal.aborted){
             this.log('providers search started')
             for await (const provider of this.components.contentRouting.findProviders(this.init.cid, abortOpts)){
                 this.log('discovered provider %s', provider.id.toString())
                 this.safeDispatchEvent('peer', { detail: provider })
             }
             this.log('providers search ended')
-            await new Promise(res => setTimeout(res, 10_000))
+            await new Promise(res => setTimeout(res, this.init.lookupInterval))
         }
     }
-    beforeStop?(): void | Promise<void> {}
-    stop(): void | Promise<void> {
+    beforeStop?(){}
+    stop(){
         if(!this.abortController) return
         this.abortController.abort(new AbortError())
+        this.abortController = undefined
     }
-    afterStop?(): void | Promise<void> {}
+    afterStop?(){}
 }
