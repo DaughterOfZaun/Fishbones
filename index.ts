@@ -13,7 +13,14 @@ import { createNode } from './index-node'
 
 await Data.repair()
 
-const port = Number(process.argv[2]) || 5116
+const getNamedArg = (name: string, defaultValue: string) => {
+    const index = process.argv.indexOf(name)
+    return (index >= 0 && index + 1 < process.argv.length) ?
+        process.argv[index + 1]! :
+        defaultValue
+}
+
+const port = parseInt(getNamedArg('--port', '5119'))
 const node = await createNode(port)
 const pubsub = node.services.pubsub //TODO: Replace with "pspd".
 const pspd = node.services.pubsubPeerWithDataDiscovery
@@ -42,7 +49,7 @@ async function main(){
                 id: pwd.id,
                 name: pwd.data!.name,
                 server: server,
-                game: RemoteGame.create(node, pwd.id, server, gameInfo) //TODO: Cache
+                game: RemoteGame.create(node, server, gameInfo) //TODO: Cache
             }))
         })
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -107,13 +114,16 @@ async function main(){
         })
         if(action == 'host' && pubsub.isStarted() == false){
             const server = await LocalServer.create(node)
-            const game = await LocalGame.create(node, server, port)
+            const game = await LocalGame.create(node, server)
+            
+            game.startListening()
             await game.join(name, undefined)
             await lobby(game)
+            game.stopListening()
         }
         if(action == 'host' && pubsub.isStarted() == true){
             const server = await LocalServer.create(node)
-            const game = await LocalGame.create(node, server, port)
+            const game = await LocalGame.create(node, server)
 
             game.startListening()
             await game.join(name, undefined)

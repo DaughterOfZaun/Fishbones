@@ -43,6 +43,7 @@ class Proxy {
     }
     
     protected getHostPorts(id: PeerId): HostPortStr[] {
+
         let hostports = this.node.getConnections(id)
             .filter(connection => UTPMatcher.exactMatch(connection.remoteAddr))
             .map(connection => {
@@ -50,10 +51,17 @@ class Proxy {
                 return `${host}:${port}`
             })
         hostports = new Set(hostports).values().toArray()
-        return hostports.sort()
+        hostports = hostports.sort()
+
+        log('hostports for peer %p are', id, hostports)
+        
+        return hostports
     }
 
     protected async createMainSocket(){
+
+        log('creating external socket')
+
         this.external = await uMplex.udpSocket({
             binaryType: 'buffer',
             socket: {
@@ -62,10 +70,11 @@ class Proxy {
                     const hostport = `${address}:${port}`
                     const peer = this.peersByHostport.get(hostport)
                     if(!peer){
-                        log('got pkt from unknown addr %s', hostport)
+                        log.error('external socket: got pkt from unknown addr %s', hostport)
                     } else if(!this.host || !this.port){
-                        log('dropping pkt because internal addr is unknown')
+                        log.error('external socket: dropping pkt because internal addr is unknown')
                     } else {
+                        log.trace('external socket: redirecting pkt from %s:%d through %s:%d to %s:%d', address, port, peer.internal.hostname, peer.internal.port, this.host, this.port)
                         peer.internal.send(data, this.port, this.host)
                         peer.host = address
                         peer.port = port
@@ -73,11 +82,15 @@ class Proxy {
                 },
             }
         })
+
+        log('created external socket at %s:%d', this.external.hostname, this.external.port)
     }
 
     protected async createPeer(id: PeerId){
         
-        let host = LOCALHOST, port = 0,
+        log('creating internal socket for peer %p', id)
+
+        let host = '', port = 0,
             hostports: HostPortStr[] = []
         if(!this.node.peerId.equals(id)){
             hostports = this.getHostPorts(id)
@@ -99,36 +112,50 @@ class Proxy {
             hostports,
             external: this.external,
             internal: await Bun.udpSocket({
+                hostname: LOCALHOST,
                 socket: {
                     data: (_, data, port, address) => {
-                        //if(!this.host || !this.port){
-                        //    log('setting internal addr to %s:%d', address, port)
-                        //} else if(this.host !== address || this.port !== port){
-                        //    log('got pkt from unexpected addr %s:%d', address, port)
-                        //} else {
-                            peer.external ??= this.external!
-                            console.log(data, peer.port, peer.host)
-                            peer.external.send(data, peer.port, peer.host)
-                            this.host = address
-                            this.port = port
-                        //}
+                        peer.external ??= this.external!
+
+                        if(!this.host || !this.port){
+                            log('internal socket: setting internal addr to %s:%d', address, port)
+                        } else if(this.host !== address || this.port !== port){
+                            log.error('internal socket: got pkt from unexpected addr %s:%d', address, port)
+                        } else {
+                            log.trace('internal socket: redirecting pkt from %s:%d through %s:%d to %s:%d', address, port, peer.external.hostname, peer.external.port, peer.host, peer.port)
+                        }
+                        
+                        peer.external.send(data, peer.port, peer.host)
+                        this.host = address
+                        this.port = port
                     },
                 }
             })
         }
 
+        log('created internal socket for peer %p at %s:%d', peer.id, peer.internal.hostname, peer.internal.port)
+
         this.peersByPeerId.set(peer.id.toString(), peer)
         for(const hostport of peer.hostports)
             this.peersByHostport.set(hostport, peer)
-        //console.log('hostports for', peer.id, peer.host, peer.port, peer.hostports.values().toArray())
-
+        
         return peer
     }
 
     protected closeSockets(){
-        for(const peer of this.peersByPeerId.values())
+        for(const peer of this.peersByPeerId.values()){
+            log('closing socket for peer %p at %s:%d', peer.id, peer.internal.hostname, peer.internal.port)
             peer.internal.close()
-        this.external?.close()
+        }
+        if(this.external){
+            log('closing socket at %s:%d', this.external.hostname, this.external.port)
+            this.external.close()
+        }
+        this.peersByPeerId.clear()
+        this.peersByHostport.clear()
+        this.external = undefined
+        this.host = undefined
+        this.port = undefined
     }
 }
 
@@ -137,6 +164,9 @@ export class ProxyServer extends Proxy {
     public async start(port: number, peerIds: PeerId[]) {
         this.host = LOCALHOST
         this.port = port
+        
+        log('starting proxy server at %s:%d', this.host, this.port)
+
         await Promise.all([
             this.createMainSocket(),
             peerIds.map(id => this.createPeer(id)),
@@ -144,6 +174,7 @@ export class ProxyServer extends Proxy {
     }
     
     public stop(){
+        log('stopping proxy server')
         this.closeSockets()
     }
 }
@@ -154,6 +185,9 @@ export class ProxyClient extends Proxy {
     public async connect(id: PeerId, proxyServer: u|ProxyServer) {
         this.serverId = id
         if(id.equals(this.node.peerId) && proxyServer){
+
+            log('connecting to local server peer %p', id)
+
             const proxyClient = this as ProxyClient
             const serverSidePeer = proxyServer.getPeer(id)!
             const clientSidePeer = await proxyClient.createPeer(id)
@@ -168,6 +202,9 @@ export class ProxyClient extends Proxy {
                 port: { get: () => proxyServer.port },
             })
         } else {
+
+            log('connecting to remote server peer %p', id)
+
             await Promise.all([
                 this.createMainSocket(),
                 this.createPeer(id),
@@ -176,6 +213,9 @@ export class ProxyClient extends Proxy {
     }
     
     public disconnect(){
+        
+        log('disconnecting from server peer %p', this.serverId)
+
         this.serverId = undefined
         this.closeSockets()
     }

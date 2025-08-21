@@ -12,7 +12,7 @@ import type { GameInfo } from './game-info'
 //}
 
 let serverSubprocess: undefined | SubProcess
-export async function launchServer(port: number, info: GameInfo){
+export async function launchServer(info: GameInfo, port = 0){
     info.gameInfo.CONTENT_PATH = path.relative(gsPkg.dllDir, gsPkg.gcDir)
 
     const gsInfo = path.join(gsPkg.infoDir, `GameInfo.${info.gameId}.json`)
@@ -29,9 +29,16 @@ export async function launchServer(port: number, info: GameInfo){
     //console.log(serverSubprocess.rep)
     serverSubprocess.on('stream-line', line => logger.log('SERVER', line))
 
-    return await startProcess(serverSubprocess, ['SERVER'], (stdout, /*stderr*/) => {
-        return /\b(?:Game)?Server (?:is )?ready\b/.test(stdout)
+    const proc = await startProcess(serverSubprocess, ['SERVER'], (stdout, /*stderr*/) => {
+        //return /\b(?:Game)?Server (?:is )?ready\b/.test(stdout)
+        const match = stdout.match(/GameServer ready for clients to connect on Port: (?<port>\d+)/)
+        if(match){
+            port = parseInt(match.groups!['port']!)
+            return true
+        }
+        return false
     })
+    return proc && Object.assign(proc, { port })
 }
 
 export async function stopServer(){

@@ -14,7 +14,8 @@ export async function relaunchClient(){
 
     const gcArgs = ['', '', '', ([ip, port.toString(), sanitize_bfkey(key), clientId.toString()]).join(' ')]
     const gcArgsStr = gcArgs.map(a => `"${a}"`).join(' ')
-    //logger.log(gcPkg.exe, gcArgsStr)
+    //console.log('running "League of Legends.exe"', gcArgsStr)
+    //logger.log('%s %s', gcPkg.exe, gcArgsStr)
 
     await stopClient()
 
@@ -23,7 +24,9 @@ export async function relaunchClient(){
             cwd: gcPkg.exeDir,
         })
     else if(process.platform == 'linux')
-        clientSubprocess = new SubProcess('bottles-cli', ['run', '-b', 'Default Gaming', '-e', gcPkg.exe, gcArgsStr]) //TODO: cwd
+        clientSubprocess = new SubProcess(
+            'flatpak', [ 'run', '--command=bottles-cli', 'com.usebottles.bottles',
+                'run', '-b', 'Default Gaming', '-e', gcPkg.exe, gcArgsStr ]) //TODO: cwd
         //clientSubprocess = new SubProcess('bottles-cli', ['run', '-b', 'Default Gaming', '-p', 'League of Legends', '--args-replace', gcArgs])
     else throw new Error(`Unsupported platform: ${process.platform}`)
 

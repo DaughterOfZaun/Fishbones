@@ -31,13 +31,35 @@ import { autodial } from './network/autodial'
 //import { webSockets } from '@libp2p/websockets'
 //import { webTransport } from '@libp2p/webtransport'
 //import * as Data from './data'
-import { utp } from './network/tcp'
+import { utp, UTPMatcher } from './network/tcp'
 import { isIPv4, isIPv6 } from '@chainsafe/is-ip'
 import { multiaddr, type Multiaddr } from '@multiformats/multiaddr'
-import type { TransportManager } from '@libp2p/interface-internal'
+import type { ConnectionManager, OpenConnectionOptions, TransportManager } from '@libp2p/interface-internal'
 import { anySignal } from 'any-signal'
 import { setMaxListeners } from 'main-event'
-import { AbortError, TimeoutError, type PeerId, type PeerInfo } from '@libp2p/interface'
+import { AbortError, TimeoutError, type Address, type PeerId, type PeerInfo } from '@libp2p/interface'
+
+import { certifiedAddressesFirst, circuitRelayAddressesLast, loopbackAddressLast, publicAddressesFirst, reliableTransportsFirst } from './node_modules/libp2p/src/connection-manager/address-sorter.ts'
+const utpTransportFirst = (a: Address, b: Address) => {
+    return +UTPMatcher.exactMatch(b.multiaddr)
+        -  +UTPMatcher.exactMatch(a.multiaddr) as (-1 | 0 | 1)
+}
+// defaultAddressSorter reversed
+const addressSorters = [
+    utpTransportFirst, // new
+    loopbackAddressLast,
+    publicAddressesFirst,
+    circuitRelayAddressesLast,
+    certifiedAddressesFirst,
+    reliableTransportsFirst,
+]
+const addressSorter = (a: Address, b: Address) => {
+    for(const sorter of addressSorters){
+        const res = sorter(a, b)
+        if(res != 0) return res
+    }
+    return 0
+}
 
 const appName = ['com', 'github', 'DaughterOfZaun', 'Fishbones']
 
@@ -64,23 +86,38 @@ const MAX_PEER_ADDRS_TO_DIAL = 25
 const PER_ADDR_DIAL_TIMEOUT = 10_000
 const DIAL_TIMEOUT = PER_ADDR_DIAL_TIMEOUT * MAX_PEER_ADDRS_TO_DIAL + 1000
 
-const DISABLE_UTP = false
-const DISABLE_MDNS = false
-const DISABLE_AUTODIAL = false
+let DISABLE_UTP = true
+let DISABLE_MDNS = true
+let DISABLE_AUTODIAL = true
 
-const DISABLE_TORRENT = true
+let DISABLE_TCP = true
+let DISABLE_DHT = true
+let DISABLE_BOOTSTRAP = true
+let DISABLE_NAT_MIGITATION = true
+let DISABLE_CONTENT_DISCOVERY = true
 
-const DISABLE_DHT = true
-const DISABLE_BOOTSTRAP = true
-const DISABLE_NAT_MIGITATION = true
-const DISABLE_CONTENT_DISCOVERY = true
+let DISABLE_TORRENT = true
+
+DISABLE_UTP = false
+DISABLE_MDNS = false
+DISABLE_AUTODIAL = false
+if(process.argv.includes('--online')){
+    DISABLE_TCP = false
+    DISABLE_DHT = false
+    DISABLE_BOOTSTRAP = false
+    DISABLE_NAT_MIGITATION = false
+    DISABLE_CONTENT_DISCOVERY = false
+    if(process.argv.includes('--torrent')){
+        DISABLE_TORRENT = false
+    }
+}
 
 export async function createNode(port: number){
     const node = await createLibp2p({
         addresses: {
             listen: [
                 ...(DISABLE_UTP ? [] : [`/ip4/0.0.0.0/udp/${port}/utp`]),
-                `/ip4/0.0.0.0/tcp/${port}`,
+                ...(DISABLE_TCP ? [] : [`/ip4/0.0.0.0/tcp/${port}`]),
                 ...(DISABLE_NAT_MIGITATION ? [] : Array(10).fill(`/p2p-circuit`))
                 //`/ip4/0.0.0.0/udp/${0}/webrtc-direct`,
                 //`/ip4/0.0.0.0/tcp/${0}/ws`,
@@ -96,8 +133,10 @@ export async function createNode(port: number){
                     //closeServerOnMaxConnections: null,
                 }),
             ]),
-            tcp(),
-            circuitRelayTransport(), // Default relay-tag.value = 1
+            ...(DISABLE_TCP ? [] : [ tcp() ]),
+            ...(DISABLE_NAT_MIGITATION ? [] : [
+                circuitRelayTransport(), // Default relay-tag.value = 1
+            ]),
             //webTransport(),
             //webRTCDirect(),
             //webSockets(),
@@ -208,6 +247,7 @@ export async function createNode(port: number){
             //maxConnections: 500,
             maxPeerAddrsToDial: MAX_PEER_ADDRS_TO_DIAL,
             dialTimeout: DIAL_TIMEOUT,
+            addressSorter,
         }
     })
 
@@ -215,6 +255,11 @@ export async function createNode(port: number){
         node as unknown as {
             components: typeof node.services & {
                 transportManager: TransportManager
+                connectionManager: ConnectionManager & {
+                    dialQueue: {
+                        calculateMultiaddrs: (peerId?: PeerId, multiaddrs?: Set<string>, options?: OpenConnectionOptions) => Promise<Address[]>
+                    }
+                }
             }
         }
     ).components
@@ -266,9 +311,10 @@ export async function createNode(port: number){
             }
         }
     }
+
     return node
 }
-
+/*
 const port = Number(process.argv[2]) || 5116
 const node = await createNode(port)
 console.log('node.peerId is', node.peerId.toString())
@@ -278,7 +324,7 @@ process.on('SIGINT', () => {
     if(node.status === 'started') node.stop()
     if(node.status === 'stopped' || ++sigints == 2) process.exit()
 })
-
+*/
 const ABORT_ERR = 20
 const ERR_UNHANDLED_ERROR = 'ERR_UNHANDLED_ERROR'
 process.on('uncaughtException', (err: Error & { code?: string, context?: Error & { code?: number } }) => {

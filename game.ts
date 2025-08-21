@@ -35,7 +35,6 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     protected readonly node: Libp2p
     public readonly server: Server
     public readonly ownerId: PeerId
-    private readonly port: number
     
     public readonly name = new Name(`Game`)
     public readonly map = new GameMap(1, () => this.server.maps)
@@ -66,12 +65,11 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         return this.joined ? this.players.size : this.players_count
     }
 
-    protected constructor(node: Libp2p, ownerId: PeerId, server: Server, port: number){
+    protected constructor(node: Libp2p, ownerId: PeerId, server: Server){
         super()
         this.node = node
         this.server = server
         this.ownerId = ownerId
-        this.port = port
     }
 
     public connected = false
@@ -81,8 +79,14 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
 
     protected cleanup(){
         /*await*/ Data.stopClient()
+        this.proxyClient?.disconnect()
+        this.proxyClient = undefined
         /*await*/ Data.stopServer()
+        this.proxyServer?.stop()
+        this.proxyServer = undefined
+        
         this.players.clear()
+        
         this.connected = false
         this.joined = false
         this.started = false
@@ -194,7 +198,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             peersRequests: [],
         })
         
-        const proc = await Data.launchServer(this.port, this.getGameInfo())
+        const proc = await Data.launchServer(this.getGameInfo())
         if(proc) proc.once('exit', this.onServerExit)
         else {
             this.onServerExit()
@@ -204,7 +208,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         const players = this.getPlayers()
 
         this.proxyServer = new ProxyServer(this.node)
-        await this.proxyServer.start(this.port, players.map(p => p.peerId!))
+        await this.proxyServer.start(proc.port, players.map(p => p.peerId!))
 
         let i = 1
         for(const player of players)
@@ -213,7 +217,6 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             launchRequest: {
                 ip: 0n,
                 port: 0,
-                //port: this.port,
                 key: text2arr(blowfishKey),
                 clientId: i++
             },
@@ -223,6 +226,10 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         return true
     }
     private onServerExit = (/*code, signal*/) => {
+
+        this.proxyServer?.stop()
+        this.proxyServer = undefined
+
         this.broadcast({
             to: this.players.values(),
             switchStateRequest: State.STOPPED,
@@ -238,7 +245,11 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 this.launched = false
                 this.unlockAllPlayers()
                 /*await*/ Data.stopClient()
+                this.proxyClient?.disconnect()
+                this.proxyClient = undefined
                 /*await*/ Data.stopServer()
+                this.proxyServer?.stop()
+                this.proxyServer = undefined
                 this.safeDispatchEvent('stop')
                 break
             case State.STARTED:

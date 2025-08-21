@@ -9,7 +9,9 @@ export const isUTP = (msg: Buffer) => {
 	const type = ver_type >> 4
 	const ext = msg[1]!
 
-    return type < /*ST_NUM_STATES*/ 5 && ext < 3 && version === 1
+    const result = type < /*ST_NUM_STATES*/ 5 && ext < 3 && version === 1
+    //if(result) console.log('got uTP pkt')
+    return result
 }
 
 //src: wireshark/epan/dissectors/packet-bt-dht.c
@@ -21,12 +23,14 @@ export const isDHT = (msg: Buffer) => {
     const last = msg.toString('utf8', msg.length - 1, msg.length)
     const result = dhtHeaders.includes(first) && last == 'e'
     //console.log('isDHT', first, last, result)
+    //if(result) console.log('got DHT pkt')
     return result
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const isENet = (msg: Buffer) => {
     //if(msg) throw new Error() //TODO:
+    //console.log('got ENet pkt')
     return true
 }
 
@@ -115,29 +119,41 @@ class BunSocketWrapper {
     private opened = false
     private open(){
         this.opened = true
-        if(this.handler)
-            container.handlers.add(this.handler)
+
+        if(this.handler) container.handlers.add(this.handler)
+        //console.log('container.handlers.size = ', container.handlers.size)
+        
         this.ref()
     }
     public get closed(){ return !this.opened }
     public close(){
         this.opened = false
-        if(this.handler)
-            container.handlers.delete(this.handler)
-        this.unref()
+    
+        if(this.handler) container.handlers.delete(this.handler)
+        //console.log('container.handlers.size = ', container.handlers.size)
+
+        if(container.handlers.size == 0){
+            container.promise = undefined
+            container.socket.close()
+            container.refs = 0
+            this.reffs = false
+        } else 
+            this.unref()
     }
 
     private reffs = false
     public ref(){
         if(!this.reffs){
             this.reffs = true
-            if(++container.refs > 0) container.socket.ref()
+            if(++container.refs == 1) container.socket.ref()
+            //console.log('container.refs = ', container.refs)
         }
     }
     public unref(){
         if(this.reffs){
             this.reffs = false
-            if(--container.refs <= 0) container.socket.unref()
+            if(--container.refs == 0) container.socket.unref()
+            //console.log('container.refs = ', container.refs)
         }
     }
 

@@ -120,7 +120,7 @@ export const modes: [string, string, boolean][] = [
 export class GameMode extends PickableValue {
     public static readonly name = 'Game Mode'
     public static readonly values = modes.map(([short,,]) => short)
-    public static readonly choices = PickableValue.normalize(GameMode.values)
+    public static readonly choices = modes.map(([short, name,], i) => ({ value: i, short, name }))
 }
 
 // short, name, enabled by default
@@ -298,7 +298,7 @@ export const champions: [string, string, boolean][] = [
 ] //as const
 export class Champion extends PickableValue {
     public static readonly name = 'Champion'
-    public static readonly values = champions.map(([, name,]) => name)
+    public static readonly values = champions.map(([short,,]) => short)
     public static readonly choices = champions.map(([short, name,], i) => ({ value: i, short, name }))
 }
 

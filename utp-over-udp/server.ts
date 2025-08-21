@@ -117,6 +117,7 @@ export class Server extends TypedEventEmitter<ServerEvents> {
 
         clearInterval(this.int)
         this.ctx.destroy()
+        this.udp.close()
 
         this.emit('close')
     }
