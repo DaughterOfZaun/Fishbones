@@ -9,6 +9,7 @@
 node_modules
 /node_modules_win_npm
 /node_modules_linux_bun
+/node_modules_linux_npm
 /node_modules_linux_deno
 
 # output

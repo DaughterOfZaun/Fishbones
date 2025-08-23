@@ -43,19 +43,24 @@ export async function repair(){
 async function repairArchived(pkg: PkgInfo){
     if(await fs_exists(pkg.checkUnpackBy)){
         return // OK
-    } else if(await fs_exists_and_size_eq(pkg.zip, pkg.zipSize)){
-        try {
-            await unpack(pkg)
-            return // OK
-        } catch(err) {
-            if(!(err instanceof DataError))
-                throw err
+    } else {
+        //console.log('file %s does not exist', pkg.checkUnpackBy)
+        if(await fs_exists_and_size_eq(pkg.zip, pkg.zipSize)){
+            try {
+                await unpack(pkg)
+                return // OK
+            } catch(err) {
+                if(!(err instanceof DataError))
+                    throw err
+            }
         }
     }
     if(await fs_exists(pkg.zipTorrent)){
+        //console.log('downloading %s', pkg.zipTorrent)
         await download(pkg, 'torrent')
         await unpack(pkg)
     } else {
+        //console.log('downloading %s', pkg.zipMagnet)
         await download(pkg, 'magnet')
         await unpack(pkg)
     }
