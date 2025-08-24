@@ -1,5 +1,5 @@
 import { build } from "./data-build"
-import { download, repairAria2 } from "./data-download"
+import { download, appendPartialDownloadFileExt, repairAria2 } from "./data-download"
 import { gcPkg, gsPkg, PkgInfo, repairTorrents, sdkPkg } from "./data-packages"
 import { repairServerSettingsJsonc } from "./data-server"
 import { downloads, fs_copyFile, fs_ensure_dir, fs_exists, fs_exists_and_size_eq } from "./data-shared"
@@ -45,7 +45,8 @@ async function repairArchived(pkg: PkgInfo){
         return // OK
     } else {
         //console.log('file %s does not exist', pkg.checkUnpackBy)
-        if(await fs_exists_and_size_eq(pkg.zip, pkg.zipSize)){
+        if(await fs_exists_and_size_eq(pkg.zip, pkg.zipSize) &&
+          !await fs_exists(appendPartialDownloadFileExt(pkg.zip))){
             try {
                 await unpack(pkg)
                 return // OK

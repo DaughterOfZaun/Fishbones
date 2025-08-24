@@ -4,6 +4,18 @@ type CheckboxChoice<T> = Extract<Parameters<typeof checkbox<T>>[0]['choices'][nu
 
 export type u = undefined
 
+export const TARGET = 'bun-windows-x64'
+export const OUTDIR = 'dist'
+export const NAME = 'Fishbones'
+export const OUTFILE = `${NAME}.exe`
+export const HIDE_CONSOLE = false // --windows-hide-console
+export const ICON = 'icon.ico'
+export const VERSION = '0.02'
+export const TITLE = `${NAME} v${VERSION}`
+export const PUBLISHER = "Jinx"
+export const DESCRIPTION = "Yet another LeagueSandbox launcher with a twist"
+export const COPYRIGHT = "AGPLv3"
+
 export const LOBBY_PROTOCOL = `/lobby/${0}`
 export const PROXY_PROTOCOL = `/proxy/${0}`
 export const LOCALHOST = '127.0.0.1'

@@ -11,6 +11,9 @@ import * as Data from './data'
 import type { Peer as PBPeer } from './message/peer'
 import { createNode } from './index-node'
 
+import { TITLE } from './utils/constants'
+process.title = TITLE
+
 await Data.repair()
 
 const getNamedArg = (name: string, defaultValue: string) => {

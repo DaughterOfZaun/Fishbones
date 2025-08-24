@@ -157,8 +157,9 @@ export const gsPkg = new class extends PkgInfoCSProj {
     program = path.join(this.csProjDir, 'Program.cs')
 }()
 
-export async function repairTorrents() {
-    try { await fs.rename(path.join(downloads, `${gsPkg.zipInfoHashV1}.torrent`), gsPkg.zipTorrent) } catch(err) {}
-    try { await fs.rename(path.join(downloads, `${gcPkg.zipInfoHashV1}.torrent`), gcPkg.zipTorrent) } catch(err) {}
-    try { await fs.rename(path.join(downloads, `${sdkPkg.zipInfoHashV1}.torrent`), sdkPkg.zipTorrent) } catch(err) {}
+export function repairTorrents() {
+    return Promise.all([gsPkg, gcPkg, sdkPkg].map(async pkg => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-empty
+        try { await fs.rename(path.join(downloads, `${pkg.zipInfoHashV1}.torrent`), pkg.zipTorrent) } catch(err) {}
+    }))
 }

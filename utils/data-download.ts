@@ -236,3 +236,7 @@ function forCompletion(gid: string, isMetadata: boolean, cb: (progress: number) 
 
     return promise
 }
+
+export function appendPartialDownloadFileExt(zip: string){
+    return `${zip}.aria2c`
+}

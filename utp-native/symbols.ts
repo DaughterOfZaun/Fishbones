@@ -1,10 +1,9 @@
 import { dlopen, type Pointer } from "bun:ffi"
 
 //@ts-expect-error Cannot find module or its corresponding type declarations.
-//import utpNativeModule from '../node_modules/utp-native/prebuilds/linux-x64/node.napi.node' with { type: 'file' }
-//import utpNativeModule from '../node_modules/utp-native/prebuilds/win32-x64/node.napi.node' with { type: 'file' }
-import utpNativeModule from '../node_modules/utp-native/deps/libutp/libutp.dll' with { type: 'file' }
-//const utpNativeModule = '../Fishbones_Data/node.napi.node' //TODO: Unhardcode.
+import utpNativeModuleWindows from '../node_modules/utp-native/deps/libutp/libutp.dll' with { type: 'file' }
+const utpNativeModuleLinux =  '../node_modules/utp-native/prebuilds/win32-x64/node.napi.node'
+//const utpNativeModule = './node_modules/utp-native/prebuilds/linux-x64/node.napi.node'
 
 const is64Bit = ['arm64', 'ppc64', 'x64', 's390x'].includes(process.arch)
 
@@ -68,7 +67,7 @@ const {
     symbols,
     close
 } = dlopen(
-    utpNativeModule,
+    process.platform === 'linux' ? utpNativeModuleLinux : utpNativeModuleWindows,
     {
         utp_init: { args: [int /*version*/] as const, returns: ptr_t },
         utp_destroy: { args: [ptr_t /*ctx*/] as const, returns: void_t },

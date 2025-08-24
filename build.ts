@@ -3,6 +3,7 @@
 import { $ } from 'bun'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
+import { COPYRIGHT, DESCRIPTION, ICON, NAME, OUTDIR, OUTFILE, PUBLISHER, TARGET, VERSION } from './utils/constants'
 
 await $`mv node_modules node_modules_linux_npm`
 await $`mv node_modules_win_npm node_modules`
@@ -10,19 +11,21 @@ try {
 await patch()
 //await build_libUTP()
 
-const TARGET = 'bun-windows-x64'
-const OUTDIR = 'dist'
-const OUTFILE = 'Fishbones.exe'
-const HIDE_CONSOLE = false // --windows-hide-console
-const ICON = 'icon.ico'
-const VERSION = '0.02'
-const TITLE = `Fishbones v${VERSION}`
-const PUBLISHER = "Jinx"
-const DESCRIPTION = "Yet another LeagueSandbox launcher with a twist"
-const COPYRIGHT = "AGPLv3"
-
 await $`bun build --compile --target="${TARGET}" --outfile="${path.join(OUTDIR, OUTFILE)}" 'index.ts'`
-await $`flatpak run --command='bottles-cli' com.usebottles.bottles run -b 'Default Gaming' -e './rcedit-x64.exe' '${path.join(OUTDIR, OUTFILE)} --set-icon ${ICON}`
+
+const wine = `flatpak run --command='bottles-cli' com.usebottles.bottles run -b 'Default Gaming' -e`
+const args = [
+    `--set-icon "${ICON}"`,
+    `--set-file-version "${VERSION}"`,
+    `--set-product-version "${VERSION}"`,
+    `--set-version-string "FileDescription" "${DESCRIPTION}"`,
+    `--set-version-string "InternalName" "${NAME}"`,
+    `--set-version-string "OriginalFilename" "${OUTFILE}"`,
+    `--set-version-string "ProductName" "${NAME}"`,
+    `--set-version-string "CompanyName" "${PUBLISHER}"`,
+    `--set-version-string "LegalCopyright" "${COPYRIGHT}"`,
+]
+await $`${{ raw: wine }} './rcedit-x64.exe' '${path.join(OUTDIR, OUTFILE)} ${{ raw: args.join(' ') }}'`
 
 //await $`flatpak run --command='bottles-cli' com.usebottles.bottles run -b 'Default Gaming' -e ${path.join(__dirname, 'bun.exe')} "build --compile --target='${TARGET}' --outfile='${path.join(__dirname, OUTDIR, OUTFILE)}' --windows-icon='${ICON}' --windows-title='${TITLE}' --windows-publisher='${PUBLISHER}' --windows-version='${VERSION}' --windows-description='${DESCRIPTION}' --windows-copyright='${COPYRIGHT}' --root='${__dirname}' '${path.join(__dirname, 'index.ts')}'"`
 
