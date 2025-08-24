@@ -164,6 +164,7 @@ export async function download(pkg: PkgInfo, type: 'magnet' | 'torrent'){
         await forCompletion(gid, true, p => bar.update(p))
     }
 
+    bar.update(bar.getTotal())
     bar.stop()
 
     if(!await fs_exists_and_size_eq(pkg.zip, pkg.zipSize))

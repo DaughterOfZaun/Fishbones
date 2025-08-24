@@ -213,6 +213,8 @@ class Socket extends TypedEventEmitter<SocketEvents> {
     bind(port?: number, hostname?: string, onListening?: () => void): this {
         Promise.resolve().then(async () => {
 
+            //TODO: What if already bound?
+            
             //if(onListening) this.once('listening', onListening.bind(this))
             
             this.socket = await (this.promise ??= udpSocket({

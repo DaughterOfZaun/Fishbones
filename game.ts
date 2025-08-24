@@ -493,7 +493,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     */
     public getGameInfo(): GameInfo {
         return {
-            gameId: 1,
+            gameId: 0,
             game: {
                 map: this.map.value ?? 1,
                 gameMode: this.mode.toString(),

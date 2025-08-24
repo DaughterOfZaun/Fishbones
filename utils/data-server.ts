@@ -24,6 +24,7 @@ export async function launchServer(info: GameInfo, port = 0){
     ], {
         cwd: gsPkg.dllDir,
         //timeout: 15 * 1000
+        //detached: true,
     })
     
     //console.log(serverSubprocess.rep)
@@ -37,7 +38,7 @@ export async function launchServer(info: GameInfo, port = 0){
             return true
         }
         return false
-    })
+    }, 60_000)
     return proc && Object.assign(proc, { port })
 }
 

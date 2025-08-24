@@ -1,12 +1,54 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { $ } from 'bun'
 import { promises as fs } from 'node:fs'
+import path from 'node:path'
 
 await $`mv node_modules node_modules_linux_npm`
 await $`mv node_modules_win_npm node_modules`
 try {
 await patch()
 //await build_libUTP()
-await $`bun build --compile --target=bun-windows-x64 --sourcemap=inline --outfile=./dist/Fishbones.exe ./index.ts`
+
+const TARGET = 'bun-windows-x64'
+const OUTDIR = 'dist'
+const OUTFILE = 'Fishbones.exe'
+const HIDE_CONSOLE = false // --windows-hide-console
+const ICON = 'icon.ico'
+const VERSION = '0.02'
+const TITLE = `Fishbones v${VERSION}`
+const PUBLISHER = "Jinx"
+const DESCRIPTION = "Yet another LeagueSandbox launcher with a twist"
+const COPYRIGHT = "AGPLv3"
+
+await $`bun build --compile --target="${TARGET}" --outfile="${path.join(OUTDIR, OUTFILE)}" 'index.ts'`
+await $`flatpak run --command='bottles-cli' com.usebottles.bottles run -b 'Default Gaming' -e './rcedit-x64.exe' '${path.join(OUTDIR, OUTFILE)} --set-icon ${ICON}`
+
+//await $`flatpak run --command='bottles-cli' com.usebottles.bottles run -b 'Default Gaming' -e ${path.join(__dirname, 'bun.exe')} "build --compile --target='${TARGET}' --outfile='${path.join(__dirname, OUTDIR, OUTFILE)}' --windows-icon='${ICON}' --windows-title='${TITLE}' --windows-publisher='${PUBLISHER}' --windows-version='${VERSION}' --windows-description='${DESCRIPTION}' --windows-copyright='${COPYRIGHT}' --root='${__dirname}' '${path.join(__dirname, 'index.ts')}'"`
+
+//console.log(`bun build --compile --target="${TARGET}" --outfile="${path.join(OUTDIR, OUTFILE)}" --windows-icon="${ICON}" --windows-title="${TITLE}" --windows-publisher="${PUBLISHER}" --windows-version="${VERSION}" --windows-description="${DESCRIPTION}" --windows-copyright="${COPYRIGHT}" 'index.ts'`)
+/*
+await Bun.build({
+    ////@ts-expect-error: Type A is not assignable to type B
+    target: 'bun',
+    entrypoints: ['./index.ts'],
+    outdir: './dist',
+    //@ts-expect-error: Object literal may only specify known properties.
+    compile: {
+        target: 'bun-windows-x64',
+        outfile: 'Fishbones.exe',
+        windows: {
+            hideConsole: false,
+            icon: "./icon.ico",
+            title: `Fishbones v${VERSION}`,
+            publisher: "Jinx",
+            version: VERSION,
+            description: "Yet another LeagueSandbox launcher with a twist",
+            //copyright: "GPLv3",
+        },
+    }
+})
+*/
 await $`chmod 666 ./dist/Fishbones.exe`
 } finally {
 await $`mv node_modules node_modules_win_npm`

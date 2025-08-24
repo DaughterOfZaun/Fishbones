@@ -37,7 +37,9 @@ import { multiaddr, type Multiaddr } from '@multiformats/multiaddr'
 import type { ConnectionManager, OpenConnectionOptions, TransportManager } from '@libp2p/interface-internal'
 import { anySignal } from 'any-signal'
 import { setMaxListeners } from 'main-event'
-import { AbortError, TimeoutError, type Address, type PeerId, type PeerInfo } from '@libp2p/interface'
+import { TimeoutError, type Address, type PeerId, type PeerInfo } from '@libp2p/interface'
+import { logger } from './utils/data-shared.ts'
+import { inspect } from 'bun'
 
 import { certifiedAddressesFirst, circuitRelayAddressesLast, loopbackAddressLast, publicAddressesFirst, reliableTransportsFirst } from './node_modules/libp2p/src/connection-manager/address-sorter.ts'
 const utpTransportFirst = (a: Address, b: Address) => {
@@ -338,7 +340,8 @@ process.on('uncaughtException', (err: Error & { code?: string, context?: Error &
     ){
         // Ignore.
     } else {
-        //console.log('UNCAUGHT EXCEPTION', err)
-        throw err
+        console.error('UNCAUGHT EXCEPTION', err)
+        logger.log('UNCAUGHT EXCEPTION', inspect(err))
+        //throw err
     }
 })

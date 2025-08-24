@@ -96,6 +96,7 @@ export class Server extends TypedEventEmitter<ServerEvents> {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             send: (socket: UTPSocketExt, buf, address, flags) => {
                 //console.log('send', address.host, address.port, buf)
+                if(!this.udp.closed) //TODO: Investigate.
                 this.udp.send(buf, address.port, address.host)
             },
             // eslint-disable-next-line @typescript-eslint/no-unused-vars

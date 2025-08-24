@@ -109,7 +109,10 @@ let pid = 0
 export class DataError extends Error {}
 export async function unpack(pkg: PkgInfo){
     //console.log(`Unpacking ${pkg.zipName}...`)
-    const bar = multibar.create(100, 0, { operation: 'Unpacking', filename: pkg.zipName }, barOpts)
+    const bar = multibar.create(100, 0, { operation: 'Unpacking', filename: pkg.zipName }, {
+        format: '{operation} {filename} |{bar}| {percentage}% | {duration_formatted}/{eta_formatted}',
+        ...barOpts,
+    })
     
     await fs_ensure_dir(pkg.dir)
     
@@ -135,9 +138,9 @@ export async function unpack(pkg: PkgInfo){
     }
 
     if(s7zs.length > 1)
-    s7zs.at(+0)!.stderr!.setEncoding('utf8').addListener('data', (chunk) => onData(+0, '[STDERR]', chunk))
-    s7zs.at(-1)!.stdout!.setEncoding('utf8').addListener('data', (chunk) => onData(-1, '[STDOUT]', chunk))
-    s7zs.at(-1)!.stderr!.setEncoding('utf8').addListener('data', (chunk) => onData(-1, '[STDERR]', chunk))
+    s7zs.at(+0)!.stderr!.setEncoding('utf8').addListener('data', (chunk) => onData(0, '[STDERR]', chunk))
+    s7zs.at(-1)!.stdout!.setEncoding('utf8').addListener('data', (chunk) => onData(s7zs.length - 1, '[STDOUT]', chunk))
+    s7zs.at(-1)!.stderr!.setEncoding('utf8').addListener('data', (chunk) => onData(s7zs.length - 1, '[STDERR]', chunk))
     function onData(i: number, src: '[STDOUT]' | '[STDERR]', chunk: string){
         chunk = chunk.replace(/[\b]/g, '').trim()
         const args = [`7Z`, pid, i, src]
@@ -155,15 +158,14 @@ export async function unpack(pkg: PkgInfo){
     }
 
     try {
-        await /*Promise.race([*/
-            Promise.all(s7zs.map(s7zi => successfulTermination(s7zi)))
-                .then(() => bar.update(100))/*,
+        await Promise.race([
+            Promise.all(s7zs.map(s7zi => successfulTermination(s7zi))),
             new Promise((resolve, reject) => {
                 signal.addEventListener('abort', () => {
                     reject(signal.reason)
                 })
             }),
-        ])*/
+        ])
     } catch(err) {
         if(err instanceof DataError) throw err
         if(err instanceof Error && err.name === 'AbortError'){
@@ -173,6 +175,7 @@ export async function unpack(pkg: PkgInfo){
             else throw err
         } else throw err
     } finally {
+        bar.update(bar.getTotal())
         bar.stop()
     }
     

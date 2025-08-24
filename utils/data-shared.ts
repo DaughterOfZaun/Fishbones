@@ -114,11 +114,14 @@ export async function killSubprocess(sp: SubProcess){
 export const barOpts = {
     stopOnComplete: true,
     clearOnComplete: true,
-    hideCursor: true
+    hideCursor: true,
+    linewrap: true,
+    autopadding: false,
+    autopaddingChar: ' ',
 }
 export const multibar = new MultiBar({
-    format: '{operation} {filename} |{bar}| {percentage}% | {value}/{total} | {duration_formatted}/{eta_formatted}',
     ...barOpts,
+    format: '{operation} {filename} |{bar}| {percentage}% | {value}/{total} | {duration_formatted}/{eta_formatted}',
     formatBar(progress, options){
         const partials = [' ', '▏', '▎', '▍', '▌', '▋', '▊', '▉', '█']
         const size = options.barsize!
@@ -130,6 +133,24 @@ export const multibar = new MultiBar({
         if(filled < size) bar += partials[Math.round((ticks - filled) * (partials.length - 1))]
         if(open > 0) bar += partials.at(0)!.repeat(open)
         return bar
+    },
+    formatValue(v, options, type){
+        const space = options.autopaddingChar!
+        
+        if(typeof v != 'number') return v
+
+        if(options.autopadding && type === 'percentage')
+            return v.toFixed(0).padStart(3, space)
+        
+        let str = ''
+        if(v >= 999_995_000) str = `${(v / 1_000_000_000).toFixed(2)}G`
+        else if(v > 999_995) str = `${(v / 1_000_000).toFixed(2)}M`
+        else if(v > 999) str = `${(v / 1_000).toFixed(2)}K`
+        else str = v.toFixed(2) + space
+
+        if(options.autopadding)
+            str = str.padStart(3 + 1 + 2 + 1, space)
+        return str
     }
 }, Presets.legacy)
 

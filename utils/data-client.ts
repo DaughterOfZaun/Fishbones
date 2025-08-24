@@ -14,7 +14,7 @@ export async function relaunchClient(){
 
     const gcArgs = ['', '', '', ([ip, port.toString(), sanitize_bfkey(key), clientId.toString()]).join(' ')]
     const gcArgsStr = gcArgs.map(a => `"${a}"`).join(' ')
-    //console.log('running "League of Legends.exe"', gcArgsStr)
+    //console.log('%s %s', gcPkg.exe, gcArgsStr)
     //logger.log('%s %s', gcPkg.exe, gcArgsStr)
 
     await stopClient()
@@ -33,7 +33,7 @@ export async function relaunchClient(){
     //console.log(clientSubprocess.rep)
     clientSubprocess.on('stream-line', line => logger.log('CLIENT', line))
 
-    return await startProcess(clientSubprocess, ['CLIENT'])
+    return await startProcess(clientSubprocess, ['CLIENT'], undefined, 60_000)
 }
 
 export async function stopClient(){

@@ -70,12 +70,16 @@ class Proxy {
                     const hostport = `${address}:${port}`
                     const peer = this.peersByHostport.get(hostport)
                     if(!peer){
-                        log.error('external socket: got pkt from unknown addr %s', hostport)
-                    } else if(!this.host || !this.port){
-                        log.error('external socket: dropping pkt because internal addr is unknown')
+                        log.error('external socket: ignoring pkt from unknown addr %s:%d', address, port)
                     } else {
-                        log.trace('external socket: redirecting pkt from %s:%d through %s:%d to %s:%d', address, port, peer.internal.hostname, peer.internal.port, this.host, this.port)
-                        peer.internal.send(data, this.port, this.host)
+                        if(!this.host || !this.port){
+                            log.error('external socket: dropping pkt from %s:%d because internal addr is unknown', address, port)
+                        } else if(peer.internal.closed){
+                            log.error('external socket: dropping pkt from %s:%d because internal socket is closed', address, port)
+                        } else {
+                            log.trace('external socket: redirecting pkt from %s:%d through %s:%d to %s:%d', address, port, peer.internal.hostname, peer.internal.port, this.host, this.port)
+                            peer.internal.send(data, this.port, this.host)
+                        }
                         peer.host = address
                         peer.port = port
                     }
@@ -121,11 +125,13 @@ class Proxy {
                             log('internal socket: setting internal addr to %s:%d', address, port)
                         } else if(this.host !== address || this.port !== port){
                             log.error('internal socket: got pkt from unexpected addr %s:%d', address, port)
+                        }
+                        if(peer.external.closed){
+                            log.error('internal socket: dropping pkt from %s:%d because external socket is closed', address, port)
                         } else {
                             log.trace('internal socket: redirecting pkt from %s:%d through %s:%d to %s:%d', address, port, peer.external.hostname, peer.external.port, peer.host, peer.port)
+                            peer.external.send(data, peer.port, peer.host)
                         }
-                        
-                        peer.external.send(data, peer.port, peer.host)
                         this.host = address
                         this.port = port
                     },
