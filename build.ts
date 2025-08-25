@@ -11,23 +11,27 @@ try {
 await patch()
 //await build_libUTP()
 
-await $`bun build --compile --target="${TARGET}" --outfile="${path.join(OUTDIR, OUTFILE)}" 'index.ts'`
+await $`bun build --compile --sourcemap --target="${TARGET}" --outfile="${path.join(OUTDIR, OUTFILE)}" 'index.ts'`
 
-const wine = `flatpak run --command='bottles-cli' com.usebottles.bottles run -b 'Default Gaming' -e`
-const args = [
-    `--set-icon "${ICON}"`,
-    `--set-file-version "${VERSION}"`,
-    `--set-product-version "${VERSION}"`,
-    `--set-version-string "FileDescription" "${DESCRIPTION}"`,
-    `--set-version-string "InternalName" "${NAME}"`,
-    `--set-version-string "OriginalFilename" "${OUTFILE}"`,
-    `--set-version-string "ProductName" "${NAME}"`,
-    `--set-version-string "CompanyName" "${PUBLISHER}"`,
-    `--set-version-string "LegalCopyright" "${COPYRIGHT}"`,
-]
-await $`${{ raw: wine }} './rcedit-x64.exe' '${path.join(OUTDIR, OUTFILE)} ${{ raw: args.join(' ') }}'`
+//await $`bun build --sourcemap --target="bun" --outdir="${OUTDIR}" 'index-failsafe.ts'`
+//await $`bun build --compile --sourcemap --target="${TARGET}" --outfile="${path.join(OUTDIR, OUTFILE)}" './dist/index-failsafe.js' './dist/index.js'`
 
-//await $`flatpak run --command='bottles-cli' com.usebottles.bottles run -b 'Default Gaming' -e ${path.join(__dirname, 'bun.exe')} "build --compile --target='${TARGET}' --outfile='${path.join(__dirname, OUTDIR, OUTFILE)}' --windows-icon='${ICON}' --windows-title='${TITLE}' --windows-publisher='${PUBLISHER}' --windows-version='${VERSION}' --windows-description='${DESCRIPTION}' --windows-copyright='${COPYRIGHT}' --root='${__dirname}' '${path.join(__dirname, 'index.ts')}'"`
+if(process.argv.includes('--release')){
+    const wine = `flatpak run --command='bottles-cli' com.usebottles.bottles run -b 'Default Gaming' -e`
+    const args = [
+        `--set-icon "${ICON}"`,
+        `--set-file-version "${VERSION}"`,
+        `--set-product-version "${VERSION}"`,
+        `--set-version-string "FileDescription" "${DESCRIPTION}"`,
+        `--set-version-string "InternalName" "${NAME}"`,
+        `--set-version-string "OriginalFilename" "${OUTFILE}"`,
+        `--set-version-string "ProductName" "${NAME}"`,
+        `--set-version-string "CompanyName" "${PUBLISHER}"`,
+        `--set-version-string "LegalCopyright" "${COPYRIGHT}"`,
+    ]
+    await $`${{ raw: wine }} './rcedit-x64.exe' '${path.join(OUTDIR, OUTFILE)} ${{ raw: args.join(' ') }}'`
+    //await $`flatpak run --command='bottles-cli' com.usebottles.bottles run -b 'Default Gaming' -e ${path.join(__dirname, 'bun.exe')} "build --compile --target='${TARGET}' --outfile='${path.join(__dirname, OUTDIR, OUTFILE)}' --windows-icon='${ICON}' --windows-title='${TITLE}' --windows-publisher='${PUBLISHER}' --windows-version='${VERSION}' --windows-description='${DESCRIPTION}' --windows-copyright='${COPYRIGHT}' --root='${__dirname}' '${path.join(__dirname, 'index.ts')}'"`
+}
 
 //console.log(`bun build --compile --target="${TARGET}" --outfile="${path.join(OUTDIR, OUTFILE)}" --windows-icon="${ICON}" --windows-title="${TITLE}" --windows-publisher="${PUBLISHER}" --windows-version="${VERSION}" --windows-description="${DESCRIPTION}" --windows-copyright="${COPYRIGHT}" 'index.ts'`)
 /*
@@ -74,9 +78,10 @@ async function build_libUTP(){
 
 async function patch(){
     await Promise.all([
-        patch_ipshipyard_node_datachannel(),
-        patch_node_datachannel(),
         patch_achingbrain_ssdp(),
+        patch_node_datachannel(),
+        patch_node_datachannel_again(),
+        patch_ipshipyard_node_datachannel(),
     ])
 }
 
@@ -109,6 +114,15 @@ const nodeDataChannel = require('../build/Release/node_datachannel.node');
 `.trim(), `
 import nodeDataChannel from "../build/Release/node_datachannel.node";
 `.trim())
+    await fs.writeFile(file, js, 'utf8')
+}
+
+async function patch_node_datachannel_again(){
+    //const file = './node_modules/webrtc-polyfill/lib/Blob.js'
+    const file = './node_modules/webrtc-polyfill/lib/RTCDataChannel.js'
+    let js = await fs.readFile(file, 'utf8')
+    //js = js.replace(`const _Blob = globalThis.Blob || (await import('node:buffer')).Blob\n\nexport default _Blob\n`.trim(), `export default globalThis.Blob`)
+    js = js.replace(`import Blob from './Blob.js'`, '')
     await fs.writeFile(file, js, 'utf8')
 }
 

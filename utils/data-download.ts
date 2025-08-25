@@ -1,10 +1,9 @@
 import path from 'node:path'
-import { promises as fs } from "node:fs"
 import { SubProcess } from 'teen_process'
 import { aria2, open, createWebSocket, type Conn } from 'maria2/dist/index.js'
 import { randomBytes } from '@libp2p/crypto'
 import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
-import { barOpts, downloads, fs_copyFile, fs_exists_and_size_eq, killSubprocess, logger, multibar, rwx_rx_rx } from './data-shared'
+import { barOpts, downloads, fs_chmod, fs_copyFile, fs_exists_and_size_eq, fs_readFile, killSubprocess, logger, multibar, rwx_rx_rx } from './data-shared'
 import { getAnnounceAddrs } from './data-trackers'
 import type { PkgInfo } from './data-packages'
 
@@ -74,7 +73,7 @@ export function repairAria2(){
         (async () => {
             //if(await fs_exists(ariaExe)) return
             await fs_copyFile(ariaExeEmbded, ariaExe)
-            await fs.chmod(ariaExe, rwx_rx_rx)
+            await fs_chmod(ariaExe, rwx_rx_rx)
         })(),
         (async () => {
             //if(await fs_exists(ariaExe)) return
@@ -140,7 +139,7 @@ export async function stopAria2(){
     await killSubprocess(prevSubprocess)
 }
 
-export async function download(pkg: PkgInfo, type: 'magnet' | 'torrent'){
+export async function download(pkg: PkgInfo){
     //console.log(`Downloading ${zipName}...`)
     const bar = multibar.create(pkg.zipSize, 0, { operation: 'Downloading', filename: pkg.zipName }, barOpts)
     
@@ -155,14 +154,10 @@ export async function download(pkg: PkgInfo, type: 'magnet' | 'torrent'){
     }
 
     const webSeeds = pkg.zipWebSeed ? [ pkg.zipWebSeed ] : []
-    if(type == 'torrent'){
-        const b64 = await fs.readFile(pkg.zipTorrent, 'base64')
-        const gid = await aria2.addTorrent(aria2conn, b64, webSeeds, opts)
-        await forCompletion(gid, false, p => bar.update(p))
-    } else if(type == 'magnet'){
-        const gid = await aria2.addUri(aria2conn, [ pkg.zipMagnet ].concat(webSeeds), opts)
-        await forCompletion(gid, true, p => bar.update(p))
-    }
+    const b64 = await fs_readFile(pkg.zipTorrent, 'base64')
+    const gid = b64 ? await aria2.addTorrent(aria2conn, b64, webSeeds, opts) :
+        await aria2.addUri(aria2conn, [ pkg.zipMagnet ].concat(webSeeds), opts)
+    await forCompletion(gid, false, p => bar.update(p))
 
     bar.update(bar.getTotal())
     bar.stop()

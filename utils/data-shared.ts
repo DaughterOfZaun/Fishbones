@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { promises as fs, type PathLike, createWriteStream as fs_createWriteStream } from "node:fs"
+import { promises as fs, createWriteStream as fs_createWriteStream } from "node:fs"
 import type { SubProcess } from 'teen_process'
 import { MultiBar, Presets } from 'cli-progress'
 
@@ -20,30 +20,34 @@ export const rwx_rx_rx =
     fs.constants.S_IRGRP | fs.constants.S_IXGRP |
     fs.constants.S_IROTH | fs.constants.S_IXOTH
 
-export async function fs_exists(path: PathLike){
+export async function fs_exists(path: string, log = true): Promise<boolean> {
     try {
         await fs.access(path)
         return true
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch(err) {
+        if(log)
+            console_log_fs_err('Checking file existance', path, err)
         return false
     }
 }
 
-export async function fs_exists_and_size_eq(path: PathLike, size: number) {
+export async function fs_exists_and_size_eq(path: string, size: number, log = true): Promise<boolean> {
     try {
         const stat = await fs.stat(path)
-        //console.log('fs_exists_and_size_eq', path, size, stat.size)
-        return stat.size == size
-    } catch (unk_err) {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const err = unk_err as ErrnoException
-        //console.log('fs_exists_and_size_eq', path, size, err.code)
+        if(stat.size == size) return true
+        else {
+            if(log)
+                console_log('File size mismatch:', stat.size, 'vs', size, path)
+            return false
+        }
+    } catch (err) {
+        if(log)
+            console_log_fs_err('Checking file size', path, err)
         return false
     }
 }
 
-export async function fs_ensure_dir(path: PathLike) {
+export async function fs_ensure_dir(path: string){
     try {
         await fs.mkdir(path)
     } catch(unk_err) {
@@ -53,8 +57,47 @@ export async function fs_ensure_dir(path: PathLike) {
     }
 }
 
-export async function fs_copyFile(src: PathLike, dest: PathLike){
+export async function fs_copyFile(src: string, dest: string){
     await fs.writeFile(dest, await fs.readFile(src))
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function fs_readFile(path: string, encoding?: string): Promise<string | undefined> {
+    try {
+        return await fs.readFile(path, 'utf8')
+    } catch(err) {
+        console_log_fs_err('Opening file', path, err)
+    }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function fs_writeFile(path: string, data: string, encoding?: string): Promise<boolean> {
+    try {
+        await fs.writeFile(path, data, 'utf8')
+        return true
+    } catch(err) {
+        console_log_fs_err('Saving file', path, err)
+        return false
+    }
+}
+
+export async function fs_chmod(path: string, mode: number | string): Promise<boolean> {
+    try {
+        await fs.chmod(path, mode)
+        return true
+    } catch(err) {
+        console_log_fs_err('Changing file mode', path, err)
+        return false
+    }
+}
+
+const FS_ERR_CODES: Record<string, string> = {
+    ENOENT: 'File not found',
+}
+export async function console_log_fs_err(operation: string, path: string, unk_err: unknown){
+    const err = unk_err as ErrnoException
+    const desc = (err.code && FS_ERR_CODES[err.code]) ?? 'Unknown'
+    console_log(operation, `failed. ${desc}:`, path)
 }
 
 type TerminationErrorCause = { code: null|number, signal: null|string }
@@ -154,9 +197,38 @@ export const multibar = new MultiBar({
     }
 }, Presets.legacy)
 
-export function console_log(...args: (string|number)[]){
+//import { makeTheme, type Theme } from '@inquirer/core'
+//const defaultTheme = makeTheme<Theme>();
+const defaultTheme = {
+    spinner: {
+        frames: ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'],
+        interval: 80,
+    }
+}
+export function createInfiniteBar(operation: string, filename: string){
+    const bar = multibar.create(1000, 1, { operation, filename }, {
+        ...barOpts,
+        stopOnComplete: false,
+        format: '{bar} {operation} {filename}... {duration_formatted}',
+        formatBar(progress){
+            const { frames } = defaultTheme.spinner
+            return frames[Math.floor(progress * 1000) % frames.length] || 'x'
+        }
+    })
+    const barUpdateInterval = setInterval(() => bar.increment(1), defaultTheme.spinner.interval)
+    return {
+        stop: () => {
+            clearInterval(barUpdateInterval)
+            bar.update(bar.getTotal())
+            bar.stop()
+        }
+    }
+}
+
+export function console_log(...args: (string | number)[]){
     if(multibar.isActive) multibar.log(args.join(' ') + '\n')
     else console.log(...args)
+    logger.log(...args)
 }
 
 export const logger = new class Logger {

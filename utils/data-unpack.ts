@@ -1,8 +1,7 @@
 import type { ChildProcess } from 'child_process'
-import { promises as fs } from "node:fs"
 import { spawn } from 'teen_process'
 import { type PkgInfo } from './data-packages'
-import { barOpts, downloads, fs_copyFile, fs_ensure_dir, fs_exists, logger, logTerminationMsg, multibar, rwx_rx_rx, TerminationError } from './data-shared'
+import { barOpts, downloads, fs_chmod, fs_copyFile, fs_ensure_dir, fs_exists, logger, logTerminationMsg, multibar, rwx_rx_rx, TerminationError } from './data-shared'
 import path from 'node:path'
 
 /*
@@ -54,7 +53,7 @@ export async function repair7z(){
             (async () => {
                 //if(fs_exists(s7zExe)) return
                 await fs_copyFile(s7zExeEmbded, s7zExe)
-                await fs.chmod(s7zExe, rwx_rx_rx)
+                await fs_chmod(s7zExe, rwx_rx_rx)
             })(),
             (async () => {
                 //if(fs_exists(s7zDll)) return

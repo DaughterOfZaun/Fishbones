@@ -10,11 +10,16 @@ import spinner from './ui/spinner'
 import * as Data from './data'
 import type { Peer as PBPeer } from './message/peer'
 import { createNode } from './index-node'
+//import { console_log } from './utils/data-shared'
 
 import { TITLE } from './utils/constants'
 process.title = TITLE
 
-await Data.repair()
+if(!process.argv.includes('--no-repair')) //try {
+    await Data.repair()
+//} catch(err) {
+//    console_log('Data repair failed:', Bun.inspect(err))
+//}
 
 const getNamedArg = (name: string, defaultValue: string) => {
     const index = process.argv.indexOf(name)

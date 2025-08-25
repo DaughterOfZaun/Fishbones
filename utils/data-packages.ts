@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { promises as fs } from "node:fs"
-import { downloads } from './data-shared'
+import { downloads, fs_copyFile, fs_exists } from './data-shared'
 
 const magnet = (ihv1?: string, ihv2?: string, fname?: string, size?: number) => {
     const parts: string[] = []
@@ -23,6 +23,7 @@ export abstract class PkgInfo {
 
     abstract dir: string
     abstract zip: string
+    abstract zipTorrentEmbded: string
     abstract zipTorrent: string
     abstract zipMagnet: string
 
@@ -51,6 +52,8 @@ export abstract class PkgInfoCSProj extends PkgInfo {
     abstract program: string
 }
 
+//@ts-expect-error: Cannot find module or its corresponding type declarations.
+import gcZipTorrent from '../Fishbones_Data/League of Legends_UNPACKED.7z.torrent' with { type: 'file' }
 export const gcPkg = new class extends PkgInfoExe {
     dirName = 'League of Legends_UNPACKED'
     noDedup = false
@@ -62,6 +65,7 @@ export const gcPkg = new class extends PkgInfoExe {
 
     dir = path.join(downloads, this.dirName)
     zip = path.join(downloads, this.zipName)
+    zipTorrentEmbded = gcZipTorrent
     zipTorrent = `${this.zip}.torrent`
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
 
@@ -88,6 +92,11 @@ const sdkArchMap: Record<string, string> = {
 const sdkArch = sdkArchMap[process.arch]
 if(!sdkArchMap) throw new Error(`Unsupported arch: ${process.arch}`)
 
+//@ts-expect-error: Cannot find module or its corresponding type declarations.
+import sdkForLinuxZipTorrent from '../Fishbones_Data/dotnet-sdk-9.0.300-linux-x64.tar.gz.torrent' with { type: 'file' }
+//@ts-expect-error: Cannot find module or its corresponding type declarations.
+import sdkForWinZipTorrent from '../Fishbones_Data/dotnet-sdk-9.0.300-win-x64.zip.torrent' with { type: 'file' }
+
 const sdkName = `dotnet-sdk-${sdkVer}-${sdkPlatform}-${sdkArch}`
 const sdkZipExt = (sdkPlatform == 'win') ? '.zip' : '.tar.gz'
 const sdkZipName = `${sdkName}${sdkZipExt}`
@@ -95,11 +104,13 @@ const sdkZipInfo = {
     'dotnet-sdk-9.0.300-win-x64.zip': {
         ihv1: '249a75bd3c8abba27b59fe42ab0771f77d6caee7',
         ihv2: '1220418d03e796bd159ed3ff24606a7b4948e520fbc4e93a172fc8a1798c51bc5647',
+        embdedTorrent: sdkForWinZipTorrent,
         size: 298580138,
     },
     'dotnet-sdk-9.0.300-linux-x64.tar.gz': {
         ihv1: 'f859eefcf797348b967220427a721655a9af0bc8',
         ihv2: '1220db828e2a00844b2ad1a457b03e521d24a0b03d4746b0e849bcf0ea1d2b34eb77',
+        embdedTorrent: sdkForLinuxZipTorrent,
         size: 217847129,
     },
 }[sdkZipName]!
@@ -118,6 +129,7 @@ export const sdkPkg = new class extends PkgInfoExe {
     dir = path.join(downloads, this.dirName)
     zip = path.join(downloads, this.zipName)
     zipTorrent = `${this.zip}.torrent`
+    zipTorrentEmbded = sdkZipInfo.embdedTorrent
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
 
     exeDir = this.dir
@@ -127,6 +139,8 @@ export const sdkPkg = new class extends PkgInfoExe {
     zipWebSeed = `https://builds.dotnet.microsoft.com/dotnet/Sdk/${sdkVer}/${sdkZipName}`
 }()
 
+//@ts-expect-error: Cannot find module or its corresponding type declarations.
+import gsPkgZipTorrent from '../Fishbones_Data/dotnet-sdk-9.0.300-win-x64.zip.torrent' with { type: 'file' }
 export const gsPkg = new class extends PkgInfoCSProj {
     dirName = 'GameServer'
     noDedup = false
@@ -138,6 +152,7 @@ export const gsPkg = new class extends PkgInfoCSProj {
     
     dir = path.join(downloads, this.dirName)
     zip = path.join(downloads, this.zipName)
+    zipTorrentEmbded = gsPkgZipTorrent
     zipTorrent = `${this.zip}.torrent`
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
 
@@ -157,8 +172,12 @@ export const gsPkg = new class extends PkgInfoCSProj {
     program = path.join(this.csProjDir, 'Program.cs')
 }()
 
-export function repairTorrents() {
+export function repairTorrents(){
     return Promise.all([gsPkg, gcPkg, sdkPkg].map(async pkg => {
+        if(!await fs_exists(pkg.zipTorrent, false)) try {
+            await fs_copyFile(pkg.zipTorrentEmbded, pkg.zipTorrent)
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-empty
+        } catch(err) {}
         // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-empty
         try { await fs.rename(path.join(downloads, `${pkg.zipInfoHashV1}.torrent`), pkg.zipTorrent) } catch(err) {}
     }))

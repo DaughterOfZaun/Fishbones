@@ -2,8 +2,8 @@ import { build } from "./data-build"
 import { download, appendPartialDownloadFileExt, repairAria2 } from "./data-download"
 import { gcPkg, gsPkg, PkgInfo, repairTorrents, sdkPkg } from "./data-packages"
 import { repairServerSettingsJsonc } from "./data-server"
-import { downloads, fs_copyFile, fs_ensure_dir, fs_exists, fs_exists_and_size_eq } from "./data-shared"
-import { repairTorrentsTxt } from "./data-trackers"
+import { console_log, downloads, fs_copyFile, fs_ensure_dir, fs_exists, fs_exists_and_size_eq } from "./data-shared"
+import { readTrackersTxt } from "./data-trackers"
 import { DataError, repair7z, unpack } from "./data-unpack"
 import path from 'node:path'
 
@@ -17,7 +17,7 @@ export async function repair(){
     
     await Promise.all([
         repairServerSettingsJsonc(),
-        repairTorrentsTxt(),
+        readTrackersTxt(),
         repairTorrents(),
         repair7z(),
         repairAria2(),
@@ -45,24 +45,21 @@ async function repairArchived(pkg: PkgInfo){
         return // OK
     } else {
         //console.log('file %s does not exist', pkg.checkUnpackBy)
-        if(await fs_exists_and_size_eq(pkg.zip, pkg.zipSize) &&
-          !await fs_exists(appendPartialDownloadFileExt(pkg.zip))){
-            try {
-                await unpack(pkg)
-                return // OK
-            } catch(err) {
-                if(!(err instanceof DataError))
-                    throw err
+        if(await fs_exists_and_size_eq(pkg.zip, pkg.zipSize)){
+            if(!await fs_exists(appendPartialDownloadFileExt(pkg.zip), false)){
+                try {
+                    await unpack(pkg)
+                    return // OK
+                } catch(err) {
+                    if(!(err instanceof DataError))
+                        throw err
+                }
+            } else {
+                console_log('Found temporary downloader file:', pkg.zip)
             }
         }
     }
-    if(await fs_exists(pkg.zipTorrent)){
-        //console.log('downloading %s', pkg.zipTorrent)
-        await download(pkg, 'torrent')
-        await unpack(pkg)
-    } else {
-        //console.log('downloading %s', pkg.zipMagnet)
-        await download(pkg, 'magnet')
-        await unpack(pkg)
-    }
+    //console.log('downloading %s', pkg.zipMagnet)
+    await download(pkg)
+    await unpack(pkg)
 }

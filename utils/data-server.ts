@@ -1,9 +1,8 @@
-import { promises as fs } from "node:fs"
 import path from 'node:path'
 import { SubProcess } from 'teen_process'
 import { champions, maps, modes, spells, /*sanitize_str*/ } from './constants'
 import { gsPkg, sdkPkg } from './data-packages'
-import { downloads, fs_exists, killSubprocess, logger, startProcess } from './data-shared'
+import { downloads, fs_exists, fs_readFile, fs_writeFile, killSubprocess, logger, startProcess } from './data-shared'
 import type { GameInfo } from './game-info'
 
 //const sanitize_kv = (key: string, value: string) => {
@@ -16,8 +15,9 @@ export async function launchServer(info: GameInfo, port = 0){
     info.gameInfo.CONTENT_PATH = path.relative(gsPkg.dllDir, gsPkg.gcDir)
 
     const gsInfo = path.join(gsPkg.infoDir, `GameInfo.${info.gameId}.json`)
-    await fs.writeFile(gsInfo, JSON.stringify(info, null, 4))
     const gsInfoRel = path.relative(gsPkg.dllDir, gsInfo)
+
+    if(!await fs_writeFile(gsInfo, JSON.stringify(info, null, 4))) return null
 
     serverSubprocess = new SubProcess(sdkPkg.exe, [
         gsPkg.dll, '--port', port.toString(), '--config', gsInfoRel,
@@ -52,11 +52,17 @@ export async function stopServer(){
 }
 
 const serverSettingsJson = path.join(downloads, 'server-settings.jsonc')
-let serverSettings: undefined | Record<'maps' | 'modes' | 'champions' | 'spells', number[]>
+type ServerSettings = Record<'maps' | 'modes' | 'champions' | 'spells', number[]>
+let serverSettings: ServerSettings | undefined
 export async function repairServerSettingsJsonc(){
     if(await fs_exists(serverSettingsJson)) return
+    const txt = getServerSettingsJsonc()
+    await fs_writeFile(serverSettingsJson, txt, 'utf8')
+    return parseServerSettings(txt)
+}
+function getServerSettingsJsonc(){
     const line = (i: number, name: string, enabled: boolean) => '        ' + (enabled ? '' : '//') + `${i}, // ${name}`
-    const txt =`{
+    return `{
     "maps": [
 ${ maps.map(([i, name, enabled]) => line(i, name, enabled)).join('\n') }
     ],
@@ -70,16 +76,14 @@ ${ champions.map(([, name, enabled], i) => line(i, name, enabled)).join('\n') }
 ${ spells.map(([, name, enabled], i) => line(i, name, enabled)).join('\n') }
     ],
 }`.trim()
-    await fs.writeFile(serverSettingsJson, txt, 'utf8')
-    parseServerSettings(txt)
 }
 function parseServerSettings(txt: string){
     txt = txt.replace(/\n? *\/\/.*/g, '').replace(/,(?=[\s\n]*[\]}])/g, '')
-    serverSettings = JSON.parse(txt)
+    return serverSettings = JSON.parse(txt) as ServerSettings
 }
 export async function getServerSettings(){
     if(serverSettings) return serverSettings
-    const txt = await fs.readFile(serverSettingsJson, 'utf8')
-    parseServerSettings(txt)
-    return serverSettings!
+    let txt = await fs_readFile(serverSettingsJson, 'utf8')
+    txt ||= getServerSettingsJsonc()
+    return parseServerSettings(txt)
 }

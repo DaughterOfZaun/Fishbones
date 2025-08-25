@@ -1,31 +1,14 @@
 import { promises as fs } from "node:fs"
 import { sdkPkg, type PkgInfoCSProj } from "./data-packages"
 import { SubProcess } from 'teen_process'
-import { fs_exists, logger, barOpts, multibar } from "./data-shared"
-//import { makeTheme, type Theme } from '@inquirer/core'
-//const defaultTheme = makeTheme<Theme>();
-const defaultTheme = {
-    spinner: {
-        frames: ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'],
-        interval: 80,
-    }
-}
+import { fs_exists, logger, createInfiniteBar } from "./data-shared"
 
 process.env['DOTNET_CLI_TELEMETRY_OPTOUT'] = '1'
 
 let sdkSubprocess: undefined | SubProcess
 export async function build(pkg: PkgInfoCSProj){
     //console_log(`Building ${pkg.dllName}...`)
-    const bar = multibar.create(1000, 1, { operation: 'Building', filename: pkg.dllName }, {
-        ...barOpts,
-        stopOnComplete: false,
-        format: '{bar} {operation} {filename}... {duration_formatted}',
-        formatBar(progress){
-            const { frames } = defaultTheme.spinner
-            return frames[Math.floor(progress * 1000) % frames.length] || 'x'
-        }
-    })
-    const barUpdateInterval = setInterval(() => bar.increment(1), defaultTheme.spinner.interval)
+    const bar = createInfiniteBar('Building', pkg.dllName)
     try{
     
     let txt = await fs.readFile(pkg.csProj, 'utf8')
@@ -54,8 +37,6 @@ export async function build(pkg: PkgInfoCSProj){
     await sdkSubprocess.join()
 
     } finally {
-        clearInterval(barUpdateInterval)
-        bar.update(bar.getTotal())
         bar.stop()
     }
 
