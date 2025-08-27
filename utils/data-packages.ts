@@ -1,6 +1,5 @@
 import path from 'node:path'
-import { promises as fs } from "node:fs"
-import { downloads, fs_copyFile, fs_exists } from './data-shared'
+import { downloads, fs_copyFile, fs_exists, fs_moveFile } from './data-shared'
 
 const magnet = (ihv1?: string, ihv2?: string, fname?: string, size?: number) => {
     const parts: string[] = []
@@ -29,6 +28,8 @@ export abstract class PkgInfo {
     abstract zipMagnet: string
     
     abstract checkUnpackBy: string
+    abstract topLevelEntries: string[]
+    abstract topLevelEntriesOptional: string[]
     
     zipWebSeed?: string
     zipMega?: string
@@ -74,6 +75,19 @@ export const gcPkg = new class extends PkgInfoExe {
 
     exeDir = path.join(this.dir, 'League-of-Legends-4-20', 'RADS', 'solutions', 'lol_game_client_sln', 'releases', '0.0.1.68', 'deploy')
     exe = path.join(this.exeDir, 'League of Legends.exe')
+
+    topLevelEntries = [
+        'League-of-Legends-4-20',
+    ]
+    topLevelEntriesOptional = [
+        'Logs',
+        'Config',
+        '2018-07-07_19-01-05_League of Legends.log',
+        '-000000000000001_crash.json',
+        '2018-07-07_18-41-50_League of Legends.log',
+        '2018-07-07_18-37-57_League of Legends.log',
+        '2018-07-07_18-36-35_League of Legends.log',
+    ]
 }()
 
 const sdkVer = '9.0.300'
@@ -137,9 +151,25 @@ export const sdkPkg = new class extends PkgInfoExe {
 
     exeDir = this.dir
     exeExt = (sdkPlatform == 'win') ? '.exe' : ''
-    exe = path.join(this.dir, `dotnet${this.exeExt}`)
+    exeName = `dotnet${this.exeExt}`
+    exe = path.join(this.dir, this.exeName)
 
     zipWebSeed = `https://builds.dotnet.microsoft.com/dotnet/Sdk/${sdkVer}/${sdkZipName}`
+
+    topLevelEntries = [
+        this.exeName,
+        'host',
+        'packs',
+        'sdk',
+        'sdk-manifests',
+        'shared',
+        'templates',
+    ]
+    topLevelEntriesOptional = [
+        'metadata',
+        'LICENSE.txt',
+        'ThirdPartyNotices.txt',
+    ]
 }()
 
 //@ts-expect-error: Cannot find module or its corresponding type declarations.
@@ -174,16 +204,43 @@ export const gsPkg = new class extends PkgInfoCSProj {
     gcDir = path.join(this.dir, 'Content', 'GameClient')
 
     program = path.join(this.csProjDir, 'Program.cs')
+
+    topLevelEntries = [
+        'QuadTree',
+        'ScriptsCore',
+        'ScriptPackage-Template',
+        'GameServerLib',
+        'GameServerCore',
+        'GameServerConsole',
+        'Content',
+        'LeaguePackets',
+        'LENet',
+    ]
+    topLevelEntriesOptional = [
+        'GameServer.sln',
+        'README.md',
+        'LICENSE',
+        'GameServer.sln.DotSettings',
+    ]
 }()
 
 export const packages = [gsPkg, gcPkg, sdkPkg]
+
+for(const a of packages)
+    for(const b of packages)
+        if(a != b)
+            console.assert(
+                new Set(a.topLevelEntries).isDisjointFrom(new Set(b.topLevelEntries)),
+                'Packages %s and %s intersecting at the top level',
+                a.dirName, b.dirName
+            )
+
 export function repairTorrents(){
     return Promise.all(packages.map(async pkg => {
         if(!await fs_exists(pkg.zipTorrent, false)) try {
             await fs_copyFile(pkg.zipTorrentEmbded, pkg.zipTorrent)
         // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-empty
         } catch(err) {}
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-empty
-        try { await fs.rename(path.join(downloads, `${pkg.zipInfoHashV1}.torrent`), pkg.zipTorrent) } catch(err) {}
+        await fs_moveFile(path.join(downloads, `${pkg.zipInfoHashV1}.torrent`), pkg.zipTorrent, false)
     }))
 }

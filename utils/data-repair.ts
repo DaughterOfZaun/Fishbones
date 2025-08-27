@@ -2,9 +2,10 @@ import { build } from "./data-build"
 import { download, appendPartialDownloadFileExt, repairAria2 } from "./data-download"
 import { gcPkg, gsPkg, PkgInfo, repairTorrents, sdkPkg } from "./data-packages"
 import { repairServerSettingsJsonc } from "./data-server"
-import { console_log, downloads, fs_copyFile, fs_ensure_dir, fs_exists, fs_exists_and_size_eq } from "./data-shared"
+import { console_log, console_log_fs_err, cwd, downloads, fs_copyFile, fs_ensure_dir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_rmdir } from "./data-shared"
 import { readTrackersTxt } from "./data-trackers"
 import { DataError, repair7z, unpack } from "./data-unpack"
+import { promises as fs } from 'fs'
 import path from 'node:path'
 
 //@ts-expect-error Cannot find module or its corresponding type declarations.
@@ -26,36 +27,181 @@ export async function repair(){
     await Promise.all([
         Promise.all([
             repairArchived(sdkPkg),
-            repairArchived(gsPkg),
+            (async () => {
+                if(!await fs_exists(gsPkg.dll))
+                    await repairArchived(gsPkg)
+            })(),
         ]).then(async () => {
-            if(!await fs_exists(gsPkg.dll))
+            if(!await fs_exists(gsPkg.dll, false))
                 await build(gsPkg)
             await fs_ensure_dir(gsPkg.infoDir)
         }),
         repairArchived(gcPkg).then(async () => {
             //await fs_ensure_dir(gcPkg.exeDir)
             const d3dx9_39_dll = path.join(gcPkg.exeDir, 'd3dx9_39.dll')
-            await fs_copyFile(d3dx9_39_dll_embded, d3dx9_39_dll)
+            if(!await fs_exists(d3dx9_39_dll, false))
+                await fs_copyFile(d3dx9_39_dll_embded, d3dx9_39_dll)
         })
     ] as Promise<unknown>[])
+}
+
+// cwd = Z:
+// downloads = Z:/Fishbones_Data
+// pkg.dir = Z:/Fishbones_Data/GameServer
+
+// [Z:/Fishbones_Data]/GameServer?/GameServer.sln <-- pkg.dir in downloads (the way it should be)
+// [Z:/Fishbones_Data]/GameServer.sln <-- pkg.dir is downloads (danger)
+// [Z:/Fishbones_Data/Foo]/GameServer?/GameServer.sln <-- pkg.dir in downloads subfolder
+// [Z:/Fishbones_Data/Foo]/GameServer.sln <-- pkg.dir in downloads but wrong name
+// [Z:/Fishbones_Data/Foo]/[Bar]/GameServer.sln <-- pkg.dir in downloads subfolder but wrong name (too complex?)
+// [Z:]/GameServer?/GameServer.sln <-- pkg.dir in cwd
+// [Z:]/GameServer.sln <-- pkg.dir is cwd (danger)
+// [Z:/Foo]/GameServer.sln <-- pkg.dir in cwd but wrong name
+// [Z:/Foo]/GameServer?/GameServer.sln <-- pkg.dir in cwd subfolder
+// [Z:/Foo]/[Bar]/GameServer.sln <-- pkg.dir in cwd subfolder but wrong name (too complex?)
+
+//TODO: Cache?
+async function getPotentialRoots(){
+    return [
+        ...[
+            ...(await fs.readdir(downloads, { withFileTypes: true })), // Z:/Fishbones_Data/Foo
+            ...(await fs.readdir(cwd, { withFileTypes: true })), // Z:/Foo
+        ]
+        .filter(dirent => dirent.isDirectory() || dirent.isSymbolicLink())
+        .map(dirent => path.join(dirent.parentPath, dirent.name)),        
+        
+        downloads, // Z:/Fishbones_Data
+        cwd, // Z:
+    ]
+}
+
+async function findPackageDir(pkg: PkgInfo){
+    const { dir: pkgDir, checkUnpackBy: filePath } = pkg
+    console.assert(filePath.startsWith(downloads))
+    console.assert(pkgDir.startsWith(downloads))
+
+    const potentialRoots = await getPotentialRoots()
+    for(const root of potentialRoots){
+        if(root != downloads && // not (the way it should be)
+            await fs_exists(filePath.replace(downloads, root), false) // GameServer/GameServer.sln
+        ) return pkgDir.replace(downloads, root)
+        
+        if(//root != cwd && root != downloads && // not (danger)
+            await fs_exists(filePath.replace(pkgDir, root), false) // GameServer.sln
+        ) return root
+    }
+    return undefined
+}
+
+async function moveFoundFilesToDir(foundPkgDir: string, pkg: PkgInfo){
+
+    await fs_ensure_dir(pkg.dir)
+    const [ movingRequiredFilesResults, movingOptionalFilesResults ] = await Promise.all([
+        Promise.allSettled(pkg.topLevelEntries.map(moveToPkgDir)),
+        Promise.allSettled(pkg.topLevelEntriesOptional.map(moveToPkgDir)),
+    ])
+    function moveToPkgDir(fileName: string){
+        return fs.rename(
+            path.join(foundPkgDir!, fileName),
+            path.join(pkg.dir, fileName),
+        )
+    }
+    let successfullyMovedRequiredFiles = true
+    for(let i = 0; i < movingRequiredFilesResults.length; i++){
+        const result = movingRequiredFilesResults[i]!
+        const fileName = pkg.topLevelEntries[i]!
+        if(result.status === 'rejected'){
+            console_log_fs_err('Moving required file', fileName, result.reason)
+            successfullyMovedRequiredFiles = false
+        }
+    }
+    for(let i = 0; i < movingOptionalFilesResults.length; i++){
+        const result = movingOptionalFilesResults[i]!
+        const fileName = pkg.topLevelEntriesOptional[i]!
+        if(result.status === 'rejected'){
+            console_log_fs_err('Moving optional file', fileName, result.reason)
+        }
+    }
+
+    // Try to delete the folder if it is empty.
+    await fs_rmdir(foundPkgDir, false)
+    
+    return successfullyMovedRequiredFiles
+}
+
+// cwd = Z:
+// downloads = Z:/Fishbones_Data
+// pkg.zip = Z:/Fishbones_Data/GameServer.7z
+
+// [Z:/Fishbones_Data]/GameServer.7z <-- pkg.zip in downloads (the way it should be)
+// [Z:/Fishbones_Data/Foo]/GameServer.7z <-- pkg.zip in downloads subfolder
+// [Z:/Foo]/GameServer.7z <-- pkg.zip in cwd subfolder
+// [Z:]/GameServer.7z <-- pkg.zip in cwd
+
+//TODO: Check downloader control file.
+//TODO: Sort candidates by date and size.
+async function findPackageZip(pkg: PkgInfo){
+    const { zip: filePath } = pkg
+    console.assert(filePath.startsWith(downloads))
+    const potentialRoots = await getPotentialRoots()
+    for(const root of potentialRoots){
+        const potentialPath = filePath.replace(downloads, root)
+        if(root != downloads // not (the way it should be)
+        && await fs_exists(potentialPath, false)
+        && await fs_exists_and_size_eq(potentialPath, pkg.zipSize, true))
+            return potentialPath
+    }
+    return undefined
 }
 
 async function repairArchived(pkg: PkgInfo){
     if(await fs_exists(pkg.checkUnpackBy)){
         return // OK
     } else {
+        const foundPkgDir = await findPackageDir(pkg)
+        if(foundPkgDir){
+            //if(foundPkgDir === cwd || foundPkgDir === downloads || foundPkgDir.startsWith(pkg.dir)){
+                console_log(`Moving files from "${foundPkgDir}" to "${pkg.dir}"`)
+                if(await moveFoundFilesToDir(foundPkgDir, pkg))
+                    return // OK
+            //} else {
+            //    console_log(`Moving "${foundPkgDir}" to "${pkg.dir}"`)
+            //    if(await fs_moveFile(foundPkgDir, pkg.dir)){
+            //        // Try to delete the folder if it is empty.
+            //        await fs_rmdir(foundPkgDir, false)
+            //        return // OK
+            //    }
+            //}
+        }
+
         //console.log('file %s does not exist', pkg.checkUnpackBy)
         if(await fs_exists_and_size_eq(pkg.zip, pkg.zipSize)){
-            if(!await fs_exists(appendPartialDownloadFileExt(pkg.zip), false)){
-                try {
-                    await unpack(pkg)
-                    return // OK
-                } catch(err) {
-                    if(!(err instanceof DataError))
-                        throw err
-                }
-            } else {
+            if(await fs_exists(appendPartialDownloadFileExt(pkg.zip), false)){
                 console_log('Found temporary downloader file:', pkg.zip)
+            } else if(await tryToUnpack())
+                return // OK
+        } else {
+            const foundPkgZip = await findPackageZip(pkg)
+            if(foundPkgZip){
+                console_log(`Moving "${foundPkgZip}" to "${pkg.zip}"`)
+                if(await fs_moveFile(foundPkgZip, pkg.zip)
+                && await tryToUnpack())
+                    return // OK
+            }
+        }
+
+        //TODO: Modify `unpack` to return boolean instead of throwning?
+        async function tryToUnpack(){
+            try {
+                await unpack(pkg)
+                return true // OK
+            } catch(err) {
+                if(err instanceof DataError){
+                    console_log_fs_err('Unpacking', pkg.zip, err)
+                    return false
+                } else {
+                    throw err
+                }
             }
         }
     }

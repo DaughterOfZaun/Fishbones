@@ -10,10 +10,12 @@ import spinner from './ui/spinner'
 import * as Data from './data'
 import type { Peer as PBPeer } from './message/peer'
 import { createNode } from './index-node'
-//import { console_log } from './utils/data-shared'
 
 import { TITLE } from './utils/constants'
 process.title = TITLE
+
+import { logger } from './utils/data-shared'
+logger.log(`${'-'.repeat(60)} ${TITLE} started ${'-'.repeat(60)}`)
 
 if(!process.argv.includes('--no-repair')) //try {
     await Data.repair()

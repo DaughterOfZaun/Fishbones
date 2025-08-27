@@ -107,6 +107,12 @@ enum s7zExitCodes {
 let pid = 0
 export class DataError extends Error {}
 export async function unpack(pkg: PkgInfo){
+    
+    if(process.argv.includes('--no-unpack')){
+        console.log(`Pretending to unpack ${pkg.zipName}...`)
+        return
+    }
+    
     //console.log(`Unpacking ${pkg.zipName}...`)
     const bar = multibar.create(100, 0, { operation: 'Unpacking', filename: pkg.zipName }, {
         format: '{operation} {filename} |{bar}| {percentage}% | {duration_formatted}/{eta_formatted}',
@@ -143,16 +149,16 @@ export async function unpack(pkg: PkgInfo){
     function onData(i: number, src: '[STDOUT]' | '[STDERR]', chunk: string){
         chunk = chunk.replace(/[\b]/g, '').trim()
         const args = [`7Z`, pid, i, src]
-        logger.log(...args, chunk)
-        if(!signal.aborted){
-            if(src === '[STDOUT]'){
-                const m = s7zProgressMsg.exec(chunk)
-                if(m && m[1]) bar.update(parseInt(m[1]))
-            } else if(src === '[STDERR]' && s7zDataErrorMsgs.some(msg => msg.test(chunk))){
-                //s7zs.at(i)![src]!.removeAllListeners('data')
-                controller.abort(new DataError())
-                logger.log(...args, 'abort')
-            }
+        let m
+        if(src === '[STDOUT]' && (m = s7zProgressMsg.exec(chunk)) && m && m[1]){
+            bar.update(parseInt(m[1]))
+        } else {
+            logger.log(...args, chunk)
+        }
+        if(src === '[STDERR]' && !signal.aborted && s7zDataErrorMsgs.some(msg => msg.test(chunk))){
+            //s7zs.at(i)![src]!.removeAllListeners('data')
+            controller.abort(new DataError())
+            logger.log(...args, 'ABORTED')
         }
     }
 
@@ -179,5 +185,5 @@ export async function unpack(pkg: PkgInfo){
     }
     
     if(!await fs_exists(pkg.checkUnpackBy))
-        throw new Error(`Unable to unpack ${pkg.zipName}`)
+        throw new DataError(`Unable to unpack ${pkg.zipName}`)
 }

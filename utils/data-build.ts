@@ -7,6 +7,12 @@ process.env['DOTNET_CLI_TELEMETRY_OPTOUT'] = '1'
 
 let sdkSubprocess: undefined | SubProcess
 export async function build(pkg: PkgInfoCSProj){
+    
+    if(process.argv.includes('--no-build')){
+        console.log(`Pretending to build ${pkg.dllName}...`)
+        return
+    }
+    
     //console_log(`Building ${pkg.dllName}...`)
     const bar = createInfiniteBar('Building', pkg.dllName)
     try{

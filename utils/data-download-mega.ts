@@ -1,12 +1,10 @@
 import * as Mega from 'megajs'
-import { packages } from './data-packages'
-import { type Readable } from 'stream'
-import http, { IncomingMessage, Server, ServerResponse } from 'http'
+import { packages, type PkgInfo } from './data-packages'
+import type { Readable } from 'stream'
+import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'http'
 import type { AddressInfo } from 'net'
 //import fs from 'fs'
 
-//const api = Mega.API.getGlobalApi()
-const api = Mega.API.globalApi = new Mega.API(false, {})
 type Fetch = (url: string | URL | Request, opts: BunFetchRequestInit | RequestInit | undefined) => Promise<Response>
 ;(Mega.API as { fetchModule?: Fetch })['fetchModule'] = async (url, opts) => {
     if(Math.random() >= 0){
@@ -26,17 +24,28 @@ function handleRetries(tries: number, unk_err: Mega.err, cb: Mega.errorCb){
     }
     cb(err)
 }
-const files = new Map(packages.filter(pkg => pkg.zipMega).map(pkg => {
-    //const file = {}
-    const file = Mega.File.fromURL(pkg.zipMega!, { api })
+
+//const api = Mega.API.getGlobalApi()
+const api: Mega.API = Mega.API.globalApi = new Mega.API(false, {})
+type MegaFile = Mega.File & { name: string, size: number }
+const files = new Map<string, MegaFile>()
+function registerPackages(){
+    for(const pkg of packages){
+        if(!pkg.zipMega) continue
+        registerPackage(pkg)
+    }
+}
+function registerPackage(pkg: PkgInfo){
+    if(!pkg.zipMega) throw new Error("Attempt to register a package without Mega URL.")
+    const filePath = '/' + encodeURIComponent(pkg.zipName)
+    const file = Mega.File.fromURL(pkg.zipMega, { api })
     const fileInfo = Object.assign(file, {
         name: pkg.zipName,
         size: pkg.zipSize,
         //hash: pkg.zipHash,
     })
-    const filePath = '/' + encodeURIComponent(fileInfo.name)
-    return [ filePath, fileInfo ]
-}))
+    files.set(filePath, fileInfo)
+}
 
 const CACHED_RESPONSE_LIFETIME = Infinity
 const cachedResponses = new Map<Mega.File, { time: number, data: JSON }>()
@@ -71,8 +80,9 @@ api.request = function request(json, cb, retryno){
 let server: Server | undefined
 let serverAddress: AddressInfo | undefined
 let serverListeningPromise: Promise<void> | undefined
-export async function ensureStarted(){
-    server ??= http.createServer({}, requestListener)
+export async function start(){
+    if(!files.size) registerPackages()
+    server ??= createServer({}, requestListener)
     if(server.listening) return
     await (serverListeningPromise ??= new Promise(res => {
         server!.listen(0, '127.0.0.1', () => {
@@ -83,10 +93,14 @@ export async function ensureStarted(){
     }))
 }
 
-//TODO: Register package
-export function getURL(zipName: string){
+let urlsInUse = 0
+export function getURL(pkg: PkgInfo){
+    if(!pkg.zipMega) throw new Error("Attempt to register a package without Mega URL.")
     if(!serverAddress) throw new Error('The server must be running before requesting URLs.')
-    return `http://${serverAddress.address}:${serverAddress.port}/${zipName}`
+    urlsInUse++; return `http://${serverAddress.address}:${serverAddress.port}/${pkg.zipName}`
+}
+export function ungetURL(){
+    if(--urlsInUse == 0) stop()
 }
 
 export function stop(){
@@ -115,8 +129,7 @@ function requestListener(req: IncomingMessage, res: ServerResponse){
         if(parts?.[1]) end = parts[1]
         ranged = true
     }
-    //const stream: Readable = fs.createReadStream(`./Fishbones_Data/${file.name}`)
-    ///*
+
     const stream: Readable & { end: () => void } = file.download({
         start, end,
         forceHttps: true,
@@ -124,13 +137,7 @@ function requestListener(req: IncomingMessage, res: ServerResponse){
         returnCiphertext: false,
         handleRetries,
     })
-    //*/
-    /*
-    const stream: Readable = new Transform()
-    setTimeout(() => {
-        stream.emit('error', new Error('Test Error'))
-    }, 1000)
-    //*/
+
     let res_headersSent = false
     stream.once('data', (chunk) => {
         const status = ranged ? 206 /*Partial Content*/ : 200 /*OK*/

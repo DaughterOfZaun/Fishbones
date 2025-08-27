@@ -20,6 +20,7 @@ export const rwx_rx_rx =
     fs.constants.S_IRGRP | fs.constants.S_IXGRP |
     fs.constants.S_IROTH | fs.constants.S_IXOTH
 
+//TODO: Check type (dir/file).
 export async function fs_exists(path: string, log = true): Promise<boolean> {
     try {
         await fs.access(path)
@@ -62,31 +63,57 @@ export async function fs_copyFile(src: string, dest: string){
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function fs_readFile(path: string, encoding?: string): Promise<string | undefined> {
+export async function fs_readFile(path: string, encoding?: string, log = true): Promise<string | undefined> {
     try {
         return await fs.readFile(path, 'utf8')
     } catch(err) {
-        console_log_fs_err('Opening file', path, err)
+        if(log)
+            console_log_fs_err('Opening file', path, err)
     }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function fs_writeFile(path: string, data: string, encoding?: string): Promise<boolean> {
+export async function fs_writeFile(path: string, data: string, encoding?: string, log = true): Promise<boolean> {
     try {
         await fs.writeFile(path, data, 'utf8')
         return true
     } catch(err) {
-        console_log_fs_err('Saving file', path, err)
+        if(log)
+            console_log_fs_err('Saving file', path, err)
         return false
     }
 }
 
-export async function fs_chmod(path: string, mode: number | string): Promise<boolean> {
+export async function fs_chmod(path: string, mode: number | string, log = true): Promise<boolean> {
     try {
         await fs.chmod(path, mode)
         return true
     } catch(err) {
-        console_log_fs_err('Changing file mode', path, err)
+        if(log)
+            console_log_fs_err('Changing file mode', path, err)
+        return false
+    }
+}
+
+export async function fs_moveFile(src: string, dest: string, log = true){
+    if(src === dest) return true
+    try {
+        await fs.rename(src, dest)
+        return true
+    } catch(err) {
+        if(log)
+            console_log_fs_err('Moving file', `${src} -> ${dest}`, err)
+        return false
+    }
+}
+
+export async function fs_rmdir(path: string, log = true){
+    try {
+        await fs.rmdir(path)
+        return true
+    } catch(err){
+        if(log)
+            console_log_fs_err('Removing folder', path, err)
         return false
     }
 }

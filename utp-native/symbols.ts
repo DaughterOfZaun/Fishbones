@@ -2,8 +2,8 @@ import { dlopen, type Pointer } from "bun:ffi"
 
 //@ts-expect-error Cannot find module or its corresponding type declarations.
 import utpNativeModuleWindows from '../node_modules/utp-native/deps/libutp/libutp.dll' with { type: 'file' }
-const utpNativeModuleLinux =  '../node_modules/utp-native/prebuilds/win32-x64/node.napi.node'
-//const utpNativeModule = './node_modules/utp-native/prebuilds/linux-x64/node.napi.node'
+//const utpNativeModuleWindows =  '../node_modules/utp-native/prebuilds/win32-x64/node.napi.node'
+const utpNativeModuleLinux = './node_modules/utp-native/prebuilds/linux-x64/node.napi.node'
 
 const is64Bit = ['arm64', 'ppc64', 'x64', 's390x'].includes(process.arch)
 

@@ -3,59 +3,10 @@ import { SubProcess } from 'teen_process'
 import { aria2, open, createWebSocket, type Conn } from 'maria2/dist/index.js'
 import { randomBytes } from '@libp2p/crypto'
 import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
-import { barOpts, downloads, fs_chmod, fs_copyFile, fs_exists_and_size_eq, fs_readFile, killSubprocess, logger, multibar, rwx_rx_rx } from './data-shared'
+import { barOpts, downloads, fs_chmod, fs_copyFile, fs_exists, fs_exists_and_size_eq, fs_readFile, killSubprocess, logger, multibar, rwx_rx_rx } from './data-shared'
 import { getAnnounceAddrs } from './data-trackers'
 import type { PkgInfo } from './data-packages'
-
-//import aria_darwin_arm64_conf from './thirdparty/Motrix/extra/darwin/arm64/engine/aria2.conf' with { type: 'file' }
-//import aria_darwin_arm64_exe from './thirdparty/Motrix/extra/darwin/arm64/engine/aria2c' with { type: 'file' }
-//import aria_darwin_x64_conf from './thirdparty/Motrix/extra/darwin/x64/engine/aria2.conf' with { type: 'file' }
-//import aria_darwin_x64_exe from './thirdparty/Motrix/extra/darwin/x64/engine/aria2c' with { type: 'file' }
-//import aria_linux_arm64_conf from './thirdparty/Motrix/extra/linux/arm64/engine/aria2.conf' with { type: 'file' }
-//import aria_linux_arm64_exe from './thirdparty/Motrix/extra/linux/arm64/engine/aria2c' with { type: 'file' }
-//import aria_linux_armv7l_conf from './thirdparty/Motrix/extra/linux/armv7l/engine/aria2.conf' with { type: 'file' }
-//import aria_linux_armv7l_exe from './thirdparty/Motrix/extra/linux/armv7l/engine/aria2c' with { type: 'file' }
-//import aria_linux_x64_conf from './thirdparty/Motrix/extra/linux/x64/engine/aria2.conf' with { type: 'file' }
-//import aria_linux_x64_exe from './thirdparty/Motrix/extra/linux/x64/engine/aria2c' with { type: 'file' }
-//import aria_win32_ia32_conf from './thirdparty/Motrix/extra/win32/ia32/engine/aria2.conf' with { type: 'file' }
-//import aria_win32_ia32_exe from './thirdparty/Motrix/extra/win32/ia32/engine/aria2c.exe' with { type: 'file' }
-//import aria_win32_x64_conf from '../thirdparty/Motrix/extra/win32/x64/engine/aria2.conf' with { type: 'file' }
-//import aria_win32_x64_exe from '../thirdparty/Motrix/extra/win32/x64/engine/aria2c.exe' with { type: 'file' }
-/*
-const AriaPlatformArchMap: Record<string, Record<string, string>> = {
-    darwin: {
-        x64: 'x64',
-        arm64: 'arm64',
-    },
-    win32: {
-        ia32: 'ia32',
-        x64: 'x64',
-        arm64: 'x64',
-    },
-    linux: {
-        x64: 'x64',
-        arm: 'armv7l',
-        arm64: 'arm64',
-    }
-}
-const ariaPlatform = process.platform
-const ariaArch = (AriaPlatformArchMap[process.platform] ?? {})[process.arch];
-if(!ariaArch) throw new Error(`Unsupported platform-arch combination: ${process.platform}-${process.arch}`)
-
-//const ariaExeDir = path.join(cwd, 'thirdparty', 'Motrix', 'extra', ariaPlatform, ariaArch, 'engine')
-const ariaExeDir = `${importMetaDirname}/thirdparty/Motrix/extra/${ariaPlatform}/${ariaArch}/engine`
-const ariaExeExt = (ariaPlatform == 'win32') ? '.exe' : ''
-const ariaExeName = `aria2c${ariaExeExt}`
-//const ariaExe = path.join(ariaExeDir, ariaExeName)
-const ariaExeEmbded = `${ariaExeDir}/${ariaExeName}`
-const ariaExe = path.join(downloads, ariaExeName)
-
-const ariaConfName = 'aria2.conf'
-//const ariaConf = path.join(ariaExeDir, ariaConfName)
-const ariaConfEmbded = `${ariaExeDir}/${ariaConfName}`
-const ariaConf = path.join(downloads, ariaConfName)
-*/
-//const ariaSession = path.join(downloads, 'aria2.session')
+import * as MegaProxy from './data-download-mega'
 
 //@ts-expect-error Cannot find module or its corresponding type declarations.
 //import ariaExeEmbded from '../thirdparty/Motrix/extra/linux/x64/engine/aria2c' with { type: 'file' }
@@ -71,12 +22,12 @@ const ariaConf = path.join(downloads, 'aria2.conf')
 export function repairAria2(){
     return Promise.all([
         (async () => {
-            //if(await fs_exists(ariaExe)) return
+            if(await fs_exists(ariaExe)) return
             await fs_copyFile(ariaExeEmbded, ariaExe)
             await fs_chmod(ariaExe, rwx_rx_rx)
         })(),
         (async () => {
-            //if(await fs_exists(ariaExe)) return
+            if(await fs_exists(ariaConf)) return
             await fs_copyFile(ariaConfEmbded, ariaConf)
         })(),
     ])
@@ -126,7 +77,7 @@ async function startAria2(){
         ], {
             cwd: downloads,
         })
-        aria2proc.on('stream-line', line => logger.log('ARIA2C', line))
+        aria2proc.on('stream-line', line => { line = line.trim(); if(line) logger.log('ARIA2C', line) })
         //console.log(aria2proc.cmd, ...aria2proc.args)
         aria2procPromise = aria2proc.start()
         //TODO: Handle start fail
@@ -151,9 +102,19 @@ export async function stopAria2(){
 }
 
 export async function download(pkg: PkgInfo){
-    //console.log(`Downloading ${zipName}...`)
+
+    if(process.argv.includes('--no-download')){
+        console.log(`Pretending to download ${pkg.zipName}...`)
+        //await new Promise<void>(res => { if(Math.random() === 0) res() })
+        //throw new Error('Unable to download file, offline mode enabled')
+        return
+    }
+
+    //console.log(`Downloading ${pkg.zipName}...`)
     const bar = multibar.create(pkg.zipSize, 0, { operation: 'Downloading', filename: pkg.zipName }, barOpts)
     
+    if(pkg.zipMega)
+    await MegaProxy.start()
     await startAria2()
     
     const opts = {
@@ -164,12 +125,15 @@ export async function download(pkg: PkgInfo){
         out: pkg.zipName,
     }
 
-    const webSeeds = pkg.zipWebSeed ? [ pkg.zipWebSeed ] : []
+    const webSeeds = []
+    if(pkg.zipWebSeed) webSeeds.push(pkg.zipWebSeed)
+    if(pkg.zipMega) webSeeds.push(MegaProxy.getURL(pkg))
     const b64 = await fs_readFile(pkg.zipTorrent, 'base64')
     const gid = b64 ? await aria2.addTorrent(aria2conn, b64, webSeeds, opts) :
         await aria2.addUri(aria2conn, [ pkg.zipMagnet ].concat(webSeeds), opts)
     await forCompletion(gid, false, p => bar.update(p))
-
+    if(pkg.zipMega) MegaProxy.ungetURL()
+    
     bar.update(bar.getTotal())
     bar.stop()
 
