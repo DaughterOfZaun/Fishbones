@@ -1,40 +1,8 @@
 import type { ChildProcess } from 'child_process'
 import { spawn } from 'teen_process'
 import { type PkgInfo } from './data-packages'
-import { barOpts, downloads, fs_chmod, fs_copyFile, fs_ensure_dir, fs_exists, logger, logTerminationMsg, multibar, rwx_rx_rx, TerminationError } from './data-shared'
+import { barOpts, downloads, fs_chmod, fs_copyFile, fs_ensure_dir, fs_exists, logger, logTerminationMsg, multibar, registerShutdownHandler, rwx_rx_rx, TerminationError } from './data-shared'
 import path from 'node:path'
-
-/*
-const s7zBinEmbded = path.join(importMetaDirname, 'node_modules', '7z-bin', 'bin')
-let s7zExeEmbded: string
-let s7zExe: string
-let s7zDllEmbded: undefined | string
-let s7zDll: undefined | string
-
-if (process.platform === "win32") {
-    if(!['arm64', 'ia32', 'x64'].includes(process.arch))
-        throw new Error(`Unsupported arch: ${process.arch}`)
-    const s7zExeName = '7z.exe'
-    const s7zDllName = '7z.dll'
-    const s7zBinWinArch = path.join(s7zBinEmbded, 'win', process.arch)
-    s7zExeEmbded = path.join(s7zBinWinArch, s7zExeName)
-    s7zDllEmbded = path.join(s7zBinWinArch, s7zDllName)
-    s7zExe = path.join(downloads, s7zExeName)
-    s7zDll = path.join(downloads, s7zDllName)
-} else if (process.platform === "darwin") {
-    const s7zExeName = '7zz'
-    s7zExeEmbded = path.join(s7zBinEmbded, 'mac', s7zExeName)
-    s7zExe = path.join(downloads, s7zExeName)
-} else if (process.platform === "linux"){
-    if(!['arm', 'arm64', 'ia32', 'x64'].includes(process.arch))
-        throw new Error(`Unsupported arch: ${process.arch}`)
-    const s7zExeName = '7zzs'
-    s7zExeEmbded = path.join(s7zBinEmbded, 'linux', process.arch, s7zExeName)
-    s7zExe = path.join(downloads, s7zExeName)
-} else {
-    throw new Error(`Unsupported platform: ${process.platform}`)
-}
-*/
 
 //@ts-expect-error Cannot find module or its corresponding type declarations.
 //import s7zExeEmbded from '../node_modules/7z-bin/bin/linux/x64/7zzs' with { type: 'file' }
@@ -44,8 +12,6 @@ const s7zExe = path.join(downloads, '7z.exe')
 //@ts-expect-error Cannot find module or its corresponding type declarations.
 import s7zDllEmbded from '../node_modules/7z-bin/bin/win/x64/7z.dll' with { type: 'file' }
 const s7zDll = path.join(downloads, '7z.dll')
-//const s7zDllEmbded = undefined
-//const s7zDll = undefined
 
 export async function repair7z(){
     try {
@@ -105,6 +71,13 @@ enum s7zExitCodes {
 }
 
 let pid = 0
+const s7zs: (ChildProcess & { id: number })[] = []
+registerShutdownHandler((force) => {
+    for(const proc of s7zs){
+        proc.kill(force ? 'SIGKILL' : 'SIGTERM')
+    }
+})
+
 export class DataError extends Error {}
 export async function unpack(pkg: PkgInfo){
     
@@ -126,8 +99,7 @@ export async function unpack(pkg: PkgInfo){
 
     const opts = ['-aoa', `-o${pkg.dir}`, '-bsp1']
     if(!pkg.noDedup) opts.push('-spe')
-    
-    const s7zs: (ChildProcess & { id: number })[] = []
+    s7zs.length = 0
 
     if(pkg.zipExt == '.tar.gz'){
         s7zs[0] = Object.assign(spawn(s7zExe, ['x', '-so', '-tgzip', pkg.zip], {

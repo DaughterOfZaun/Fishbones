@@ -3,6 +3,7 @@ import { packages, type PkgInfo } from './data-packages'
 import type { Readable } from 'stream'
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'http'
 import type { AddressInfo } from 'net'
+import { registerShutdownHandler } from './data-shared'
 //import fs from 'fs'
 
 type Fetch = (url: string | URL | Request, opts: BunFetchRequestInit | RequestInit | undefined) => Promise<Response>
@@ -103,6 +104,7 @@ export function ungetURL(){
     if(--urlsInUse == 0) stop()
 }
 
+registerShutdownHandler(stop)
 export function stop(){
     if(!server?.listening) return
     server.close()
@@ -181,10 +183,3 @@ function requestListener(req: IncomingMessage, res: ServerResponse){
         res.end()
     })
 }
-/*
-let sigints = 0
-process.on('SIGINT', () => {
-    if(++sigints == 1) server.close()
-    else process.exit()
-})
-*/

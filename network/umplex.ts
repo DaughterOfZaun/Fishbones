@@ -68,6 +68,13 @@ const container = new class BunSocketContainer {
     handlers = new Set<BunSocketHandler>()
     refs: number = 0
 }
+export function shutdown(){
+    container.socket.close()
+    container.socket = undefined!
+    container.handlers.clear()
+    container.promise = undefined
+    container.refs = 0
+}
 
 export async function udpSocket(options: BunSocketOptions): Promise<BunSocket> {
     const { hostname, port, socket: handler } = options
@@ -133,10 +140,8 @@ class BunSocketWrapper {
         //console.log('container.handlers.size = ', container.handlers.size)
 
         if(container.handlers.size == 0){
-            container.promise = undefined
-            container.socket.close()
-            container.refs = 0
             this.reffs = false
+            shutdown()
         } else 
             this.unref()
     }

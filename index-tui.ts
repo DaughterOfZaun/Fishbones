@@ -7,40 +7,19 @@ import { LocalGame } from './game-local'
 import type { GamePlayer, PPP } from './game-player'
 import { LocalServer, RemoteServer } from './server'
 import spinner from './ui/spinner'
-import * as Data from './data'
 import type { Peer as PBPeer } from './message/peer'
-import { createNode } from './index-node'
-
+import type { LibP2PNode } from './index-node'
 import { TITLE } from './utils/constants'
-process.title = TITLE
 
-import { logger } from './utils/data-shared'
-logger.log(`${'-'.repeat(60)} ${TITLE} started ${'-'.repeat(60)}`)
+export async function main(node: LibP2PNode){
+    
+    process.title = TITLE
 
-if(!process.argv.includes('--no-repair')) //try {
-    await Data.repair()
-//} catch(err) {
-//    console_log('Data repair failed:', Bun.inspect(err))
-//}
+    const pubsub = node.services.pubsub //TODO: Replace with "pspd".
+    const pspd = node.services.pubsubPeerWithDataDiscovery
+    //const name = node.peerId.toString().slice(-8)
+    const name = 'Player'
 
-const getNamedArg = (name: string, defaultValue: string) => {
-    const index = process.argv.indexOf(name)
-    return (index >= 0 && index + 1 < process.argv.length) ?
-        process.argv[index + 1]! :
-        defaultValue
-}
-
-const port = parseInt(getNamedArg('--port', '5119'))
-const node = await createNode(port)
-const pubsub = node.services.pubsub //TODO: Replace with "pspd".
-const pspd = node.services.pubsubPeerWithDataDiscovery
-
-const name = 'Player'
-//const name = node.peerId.toString().slice(-8)
-
-await main()
-
-async function main(){
     type Action = ['join', RemoteGame] | ['host'] | ['exit'] | ['noop']
     
     const getChoices = () => {

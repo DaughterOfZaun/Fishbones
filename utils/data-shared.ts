@@ -266,3 +266,15 @@ export const logger = new class Logger {
         }\n`)
     }
 }()
+
+// Kind of global event bus.
+type ShutdownHandler = (force: boolean) => void | Promise<void>
+const shutdownHandlers: ShutdownHandler[] = []
+export function registerShutdownHandler(handler: ShutdownHandler){
+    shutdownHandlers.push(handler)
+}
+export const callShutdownHandlers: ShutdownHandler = (force) => {
+    Promise.allSettled(shutdownHandlers.map(handler => handler(force)?.catch(err => {
+        logger.log('An error occurred while calling the shutdown handler:', Bun.inspect(err))
+    })))
+}

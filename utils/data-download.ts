@@ -3,7 +3,7 @@ import { SubProcess } from 'teen_process'
 import { aria2, open, createWebSocket, type Conn } from 'maria2/dist/index.js'
 import { randomBytes } from '@libp2p/crypto'
 import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
-import { barOpts, downloads, fs_chmod, fs_copyFile, fs_exists, fs_exists_and_size_eq, fs_readFile, killSubprocess, logger, multibar, rwx_rx_rx } from './data-shared'
+import { barOpts, downloads, fs_chmod, fs_copyFile, fs_exists, fs_exists_and_size_eq, fs_readFile, killSubprocess, logger, multibar, registerShutdownHandler, rwx_rx_rx } from './data-shared'
 import { getAnnounceAddrs } from './data-trackers'
 import type { PkgInfo } from './data-packages'
 import * as MegaProxy from './data-download-mega'
@@ -38,6 +38,10 @@ let aria2procPromise: undefined | Promise<void>
 let aria2conn: /*undefined |*/ Conn
 let aria2connPromise: undefined | Promise<Conn>
 let aria2secret: undefined | string
+
+registerShutdownHandler(async (force) => {
+    await aria2proc?.stop(force ? 'SIGKILL' : 'SIGSTOP')
+})
 
 async function startAria2(){
 

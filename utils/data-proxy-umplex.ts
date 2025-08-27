@@ -5,6 +5,7 @@ import { logger } from "@libp2p/logger"
 import { isENet, type BunSocket } from "../network/umplex"
 import * as uMplex from '../network/umplex'
 import { UTPMatcher } from "../network/tcp"
+import { registerShutdownHandler } from "./data-shared"
 
 const log = logger('launcher:proxy')
 
@@ -20,6 +21,13 @@ type PeerData = {
     external: BunSocket|u,
     internal: BunSocket,
 }
+
+const openSockets = new Set<BunSocket>()
+registerShutdownHandler(() => {
+    for(const socket of openSockets)
+        socket.close()
+    //openSockets.clear()
+})
 
 class Proxy {
     
@@ -86,6 +94,7 @@ class Proxy {
                 },
             }
         })
+        openSockets.add(this.external)
 
         log('created external socket at %s:%d', this.external.hostname, this.external.port)
     }
@@ -138,6 +147,7 @@ class Proxy {
                 }
             })
         }
+        openSockets.add(peer.internal)
 
         log('created internal socket for peer %p at %s:%d', peer.id, peer.internal.hostname, peer.internal.port)
 
@@ -151,10 +161,12 @@ class Proxy {
     protected closeSockets(){
         for(const peer of this.peersByPeerId.values()){
             log('closing socket for peer %p at %s:%d', peer.id, peer.internal.hostname, peer.internal.port)
+            openSockets.delete(peer.internal)
             peer.internal.close()
         }
         if(this.external){
             log('closing socket at %s:%d', this.external.hostname, this.external.port)
+            openSockets.delete(this.external)
             this.external.close()
         }
         this.peersByPeerId.clear()

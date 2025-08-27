@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
 import { GossipSub, gossipsub, type GossipSubComponents } from '@chainsafe/libp2p-gossipsub'
 import { yamux } from '@chainsafe/libp2p-yamux'
 import { tcp } from '@libp2p/tcp'
@@ -38,8 +36,6 @@ import type { ConnectionManager, OpenConnectionOptions, TransportManager } from 
 import { anySignal } from 'any-signal'
 import { setMaxListeners } from 'main-event'
 import { TimeoutError, type Address, type PeerId, type PeerInfo } from '@libp2p/interface'
-import { logger } from './utils/data-shared.ts'
-import { inspect } from 'bun'
 
 import { certifiedAddressesFirst, circuitRelayAddressesLast, loopbackAddressLast, publicAddressesFirst, reliableTransportsFirst } from './node_modules/libp2p/src/connection-manager/address-sorter.ts'
 const utpTransportFirst = (a: Address, b: Address) => {
@@ -114,6 +110,7 @@ if(process.argv.includes('--online')){
     }
 }
 
+export type LibP2PNode = Awaited<ReturnType<typeof createNode>>
 export async function createNode(port: number){
     const node = await createLibp2p({
         addresses: {
@@ -316,32 +313,3 @@ export async function createNode(port: number){
 
     return node
 }
-/*
-const port = Number(process.argv[2]) || 5116
-const node = await createNode(port)
-console.log('node.peerId is', node.peerId.toString())
-
-let sigints = 0
-process.on('SIGINT', () => {
-    if(node.status === 'started') node.stop()
-    if(node.status === 'stopped' || ++sigints == 2) process.exit()
-})
-*/
-const ABORT_ERR = 20
-const ERR_UNHANDLED_ERROR = 'ERR_UNHANDLED_ERROR'
-process.on('uncaughtException', (err: Error & { code?: string, context?: Error & { code?: number } }) => {
-    if(
-        //err.message.startsWith('Unhandled error. (') &&
-        //err.message.endsWith(')') &&
-        err.code === ERR_UNHANDLED_ERROR &&
-        err.context?.code === ABORT_ERR//&&
-        //err.context?.name === 'AbortError' &&
-        //err.context?.message === 'The operation was aborted.'
-    ){
-        // Ignore.
-    } else {
-        console.error('UNCAUGHT EXCEPTION', err)
-        logger.log('UNCAUGHT EXCEPTION', inspect(err))
-        //throw err
-    }
-})
