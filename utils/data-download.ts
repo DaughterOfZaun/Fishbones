@@ -114,7 +114,18 @@ async function startAria2(){
             //`--dir=${downloads}`,
             `--bt-exclude-tracker=${'*'}`,
             `--bt-tracker=${trackers?.join(',')}`,
-        ])
+            `--file-allocation=${'falloc'}`,
+            `--dht-file-path=${'aria2.dht.dat'}`,
+            `--dht-file-path6=${'aria2.dht6.dat'}`,
+            `--log=${'aria2.log'}`,
+
+            //TODO: These values are tweaked to download exactly two archives.
+            //`--min-split-size=${512 * 1024 * 1024}`,
+            //`--max-connection-per-server=${5}`,
+            //`--split=${4}`,
+        ], {
+            cwd: downloads,
+        })
         aria2proc.on('stream-line', line => logger.log('ARIA2C', line))
         //console.log(aria2proc.cmd, ...aria2proc.args)
         aria2procPromise = aria2proc.start()

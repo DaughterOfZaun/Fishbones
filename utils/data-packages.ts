@@ -20,16 +20,18 @@ export abstract class PkgInfo {
     abstract zipInfoHashV1: string
     abstract zipInfoHashV2: string
     abstract zipSize: number
+    //abstract zipHash: string
 
     abstract dir: string
     abstract zip: string
     abstract zipTorrentEmbded: string
     abstract zipTorrent: string
     abstract zipMagnet: string
-
+    
     abstract checkUnpackBy: string
     
     zipWebSeed?: string
+    zipMega?: string
 }
 
 export abstract class PkgInfoExe extends PkgInfo {
@@ -68,6 +70,7 @@ export const gcPkg = new class extends PkgInfoExe {
     zipTorrentEmbded = gcZipTorrent
     zipTorrent = `${this.zip}.torrent`
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
+    zipMega = 'https://mega.nz/file/Hr5XEAqT#veo2lfRWK7RrLUdFBBqRdUvxwr_gd8UyUL0f6b4pHJ0'
 
     exeDir = path.join(this.dir, 'League-of-Legends-4-20', 'RADS', 'solutions', 'lol_game_client_sln', 'releases', '0.0.1.68', 'deploy')
     exe = path.join(this.exeDir, 'League of Legends.exe')
@@ -140,7 +143,7 @@ export const sdkPkg = new class extends PkgInfoExe {
 }()
 
 //@ts-expect-error: Cannot find module or its corresponding type declarations.
-import gsPkgZipTorrent from '../Fishbones_Data/dotnet-sdk-9.0.300-win-x64.zip.torrent' with { type: 'file' }
+import gsPkgZipTorrent from '../Fishbones_Data/Chronobreak.GameServer.7z.torrent' with { type: 'file' }
 export const gsPkg = new class extends PkgInfoCSProj {
     dirName = 'GameServer'
     noDedup = false
@@ -155,6 +158,7 @@ export const gsPkg = new class extends PkgInfoCSProj {
     zipTorrentEmbded = gsPkgZipTorrent
     zipTorrent = `${this.zip}.torrent`
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
+    zipMega = 'https://mega.nz/file/D35i0YaD#P08udvnbUByZHGBvCTbC1XDPkKdUGgp4xtravAlECbU'
 
     projName = 'GameServerConsole'
     csProjDir = path.join(this.dir, this.projName)
@@ -172,8 +176,9 @@ export const gsPkg = new class extends PkgInfoCSProj {
     program = path.join(this.csProjDir, 'Program.cs')
 }()
 
+export const packages = [gsPkg, gcPkg, sdkPkg]
 export function repairTorrents(){
-    return Promise.all([gsPkg, gcPkg, sdkPkg].map(async pkg => {
+    return Promise.all(packages.map(async pkg => {
         if(!await fs_exists(pkg.zipTorrent, false)) try {
             await fs_copyFile(pkg.zipTorrentEmbded, pkg.zipTorrent)
         // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-empty
