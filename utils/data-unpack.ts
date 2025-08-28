@@ -1,7 +1,9 @@
 import type { ChildProcess } from 'child_process'
 import { spawn } from 'teen_process'
 import { type PkgInfo } from './data-packages'
-import { barOpts, downloads, fs_chmod, fs_copyFile, fs_ensure_dir, fs_exists, logger, logTerminationMsg, multibar, registerShutdownHandler, rwx_rx_rx, TerminationError } from './data-shared'
+import { barOpts, logger, logTerminationMsg, multibar, registerShutdownHandler, TerminationError } from './data-shared'
+import { rwx_rx_rx, downloads, fs_chmod, fs_copyFile, fs_ensure_dir, fs_exists, fs_writeFile, fs_rmfile } from './data-fs'
+import type { AbortOptions } from '@libp2p/interface'
 import path from 'node:path'
 
 //@ts-expect-error Cannot find module or its corresponding type declarations.
@@ -13,18 +15,18 @@ const s7zExe = path.join(downloads, '7z.exe')
 import s7zDllEmbded from '../node_modules/7z-bin/bin/win/x64/7z.dll' with { type: 'file' }
 const s7zDll = path.join(downloads, '7z.dll')
 
-export async function repair7z(){
+export async function repair7z(opts: Required<AbortOptions>){
     try {
         await Promise.all([
             (async () => {
-                //if(fs_exists(s7zExe)) return
-                await fs_copyFile(s7zExeEmbded, s7zExe)
-                await fs_chmod(s7zExe, rwx_rx_rx)
+                if(!await fs_exists(s7zExe, opts)){
+                    await fs_copyFile(s7zExeEmbded, s7zExe, opts)
+                    await fs_chmod(s7zExe, rwx_rx_rx, opts)
+                }
             })(),
             (async () => {
-                //if(fs_exists(s7zDll)) return
-                if(s7zDll && s7zDllEmbded)
-                await fs_copyFile(s7zDllEmbded, s7zDll)
+                if(s7zDll && s7zDllEmbded && !await fs_exists(s7zDll, opts))
+                    await fs_copyFile(s7zDllEmbded, s7zDll, opts)
             })(),
         ])
     } catch(unk_err){
@@ -78,8 +80,12 @@ registerShutdownHandler((force) => {
     }
 })
 
+export function appendPartialUnpackFileExt(path: string){
+    return `${path}.being-unpacked`
+}
+
 export class DataError extends Error {}
-export async function unpack(pkg: PkgInfo){
+export async function unpack(pkg: PkgInfo, opts: Required<AbortOptions>){
     
     if(process.argv.includes('--no-unpack')){
         console.log(`Pretending to unpack ${pkg.zipName}...`)
@@ -92,26 +98,31 @@ export async function unpack(pkg: PkgInfo){
         ...barOpts,
     })
     
-    await fs_ensure_dir(pkg.dir)
+    await fs_ensure_dir(pkg.dir, opts)
     
-    const controller = new AbortController();
-    const { signal } = controller;
+    const lockfile = appendPartialUnpackFileExt(pkg.zip)
+    await fs_writeFile(lockfile, '', { ...opts, encoding: 'utf8' })
+    
+    const controller = new AbortController()
+    const signal = AbortSignal.any([ controller.signal, opts.signal ])
 
-    const opts = ['-aoa', `-o${pkg.dir}`, '-bsp1']
-    if(!pkg.noDedup) opts.push('-spe')
+    const args = ['-aoa', `-o${pkg.dir}`, '-bsp1']
+    if(!pkg.noDedup) args.push('-spe')
     s7zs.length = 0
 
     if(pkg.zipExt == '.tar.gz'){
         s7zs[0] = Object.assign(spawn(s7zExe, ['x', '-so', '-tgzip', pkg.zip], {
-            stdio: [ 'inherit', 'pipe', 'pipe' ], signal
+            stdio: [ 'inherit', 'pipe', 'pipe' ], signal,
         }), { id: pid })
-        s7zs[1] = Object.assign(spawn(s7zExe, ['x', '-si', '-ttar', ...opts], {
-            stdio: [ 'pipe', 'pipe', 'pipe' ], signal
+        s7zs[1] = Object.assign(spawn(s7zExe, ['x', '-si', '-ttar', ...args], {
+            stdio: [ 'pipe', 'pipe', 'pipe' ], signal,
         }), { id: pid })
         s7zs[0].stdout!.pipe(s7zs[1].stdin!)
         pid++
     } else {
-        s7zs[0] = Object.assign(spawn(s7zExe, (['x', ...opts, pkg.zip])), { id: pid++ })
+        s7zs[0] = Object.assign(spawn(s7zExe, ['x', ...args, pkg.zip], {
+            signal,
+        }), { id: pid++ })
     }
 
     if(s7zs.length > 1)
@@ -143,11 +154,10 @@ export async function unpack(pkg: PkgInfo){
                 })
             }),
         ])
+        await fs_rmfile(lockfile, opts)
     } catch(err) {
         if(err instanceof DataError) throw err
-        if(err instanceof Error && err.name === 'AbortError'){
-            throw signal.reason
-        } else if(err instanceof TerminationError){
+        if(err instanceof TerminationError){
             if(err.cause?.code === s7zExitCodes.Warning){ /*OK*/ }
             else throw err
         } else throw err
@@ -156,6 +166,6 @@ export async function unpack(pkg: PkgInfo){
         bar.stop()
     }
     
-    if(!await fs_exists(pkg.checkUnpackBy))
+    if(!await fs_exists(pkg.checkUnpackBy, opts))
         throw new DataError(`Unable to unpack ${pkg.zipName}`)
 }

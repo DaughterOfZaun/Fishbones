@@ -3,7 +3,9 @@ import { SubProcess } from 'teen_process'
 import { aria2, open, createWebSocket, type Conn } from 'maria2/dist/index.js'
 import { randomBytes } from '@libp2p/crypto'
 import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
-import { barOpts, downloads, fs_chmod, fs_copyFile, fs_exists, fs_exists_and_size_eq, fs_readFile, killSubprocess, logger, multibar, registerShutdownHandler, rwx_rx_rx } from './data-shared'
+import { barOpts, killSubprocess, logger, multibar, registerShutdownHandler } from './data-shared'
+import { rwx_rx_rx, downloads, fs_chmod, fs_copyFile, fs_exists, fs_exists_and_size_eq, fs_readFile } from './data-fs'
+import type { AbortOptions } from '@libp2p/interface'
 import { getAnnounceAddrs } from './data-trackers'
 import type { PkgInfo } from './data-packages'
 import * as MegaProxy from './data-download-mega'
@@ -19,16 +21,16 @@ import ariaConfEmbded from '../thirdparty/Motrix/extra/win32/x64/engine/aria2.co
 const ariaExe = path.join(downloads, 'aria2c.exe')
 const ariaConf = path.join(downloads, 'aria2.conf')
 
-export function repairAria2(){
+export function repairAria2(opts: Required<AbortOptions>){
     return Promise.all([
         (async () => {
-            if(await fs_exists(ariaExe)) return
-            await fs_copyFile(ariaExeEmbded, ariaExe)
-            await fs_chmod(ariaExe, rwx_rx_rx)
+            if(await fs_exists(ariaExe, opts)) return
+            await fs_copyFile(ariaExeEmbded, ariaExe, opts)
+            await fs_chmod(ariaExe, rwx_rx_rx, opts)
         })(),
         (async () => {
-            if(await fs_exists(ariaConf)) return
-            await fs_copyFile(ariaConfEmbded, ariaConf)
+            if(await fs_exists(ariaConf, opts)) return
+            await fs_copyFile(ariaConfEmbded, ariaConf, opts)
         })(),
     ])
 }
@@ -40,12 +42,13 @@ let aria2connPromise: undefined | Promise<Conn>
 let aria2secret: undefined | string
 
 registerShutdownHandler(async (force) => {
-    await aria2proc?.stop(force ? 'SIGKILL' : 'SIGSTOP')
+    if(aria2proc?.isRunning)
+        await aria2proc.stop(force ? 'SIGKILL' : 'SIGSTOP')
 })
 
-async function startAria2(){
+async function startAria2(opts: Required<AbortOptions>){
 
-    const trackers = await getAnnounceAddrs()
+    const trackers = await getAnnounceAddrs(opts)
     
     if(!aria2procPromise){
         aria2secret = uint8ArrayToString(randomBytes(8), 'base32')
@@ -96,16 +99,16 @@ async function startAria2(){
         await aria2connPromise
 }
 
-export async function stopAria2(){
+export async function stopAria2(opts: Required<AbortOptions>){
     const prevSubprocess = aria2proc!
 
     if(!aria2proc) return
     aria2proc = undefined
 
-    await killSubprocess(prevSubprocess)
+    await killSubprocess(prevSubprocess, opts)
 }
 
-export async function download(pkg: PkgInfo){
+export async function download(pkg: PkgInfo, opts: Required<AbortOptions>){
 
     if(process.argv.includes('--no-download')){
         console.log(`Pretending to download ${pkg.zipName}...`)
@@ -116,32 +119,38 @@ export async function download(pkg: PkgInfo){
 
     //console.log(`Downloading ${pkg.zipName}...`)
     const bar = multibar.create(pkg.zipSize, 0, { operation: 'Downloading', filename: pkg.zipName }, barOpts)
+    try {
     
-    if(pkg.zipMega)
-    await MegaProxy.start()
-    await startAria2()
-    
-    const opts = {
-        'bt-save-metadata': true,
-        'bt-load-saved-metadata': true,
-        'rpc-save-upload-metadata': true,
-        dir: downloads,
-        out: pkg.zipName,
+        if(pkg.zipMega)
+        await MegaProxy.start(opts)
+        await startAria2(opts)
+        
+        const args = {
+            'bt-save-metadata': true,
+            'bt-load-saved-metadata': true,
+            'rpc-save-upload-metadata': true,
+            dir: downloads,
+            out: pkg.zipName,
+        }
+
+        const webSeeds = []
+        if(pkg.zipWebSeed) webSeeds.push(pkg.zipWebSeed)
+        if(pkg.zipMega) webSeeds.push(MegaProxy.getURL(pkg))
+        
+        const b64 = await fs_readFile(pkg.zipTorrent, { ...opts, encoding: 'base64' })
+        const gid = b64 ? await aria2.addTorrent(aria2conn, b64, webSeeds, args) :
+            await aria2.addUri(aria2conn, [ pkg.zipMagnet ].concat(webSeeds), args)
+        opts.signal.throwIfAborted()
+
+        await forCompletion(gid, false, p => bar.update(p))
+        if(pkg.zipMega) MegaProxy.ungetURL()
+
+    } finally {
+        bar.update(bar.getTotal())
+        bar.stop()
     }
 
-    const webSeeds = []
-    if(pkg.zipWebSeed) webSeeds.push(pkg.zipWebSeed)
-    if(pkg.zipMega) webSeeds.push(MegaProxy.getURL(pkg))
-    const b64 = await fs_readFile(pkg.zipTorrent, 'base64')
-    const gid = b64 ? await aria2.addTorrent(aria2conn, b64, webSeeds, opts) :
-        await aria2.addUri(aria2conn, [ pkg.zipMagnet ].concat(webSeeds), opts)
-    await forCompletion(gid, false, p => bar.update(p))
-    if(pkg.zipMega) MegaProxy.ungetURL()
-    
-    bar.update(bar.getTotal())
-    bar.stop()
-
-    if(!await fs_exists_and_size_eq(pkg.zip, pkg.zipSize))
+    if(!await fs_exists_and_size_eq(pkg.zip, pkg.zipSize, opts))
         throw new Error(`Unable to download ${pkg.zipName}`)
 }
 

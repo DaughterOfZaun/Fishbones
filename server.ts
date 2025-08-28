@@ -1,10 +1,10 @@
-import type { PeerId } from "@libp2p/interface"
+import type { AbortOptions, PeerId } from "@libp2p/interface"
 import { logger } from "@libp2p/logger"
 import type { Libp2p } from "libp2p"
 import { ChampionsEnabled, GameMapsEnabled, GameModesEnabled, Name, SummonerSpellsEnabled, TickRate } from "./utils/constants"
 //import { Champion, GameMap, GameMode, SummonerSpell } from "./utils/constants"
 import type { Peer } from "./message/peer"
-import * as Data from './data'
+import { getServerSettings } from "./utils/data-server"
 
 export abstract class Server {
 
@@ -62,14 +62,14 @@ export class RemoteServer extends Server {
 
 export class LocalServer extends Server {
     private log = logger('launcher:server-local')
-    public static async create(node: Libp2p){
+    public static async create(node: Libp2p, opts: Required<AbortOptions>){
         const server = new LocalServer(node, node.peerId)
-        //await ufill(server)
+        //await ufill(server, opts)
         //server.maps.value = Object.keys(GameMap.values).map(key => Number(key))
         //server.modes.value = Object.keys(GameMode.values).map(key => Number(key))
         //server.champions.value = Object.keys(Champion.values).map(key => Number(key))
         //server.spells.value = Object.keys(SummonerSpell.values).map(key => Number(key))
-        const ss = await Data.getServerSettings()
+        const ss = await getServerSettings(opts)
         server.maps.value = ss.maps
         server.modes.value = ss.modes
         server.champions.value = ss.champions

@@ -1,12 +1,12 @@
 import { LOBBY_PROTOCOL, ufill, type u } from './utils/constants'
-import { type Libp2p, type PeerId, type StreamHandler } from '@libp2p/interface'
+import { type AbortOptions, type Libp2p, type PeerId, type StreamHandler } from '@libp2p/interface'
 import * as lp from 'it-length-prefixed'
 import { pipe } from 'it-pipe'
 import { LobbyRequestMessage, LobbyNotificationMessage, KickReason } from './message/lobby'
-import { Game, type BroadcastOpts } from './game'
+import { Game } from './game'
 import { logger } from '@libp2p/logger'
 import type { Server } from './server'
-import type { PlayerId } from './game-player'
+import type { GamePlayer, PlayerId } from './game-player'
 import { PeerMap } from '@libp2p/peer-collections'
 import { pbStream } from './utils/pb-stream'
 
@@ -15,8 +15,8 @@ export class LocalGame extends Game {
 
     public get canStart(){ return true }
 
-    public static create(node: Libp2p, server: Server){
-        return ufill(new LocalGame(node, server))
+    public static create(node: Libp2p, server: Server, opts: Required<AbortOptions>){
+        return ufill(new LocalGame(node, server), opts)
     }
     
     private readonly peerId: PeerId
@@ -27,9 +27,9 @@ export class LocalGame extends Game {
         this.peerId = node.peerId
     }
 
-    public startListening(){
+    public async startListening(opts: Required<AbortOptions>){
         if(this.connected) return true
-        this.node.handle(LOBBY_PROTOCOL, this.handleIncomingStream)
+        await this.node.handle(LOBBY_PROTOCOL, this.handleIncomingStream, opts)
         this.connected = true
         return true
     }
@@ -81,13 +81,13 @@ export class LocalGame extends Game {
         }
     }
 
-    protected async stream_write(req: LobbyRequestMessage){
+    protected stream_write(req: LobbyRequestMessage): boolean {
         this.handleRequest(this.playerId, req, undefined, this.peerId)
         return true
     }
-    protected broadcast(msg: LobbyNotificationMessage & BroadcastOpts){
-        for(const player of msg.to){
-            if(player == msg.ignore) continue
+    protected broadcast(msg: LobbyNotificationMessage, to: Iterable<GamePlayer>, ignore?: GamePlayer): void {
+        for(const player of to){
+            if(player == ignore) continue
             if(player.stream){
                 /* await */ player.stream.write(msg)
                     .catch(err => this.log.error(err))

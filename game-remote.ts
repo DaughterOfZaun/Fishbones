@@ -1,6 +1,6 @@
 import { LOBBY_PROTOCOL } from './utils/constants'
 import { Peer as PBPeer } from './message/peer'
-import { type Libp2p, type Stream, type StreamHandler } from '@libp2p/interface'
+import { type AbortOptions, type Libp2p, type Stream, type StreamHandler } from '@libp2p/interface'
 import * as lp from 'it-length-prefixed'
 import { pbStream, type MessageStream } from './utils/pb-stream'
 import { pipe } from 'it-pipe'
@@ -20,13 +20,13 @@ export class RemoteGame extends Game {
         return game
     }
 
-    public async connect(){
+    public async connect(opts: Required<AbortOptions>){
         if(this.connected) return true
         try {
-            const connection = await this.node.dial(this.ownerId) //TODO: Switch to cm.openConnection?
-            const stream = await connection.newStream([ LOBBY_PROTOCOL ])
+            const connection = await this.node.dial(this.ownerId, opts) //TODO: Switch to cm.openConnection?
+            const stream = await connection.newStream([ LOBBY_PROTOCOL ], opts)
             this.stream = pbStream(stream).pb(LobbyNotificationMessage, LobbyRequestMessage)
-            this.handleOutgoingStream({ stream, connection })
+            /*async*/ this.handleOutgoingStream({ stream, connection })
             this.connected = true
             return true
         } catch(err) {
@@ -36,16 +36,12 @@ export class RemoteGame extends Game {
     }
 
     private stream?: MessageStream<LobbyNotificationMessage, LobbyRequestMessage, Stream>
-    protected async stream_write(req: LobbyRequestMessage){
-        try {
-            await this.stream?.write(req)
-            return true
-        } catch(err) {
-            this.log.error(err)
-            return false
-        }
+    protected stream_write(req: LobbyRequestMessage){
+        this.stream?.write(req).catch(err => this.log.error(err))
+        return true
     }
     
+    //TODO: opts: Required<AbortOptions>
     private handleOutgoingStream: StreamHandler = async ({ stream, /*connection*/ }) => {
         //if(!connection.remotePeer.equals(this.id)) return
         try {

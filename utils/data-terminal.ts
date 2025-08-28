@@ -1,6 +1,6 @@
 /*
 import path from 'node:path'
-import { downloads, fs_copyFile, fs_ensure_dir } from "./data-shared"
+import { downloads, fs_copyFile, fs_ensure_dir } from "./data-fs"
 
 ////@ts-expect-error Cannot find module or its corresponding type declarations.
 import minttyExeEmbded from '../thirdparty/mintty-msys2/mintty.exe' with { type: 'file' }

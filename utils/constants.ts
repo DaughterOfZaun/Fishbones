@@ -1,5 +1,6 @@
 import { input, checkbox, select } from "@inquirer/prompts"
 import type { Choice as SelectChoice } from "../ui/dynamic-select"
+import type { AbortOptions } from "@libp2p/interface"
 type CheckboxChoice<T> = Extract<Parameters<typeof checkbox<T>>[0]['choices'][number], { value: T }>
 
 export type u = undefined
@@ -25,7 +26,7 @@ export abstract class ValueDesc<I, E> {
     public value?: I
     abstract encode(): E
     abstract decodeInplace(v: E): boolean
-    abstract uinput(signal?: AbortSignal): Promise<unknown>
+    abstract uinput(opts: Required<AbortOptions>): Promise<unknown>
     abstract toString(): string
 }
 
@@ -63,7 +64,7 @@ export class PickableValue extends ValueDesc<number, number> {
         }
         return false
     }
-    public async uinput(signal?: AbortSignal) {
+    public async uinput(opts: Required<AbortOptions>) {
         const enabled = this.enabledGetter?.call(null)
         //const enabled = this.enabled
         if(enabled) for(const choice of this.choices){
@@ -76,7 +77,7 @@ export class PickableValue extends ValueDesc<number, number> {
                 pageSize: 20,
             }, {
                 clearPromptOnDone: true,
-                signal: signal,
+                signal: opts.signal,
             })
         } finally {
             if(enabled) for(const choice of this.choices){
@@ -402,7 +403,7 @@ export class InputableValue extends ValueDesc<string, string> {
         this.value = sanitize_str(v)
         return true
     }
-    public async uinput(signal?: AbortSignal) {
+    public async uinput(opts: Required<AbortOptions>) {
         this.value = await input({
             message: `Enter ${this.name}`,
             //transformer: (v, /*{ isFinal }*/) => sanitize_str(v),
@@ -410,7 +411,7 @@ export class InputableValue extends ValueDesc<string, string> {
             default: this.value,
         }, {
             clearPromptOnDone: true,
-            signal: signal,
+            signal: opts.signal,
         })
     }
     public get [Symbol.toStringTag]() {
@@ -458,14 +459,14 @@ export class Enabled extends ValueDesc<number[], number[]>{
         this.value = v.filter(v => v in this.values)
         return true
     }
-    async uinput(signal?: AbortSignal) {
+    async uinput(opts: Required<AbortOptions>) {
         this.value = await checkbox({
             message: `Check ${this.name}`,
             choices: this.choices,
             pageSize: 20,
         }, {
             clearPromptOnDone: true,
-            signal: signal,
+            signal: opts.signal,
         })
     }
     public get [Symbol.toStringTag]() {
@@ -493,9 +494,12 @@ export function enabled(wrapped: PickableValueStatics){
 export type KeysByValue<T, V> = Exclude<{ [K in keyof T]: T[K] extends V ? K : u }[keyof T], u>
 
 export type DescKeys<T> = KeysByValue<T, ValueDesc<unknown, unknown>>
-export async function ufill<T extends object>(obj: T, fields?: DescKeys<T>[]): Promise<T> {
-    fields ||= (Object.keys(obj) as (keyof T)[]).filter(key => obj[key] instanceof ValueDesc) as unknown as DescKeys<T>[]
-    const opts = { clearPromptOnDone: true }
+export async function ufill<T extends object>(obj: T, { signal }: Required<AbortOptions>, /*fields?: DescKeys<T>[]*/): Promise<T> {
+    const fields = (Object.keys(obj) as (keyof T)[]).filter(key => obj[key] instanceof ValueDesc) as unknown as DescKeys<T>[]
+    const opts = {
+        clearPromptOnDone: true,
+        signal,
+    }
     type ActionEdit = ['edit', DescKeys<T>]
     type Action = ActionEdit | ['enter']
     let selected: u|Action = undefined
@@ -522,7 +526,7 @@ export async function ufill<T extends object>(obj: T, fields?: DescKeys<T>[]): P
         const [action, key] = selected
         if(action == 'edit'){
             const obj_key = obj[key] as ValueDesc<unknown, unknown>
-            await obj_key.uinput()
+            await obj_key.uinput(opts)
         }
         if(action == 'enter') break loop;
     }

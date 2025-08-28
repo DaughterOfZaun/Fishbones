@@ -4,7 +4,7 @@ import type { Readable } from 'stream'
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'http'
 import type { AddressInfo } from 'net'
 import { registerShutdownHandler } from './data-shared'
-//import fs from 'fs'
+import type { AbortOptions } from '@libp2p/interface'
 
 type Fetch = (url: string | URL | Request, opts: BunFetchRequestInit | RequestInit | undefined) => Promise<Response>
 ;(Mega.API as { fetchModule?: Fetch })['fetchModule'] = async (url, opts) => {
@@ -81,7 +81,7 @@ api.request = function request(json, cb, retryno){
 let server: Server | undefined
 let serverAddress: AddressInfo | undefined
 let serverListeningPromise: Promise<void> | undefined
-export async function start(){
+export async function start(opts: Required<AbortOptions>){
     if(!files.size) registerPackages()
     server ??= createServer({}, requestListener)
     if(server.listening) return
@@ -92,6 +92,8 @@ export async function start(){
             res()
         })
     }))
+    if(opts.signal.aborted) server.close()
+    opts.signal.throwIfAborted()
 }
 
 let urlsInUse = 0

@@ -1,131 +1,9 @@
 import path from 'node:path'
-import { promises as fs, createWriteStream as fs_createWriteStream } from "node:fs"
+import { createWriteStream as fs_createWriteStream, WriteStream } from "node:fs"
 import type { SubProcess } from 'teen_process'
 import { MultiBar, Presets } from 'cli-progress'
-
-//export const cwd = process.cwd()
-//export const cwd = path.dirname(process.execPath)
-const isStandaloneBuild = globalThis.Deno?.build?.standalone //TODO: Bun
-export const cwd = isStandaloneBuild ? path.dirname(process.execPath) : process.cwd()
-const cwdWin = cwd.replaceAll('/', '\\') // For Logger
-const cwdLin = cwd.replaceAll('\\', '/') // For Logger
-export const downloads = path.join(cwd, 'Fishbones_Data')
-await fs_ensure_dir(downloads) // For Logger
-
-//export const importMetaDirname = path.dirname(import.meta.dirname)
-//export const importMetaDirname = `/tmp/deno-compile-index`
-
-export const rwx_rx_rx =
-    fs.constants.S_IRUSR | fs.constants.S_IWUSR | fs.constants.S_IXUSR |
-    fs.constants.S_IRGRP | fs.constants.S_IXGRP |
-    fs.constants.S_IROTH | fs.constants.S_IXOTH
-
-//TODO: Check type (dir/file).
-export async function fs_exists(path: string, log = true): Promise<boolean> {
-    try {
-        await fs.access(path)
-        return true
-    } catch(err) {
-        if(log)
-            console_log_fs_err('Checking file existance', path, err)
-        return false
-    }
-}
-
-export async function fs_exists_and_size_eq(path: string, size: number, log = true): Promise<boolean> {
-    try {
-        const stat = await fs.stat(path)
-        if(stat.size == size) return true
-        else {
-            if(log)
-                console_log('File size mismatch:', stat.size, 'vs', size, path)
-            return false
-        }
-    } catch (err) {
-        if(log)
-            console_log_fs_err('Checking file size', path, err)
-        return false
-    }
-}
-
-export async function fs_ensure_dir(path: string){
-    try {
-        await fs.mkdir(path)
-    } catch(unk_err) {
-        const err = unk_err as ErrnoException
-        if(err.code != 'EEXIST')
-            throw err
-    }
-}
-
-export async function fs_copyFile(src: string, dest: string){
-    await fs.writeFile(dest, await fs.readFile(src))
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function fs_readFile(path: string, encoding?: string, log = true): Promise<string | undefined> {
-    try {
-        return await fs.readFile(path, 'utf8')
-    } catch(err) {
-        if(log)
-            console_log_fs_err('Opening file', path, err)
-    }
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export async function fs_writeFile(path: string, data: string, encoding?: string, log = true): Promise<boolean> {
-    try {
-        await fs.writeFile(path, data, 'utf8')
-        return true
-    } catch(err) {
-        if(log)
-            console_log_fs_err('Saving file', path, err)
-        return false
-    }
-}
-
-export async function fs_chmod(path: string, mode: number | string, log = true): Promise<boolean> {
-    try {
-        await fs.chmod(path, mode)
-        return true
-    } catch(err) {
-        if(log)
-            console_log_fs_err('Changing file mode', path, err)
-        return false
-    }
-}
-
-export async function fs_moveFile(src: string, dest: string, log = true){
-    if(src === dest) return true
-    try {
-        await fs.rename(src, dest)
-        return true
-    } catch(err) {
-        if(log)
-            console_log_fs_err('Moving file', `${src} -> ${dest}`, err)
-        return false
-    }
-}
-
-export async function fs_rmdir(path: string, log = true){
-    try {
-        await fs.rmdir(path)
-        return true
-    } catch(err){
-        if(log)
-            console_log_fs_err('Removing folder', path, err)
-        return false
-    }
-}
-
-const FS_ERR_CODES: Record<string, string> = {
-    ENOENT: 'File not found',
-}
-export async function console_log_fs_err(operation: string, path: string, unk_err: unknown){
-    const err = unk_err as ErrnoException
-    const desc = (err.code && FS_ERR_CODES[err.code]) ?? 'Unknown'
-    console_log(operation, `failed. ${desc}:`, path)
-}
+import { cwd, downloads } from './data-fs'
+import type { AbortOptions } from '@libp2p/interface'
 
 type TerminationErrorCause = { code: null|number, signal: null|string }
 type TerminationErrorOptions = { cause?: TerminationErrorCause }
@@ -146,8 +24,10 @@ export function logTerminationMsg(args: (string|number)[], action: string, code:
 export async function startProcess(
     sp: SubProcess,
     loggerArgs: (string|number)[],
-    ...startArgs: Parameters<SubProcess['start']>
+    startArgs: Parameters<SubProcess['start']>,
+    opts: Required<AbortOptions>,
 ): Promise<SubProcess | null> {
+    let lastError: Error | undefined
     try {
         await Promise.race([
             sp.start(...startArgs),
@@ -159,26 +39,32 @@ export async function startProcess(
             })
         ])
     } catch(err) {
-        if(err instanceof TerminationError){
+        lastError = err as Error
+    }
+
+    opts.signal.throwIfAborted()
+    
+    if(lastError){
+        if(lastError instanceof TerminationError)
             return null
-        }
-        throw err
+        throw lastError
     }
     return sp
 }
 
-export async function killSubprocess(sp: SubProcess){
+export async function killSubprocess(sp: SubProcess, opts: Required<AbortOptions>){
     try {
-        await sp.stop('SIGTERM', 10 * 1000)
+        await sp.stop('SIGTERM', 4.5 * 1000)
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch(err){
         try {
-            await sp.stop('SIGKILL', 5 * 1000)
+            await sp.stop('SIGKILL', 1)
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (err) {
             //TODO: Handle errors
         }
     }
+    opts.signal.throwIfAborted()
 }
 
 export const barOpts = {
@@ -258,14 +144,21 @@ export function console_log(...args: (string | number)[]){
     logger.log(...args)
 }
 
+const cwdWin = cwd.replaceAll('/', '\\')
+const cwdLin = cwd.replaceAll('\\', '/')
 export const logger = new class Logger {
-    stream = fs_createWriteStream(path.join(downloads, 'log.txt'), { flags: 'a', autoClose: true })
+    private stream?: WriteStream
     log(...args: (string | number)[]){
+        this.stream ??= fs_createWriteStream(path.join(downloads, 'log.txt'), { flags: 'a', autoClose: true })
         this.stream.write(`${Date.now()} ${
             args.join(' ').replace(cwdWin, '.').replaceAll(cwdLin, '.')
         }\n`)
     }
 }()
+
+export const shutdownController = new AbortController()
+export const shutdownOptions = { signal: shutdownController.signal }
+export const safeOptions = { signal: (new AbortController()).signal }
 
 // Kind of global event bus.
 type ShutdownHandler = (force: boolean) => void | Promise<void>

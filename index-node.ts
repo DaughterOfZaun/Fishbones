@@ -35,7 +35,7 @@ import { multiaddr, type Multiaddr } from '@multiformats/multiaddr'
 import type { ConnectionManager, OpenConnectionOptions, TransportManager } from '@libp2p/interface-internal'
 import { anySignal } from 'any-signal'
 import { setMaxListeners } from 'main-event'
-import { TimeoutError, type Address, type PeerId, type PeerInfo } from '@libp2p/interface'
+import { TimeoutError, type AbortOptions, type Address, type PeerId, type PeerInfo } from '@libp2p/interface'
 
 import { certifiedAddressesFirst, circuitRelayAddressesLast, loopbackAddressLast, publicAddressesFirst, reliableTransportsFirst } from './node_modules/libp2p/src/connection-manager/address-sorter.ts'
 const utpTransportFirst = (a: Address, b: Address) => {
@@ -111,7 +111,7 @@ if(process.argv.includes('--online')){
 }
 
 export type LibP2PNode = Awaited<ReturnType<typeof createNode>>
-export async function createNode(port: number){
+export async function createNode(port: number, opts: Required<AbortOptions>){
     const node = await createLibp2p({
         addresses: {
             listen: [
@@ -250,6 +250,8 @@ export async function createNode(port: number){
         }
     })
 
+    opts.signal.throwIfAborted()
+
     const nc = (
         node as unknown as {
             components: typeof node.services & {
@@ -289,14 +291,14 @@ export async function createNode(port: number){
     const transports = nc.transportManager.getTransports()
     for(const transport of transports){
         const transport_dial = transport.dial
-        transport.dial = async (ma, options) => {
+        transport.dial = async (ma, opts) => {
             
             const signalTimeout = AbortSignal.timeout(PER_ADDR_DIAL_TIMEOUT)
-            const signal = anySignal([ options.signal, signalTimeout ])
+            const signal = anySignal([ opts.signal, signalTimeout ])
             setMaxListeners(Infinity, signal)
 
             try {
-                return await transport_dial.call(transport, ma, { ...options, signal })
+                return await transport_dial.call(transport, ma, { ...opts, signal })
             } catch(unk_err) {
                 if(signalTimeout.aborted){
                     //const err = unk_err as AbortError

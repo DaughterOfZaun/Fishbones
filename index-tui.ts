@@ -10,8 +10,10 @@ import spinner from './ui/spinner'
 import type { Peer as PBPeer } from './message/peer'
 import type { LibP2PNode } from './index-node'
 import { TITLE } from './utils/constants'
+import type { AbortOptions } from '@libp2p/interface'
+import { shutdownOptions } from './utils/data-shared'
 
-export async function main(node: LibP2PNode){
+export async function main(node: LibP2PNode, opts: Required<AbortOptions>){
     
     process.title = TITLE
 
@@ -100,79 +102,84 @@ export async function main(node: LibP2PNode){
             pageSize: 20,
         }, {
             clearPromptOnDone: true,
+            signal: opts.signal,
         })
         if(action == 'host' && pubsub.isStarted() == false){
-            const server = await LocalServer.create(node)
-            const game = await LocalGame.create(node, server)
-            
-            game.startListening()
-            await game.join(name, undefined)
-            await lobby(game)
-            game.stopListening()
+            const server = await LocalServer.create(node, opts)
+            const game = await LocalGame.create(node, server, opts)
+            try {
+                await game.startListening(opts)
+                game.join(name, undefined)
+                await lobby(game, opts)
+            } finally {
+                game.stopListening()
+            }
         }
         if(action == 'host' && pubsub.isStarted() == true){
-            const server = await LocalServer.create(node)
-            const game = await LocalGame.create(node, server)
+            const server = await LocalServer.create(node, opts)
+            const game = await LocalGame.create(node, server, opts)
+            let data: PBPeer.AdditionalData
+            try {
+                await game.startListening(opts)
+                game.join(name, undefined)
+                data = {
+                    name: name,
+                    serverSettings: server.encode(),
+                    gameInfos: [ game.encode() ],
+                }
+                pspd.setData(data)
+                pspd_broadcast(true)
 
-            game.startListening()
-            await game.join(name, undefined)
+                game.addEventListener('update', update)
+                game.addEventListener('start', start)
+                game.addEventListener('stop', stop)
+                
+                await lobby(game, opts)
 
-            const data = {
-                name: name,
-                serverSettings: server.encode(),
-                gameInfos: [ game.encode() ],
-            } as PBPeer.AdditionalData
-            pspd.setData(data)
-            
-            broadcast(true)
-            function broadcast(announce: boolean){
+            } finally {
+                game.stopListening()
+
+                game.removeEventListener('update', update)
+                game.removeEventListener('start', start)
+                game.removeEventListener('stop', stop)
+                
+                pspd.setData(null)
+                pspd_broadcast(false)
+            }
+
+            function pspd_broadcast(announce: boolean){
                 if(announce || pspd.getBroadcastEnabled()){
                     pspd.setBroadcastEnabled(announce)
                     pspd.broadcast(announce)
                 }
             }
-            
+
             let prevPlayerCount = 0
-            game.addEventListener('update', update)
             function update(){
                 const gi = data.gameInfos[0]!
                 gi.players = game.getPlayersCount()
                 if(gi.players != prevPlayerCount){
                     prevPlayerCount = gi.players
-                    broadcast(game.isJoinable())
+                    pspd_broadcast(game.isJoinable())
                 }
             }
-            game.addEventListener('start', start)
-            function start(){ broadcast(game.isJoinable()) }
-            game.addEventListener('stop', stop)
-            function stop(){ broadcast(game.isJoinable()) }
-            
-            await lobby(game)
-            game.stopListening()
 
-            game.removeEventListener('update', update)
-            game.removeEventListener('start', start)
-            game.removeEventListener('stop', stop)
-            pspd.setData(null)
-            broadcast(false)
+            function start(){ pspd_broadcast(game.isJoinable()) }
+            function stop(){ pspd_broadcast(game.isJoinable()) }
         }
         if(action == 'join'){
             const game = args[0]!
-
-            await game.connect()
-            if(game.password.isSet)
-                await game.password.uinput()
-            await game.join(name, game.password.encode())
-            await lobby(game)
-            game.disconnect()
+            try {
+                await game.connect(opts)
+                if(game.password.isSet)
+                    await game.password.uinput(opts)
+                game.join(name, game.password.encode())
+                await lobby(game, opts)
+            } finally {
+                game.disconnect()
+            }
         }
         if(action == 'exit'){
-            //await node.services.pubsubPeerWithDataDiscovery?.beforeStop()
-            //await node.services.pubsubPeerDiscovery?.stop()
-            //await node.services.torrentPeerDiscovery?.beforeStop()
-            //await node.services.torrentPeerDiscovery?.stop()
-            //await node_services_upnpNAT?.stop()
-            await node.stop()
             break loop
         }
     }
@@ -202,12 +209,13 @@ type Context = {
     game: Game,
 }
 
-async function lobby(game: Game){
+async function lobby(game: Game, opts: Required<AbortOptions>){
     type View = null | ((opts: Context) => Promise<unknown>)
 
     let controller = new AbortController()
+    const createSignal = () => AbortSignal.any([ controller.signal, opts.signal ]) 
     const ctx: Context = {
-        signal: controller.signal,
+        signal: createSignal(),
         clearPromptOnDone: true,
         controller,
         game,
@@ -224,22 +232,24 @@ async function lobby(game: Game){
     for(const name of handlers_keys)
         game.addEventListener(name, handlers[name])
     
-    let view: View = lobby_gather
-    while(view){
-        try {
-            await view(ctx)
-            //break
-        } catch(error) {
-            if (error instanceof AbortPromptError){
-                controller = new AbortController()
-                ctx.signal = controller.signal
-                view = error.cause as View
-            } else throw error
+    try {
+        let view: View = lobby_gather
+        while(view){
+            try {
+                await view(ctx)
+                //break
+            } catch(error) {
+                if (error instanceof AbortPromptError){
+                    controller = new AbortController()
+                    ctx.signal = createSignal()
+                    view = error.cause as View
+                } else throw error
+            }
         }
+    } finally {
+        for(const name of handlers_keys)
+            game.removeEventListener(name, handlers[name])
     }
-
-    for(const name of handlers_keys)
-        game.removeEventListener(name, handlers[name])
 }
 
 async function lobby_gather(ctx: Context){
@@ -264,7 +274,7 @@ async function lobby_gather(ctx: Context){
             pageSize: 20,
         }, ctx)
         if(action == 'start'){
-            /*await*/ game.start()
+            game.start()
             break loop
         } else if(action == 'noop'){
             continue
@@ -293,7 +303,7 @@ async function lobby_pick(ctx: Context){
     }
 
     for(const prop of ['champion', 'spell1', 'spell2'] as const){
-        await game.pick(prop, ctx.signal)
+        await game.pick(prop, ctx)
     }
 
     /*loop:*/ while(true){
@@ -308,11 +318,11 @@ async function lobby_pick(ctx: Context){
             pageSize: 20,
         }, ctx)
         if(action == 'lock'){
-            await game.set('lock', +true)
+            game.set('lock', +true)
             //break loop
         } else if(action == 'pick'){
             const prop = args[0]!
-            await game.pick(prop, ctx.signal)
+            await game.pick(prop, ctx)
         } else if(action == 'noop'){
             continue
         } else if(action == 'exit'){
@@ -345,7 +355,7 @@ async function lobby_crash_report(ctx: Context){
         pageSize: 20,
     }, ctx)
     if(action === 'relaunch'){
-        /*await*/ game.relaunch()
+        /*await*/ game.relaunch(shutdownOptions)
         //return await lobby_wait_for_end(ctx)
         throw new AbortPromptError({ cause: lobby_wait_for_end })   
     } else if(action == 'exit'){

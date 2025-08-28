@@ -1,5 +1,6 @@
 import path from 'node:path'
-import { downloads, fs_copyFile, fs_exists, fs_moveFile } from './data-shared'
+import type { AbortOptions } from '@libp2p/interface'
+import { downloads, fs_copyFile, fs_exists, fs_moveFile } from './data-fs'
 
 const magnet = (ihv1?: string, ihv2?: string, fname?: string, size?: number) => {
     const parts: string[] = []
@@ -235,12 +236,12 @@ for(const a of packages)
                 a.dirName, b.dirName
             )
 
-export function repairTorrents(){
+export function repairTorrents(opts: Required<AbortOptions>){
     return Promise.all(packages.map(async pkg => {
-        if(!await fs_exists(pkg.zipTorrent, false)) try {
-            await fs_copyFile(pkg.zipTorrentEmbded, pkg.zipTorrent)
+        if(!await fs_exists(pkg.zipTorrent, opts, false)) try {
+            await fs_copyFile(pkg.zipTorrentEmbded, pkg.zipTorrent, opts)
         // eslint-disable-next-line @typescript-eslint/no-unused-vars, no-empty
         } catch(err) {}
-        await fs_moveFile(path.join(downloads, `${pkg.zipInfoHashV1}.torrent`), pkg.zipTorrent, false)
+        await fs_moveFile(path.join(downloads, `${pkg.zipInfoHashV1}.torrent`), pkg.zipTorrent, opts, false)
     }))
 }

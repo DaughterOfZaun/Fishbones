@@ -1,15 +1,21 @@
 import { SubProcess } from "teen_process"
 import { gcPkg } from "./data-packages"
 import { sanitize_bfkey } from "./constants"
-import { killSubprocess, logger, startProcess } from "./data-shared"
+import { killSubprocess, logger, registerShutdownHandler, startProcess } from "./data-shared"
+import type { AbortOptions } from "@libp2p/interface"
 
-let launchArgs: undefined | Parameters<typeof launchClient>
 let clientSubprocess: undefined | SubProcess
-export async function launchClient(ip: string, port: number, key: string, clientId: number){
+registerShutdownHandler(async (force) => {
+    if(clientSubprocess?.isRunning)
+        await clientSubprocess.stop(force ? 'SIGKILL' : 'SIGTERM')
+})
+
+let launchArgs: undefined | [ ip: string, port: number, key: string, clientId: number ]
+export async function launchClient(ip: string, port: number, key: string, clientId: number, opts: Required<AbortOptions>){
     launchArgs = [ip, port, key, clientId]
-    return await relaunchClient()
+    return await relaunchClient(opts)
 }
-export async function relaunchClient(){
+export async function relaunchClient(opts: Required<AbortOptions>){
     const [ip, port, key, clientId] = launchArgs!
 
     const gcArgs = ['', '', '', ([ip, port.toString(), sanitize_bfkey(key), clientId.toString()]).join(' ')]
@@ -17,7 +23,7 @@ export async function relaunchClient(){
     //console.log('%s %s', gcPkg.exe, gcArgsStr)
     //logger.log('%s %s', gcPkg.exe, gcArgsStr)
 
-    await stopClient()
+    await stopClient(opts)
 
     if(process.platform == 'win32')
         clientSubprocess = new SubProcess(gcPkg.exe, gcArgs, {
@@ -33,14 +39,14 @@ export async function relaunchClient(){
     //console.log(clientSubprocess.rep)
     clientSubprocess.on('stream-line', line => logger.log('CLIENT', line))
 
-    return await startProcess(clientSubprocess, ['CLIENT'], undefined, 60_000)
+    return await startProcess(clientSubprocess, ['CLIENT'], [undefined, 60_000], opts)
 }
 
-export async function stopClient(){
+export async function stopClient(opts: Required<AbortOptions>){
     const prevSubprocess = clientSubprocess!
 
     if(!clientSubprocess) return
     clientSubprocess = undefined
 
-    await killSubprocess(prevSubprocess)
+    await killSubprocess(prevSubprocess, opts)
 }

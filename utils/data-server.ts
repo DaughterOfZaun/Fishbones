@@ -1,23 +1,25 @@
 import path from 'node:path'
 import { SubProcess } from 'teen_process'
-import { champions, maps, modes, spells, /*sanitize_str*/ } from './constants'
+import { champions, maps, modes, spells } from './constants'
 import { gsPkg, sdkPkg } from './data-packages'
-import { downloads, fs_exists, fs_readFile, fs_writeFile, killSubprocess, logger, startProcess } from './data-shared'
+import { killSubprocess, logger, registerShutdownHandler, startProcess } from './data-shared'
+import { downloads, fs_exists, fs_readFile, fs_writeFile } from './data-fs'
 import type { GameInfo } from './game-info'
-
-//const sanitize_kv = (key: string, value: string) => {
-//    if(typeof value === 'string')
-//        return sanitize_str(value)
-//}
+import type { AbortOptions } from '@libp2p/interface'
 
 let serverSubprocess: undefined | SubProcess
-export async function launchServer(info: GameInfo, port = 0){
+registerShutdownHandler(async (force) => {
+    if(serverSubprocess?.isRunning)
+        await serverSubprocess.stop(force ? 'SIGKILL' : 'SIGTERM')
+})
+
+export async function launchServer(info: GameInfo, opts: Required<AbortOptions>, port = 0){
     info.gameInfo.CONTENT_PATH = path.relative(gsPkg.dllDir, gsPkg.gcDir)
 
     const gsInfo = path.join(gsPkg.infoDir, `GameInfo.${info.gameId}.json`)
     const gsInfoRel = path.relative(gsPkg.dllDir, gsInfo)
 
-    if(!await fs_writeFile(gsInfo, JSON.stringify(info, null, 4))) return null
+    if(!await fs_writeFile(gsInfo, JSON.stringify(info, null, 4), { ...opts, encoding: 'utf8' })) return null
 
     serverSubprocess = new SubProcess(sdkPkg.exe, [
         gsPkg.dll, '--port', port.toString(), '--config', gsInfoRel,
@@ -30,7 +32,7 @@ export async function launchServer(info: GameInfo, port = 0){
     //console.log(serverSubprocess.rep)
     serverSubprocess.on('stream-line', line => logger.log('SERVER', line))
 
-    const proc = await startProcess(serverSubprocess, ['SERVER'], (stdout, /*stderr*/) => {
+    const proc = await startProcess(serverSubprocess, ['SERVER'], [(stdout, /*stderr*/) => {
         //return /\b(?:Game)?Server (?:is )?ready\b/.test(stdout)
         const match = stdout.match(/GameServer ready for clients to connect on Port: (?<port>\d+)/)
         if(match){
@@ -38,26 +40,26 @@ export async function launchServer(info: GameInfo, port = 0){
             return true
         }
         return false
-    }, 60_000)
+    }, 60_000], opts)
     return proc && Object.assign(proc, { port })
 }
 
-export async function stopServer(){
+export async function stopServer(opts: Required<AbortOptions>){
     const prevSubprocess = serverSubprocess!
 
     if(!serverSubprocess) return
     serverSubprocess = undefined
 
-    await killSubprocess(prevSubprocess)
+    await killSubprocess(prevSubprocess, opts)
 }
 
 const serverSettingsJson = path.join(downloads, 'server-settings.jsonc')
 type ServerSettings = Record<'maps' | 'modes' | 'champions' | 'spells', number[]>
 let serverSettings: ServerSettings | undefined
-export async function repairServerSettingsJsonc(){
-    if(await fs_exists(serverSettingsJson)) return
+export async function repairServerSettingsJsonc(opts: Required<AbortOptions>){
+    if(await fs_exists(serverSettingsJson, opts)) return
     const txt = getServerSettingsJsonc()
-    await fs_writeFile(serverSettingsJson, txt, 'utf8')
+    await fs_writeFile(serverSettingsJson, txt, { ...opts, encoding: 'utf8' })
     return parseServerSettings(txt)
 }
 function getServerSettingsJsonc(){
@@ -81,9 +83,9 @@ function parseServerSettings(txt: string){
     txt = txt.replace(/\n? *\/\/.*/g, '').replace(/,(?=[\s\n]*[\]}])/g, '')
     return serverSettings = JSON.parse(txt) as ServerSettings
 }
-export async function getServerSettings(){
+export async function getServerSettings(opts: Required<AbortOptions>){
     if(serverSettings) return serverSettings
-    let txt = await fs_readFile(serverSettingsJson, 'utf8')
+    let txt = await fs_readFile(serverSettingsJson, { encoding : 'utf8', ...opts })
     txt ||= getServerSettingsJsonc()
     return parseServerSettings(txt)
 }

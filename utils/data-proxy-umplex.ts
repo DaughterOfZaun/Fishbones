@@ -1,6 +1,6 @@
 import type { Libp2p } from "libp2p"
 import { LOCALHOST } from "./constants"
-import type { PeerId } from "@libp2p/interface"
+import type { PeerId, AbortOptions } from "@libp2p/interface"
 import { logger } from "@libp2p/logger"
 import { isENet, type BunSocket } from "../network/umplex"
 import * as uMplex from '../network/umplex'
@@ -66,7 +66,7 @@ class Proxy {
         return hostports
     }
 
-    protected async createMainSocket(){
+    protected async createMainSocket(opts: Required<AbortOptions>){
 
         log('creating external socket')
 
@@ -97,9 +97,11 @@ class Proxy {
         openSockets.add(this.external)
 
         log('created external socket at %s:%d', this.external.hostname, this.external.port)
+
+        opts.signal.throwIfAborted()
     }
 
-    protected async createPeer(id: PeerId){
+    protected async createPeer(id: PeerId, opts: Required<AbortOptions>){
         
         log('creating internal socket for peer %p', id)
 
@@ -154,6 +156,8 @@ class Proxy {
         this.peersByPeerId.set(peer.id.toString(), peer)
         for(const hostport of peer.hostports)
             this.peersByHostport.set(hostport, peer)
+
+        opts.signal.throwIfAborted()
         
         return peer
     }
@@ -179,15 +183,15 @@ class Proxy {
 
 export class ProxyServer extends Proxy {
 
-    public async start(port: number, peerIds: PeerId[]) {
+    public async start(port: number, peerIds: PeerId[], opts: Required<AbortOptions>) {
         this.host = LOCALHOST
         this.port = port
         
         log('starting proxy server at %s:%d', this.host, this.port)
 
         await Promise.all([
-            this.createMainSocket(),
-            peerIds.map(id => this.createPeer(id)),
+            this.createMainSocket(opts),
+            peerIds.map(id => this.createPeer(id, opts)),
         ])
     }
     
@@ -200,7 +204,7 @@ export class ProxyServer extends Proxy {
 export class ProxyClient extends Proxy {
     
     private serverId: u|PeerId
-    public async connect(id: PeerId, proxyServer: u|ProxyServer) {
+    public async connect(id: PeerId, proxyServer: u|ProxyServer, opts: Required<AbortOptions>) {
         this.serverId = id
         if(id.equals(this.node.peerId) && proxyServer){
 
@@ -208,7 +212,7 @@ export class ProxyClient extends Proxy {
 
             const proxyClient = this as ProxyClient
             const serverSidePeer = proxyServer.getPeer(id)!
-            const clientSidePeer = await proxyClient.createPeer(id)
+            const clientSidePeer = await proxyClient.createPeer(id, opts)
             clientSidePeer.external = serverSidePeer.internal
             serverSidePeer.external = clientSidePeer.internal
             Object.defineProperties(serverSidePeer, {
@@ -224,8 +228,8 @@ export class ProxyClient extends Proxy {
             log('connecting to remote server peer %p', id)
 
             await Promise.all([
-                this.createMainSocket(),
-                this.createPeer(id),
+                this.createMainSocket(opts),
+                this.createPeer(id, opts),
             ])
         }
     }
