@@ -32,21 +32,22 @@ export async function readTrackersTxt(opts: Required<AbortOptions>){
 async function downloadTrackersTxt(opts: Required<AbortOptions>){
     //console.log(`Downloading ${trackersTxtName}...`)
     const bar = createInfiniteBar('Downloading', trackersTxtName)
-
+    
     let txt: string = ''
     let lastError: Error | undefined
-    for(const url of trackerListsURLS){
-        try {
-            txt = await (await fetch(url, opts)).text()
-            break
-        } catch(err) {
-            lastError = err as Error
+    try {
+        for(const url of trackerListsURLS){
+            try {
+                txt = await (await fetch(url, opts)).text()
+                break
+            } catch(err) {
+                lastError = err as Error
+            }
+            opts.signal.throwIfAborted()
         }
-        opts.signal.throwIfAborted()
+    } finally {
+        bar.stop()
     }
-    
-    bar.stop()
-
     if(txt){
         await fs_writeFile(trackersTxt, txt, { ...opts, encoding: 'utf8' })
         return setTrackers(txt)

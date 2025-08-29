@@ -1,17 +1,17 @@
 import path from 'node:path'
-import { SubProcess } from 'teen_process'
 import { champions, maps, modes, spells } from './constants'
 import { gsPkg, sdkPkg } from './data-packages'
 import { logger } from './data-shared'
-import { killSubprocess, registerShutdownHandler, startProcess } from './data-process'
+import { killSubprocess, registerShutdownHandler, spawn, startProcess, type ChildProcess } from './data-process'
 import { downloads, fs_exists, fs_readFile, fs_writeFile } from './data-fs'
 import type { GameInfo } from './game-info'
 import type { AbortOptions } from '@libp2p/interface'
 
-let serverSubprocess: undefined | SubProcess
-registerShutdownHandler(async (force) => {
-    if(serverSubprocess?.isRunning)
-        await serverSubprocess.stop(force ? 'SIGKILL' : 'SIGTERM')
+const LOG_PREFIX = 'SERVER'
+
+let serverSubprocess: ChildProcess | undefined
+registerShutdownHandler((force) => {
+    serverSubprocess?.kill(force ? 'SIGKILL' : 'SIGTERM')
 })
 
 export async function launchServer(info: GameInfo, opts: Required<AbortOptions>, port = 0){
@@ -20,20 +20,22 @@ export async function launchServer(info: GameInfo, opts: Required<AbortOptions>,
     const gsInfo = path.join(gsPkg.infoDir, `GameInfo.${info.gameId}.json`)
     const gsInfoRel = path.relative(gsPkg.dllDir, gsInfo)
 
-    if(!await fs_writeFile(gsInfo, JSON.stringify(info, null, 4), { ...opts, encoding: 'utf8' })) return null
+    await fs_writeFile(gsInfo, JSON.stringify(info, null, 4), { ...opts, encoding: 'utf8', rethrow: true })
 
-    serverSubprocess = new SubProcess(sdkPkg.exe, [
+    serverSubprocess = spawn(sdkPkg.exe, [
         gsPkg.dll, '--port', port.toString(), '--config', gsInfoRel,
     ], {
         cwd: gsPkg.dllDir,
-        //timeout: 15 * 1000
         //detached: true,
     })
     
-    //console.log(serverSubprocess.rep)
-    serverSubprocess.on('stream-line', line => logger.log('SERVER', line))
+    serverSubprocess.stdout.setEncoding('utf8').on('data', (chunk) => onData('[STDOUT]', chunk))
+    serverSubprocess.stderr.setEncoding('utf8').on('data', (chunk) => onData('[STDERR]', chunk))
+    function onData(src: string, chunk: string){
+        logger.log(LOG_PREFIX, src, chunk)
+    }
 
-    const proc = await startProcess(serverSubprocess, ['SERVER'], [(stdout, /*stderr*/) => {
+    await startProcess(LOG_PREFIX, serverSubprocess, (stdout, /*stderr*/) => {
         //return /\b(?:Game)?Server (?:is )?ready\b/.test(stdout)
         const match = stdout.match(/GameServer ready for clients to connect on Port: (?<port>\d+)/)
         if(match){
@@ -41,8 +43,9 @@ export async function launchServer(info: GameInfo, opts: Required<AbortOptions>,
             return true
         }
         return false
-    }, 60_000], opts)
-    return proc && Object.assign(proc, { port })
+    }, opts, 60_000)
+
+    return Object.assign(serverSubprocess, { port })
 }
 
 export async function stopServer(opts: Required<AbortOptions>){
@@ -51,7 +54,7 @@ export async function stopServer(opts: Required<AbortOptions>){
     if(!serverSubprocess) return
     serverSubprocess = undefined
 
-    await killSubprocess(prevSubprocess, opts)
+    await killSubprocess(LOG_PREFIX, prevSubprocess, opts)
 }
 
 const serverSettingsJson = path.join(downloads, 'server-settings.jsonc')

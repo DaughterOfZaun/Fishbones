@@ -1,15 +1,16 @@
 import path from 'node:path'
-import { SubProcess } from 'teen_process'
 import { aria2, open, createWebSocket, type Conn } from 'maria2/dist/index.js'
 import { randomBytes } from '@libp2p/crypto'
 import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
 import { barOpts, logger, multibar } from './data-shared'
-import { killSubprocess, registerShutdownHandler } from './data-process'
+import { killSubprocess, logTerminationMsg, registerShutdownHandler, spawn, startProcess, type ChildProcess } from './data-process'
 import { rwx_rx_rx, downloads, fs_chmod, fs_copyFile, fs_exists, fs_exists_and_size_eq, fs_readFile } from './data-fs'
 import type { AbortOptions } from '@libp2p/interface'
 import { getAnnounceAddrs } from './data-trackers'
 import type { PkgInfo } from './data-packages'
 import * as MegaProxy from './data-download-mega'
+
+const LOG_PREFIX = 'ARIA2C'
 
 //@ts-expect-error Cannot find module or its corresponding type declarations.
 //import ariaExeEmbded from '../thirdparty/Motrix/extra/linux/x64/engine/aria2c' with { type: 'file' }
@@ -36,15 +37,15 @@ export function repairAria2(opts: Required<AbortOptions>){
     ])
 }
 
-let aria2proc: undefined | SubProcess
-let aria2procPromise: undefined | Promise<void>
-let aria2conn: /*undefined |*/ Conn
-let aria2connPromise: undefined | Promise<Conn>
-let aria2secret: undefined | string
+let aria2proc: ChildProcess | undefined
+let aria2procPromise: Promise<void> | undefined
+let aria2conn: Conn //| undefined
+let aria2connPromise: Promise<Conn> | undefined
+let aria2secret: string | undefined
+let aria2port: number | undefined = 6800
 
-registerShutdownHandler(async (force) => {
-    if(aria2proc?.isRunning)
-        await aria2proc.stop(force ? 'SIGKILL' : 'SIGSTOP')
+registerShutdownHandler((force) => {
+    aria2proc?.kill(force ? 'SIGKILL' : 'SIGSTOP')
 })
 
 async function startAria2(opts: Required<AbortOptions>){
@@ -53,14 +54,14 @@ async function startAria2(opts: Required<AbortOptions>){
     
     if(!aria2procPromise){
         aria2secret = uint8ArrayToString(randomBytes(8), 'base32')
-        aria2proc = new SubProcess(ariaExe, [
+        aria2proc = spawn(ariaExe, [
             `--enable-dht=${true}`,
             `--enable-dht6=${true}`,
             `--enable-peer-exchange=${true}`,
-            `--dht-listen-port=${6881}`,
+            //`--dht-listen-port=${6881}`,
             `--conf-path=${ariaConf}`,
             `--enable-rpc=${true}`,
-            `--rpc-listen-port=${6800}`,
+            //`--rpc-listen-port=${6800}`,
             `--rpc-listen-all=${false}`,
             `--rpc-allow-origin-all=${false}`,
             `--rpc-secret=${aria2secret}`,
@@ -84,21 +85,32 @@ async function startAria2(opts: Required<AbortOptions>){
             //`--split=${4}`,
         ], {
             cwd: downloads,
-        })
-        aria2proc.on('stream-line', line => {
-            line = line.trim();
-            if(line && line !== '[STDOUT]' && line != '[STDERR]' && !/./.test(line))
-                logger.log('ARIA2C', line)
-        })
-        //console.log(aria2proc.cmd, ...aria2proc.args)
-        aria2procPromise = aria2proc.start()
-        //TODO: Handle start fail
+        }) //TODO: Handle start fail. Maybe?
+        aria2proc.addListener('exit', (code, signal) => logTerminationMsg(LOG_PREFIX, 'exited', code, signal))
+
+        aria2proc.stdout.setEncoding('utf8').addListener('data', (chunk) => onData('[STDOUT]', chunk))
+        aria2proc.stderr.setEncoding('utf8').addListener('data', (chunk) => onData('[STDERR]', chunk))
+        function onData(src: string, chunk: string){
+            chunk = chunk.trim()
+            if(chunk && !/^\[#\w+ .*\]$/.test(chunk)) // [#e69e0c 0B/20MiB(0%) CN:1 SD:0 DL:0B]
+                logger.log(LOG_PREFIX, src, chunk)
+        }
+
+        aria2procPromise = startProcess(LOG_PREFIX, aria2proc, (stdout, /*stderr*/) => {
+            const match = stdout.match(/IPv4 RPC: listening on TCP port (?<port>\d+)/)
+            if(match){
+                aria2port = parseInt(match.groups!['port']!)
+                return true
+            }
+            return false
+        }, opts)
+        
         await aria2procPromise
     } else
         await aria2procPromise
     
     if(!aria2connPromise){
-        aria2connPromise = open(createWebSocket(`ws://127.0.0.1:${6800}/jsonrpc`), { secret: aria2secret! })
+        aria2connPromise = open(createWebSocket(`ws://127.0.0.1:${aria2port}/jsonrpc`), { secret: aria2secret! })
         aria2conn = await aria2connPromise
     } else
         await aria2connPromise
@@ -110,7 +122,7 @@ export async function stopAria2(opts: Required<AbortOptions>){
     if(!aria2proc) return
     aria2proc = undefined
 
-    await killSubprocess(prevSubprocess, opts)
+    await killSubprocess(LOG_PREFIX, prevSubprocess, opts)
 }
 
 export async function download(pkg: PkgInfo, opts: Required<AbortOptions>){

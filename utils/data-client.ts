@@ -1,17 +1,17 @@
-import { SubProcess } from "teen_process"
 import { gcPkg } from "./data-packages"
 import { sanitize_bfkey } from "./constants"
 import { logger } from "./data-shared"
-import { killSubprocess, registerShutdownHandler, startProcess } from "./data-process"
+import { killSubprocess, logTerminationMsg, registerShutdownHandler, spawn, startProcess, type ChildProcess } from "./data-process"
 import type { AbortOptions } from "@libp2p/interface"
 
-let clientSubprocess: undefined | SubProcess
-registerShutdownHandler(async (force) => {
-    if(clientSubprocess?.isRunning)
-        await clientSubprocess.stop(force ? 'SIGKILL' : 'SIGTERM')
+const LOG_PREFIX = 'CLIENT'
+
+let clientSubprocess: ChildProcess | undefined
+registerShutdownHandler((force) => {
+    clientSubprocess?.kill(force ? 'SIGKILL' : 'SIGTERM')
 })
 
-let launchArgs: undefined | [ ip: string, port: number, key: string, clientId: number ]
+let launchArgs: [ ip: string, port: number, key: string, clientId: number ] | undefined
 export async function launchClient(ip: string, port: number, key: string, clientId: number, opts: Required<AbortOptions>){
     launchArgs = [ip, port, key, clientId]
     return await relaunchClient(opts)
@@ -27,20 +27,27 @@ export async function relaunchClient(opts: Required<AbortOptions>){
     await stopClient(opts)
 
     if(process.platform == 'win32')
-        clientSubprocess = new SubProcess(gcPkg.exe, gcArgs, {
+        clientSubprocess = spawn(gcPkg.exe, gcArgs, {
             cwd: gcPkg.exeDir,
         })
     else if(process.platform == 'linux')
-        clientSubprocess = new SubProcess(
+        clientSubprocess = spawn(
             'flatpak', [ 'run', '--command=bottles-cli', 'com.usebottles.bottles',
                 'run', '-b', 'Default Gaming', '-e', gcPkg.exe, gcArgsStr ]) //TODO: cwd
-        //clientSubprocess = new SubProcess('bottles-cli', ['run', '-b', 'Default Gaming', '-p', 'League of Legends', '--args-replace', gcArgs])
+        //clientSubprocess = spawn('bottles-cli', ['run', '-b', 'Default Gaming', '-p', 'League of Legends', '--args-replace', gcArgs])
     else throw new Error(`Unsupported platform: ${process.platform}`)
 
-    //console.log(clientSubprocess.rep)
-    clientSubprocess.on('stream-line', line => logger.log('CLIENT', line))
+    clientSubprocess.addListener('exit', (code, signal) => logTerminationMsg(LOG_PREFIX, 'exited', code, signal))
 
-    return await startProcess(clientSubprocess, ['CLIENT'], [undefined, 60_000], opts)
+    clientSubprocess.stdout.setEncoding('utf8').on('data', (chunk) => onData('[STDOUT]', chunk))
+    clientSubprocess.stderr.setEncoding('utf8').on('data', (chunk) => onData('[STDERR]', chunk))
+    function onData(src: string, chunk: string){
+        logger.log(LOG_PREFIX, src, chunk)
+    }
+
+    await startProcess(LOG_PREFIX, clientSubprocess, (chunk) => chunk.trim().length > 0, opts, 30_000)
+
+    return clientSubprocess
 }
 
 export async function stopClient(opts: Required<AbortOptions>){
@@ -49,5 +56,5 @@ export async function stopClient(opts: Required<AbortOptions>){
     if(!clientSubprocess) return
     clientSubprocess = undefined
 
-    await killSubprocess(prevSubprocess, opts)
+    await killSubprocess(LOG_PREFIX, prevSubprocess, opts)
 }

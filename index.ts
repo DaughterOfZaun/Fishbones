@@ -3,7 +3,7 @@ import { createNode } from './index-node'
 import { main } from './index-tui'
 import { TITLE } from './utils/constants'
 import { console_log, logger } from './utils/data-shared'
-import { callShutdownHandlers, registerShutdownHandler, shutdownController, shutdownOptions } from './utils/data-process'
+import { callShutdownHandlers, MAIN_PROCESS_EXIT_TIMEOUT, registerShutdownHandler, shutdownController, shutdownOptions } from './utils/data-process'
 import { repair } from './utils/data-repair'
 
 const ABORT_ERR = 20
@@ -45,7 +45,7 @@ function shutdown(force: boolean, source: 'signal' | 'exception' | 'call'){
     if(!force){
         if(shuttingDownAlready == 1){
             shutdownController.abort(new ExitPromptError())
-            setTimeout(() => shutdown(true, 'call'), 10_000).unref()
+            setTimeout(() => shutdown(true, 'call'), MAIN_PROCESS_EXIT_TIMEOUT).unref()
         }
         if(isInsideOfUI && source === 'signal'){ /* Ignore */ }
         else callShutdownHandlers(false)

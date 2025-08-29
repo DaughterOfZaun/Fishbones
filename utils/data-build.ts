@@ -1,14 +1,14 @@
 import { sdkPkg, type PkgInfoCSProj } from "./data-packages"
-import { SubProcess } from 'teen_process'
 import { logger, createInfiniteBar } from "./data-shared"
 import type { AbortOptions } from "@libp2p/interface"
 import { fs_exists, fs_readFile, fs_writeFile, type ReadWriteFileOpts } from "./data-fs"
-import { registerShutdownHandler } from "./data-process"
+import { logTerminationMsg, registerShutdownHandler, spawn, successfulTermination, type ChildProcess } from "./data-process"
 
-let sdkSubprocess: undefined | SubProcess
-registerShutdownHandler(async (force) => {
-    if(sdkSubprocess?.isRunning)
-        await sdkSubprocess.stop(force ? 'SIGKILL' : 'SIGTERM')
+const LOG_PREFIX = 'SDK'
+
+let sdkSubprocess: ChildProcess | undefined
+registerShutdownHandler((force) => {
+    sdkSubprocess?.kill(force ? 'SIGKILL' : 'SIGTERM')
 })
 
 export async function build(pkg: PkgInfoCSProj, opts: Required<AbortOptions>){
@@ -43,24 +43,25 @@ export async function build(pkg: PkgInfoCSProj, opts: Required<AbortOptions>){
         txt = txt.replace(`${nl3}Banner();\n`, `${nl3}//Banner();\n`)
         await fs_writeFile(pkg.program, txt, fs_opts)
 
-        const env = { 'DOTNET_CLI_TELEMETRY_OPTOUT': '1' }
-        sdkSubprocess = new SubProcess(sdkPkg.exe, ['build', pkg.csProj], { env })
-        sdkSubprocess.on('stream-line', line => logger.log('SDK', line))
+        sdkSubprocess = spawn(sdkPkg.exe, ['build', pkg.csProj], {
+            env: { 'DOTNET_CLI_TELEMETRY_OPTOUT': '1' },
+            stdio: [ null, 'pipe', 'pipe' ],
+            signal: opts.signal,
+        })
+        sdkSubprocess.addListener('exit', (code, signal) => logTerminationMsg(LOG_PREFIX, 'exited', code, signal))
         
-        const abort = () => sdkSubprocess!.stop()
-        try {
-            opts.signal.addEventListener('abort', abort)
-            
-            await sdkSubprocess.start()
-            opts.signal.throwIfAborted()
-
-            await sdkSubprocess.join()
-            opts.signal.throwIfAborted()
-        } finally {
-            opts.signal.removeEventListener('abort', abort)
+        sdkSubprocess.stdout.setEncoding('utf8').on('data', (chunk) => onData('[STDOUT]', chunk))
+        sdkSubprocess.stderr.setEncoding('utf8').on('data', (chunk) => onData('[STDERR]', chunk))
+        function onData(src: string, chunk: string){
+            logger.log(LOG_PREFIX, src, chunk)
         }
+        
+        await successfulTermination(LOG_PREFIX, sdkSubprocess, opts)
+
     } finally {
         bar.stop()
+        sdkSubprocess?.kill()
+        sdkSubprocess = undefined
     }
 
     if(!await fs_exists(pkg.dll, opts))

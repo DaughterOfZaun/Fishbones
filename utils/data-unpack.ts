@@ -1,8 +1,6 @@
-import type { ChildProcess } from 'child_process'
-import { spawn } from 'teen_process'
 import { type PkgInfo } from './data-packages'
 import { barOpts, logger, multibar } from './data-shared'
-import { registerShutdownHandler, successfulTermination, TerminationError } from './data-process'
+import { registerShutdownHandler, spawn, successfulTermination, type ChildProcess } from './data-process'
 import { rwx_rx_rx, downloads, fs_chmod, fs_copyFile, fs_ensureDir, fs_exists, fs_writeFile, fs_removeFile } from './data-fs'
 import type { AbortOptions } from '@libp2p/interface'
 import path from 'node:path'
@@ -37,15 +35,18 @@ export async function repair7z(opts: Required<AbortOptions>){
     }
 }
 
-const s7zDataErrorMsgs = [
-    /\bHeaders Error\b/,
-    /\bData Error\b/,
-    /\bCRC Failed\b/,
-    /\bIs not archive\b/,
-    /\bCan(?: ?not|'?t) open (?:(?:the )?file )?as (?:\[\w+\] )?archive\b/,
-    /\bUnexpected end of (?:data|archive|(?:input )?stream)\b/,
-    //TODO: ...
-]
+const s7zDataErrorMsgs = new RegExp(
+    [
+        /\bHeaders Error\b/,
+        /\bData Error\b/,
+        /\bCRC Failed\b/,
+        /\bIs not archive\b/,
+        /\bCan(?: ?not|'?t) open (?:(?:the )?file )?as (?:\[\w+\] )?archive\b/,
+        /\bUnexpected end of (?:data|archive|(?:input )?stream)\b/,
+        //TODO: ...
+    ]
+    .map(regex => regex.source).join('|')
+)
 
 const s7zProgressMsg = /(\d+)%/m
 
@@ -82,71 +83,69 @@ export async function unpack(pkg: PkgInfo, opts: Required<AbortOptions>){
         format: '{operation} {filename} |{bar}| {percentage}% | {duration_formatted}/{eta_formatted}',
         ...barOpts,
     })
-    
-    await fs_ensureDir(pkg.dir, opts)
-    
-    const lockfile = appendPartialUnpackFileExt(pkg.zip)
-    await fs_writeFile(lockfile, '', { ...opts, encoding: 'utf8' })
-    
-    const controller = new AbortController()
-    const signal = AbortSignal.any([ controller.signal, opts.signal ])
-
-    const args = ['-aoa', `-o${pkg.dir}`, '-bsp1']
-    if(!pkg.noDedup) args.push('-spe')
-    s7zs.length = 0
-
-    if(pkg.zipExt == '.tar.gz'){
-        s7zs[0] = Object.assign(spawn(s7zExe, ['x', '-so', '-tgzip', pkg.zip], {
-            stdio: [ 'inherit', 'pipe', 'pipe' ], signal,
-        }), { id: pid })
-        s7zs[1] = Object.assign(spawn(s7zExe, ['x', '-si', '-ttar', ...args], {
-            stdio: [ 'pipe', 'pipe', 'pipe' ], signal,
-        }), { id: pid })
-        s7zs[0].stdout!.pipe(s7zs[1].stdin!)
-        pid++
-    } else {
-        s7zs[0] = Object.assign(spawn(s7zExe, ['x', ...args, pkg.zip], {
-            signal,
-        }), { id: pid++ })
-    }
-
-    if(s7zs.length > 1)
-    s7zs.at(+0)!.stderr!.setEncoding('utf8').addListener('data', (chunk) => onData(0, '[STDERR]', chunk))
-    s7zs.at(-1)!.stdout!.setEncoding('utf8').addListener('data', (chunk) => onData(s7zs.length - 1, '[STDOUT]', chunk))
-    s7zs.at(-1)!.stderr!.setEncoding('utf8').addListener('data', (chunk) => onData(s7zs.length - 1, '[STDERR]', chunk))
-    function onData(i: number, src: '[STDOUT]' | '[STDERR]', chunk: string){
-        chunk = chunk.replace(/[\b]/g, '').trim()
-        const args = [`7Z`, pid, i, src]
-        let m
-        if(src === '[STDOUT]' && (m = s7zProgressMsg.exec(chunk)) && m && m[1]){
-            bar.update(parseInt(m[1]))
-        } else {
-            logger.log(...args, chunk)
-        }
-        if(src === '[STDERR]' && !signal.aborted && s7zDataErrorMsgs.some(msg => msg.test(chunk))){
-            //s7zs.at(i)![src]!.removeAllListeners('data')
-            controller.abort(new DataError())
-            logger.log(...args, 'ABORTED')
-        }
-    }
-
     try {
-        await Promise.race([
-            Promise.all(s7zs.map(s7zi => successfulTermination(s7zi))),
-            new Promise((resolve, reject) => {
-                signal.addEventListener('abort', () => {
-                    reject(signal.reason)
-                })
-            }),
-        ])
+    
+        await fs_ensureDir(pkg.dir, opts)
+    
+        const lockfile = appendPartialUnpackFileExt(pkg.zip)
+        await fs_writeFile(lockfile, '', { ...opts, encoding: 'utf8' })
+        
+        const controller = new AbortController()
+        const signal = AbortSignal.any([ controller.signal, opts.signal ])
+
+        const args = ['-aoa', `-o${pkg.dir}`, '-bsp1']
+        if(!pkg.noDedup) args.push('-spe')
+        s7zs.length = 0
+
+        if(pkg.zipExt == '.tar.gz'){
+            s7zs[0] = Object.assign(spawn(s7zExe, ['x', '-so', '-tgzip', pkg.zip], {
+                stdio: [   null, 'pipe', 'pipe' ], signal,
+            }), { id: pid })
+            s7zs[1] = Object.assign(spawn(s7zExe, ['x', '-si', '-ttar', ...args], {
+                stdio: [ 'pipe', 'pipe', 'pipe' ], signal,
+            }), { id: pid })
+            s7zs[0].stdout!.pipe(s7zs[1].stdin!)
+        } else {
+            s7zs[0] = Object.assign(spawn(s7zExe, ['x', ...args, pkg.zip], {
+                signal,
+            }), { id: pid })
+        }
+        pid++
+
+        connect(s7zs.length - 1, 'stdout')
+        for(let i = 0; i < s7zs.length; i++)
+            connect(i, 'stderr')
+
+        function connect(i: number, src: 'stdout' | 'stderr'){
+            const proc = s7zs[i]!
+            const logPrefix = `7Z ${proc.id} ${i} [${src.toUpperCase()}]`
+            proc[src]!.setEncoding('utf8').on('data', (chunk) => {
+                onData(logPrefix, src, chunk)
+            })
+        }
+
+        function onData(loggerPrefix: string, src: 'stdout' | 'stderr', chunk: string){
+            chunk = chunk.replace(/[\b]/g, '').trim()
+            let m
+            if(src === 'stdout' && (m = s7zProgressMsg.exec(chunk)) && m && m[1]){
+                bar.update(parseInt(m[1]))
+            } else if(chunk){
+                logger.log(loggerPrefix, chunk)
+            }
+            if(src === 'stderr' && !signal.aborted && s7zDataErrorMsgs.test(chunk)){
+                //s7zs.at(i)![src]!.removeAllListeners('data')
+                controller.abort(new DataError())
+                logger.log(loggerPrefix, 'ABORTED')
+            }
+        }
+
+        await Promise.all(s7zs.map((proc, i) => successfulTermination(
+            `7Z ${proc.id} ${i}`, proc, opts, [ 0, s7zExitCodes.Warning ]
+        )))
         await fs_removeFile(lockfile, opts)
-    } catch(err) {
-        if(err instanceof DataError) throw err
-        if(err instanceof TerminationError){
-            if(err.cause?.code === s7zExitCodes.Warning){ /*OK*/ }
-            else throw err
-        } else throw err
+    
     } finally {
+        for(const proc of s7zs) proc.kill()
         bar.update(bar.getTotal())
         bar.stop()
     }

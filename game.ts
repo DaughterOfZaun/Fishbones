@@ -11,6 +11,7 @@ import type { WriteonlyMessageStream } from './utils/pb-stream'
 import { launchClient, relaunchClient, stopClient } from './utils/data-client'
 import { launchServer, stopServer } from './utils/data-server'
 import { safeOptions, shutdownOptions } from './utils/data-process'
+import { console_log } from './utils/data-shared'
 
 type GameEvents = {
     update: CustomEvent,
@@ -207,9 +208,12 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             this.players.values(),
         )
         
-        const proc = await launchServer(this.getGameInfo(), opts)
-        if(proc) proc.once('exit', this.onServerExit)
-        else {
+        let proc
+        try {
+            proc = await launchServer(this.getGameInfo(), opts)
+            proc.once('exit', this.onServerExit)
+        } catch(err) {
+            console_log('Failed to start server:', Bun.inspect(err))
             this.onServerExit()
             return false
         }
@@ -296,18 +300,21 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         const port = this.proxyClient.getPort()!
         const ip = LOCALHOST
         
-        //if(!ip) return //TODO:
-        const proc = await launchClient(ip, port, key, clientId, opts)
-        if(proc) proc.once('exit', this.onClientExit)
-        else {
+        try {
+            const proc = await launchClient(ip, port, key, clientId, opts)
+            proc.once('exit', this.onClientExit)
+        } catch(err) {
+            console_log('Failed to start client:', Bun.inspect(err))
             this.onClientExit()
             return false
         }
     }
     public async relaunch(opts: Required<AbortOptions>){
-        const proc = await relaunchClient(opts)
-        if(proc) proc.once('exit', this.onClientExit)
-        else {
+        try {
+            const proc = await relaunchClient(opts)
+            proc.once('exit', this.onClientExit)
+        } catch(err) {
+            console_log('Failed to restart client:', Bun.inspect(err))
             this.onClientExit()
             return false
         }

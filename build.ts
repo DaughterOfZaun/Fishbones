@@ -3,76 +3,70 @@
 import { $ } from 'bun'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
-import { COPYRIGHT, DESCRIPTION, ICON, NAME, OUTDIR, OUTFILE, PUBLISHER, TARGET, VERSION } from './utils/constants'
+import { COPYRIGHT, DESCRIPTION, HIDE_CONSOLE, ICON, NAME, OUTDIR, OUTFILE, PUBLISHER, TARGET, TITLE, VERSION } from './utils/constants'
 
 await $`mv node_modules node_modules_linux_npm`
 await $`mv node_modules_win_npm node_modules`
 try {
-await patch()
-//await build_libUTP()
+    await patch()
+    //await build_libUTP()
 
-await $`bun build --compile --sourcemap --target="${TARGET}" --outfile="${path.join(OUTDIR, OUTFILE)}" 'index.ts'`
+    //await $`bun build --compile --sourcemap --target="${TARGET}" --outfile="${path.join(OUTDIR, OUTFILE)}" 'index.ts'`
+    await Bun.build({
+        entrypoints: [ './index.ts' ],
+        outdir: OUTDIR,
+        compile: {
+            target: TARGET,
+            outfile: OUTFILE,
+            windows: {
+                hideConsole: HIDE_CONSOLE,
+                icon: ICON,
+                title: TITLE,
+                publisher: PUBLISHER,
+                version: VERSION,
+                description: DESCRIPTION,
+                copyright: COPYRIGHT,
+            },
+        }
+    })
 
-//await $`bun build --sourcemap --target="bun" --outdir="${OUTDIR}" 'index-failsafe.ts'`
-//await $`bun build --compile --sourcemap --target="${TARGET}" --outfile="${path.join(OUTDIR, OUTFILE)}" './dist/index-failsafe.js' './dist/index.js'`
+    //await $`bun build --sourcemap --target="bun" --outdir="${OUTDIR}" 'index-failsafe.ts'`
+    //await $`bun build --compile --sourcemap --target="${TARGET}" --outfile="${path.join(OUTDIR, OUTFILE)}" './dist/index-failsafe.js' './dist/index.js'`
 
-if(process.argv.includes('--release')){
-    const wine = `flatpak run --command='bottles-cli' com.usebottles.bottles run -b 'Default Gaming' -e`
-    const args = [
-        `--set-icon "${ICON}"`,
-        `--set-file-version "${VERSION}"`,
-        `--set-product-version "${VERSION}"`,
-        `--set-version-string "FileDescription" "${DESCRIPTION}"`,
-        `--set-version-string "InternalName" "${NAME}"`,
-        `--set-version-string "OriginalFilename" "${OUTFILE}"`,
-        `--set-version-string "ProductName" "${NAME}"`,
-        `--set-version-string "CompanyName" "${PUBLISHER}"`,
-        `--set-version-string "LegalCopyright" "${COPYRIGHT}"`,
-    ]
-    await $`${{ raw: wine }} './rcedit-x64.exe' '${path.join(OUTDIR, OUTFILE)} ${{ raw: args.join(' ') }}'`
+    //console.log(`bun build --compile --target="${TARGET}" --outfile="${path.join(OUTDIR, OUTFILE)}" --windows-icon="${ICON}" --windows-title="${TITLE}" --windows-publisher="${PUBLISHER}" --windows-version="${VERSION}" --windows-description="${DESCRIPTION}" --windows-copyright="${COPYRIGHT}" 'index.ts'`)
     //await $`flatpak run --command='bottles-cli' com.usebottles.bottles run -b 'Default Gaming' -e ${path.join(__dirname, 'bun.exe')} "build --compile --target='${TARGET}' --outfile='${path.join(__dirname, OUTDIR, OUTFILE)}' --windows-icon='${ICON}' --windows-title='${TITLE}' --windows-publisher='${PUBLISHER}' --windows-version='${VERSION}' --windows-description='${DESCRIPTION}' --windows-copyright='${COPYRIGHT}' --root='${__dirname}' '${path.join(__dirname, 'index.ts')}'"`
-}
-
-//console.log(`bun build --compile --target="${TARGET}" --outfile="${path.join(OUTDIR, OUTFILE)}" --windows-icon="${ICON}" --windows-title="${TITLE}" --windows-publisher="${PUBLISHER}" --windows-version="${VERSION}" --windows-description="${DESCRIPTION}" --windows-copyright="${COPYRIGHT}" 'index.ts'`)
-/*
-await Bun.build({
-    ////@ts-expect-error: Type A is not assignable to type B
-    target: 'bun',
-    entrypoints: ['./index.ts'],
-    outdir: './dist',
-    //@ts-expect-error: Object literal may only specify known properties.
-    compile: {
-        target: 'bun-windows-x64',
-        outfile: 'Fishbones.exe',
-        windows: {
-            hideConsole: false,
-            icon: "./icon.ico",
-            title: `Fishbones v${VERSION}`,
-            publisher: "Jinx",
-            version: VERSION,
-            description: "Yet another LeagueSandbox launcher with a twist",
-            //copyright: "GPLv3",
-        },
+    if(process.argv.includes('--release')){
+        const wine = `flatpak run --command='bottles-cli' com.usebottles.bottles run -b 'Default Gaming' -e`
+        const args = [
+            `--set-icon "${ICON}"`,
+            `--set-file-version "${VERSION}"`,
+            `--set-product-version "${VERSION}"`,
+            `--set-version-string "FileDescription" "${DESCRIPTION}"`,
+            `--set-version-string "InternalName" "${NAME}"`,
+            `--set-version-string "OriginalFilename" "${OUTFILE}"`,
+            `--set-version-string "ProductName" "${NAME}"`,
+            `--set-version-string "CompanyName" "${PUBLISHER}"`,
+            `--set-version-string "LegalCopyright" "${COPYRIGHT}"`,
+        ]
+        await $`${{ raw: wine }} './rcedit-x64.exe' '${path.join(OUTDIR, OUTFILE)} ${{ raw: args.join(' ') }}'`
     }
-})
-*/
-await $`chmod 666 ./dist/Fishbones.exe`
+
+    await $`chmod 666 ./dist/Fishbones.exe`
 } finally {
-await $`mv node_modules node_modules_win_npm`
-await $`mv node_modules_linux_npm node_modules`
+    await $`mv node_modules node_modules_win_npm`
+    await $`mv node_modules_linux_npm node_modules`
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function build_libUTP(){
     $.cwd('./node_modules/utp-native/deps/libutp')
     try {
-    //zig build-lib -dynamic -lc -lc++ -target x86_64-windows-gnu -lws2_32
-    const objs = ['utp_internal.o', 'utp_utils.o', 'utp_hash.o', 'utp_callbacks.o', 'utp_api.o', 'utp_packedsockaddr.o',]
-    const gpp = 'x86_64-w64-mingw32-g++ -Wall -DPOSIX -g -fno-exceptions -O3 -fPIC -fno-rtti -Wno-sign-compare -fpermissive'
-    await Promise.all(objs.map(obj => $`${{ raw: gpp }} -c -o ${obj} ${obj.replace(/\.o$/, '.cpp')}`))
-    await $`${{ raw: gpp }} -o libutp.so -shared ${{ raw: objs.join(' ') }} -lws2_32 -static -static-libgcc -static-libstdc++`
+        //zig build-lib -dynamic -lc -lc++ -target x86_64-windows-gnu -lws2_32
+        const objs = ['utp_internal.o', 'utp_utils.o', 'utp_hash.o', 'utp_callbacks.o', 'utp_api.o', 'utp_packedsockaddr.o',]
+        const gpp = 'x86_64-w64-mingw32-g++ -Wall -DPOSIX -g -fno-exceptions -O3 -fPIC -fno-rtti -Wno-sign-compare -fpermissive'
+        await Promise.all(objs.map(obj => $`${{ raw: gpp }} -c -o ${obj} ${obj.replace(/\.o$/, '.cpp')}`))
+        await $`${{ raw: gpp }} -o libutp.so -shared ${{ raw: objs.join(' ') }} -lws2_32 -static -static-libgcc -static-libstdc++`
     } finally {
-    $.cwd()
+        $.cwd()
     }
 }
 

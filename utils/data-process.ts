@@ -1,7 +1,17 @@
-import type { SubProcess } from 'teen_process'
-import type { ChildProcess } from 'child_process'
+import defer from 'p-defer'
+import type { ChildProcess, ChildProcessWithoutNullStreams } from 'child_process'
 import type { AbortOptions } from '@libp2p/interface'
 import { logger } from './data-shared'
+//import type { Readable } from 'stream'
+export { spawn } from 'child_process'
+
+export const MAIN_PROCESS_EXIT_TIMEOUT = 10_000
+export const PROCESS_START_TIMEOUT = 10_000
+export const PROCESS_EXIT_TIMEOUT = 9_000
+
+//type ChildProcessWithStdoutAndStderr = ChildProcessByStdio<null, Readable, Readable>
+//export type { ChildProcessWithStdoutAndStderr as ChildProcess }
+export type { ChildProcessWithoutNullStreams as ChildProcess }
 
 type TerminationErrorCause = { code: null|number, signal: null|string }
 type TerminationErrorOptions = { cause?: TerminationErrorCause }
@@ -12,73 +22,110 @@ export class TerminationError extends Error implements TerminationErrorOptions {
         this.cause = options?.cause
     }
 }
-export function logTerminationMsg(args: (string|number)[], action: string, code: null|number, signal: null|string){
+export function logTerminationMsg(prefix: string, action: string, code: null|number, signal: null|string){
     let msg = `Process ${action} with code ${code}`
     if(signal) msg += ` by signal ${signal}`
-    logger.log(...args, msg)
+    logger.log(prefix, msg)
     return msg
 }
 
+type ProcessEventHandler = (code: number | null, signal: NodeJS.Signals | null) => void
+
 export async function startProcess(
-    sp: SubProcess,
-    loggerArgs: (string|number)[],
-    startArgs: Parameters<SubProcess['start']>,
+    logPrefix: string,
+    proc: ChildProcess,
+    startDetector: (stdout: string) => boolean,
     opts: Required<AbortOptions>,
-): Promise<SubProcess | null> {
-    let lastError: Error | undefined
-    try {
-        await Promise.race([
-            sp.start(...startArgs),
-            new Promise((resolve, reject) => {
-                sp.on('die', (code, signal) => {
-                    const msg = logTerminationMsg(loggerArgs, 'died', code, signal)
-                    reject(new TerminationError(msg, { cause: { code, signal } }))
-                })
-            })
-        ])
-    } catch(err) {
-        lastError = err as Error
-    }
+    timeoutMs: number = PROCESS_START_TIMEOUT,
+): Promise<void> {
 
-    opts.signal.throwIfAborted()
+    const deferred = defer<void>()
     
-    if(lastError){
-        if(lastError instanceof TerminationError)
-            return null
-        throw lastError
+    const ondata = (chunk: string) => {
+        if(startDetector(chunk))
+            deferred.resolve()
     }
-    return sp
-}
+    const onexit: ProcessEventHandler = (code, signal) => {
+        const msg = logTerminationMsg(logPrefix, 'died', code, signal)
+        deferred.reject(new TerminationError(msg, { cause: { code, signal } }))
+    }
+    const onabort = () => {
+        deferred.reject(opts.signal.reason)
+    }
 
-export function successfulTermination(proc: ChildProcess & { id: number }){
-    return new Promise<void>((resolve, reject) => {
-        proc.once('error', (err) => reject(err))
-        proc.once('close', (code, signal) => {
-            logTerminationMsg(['7Z', proc.id], 'closed', code, signal)
-        })
-        proc.once('exit', (code, signal) => {
-            const msg = logTerminationMsg(['7Z', proc.id], 'exited', code, signal)
-            if(code === 0) resolve()
-            else {
-                reject(new TerminationError(msg, { cause: { code, signal } }))
-            }
-        })
+    proc.addListener('exit', onexit)
+    proc.stdout!.addListener('data', ondata)
+    opts.signal!.addEventListener('abort', onabort)
+    const timeout = setTimeout(() => {
+        deferred.reject(new Error(`${logPrefix} did not start within ${timeoutMs}ms`))
+    }, timeoutMs)
+    
+    return deferred.promise.finally(() => {
+        proc.removeListener('exit', onexit)
+        proc.stdout!.removeListener('data', ondata)
+        opts.signal!.removeEventListener('abort', onabort)
+        clearTimeout(timeout)
     })
 }
 
-export async function killSubprocess(sp: SubProcess, opts: Required<AbortOptions>){
-    try {
-        await sp.stop('SIGTERM', 4.5 * 1000)
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch(err){
-        try {
-            await sp.stop('SIGKILL', 1)
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (err) {
-            //TODO: Handle errors
-        }
+export async function successfulTermination(loggerPrefix: string, proc: ChildProcess, opts: Required<AbortOptions>, allowedExitCodes = [ 0 ]){
+    
+    const deferred = defer<void>()
+
+    const onerror = (err: Error) => deferred.reject(err)
+    const onclose: ProcessEventHandler = (code, signal) => {
+        logTerminationMsg(loggerPrefix, 'closed', code, signal)
     }
-    opts.signal.throwIfAborted()
+    const onexit: ProcessEventHandler = (code, signal) => {
+        const msg = logTerminationMsg(loggerPrefix, 'exited', code, signal)
+        if(!allowedExitCodes.includes(code!))
+            deferred.reject(new TerminationError(msg, { cause: { code, signal } }))
+        else deferred.resolve()
+    }
+    const onabort = () => {
+        deferred.reject(opts.signal.reason)
+    }
+
+    opts.signal.addEventListener('aborted', onabort)
+    proc.addListener('error', onerror)
+    proc.addListener('close', onclose)
+    proc.addListener('exit', onexit)
+    
+    return deferred.promise.finally(() => {
+        opts.signal.removeEventListener('aborted', onabort)
+        proc.removeListener('error', onerror)
+        proc.removeListener('close', onclose)
+        proc.removeListener('exit', onexit)
+    })
+}
+
+export async function killSubprocess(loggerPrefix: string, proc: ChildProcess, opts: Required<AbortOptions>){
+    const timeoutMs = PROCESS_EXIT_TIMEOUT
+
+    const deferred = defer<void>()
+
+    const onexit: ProcessEventHandler = (code, signal) => {
+        logTerminationMsg(loggerPrefix, 'exited', code, signal)
+        deferred.resolve()
+    }
+    const onabort = () => {
+        deferred.reject(opts.signal.reason)
+    }
+
+    proc.addListener('exit', onexit)
+    opts.signal.addEventListener('abort', onabort)
+    const timeout = setTimeout(() => {
+        proc.kill('SIGKILL')
+        deferred.resolve()
+    }, timeoutMs)
+
+    proc.kill('SIGTERM')
+
+    return deferred.promise.finally(() => {
+        proc.removeListener('exit', onexit)
+        opts.signal.removeEventListener('abort', onabort)
+        clearTimeout(timeout)
+    })
 }
 
 export const shutdownController = new AbortController()
