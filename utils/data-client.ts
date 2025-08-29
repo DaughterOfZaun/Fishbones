@@ -1,7 +1,8 @@
 import { SubProcess } from "teen_process"
 import { gcPkg } from "./data-packages"
 import { sanitize_bfkey } from "./constants"
-import { killSubprocess, logger, registerShutdownHandler, startProcess } from "./data-shared"
+import { logger } from "./data-shared"
+import { killSubprocess, registerShutdownHandler, startProcess } from "./data-process"
 import type { AbortOptions } from "@libp2p/interface"
 
 let clientSubprocess: undefined | SubProcess

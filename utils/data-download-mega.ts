@@ -3,7 +3,7 @@ import { packages, type PkgInfo } from './data-packages'
 import type { Readable } from 'stream'
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'http'
 import type { AddressInfo } from 'net'
-import { registerShutdownHandler } from './data-shared'
+import { registerShutdownHandler } from './data-process'
 import type { AbortOptions } from '@libp2p/interface'
 
 type Fetch = (url: string | URL | Request, opts: BunFetchRequestInit | RequestInit | undefined) => Promise<Response>

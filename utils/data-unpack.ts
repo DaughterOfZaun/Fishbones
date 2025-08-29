@@ -1,8 +1,9 @@
 import type { ChildProcess } from 'child_process'
 import { spawn } from 'teen_process'
 import { type PkgInfo } from './data-packages'
-import { barOpts, logger, logTerminationMsg, multibar, registerShutdownHandler, TerminationError } from './data-shared'
-import { rwx_rx_rx, downloads, fs_chmod, fs_copyFile, fs_ensure_dir, fs_exists, fs_writeFile, fs_rmfile } from './data-fs'
+import { barOpts, logger, multibar } from './data-shared'
+import { registerShutdownHandler, successfulTermination, TerminationError } from './data-process'
+import { rwx_rx_rx, downloads, fs_chmod, fs_copyFile, fs_ensureDir, fs_exists, fs_writeFile, fs_removeFile } from './data-fs'
 import type { AbortOptions } from '@libp2p/interface'
 import path from 'node:path'
 
@@ -34,22 +35,6 @@ export async function repair7z(opts: Required<AbortOptions>){
         if(err.errno == 32){ /*OK*/ } // The process cannot access the file because it is being used by another process.
         else throw err
     }
-}
-
-function successfulTermination(proc: ChildProcess & { id: number }){
-    return new Promise<void>((resolve, reject) => {
-        proc.once('error', (err) => reject(err))
-        proc.once('close', (code, signal) => {
-            logTerminationMsg(['7Z', proc.id], 'closed', code, signal)
-        })
-        proc.once('exit', (code, signal) => {
-            const msg = logTerminationMsg(['7Z', proc.id], 'exited', code, signal)
-            if(code === 0) resolve()
-            else {
-                reject(new TerminationError(msg, { cause: { code, signal } }))
-            }
-        })
-    })
 }
 
 const s7zDataErrorMsgs = [
@@ -98,7 +83,7 @@ export async function unpack(pkg: PkgInfo, opts: Required<AbortOptions>){
         ...barOpts,
     })
     
-    await fs_ensure_dir(pkg.dir, opts)
+    await fs_ensureDir(pkg.dir, opts)
     
     const lockfile = appendPartialUnpackFileExt(pkg.zip)
     await fs_writeFile(lockfile, '', { ...opts, encoding: 'utf8' })
@@ -154,7 +139,7 @@ export async function unpack(pkg: PkgInfo, opts: Required<AbortOptions>){
                 })
             }),
         ])
-        await fs_rmfile(lockfile, opts)
+        await fs_removeFile(lockfile, opts)
     } catch(err) {
         if(err instanceof DataError) throw err
         if(err instanceof TerminationError){

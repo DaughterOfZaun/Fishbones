@@ -47,7 +47,7 @@ export async function fs_exists_and_size_eq(path: string, size: number, opts: Re
     return result
 }
 
-export async function fs_ensure_dir(path: string, opts: Required<AbortOptions>){
+export async function fs_ensureDir(path: string, opts: Required<AbortOptions>){
     try {
         await fs.mkdir(path)
     } catch(unk_err) {
@@ -134,7 +134,7 @@ export async function fs_rmdir(path: string, opts: Required<AbortOptions>, log =
     return result
 }
 
-export async function fs_rmfile(path: string, opts: Required<AbortOptions>, log = true){
+export async function fs_removeFile(path: string, opts: Required<AbortOptions>, log = true){
     let result = false
     try {
         await fs.rm(path)

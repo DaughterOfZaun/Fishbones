@@ -3,7 +3,7 @@ import { download, appendPartialDownloadFileExt, repairAria2 } from "./data-down
 import { gcPkg, gsPkg, PkgInfo, repairTorrents, sdkPkg } from "./data-packages"
 import { repairServerSettingsJsonc } from "./data-server"
 import { console_log } from "./data-shared"
-import { console_log_fs_err, cwd, downloads, fs_copyFile, fs_ensure_dir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_rmdir } from './data-fs'
+import { console_log_fs_err, cwd, downloads, fs_copyFile, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_rmdir } from './data-fs'
 import { readTrackersTxt } from "./data-trackers"
 import { appendPartialUnpackFileExt, DataError, repair7z, unpack } from "./data-unpack"
 import type { AbortOptions } from "@libp2p/interface"
@@ -16,7 +16,7 @@ import d3dx9_39_dll_embded from '../thirdparty/directx_Jun2010_redist/Aug2008_d3
 export async function repair(opts: Required<AbortOptions>){
     //console.log('Running data check and repair...')
 
-    await fs_ensure_dir(downloads, opts)
+    await fs_ensureDir(downloads, opts)
     
     await Promise.all([
         repairServerSettingsJsonc(opts),
@@ -36,10 +36,10 @@ export async function repair(opts: Required<AbortOptions>){
         ]).then(async () => {
             if(!await fs_exists(gsPkg.dll, opts, false))
                 await build(gsPkg, opts)
-            await fs_ensure_dir(gsPkg.infoDir, opts)
+            await fs_ensureDir(gsPkg.infoDir, opts)
         }),
         /*await*/ repairArchived(gcPkg, opts).then(async () => {
-            //await fs_ensure_dir(gcPkg.exeDir, opts)
+            //await fs_ensureDir(gcPkg.exeDir, opts)
             const d3dx9_39_dll = path.join(gcPkg.exeDir, 'd3dx9_39.dll')
             if(!await fs_exists(d3dx9_39_dll, opts, false))
                 await fs_copyFile(d3dx9_39_dll_embded, d3dx9_39_dll, opts)
@@ -102,7 +102,7 @@ async function findPackageDir(pkg: PkgInfo, opts: Required<AbortOptions>){
 
 async function moveFoundFilesToDir(foundPkgDir: string, pkg: PkgInfo, opts: Required<AbortOptions>){
 
-    await fs_ensure_dir(pkg.dir, opts)
+    await fs_ensureDir(pkg.dir, opts)
     const [ movingRequiredFilesResults, movingOptionalFilesResults ] = await Promise.all([
         Promise.allSettled(pkg.topLevelEntries.map(moveToPkgDir)),
         Promise.allSettled(pkg.topLevelEntriesOptional.map(moveToPkgDir)),

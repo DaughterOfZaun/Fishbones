@@ -5,7 +5,7 @@ import { logger } from "@libp2p/logger"
 import { isENet, type BunSocket } from "../network/umplex"
 import * as uMplex from '../network/umplex'
 import { UTPMatcher } from "../network/tcp"
-import { registerShutdownHandler } from "./data-shared"
+import { registerShutdownHandler } from "./data-process"
 
 const log = logger('launcher:proxy')
 

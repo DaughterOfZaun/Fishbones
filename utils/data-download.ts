@@ -3,7 +3,8 @@ import { SubProcess } from 'teen_process'
 import { aria2, open, createWebSocket, type Conn } from 'maria2/dist/index.js'
 import { randomBytes } from '@libp2p/crypto'
 import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
-import { barOpts, killSubprocess, logger, multibar, registerShutdownHandler } from './data-shared'
+import { barOpts, logger, multibar } from './data-shared'
+import { killSubprocess, registerShutdownHandler } from './data-process'
 import { rwx_rx_rx, downloads, fs_chmod, fs_copyFile, fs_exists, fs_exists_and_size_eq, fs_readFile } from './data-fs'
 import type { AbortOptions } from '@libp2p/interface'
 import { getAnnounceAddrs } from './data-trackers'
@@ -84,7 +85,11 @@ async function startAria2(opts: Required<AbortOptions>){
         ], {
             cwd: downloads,
         })
-        aria2proc.on('stream-line', line => { line = line.trim(); if(line) logger.log('ARIA2C', line) })
+        aria2proc.on('stream-line', line => {
+            line = line.trim();
+            if(line && line !== '[STDOUT]' && line != '[STDERR]' && !/./.test(line))
+                logger.log('ARIA2C', line)
+        })
         //console.log(aria2proc.cmd, ...aria2proc.args)
         aria2procPromise = aria2proc.start()
         //TODO: Handle start fail

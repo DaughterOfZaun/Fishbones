@@ -1,8 +1,9 @@
 import { sdkPkg, type PkgInfoCSProj } from "./data-packages"
 import { SubProcess } from 'teen_process'
-import { logger, createInfiniteBar, registerShutdownHandler } from "./data-shared"
+import { logger, createInfiniteBar } from "./data-shared"
 import type { AbortOptions } from "@libp2p/interface"
 import { fs_exists, fs_readFile, fs_writeFile, type ReadWriteFileOpts } from "./data-fs"
+import { registerShutdownHandler } from "./data-process"
 
 let sdkSubprocess: undefined | SubProcess
 registerShutdownHandler(async (force) => {

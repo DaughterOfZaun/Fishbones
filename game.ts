@@ -10,7 +10,7 @@ import { ProxyClient, ProxyServer } from './utils/data-proxy-umplex'
 import type { WriteonlyMessageStream } from './utils/pb-stream'
 import { launchClient, relaunchClient, stopClient } from './utils/data-client'
 import { launchServer, stopServer } from './utils/data-server'
-import { safeOptions, shutdownOptions } from './utils/data-shared'
+import { safeOptions, shutdownOptions } from './utils/data-process'
 
 type GameEvents = {
     update: CustomEvent,

@@ -2,7 +2,8 @@ import { ExitPromptError } from '@inquirer/core'
 import { createNode } from './index-node'
 import { main } from './index-tui'
 import { TITLE } from './utils/constants'
-import { callShutdownHandlers, console_log, logger, registerShutdownHandler, shutdownController, shutdownOptions } from './utils/data-shared'
+import { console_log, logger } from './utils/data-shared'
+import { callShutdownHandlers, registerShutdownHandler, shutdownController, shutdownOptions } from './utils/data-process'
 import { repair } from './utils/data-repair'
 
 const ABORT_ERR = 20

@@ -11,7 +11,7 @@ import type { Peer as PBPeer } from './message/peer'
 import type { LibP2PNode } from './index-node'
 import { TITLE } from './utils/constants'
 import type { AbortOptions } from '@libp2p/interface'
-import { shutdownOptions } from './utils/data-shared'
+import { shutdownOptions } from './utils/data-process'
 
 export async function main(node: LibP2PNode, opts: Required<AbortOptions>){
     
