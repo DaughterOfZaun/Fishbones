@@ -1,6 +1,6 @@
 import { LOBBY_PROTOCOL } from './utils/constants'
 import { Peer as PBPeer } from './message/peer'
-import { type AbortOptions, type Libp2p, type Stream, type StreamHandler } from '@libp2p/interface'
+import { type AbortOptions, type IncomingStreamData, type Libp2p, type Stream } from '@libp2p/interface'
 import * as lp from 'it-length-prefixed'
 import { pbStream, type MessageStream } from './utils/pb-stream'
 import { pipe } from 'it-pipe'
@@ -12,7 +12,7 @@ import { logger } from '@libp2p/logger'
 export class RemoteGame extends Game {
     protected log = logger('launcher:game-remote')
 
-    public get canStart(): boolean { return false }
+    public readonly canStart = false
 
     public static create(node: Libp2p, server: Server, gameInfo: PBPeer.AdditionalData.GameInfo){
         const game = new RemoteGame(node, server.id, server)
@@ -26,7 +26,7 @@ export class RemoteGame extends Game {
             const connection = await this.node.dial(this.ownerId, opts) //TODO: Switch to cm.openConnection?
             const stream = await connection.newStream([ LOBBY_PROTOCOL ], opts)
             this.stream = pbStream(stream).pb(LobbyNotificationMessage, LobbyRequestMessage)
-            /*async*/ this.handleOutgoingStream({ stream, connection })
+            this.handleOutgoingStream({ stream, connection })
             this.connected = true
             return true
         } catch(err) {
@@ -42,31 +42,30 @@ export class RemoteGame extends Game {
     }
     
     //TODO: opts: Required<AbortOptions>
-    private handleOutgoingStream: StreamHandler = async ({ stream, /*connection*/ }) => {
+    private handleOutgoingStream = ({ stream, /*connection*/ }: IncomingStreamData) => {
         //if(!connection.remotePeer.equals(this.id)) return
-        try {
-            await pipe(
-                stream,
-                (source) => lp.decode(source),
-                async (source) => {
-                    for await (const data of source) {
-                        const req = LobbyNotificationMessage.decode(data)
-                        this.handleResponse(req)
-                    }
+        pipe(
+            stream,
+            (source) => lp.decode(source),
+            async (source) => {
+                for await (const data of source) {
+                    const req = LobbyNotificationMessage.decode(data)
+                    this.handleResponse(req)
                 }
-            )
+            }
+        ).catch(err => {
+            this.log.error(err)
+        }).finally(() => {
             this.cleanup()
             this.safeDispatchEvent('kick')
-        } catch(err) {
-            this.log.error(err)
-        }
+        })
     }
     
     public disconnect() {
         if(!this.connected) return true
         //try {
             //await this.stream?.write({ ...lmDefaults, leaveRequest: {} })
-            /*await*/ this.stream?.unwrap().unwrap().close()
+            this.stream?.unwrap().unwrap().close()
                 .catch(err => this.log.error(err))
             this.cleanup()
         //} catch(err) {

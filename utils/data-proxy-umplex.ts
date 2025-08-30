@@ -14,7 +14,7 @@ type PeerIdStr = string
 type HostPortStr = string
 //type HostPortObj = { host: string, port: number }
 //type HostPort = string & HostPortObj
-type PeerData = {
+interface PeerData {
     id: PeerId,
     host: string, port: number,
     hostports: HostPortStr[],
@@ -191,7 +191,7 @@ export class ProxyServer extends Proxy {
 
         await Promise.all([
             this.createMainSocket(opts),
-            peerIds.map(id => this.createPeer(id, opts)),
+            peerIds.map(async (id) => this.createPeer(id, opts)),
         ])
     }
     

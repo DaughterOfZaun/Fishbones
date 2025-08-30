@@ -78,13 +78,13 @@ try {
     const port = parseInt(getNamedArg('--port', '5119'))
     const node = await createNode(port, shutdownOptions)
     //console.log('node.peerId is', node.peerId.toString())
-    registerShutdownHandler(() => {
+    registerShutdownHandler(async () => {
         //await node.services.pubsubPeerWithDataDiscovery?.beforeStop()
         //await node.services.pubsubPeerDiscovery?.stop()
         //await node.services.torrentPeerDiscovery?.beforeStop()
         //await node.services.torrentPeerDiscovery?.stop()
         //await node_services_upnpNAT?.stop()
-        return node.stop()
+        await node.stop()
     })
 
     isInsideOfUI = true

@@ -51,8 +51,8 @@ function registerPackage(pkg: PkgInfo){
 const CACHED_RESPONSE_LIFETIME = Infinity
 const cachedResponses = new Map<Mega.File, { time: number, data: JSON }>()
 
-const api_request = api.request
-api.request = function request(json, cb, retryno){
+const api_request = api.request.bind(api)
+api.request = async function request(json, cb, retryno){
     const req = json as { a?: string, g?: number, n?: string, _querystring?: { n?: string }, p?: string }
     if(req.a === 'g' && req.g === 1){
         const file = files.values().find(file => {
@@ -66,7 +66,7 @@ api.request = function request(json, cb, retryno){
                 console.log('cached res found', res)
                 return Promise.resolve(res.data)
             }
-            return api_request.call(api, json, (err, res) => {
+            return api_request(json, (err, res) => {
                 if(!err && res){
                     console.log('caching res', res)
                     cachedResponses.set(file, { time: Date.now(), data: res })
@@ -75,7 +75,7 @@ api.request = function request(json, cb, retryno){
             }, retryno)
         }
     }
-    return api_request.call(api, json, cb, retryno)
+    return api_request(json, cb, retryno)
 }
 
 let server: Server | undefined
@@ -120,7 +120,7 @@ function requestListener(req: IncomingMessage, res: ServerResponse){
 
     console.log(id, req.method, 'REQUEST', req.headers)
 
-    if(!req.url || !req.headers) return
+    if(!req.url) return
     const file = files.get(req.url)
     if(!file) return
 
@@ -128,19 +128,19 @@ function requestListener(req: IncomingMessage, res: ServerResponse){
     let start = 0, end = file.size - 1
     const rangeHeader = req.headers['range']
     if(typeof rangeHeader === 'string'){
-        const parts = rangeHeader?.split('=').at(-1)?.split('-').map(Number)
+        const parts = rangeHeader.split('=').at(-1)?.split('-').map(Number)
         if(parts?.[0]) start = parts[0]
         if(parts?.[1]) end = parts[1]
         ranged = true
     }
 
-    const stream: Readable & { end: () => void } = file.download({
+    const stream = file.download({
         start, end,
         forceHttps: true,
         maxConnections: 1,
         returnCiphertext: false,
         handleRetries,
-    })
+    }) as Readable & { end: () => void }
 
     let res_headersSent = false
     stream.once('data', (chunk) => {

@@ -10,7 +10,7 @@ export type UTPSocketExt = UTPSocket & {
     wrapper?: Socket
 }
 
-type SocketEvents = {
+interface SocketEvents {
     error: [Error],
     close: [boolean],
     end: [],

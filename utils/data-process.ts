@@ -1,5 +1,5 @@
 import defer from 'p-defer'
-import type { ChildProcess, ChildProcessWithoutNullStreams } from 'child_process'
+import type { ChildProcessWithoutNullStreams } from 'child_process'
 import type { AbortOptions } from '@libp2p/interface'
 import { logger } from './data-shared'
 //import type { Readable } from 'stream'
@@ -11,10 +11,10 @@ export const PROCESS_EXIT_TIMEOUT = 9_000
 
 //type ChildProcessWithStdoutAndStderr = ChildProcessByStdio<null, Readable, Readable>
 //export type { ChildProcessWithStdoutAndStderr as ChildProcess }
-export type { ChildProcessWithoutNullStreams as ChildProcess }
+export type ChildProcess = ChildProcessWithoutNullStreams
 
-type TerminationErrorCause = { code: null|number, signal: null|string }
-type TerminationErrorOptions = { cause?: TerminationErrorCause }
+interface TerminationErrorCause { code: null|number, signal: null|string }
+interface TerminationErrorOptions { cause?: TerminationErrorCause }
 export class TerminationError extends Error implements TerminationErrorOptions {
     cause?: TerminationErrorCause
     constructor(msg?: string, options?: TerminationErrorOptions){
@@ -54,16 +54,16 @@ export async function startProcess(
     }
 
     proc.addListener('exit', onexit)
-    proc.stdout!.addListener('data', ondata)
-    opts.signal!.addEventListener('abort', onabort)
+    proc.stdout.addListener('data', ondata)
+    opts.signal.addEventListener('abort', onabort)
     const timeout = setTimeout(() => {
         deferred.reject(new Error(`${logPrefix} did not start within ${timeoutMs}ms`))
     }, timeoutMs)
     
     return deferred.promise.finally(() => {
         proc.removeListener('exit', onexit)
-        proc.stdout!.removeListener('data', ondata)
-        opts.signal!.removeEventListener('abort', onabort)
+        proc.stdout.removeListener('data', ondata)
+        opts.signal.removeEventListener('abort', onabort)
         clearTimeout(timeout)
     })
 }
@@ -138,8 +138,9 @@ const shutdownHandlers: ShutdownHandler[] = []
 export function registerShutdownHandler(handler: ShutdownHandler){
     shutdownHandlers.push(handler)
 }
-export const callShutdownHandlers: ShutdownHandler = (force) => {
-    Promise.allSettled(shutdownHandlers.map(handler => handler(force)?.catch(err => {
+export const callShutdownHandlers = (force: boolean) => {
+    Promise.allSettled(shutdownHandlers.map(async (handler) => handler(force)?.catch(logError))).catch(logError)
+    function logError(err: unknown){
         logger.log('An error occurred while calling the shutdown handler:', Bun.inspect(err))
-    })))
+    }
 }

@@ -6,7 +6,7 @@ import { Socket, type UTPSocketExt } from "./socket"
 import type { UTPContext } from '../utp-native/context'
 import { isUTP, udpSocket } from '../network/umplex'
 
-type ServerEvents = {
+interface ServerEvents {
     listening: [],
     connection: [Socket],
     error: [Error],
@@ -15,7 +15,7 @@ type ServerEvents = {
     drop: [],
 }
 
-type HostPort = { host: string, port: number }
+interface HostPort { host: string, port: number }
 
 export class Server extends TypedEventEmitter<ServerEvents> {
     

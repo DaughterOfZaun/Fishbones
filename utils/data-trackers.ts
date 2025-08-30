@@ -18,7 +18,7 @@ function setTrackers(txt: string){
 }
 
 let trackersPromise: undefined | Promise<string[]>
-export function getAnnounceAddrs(opts: Required<AbortOptions>): Promise<string[]> {
+export async function getAnnounceAddrs(opts: Required<AbortOptions>): Promise<string[]> {
     return trackersPromise ||= (trackers !== undefined) ?
         Promise.resolve(trackers) :
         readTrackersTxt(opts)

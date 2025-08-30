@@ -7,22 +7,22 @@ type EncoderProto<T> = { encode: Encoder<T> }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyDuplex = Duplex<any, any, any>
 
-type AbortOptions = { signal: AbortSignal }
+interface AbortOptions { signal: AbortSignal }
 
 //// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export type ReadonlyMessageStream<I, S> = {
+export interface ReadonlyMessageStream<I, S> {
     read: (options?: AbortOptions) => Promise<I>
     unwrap: () => ProtobufStream<S>
 }
 
 //// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export type WriteonlyMessageStream<O, S> = {
+export interface WriteonlyMessageStream<O, S> {
     write: (data: O, options?: AbortOptions) => Promise<void>,
     writeV: (data: O[], options?: AbortOptions) => Promise<void>,
     unwrap: () => ProtobufStream<S>
 }
 
-export type MessageStream<I, O, S> = {
+export interface MessageStream<I, O, S> {
     read: (options?: AbortOptions) => Promise<I>
     write: (data: O, options?: AbortOptions) => Promise<void>,
     writeV: (data: O[], options?: AbortOptions) => Promise<void>,
@@ -40,9 +40,9 @@ function pbStream<S extends AnyDuplex>
                 inProto: DecoderProto<I>,
                 outProto: EncoderProto<O> //= inProto as unknown as EncoderProto<O>
             ): MessageStream<I, O, S> => ({
-            read: (options?: AbortOptions) => W.read(inProto, options),
-            write: (data: O, options?: AbortOptions) => W.write(data, outProto, options),
-            writeV: (data: O[], options?: AbortOptions) => W.writeV(data, outProto, options),
+            read: async (options?: AbortOptions) => W.read(inProto, options),
+            write: async (data: O, options?: AbortOptions) => W.write(data, outProto, options),
+            writeV: async (data: O[], options?: AbortOptions) => W.writeV(data, outProto, options),
             unwrap: () => W
         })
     })

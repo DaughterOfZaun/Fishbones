@@ -144,8 +144,8 @@ const verify = (signature: Uint8Array, data: Uint8Array, publicKeyRaw: Uint8Arra
     return ret === true //HACK:
 }
 
-type RPCPeer = { id: Buffer, host?: string, address?: string, port: number }
-type RPCResponse = {
+interface RPCPeer { id: Buffer, host?: string, address?: string, port: number }
+interface RPCResponse {
     ip?: Buffer,
     r?: { id?: Buffer, nodes?: Buffer, p?: number },
     a?: { id?: Buffer }
@@ -154,12 +154,12 @@ type RPCResponse = {
 type RPCQueryCallback = (err: null | Error & { code?: string }, res: RPCResponse, peer: RPCPeer) => void
 
 type Bencoded = Uint8Array | string | number | { [key: number]: Bencoded } | { [key: string]: Bencoded }
-type DHTGetReturnType = { v: Bencoded }
+interface DHTGetReturnType { v: Bencoded }
 
 type u = undefined
-type HostPort = { host: string, port: number }
+interface HostPort { host: string, port: number }
 type DeriveFunc = ({ host, port }: HostPort) => Multiaddr[]
-type ExternalAddress = {
+interface ExternalAddress {
     ipport: string // For debug log
     key: PrivateKey
     salt: Uint8Array
@@ -173,7 +173,7 @@ type ExternalAddress = {
     derived?: ReturnType<DeriveFunc>
     multiaddr?: Multiaddr
 }
-type ResolutionResult = {
+interface ResolutionResult {
     ipport: string // For debug log
     hash: Uint8Array
     salt: Uint8Array

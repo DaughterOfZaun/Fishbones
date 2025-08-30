@@ -50,8 +50,8 @@ export async function build(pkg: PkgInfoCSProj, opts: Required<AbortOptions>){
         })
         sdkSubprocess.addListener('exit', (code, signal) => logTerminationMsg(LOG_PREFIX, 'exited', code, signal))
         
-        sdkSubprocess.stdout.setEncoding('utf8').on('data', (chunk) => onData('[STDOUT]', chunk))
-        sdkSubprocess.stderr.setEncoding('utf8').on('data', (chunk) => onData('[STDERR]', chunk))
+        sdkSubprocess.stdout.setEncoding('utf8').on('data', (chunk: string) => onData('[STDOUT]', chunk))
+        sdkSubprocess.stderr.setEncoding('utf8').on('data', (chunk: string) => onData('[STDERR]', chunk))
         function onData(src: string, chunk: string){
             logger.log(LOG_PREFIX, src, chunk)
         }

@@ -19,13 +19,13 @@ export async function repair7z(opts: Required<AbortOptions>){
         await Promise.all([
             (async () => {
                 if(!await fs_exists(s7zExe, opts)){
-                    await fs_copyFile(s7zExeEmbded, s7zExe, opts)
+                    await fs_copyFile(String(s7zExeEmbded), s7zExe, opts)
                     await fs_chmod(s7zExe, rwx_rx_rx, opts)
                 }
             })(),
             (async () => {
                 if(s7zDll && s7zDllEmbded && !await fs_exists(s7zDll, opts))
-                    await fs_copyFile(s7zDllEmbded, s7zDll, opts)
+                    await fs_copyFile(String(s7zDllEmbded), s7zDll, opts)
             })(),
         ])
     } catch(unk_err){
@@ -104,7 +104,7 @@ export async function unpack(pkg: PkgInfo, opts: Required<AbortOptions>){
             s7zs[1] = Object.assign(spawn(s7zExe, ['x', '-si', '-ttar', ...args], {
                 stdio: [ 'pipe', 'pipe', 'pipe' ], signal,
             }), { id: pid })
-            s7zs[0].stdout!.pipe(s7zs[1].stdin!)
+            s7zs[0].stdout.pipe(s7zs[1].stdin)
         } else {
             s7zs[0] = Object.assign(spawn(s7zExe, ['x', ...args, pkg.zip], {
                 signal,
@@ -119,7 +119,7 @@ export async function unpack(pkg: PkgInfo, opts: Required<AbortOptions>){
         function connect(i: number, src: 'stdout' | 'stderr'){
             const proc = s7zs[i]!
             const logPrefix = `7Z ${proc.id} ${i} [${src.toUpperCase()}]`
-            proc[src]!.setEncoding('utf8').on('data', (chunk) => {
+            proc[src].setEncoding('utf8').on('data', (chunk: string) => {
                 onData(logPrefix, src, chunk)
             })
         }
@@ -139,7 +139,7 @@ export async function unpack(pkg: PkgInfo, opts: Required<AbortOptions>){
             }
         }
 
-        await Promise.all(s7zs.map((proc, i) => successfulTermination(
+        await Promise.all(s7zs.map(async (proc, i) => successfulTermination(
             `7Z ${proc.id} ${i}`, proc, opts, [ 0, s7zExitCodes.Warning ]
         )))
         await fs_removeFile(lockfile, opts)

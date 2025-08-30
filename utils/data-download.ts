@@ -9,6 +9,7 @@ import type { AbortOptions } from '@libp2p/interface'
 import { getAnnounceAddrs } from './data-trackers'
 import type { PkgInfo } from './data-packages'
 import * as MegaProxy from './data-download-mega'
+import defer from 'p-defer'
 
 const LOG_PREFIX = 'ARIA2C'
 
@@ -23,16 +24,16 @@ import ariaConfEmbded from '../thirdparty/Motrix/extra/win32/x64/engine/aria2.co
 const ariaExe = path.join(downloads, 'aria2c.exe')
 const ariaConf = path.join(downloads, 'aria2.conf')
 
-export function repairAria2(opts: Required<AbortOptions>){
+export async function repairAria2(opts: Required<AbortOptions>){
     return Promise.all([
         (async () => {
             if(await fs_exists(ariaExe, opts)) return
-            await fs_copyFile(ariaExeEmbded, ariaExe, opts)
+            await fs_copyFile(String(ariaExeEmbded), ariaExe, opts)
             await fs_chmod(ariaExe, rwx_rx_rx, opts)
         })(),
         (async () => {
             if(await fs_exists(ariaConf, opts)) return
-            await fs_copyFile(ariaConfEmbded, ariaConf, opts)
+            await fs_copyFile(String(ariaConfEmbded), ariaConf, opts)
         })(),
     ])
 }
@@ -73,7 +74,7 @@ async function startAria2(opts: Required<AbortOptions>){
             `--check-integrity=${true}`,
             //`--dir=${downloads}`,
             `--bt-exclude-tracker=${'*'}`,
-            `--bt-tracker=${trackers?.join(',')}`,
+            `--bt-tracker=${trackers.join(',')}`,
             `--file-allocation=${'falloc'}`,
             `--dht-file-path=${'aria2.dht.dat'}`,
             `--dht-file-path6=${'aria2.dht6.dat'}`,
@@ -88,8 +89,8 @@ async function startAria2(opts: Required<AbortOptions>){
         }) //TODO: Handle start fail. Maybe?
         aria2proc.addListener('exit', (code, signal) => logTerminationMsg(LOG_PREFIX, 'exited', code, signal))
 
-        aria2proc.stdout.setEncoding('utf8').addListener('data', (chunk) => onData('[STDOUT]', chunk))
-        aria2proc.stderr.setEncoding('utf8').addListener('data', (chunk) => onData('[STDERR]', chunk))
+        aria2proc.stdout.setEncoding('utf8').addListener('data', (chunk: string) => onData('[STDOUT]', chunk))
+        aria2proc.stderr.setEncoding('utf8').addListener('data', (chunk: string) => onData('[STDERR]', chunk))
         function onData(src: string, chunk: string){
             chunk = chunk.trim()
             if(chunk && !/^\[#\w+ .*\]$/.test(chunk)) // [#e69e0c 0B/20MiB(0%) CN:1 SD:0 DL:0B]
@@ -171,13 +172,12 @@ export async function download(pkg: PkgInfo, opts: Required<AbortOptions>){
         throw new Error(`Unable to download ${pkg.zipName}`)
 }
 
-function forCompletion(gid: string, isMetadata: boolean, cb: (progress: number) => void){
+async function forCompletion(gid: string, isMetadata: boolean, cb: (progress: number) => void){
     
-    let resolve: () => void
-    let reject: (err?: unknown) => void
+    const deferred = defer()
 
     const delay = 100 //TODO: Unhardcode. delay = 1000 / bar.fps
-    const interval = setInterval(update, delay)
+    const interval = setInterval(() => { update().catch(() => {}) }, delay)
     async function update(){
         try {
             const status = await aria2.tellStatus(aria2conn, gid, ['status', 'completedLength'])
@@ -185,14 +185,9 @@ function forCompletion(gid: string, isMetadata: boolean, cb: (progress: number) 
             //if(status.status === 'error') onError({ gid, status: status.status })
             cb(Number(status.completedLength))
         } catch(err) {
-            reject(err)
+            deferred.reject(err)
         }
     }
-
-    const promise = new Promise<void>((res, rej) => {
-        resolve = () => _finally() && res()
-        reject = (err) => _finally() && rej(err)
-    })
 
     const cbs = [
         aria2.onDownloadComplete(aria2conn, onComplete),
@@ -211,30 +206,28 @@ function forCompletion(gid: string, isMetadata: boolean, cb: (progress: number) 
                         isMetadata = false
                         //timeout = setTimeout(update, delay)
                     } else {
-                        resolve()
+                        deferred.resolve()
                     }
                 } catch(err) {
-                    reject(err)
+                    deferred.reject(err)
                 }
             } else {
-                resolve()
+                deferred.resolve()
             }
         }
     }
     
     function onError(notification: { gid: string, status?: string }) {
         if(notification.gid == gid){
-            reject()
+            deferred.reject()
         }
     }
 
-    function _finally(){
+    return deferred.promise.finally(() => {
         cbs.forEach(cb => cb.dispose())
         clearInterval(interval)
         return true
-    }
-
-    return promise
+    })
 }
 
 export function appendPartialDownloadFileExt(zip: string){

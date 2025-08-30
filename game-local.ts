@@ -13,9 +13,9 @@ import { pbStream } from './utils/pb-stream'
 export class LocalGame extends Game {
     protected log = logger('launcher:game-local')
 
-    public get canStart(){ return true }
+    public readonly canStart = true
 
-    public static create(node: Libp2p, server: Server, opts: Required<AbortOptions>){
+    public static async create(node: Libp2p, server: Server, opts: Required<AbortOptions>){
         return ufill(new LocalGame(node, server), opts)
     }
     
@@ -89,7 +89,7 @@ export class LocalGame extends Game {
         for(const player of to){
             if(player == ignore) continue
             if(player.stream){
-                /* await */ player.stream.write(msg)
+                player.stream.write(msg)
                     .catch(err => this.log.error(err))
             } else {
                 this.handleResponse(msg)
@@ -101,10 +101,12 @@ export class LocalGame extends Game {
         if(!this.connected) return true
         this.connected = false
         
-        this.node.unhandle(LOBBY_PROTOCOL)
+        this.node.unhandle(LOBBY_PROTOCOL).catch(err => {
+            this.log.error('An error occurred while unhandling the protocol: %e', err)
+        })
         for(const player of this.players.values()){
-            /*await*/ player?.stream?.unwrap().unwrap().close()
-            .catch(err => this.log.error(err))
+            player.stream?.unwrap().unwrap().close()
+                .catch(err => this.log.error(err))
         }
         this.cleanup()
         return true

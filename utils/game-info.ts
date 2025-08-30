@@ -1,4 +1,4 @@
-export type GameInfo = {
+export interface GameInfo {
     gameId: number
     game: {
         map: number

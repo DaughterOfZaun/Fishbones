@@ -23,12 +23,12 @@ export interface PubSubPeerDiscoveryComponents {
     peerStore: PeerStore
 }
 
-export type PubSubPeerDiscoveryEvents = {
+export interface PubSubPeerDiscoveryEvents {
     //data: PeerIdWithData,
     update: void
 }
 
-export type PeerIdWithData = { id: PeerId, data?: PBPeer.AdditionalData }
+export interface PeerIdWithData { id: PeerId, data?: PBPeer.AdditionalData }
 
 export function pubsubPeerDiscovery (init: PubsubPeerDiscoveryInit = {}): (components: PubSubPeerDiscoveryComponents) => PubSubPeerDiscovery {
     return (components: PubSubPeerDiscoveryComponents) => new PubSubPeerDiscovery(components, init)

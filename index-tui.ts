@@ -11,7 +11,6 @@ import type { Peer as PBPeer } from './message/peer'
 import type { LibP2PNode } from './index-node'
 import { TITLE } from './utils/constants'
 import type { AbortOptions } from '@libp2p/interface'
-import { shutdownOptions } from './utils/data-process'
 
 export async function main(node: LibP2PNode, opts: Required<AbortOptions>){
     
@@ -48,8 +47,8 @@ export async function main(node: LibP2PNode, opts: Required<AbortOptions>){
             //const ownerId = id.toString().slice(-8)
             //const gameName = game.name.toString()
             //const serverName = server.name.toString()
-            const players = ('' + game.getPlayersCount()).padStart(2, ' ')
-            const playersMax = ('' + 2 * (game.playersMax.value ?? 0)).padEnd(2, ' ')
+            const players = game.getPlayersCount().toString().padStart(2, ' ')
+            const playersMax = (2 * (game.playersMax.value ?? 0)).toString().padEnd(2, ' ')
             const mode = game.mode.toString()
             const map = game.map.toString()
             //const password = (game.password.isSet ? '[P] ' : '   ')
@@ -196,13 +195,13 @@ function playerChoices<T>(game: Game, cb: (player: GamePlayer) => T){
         return ({
             value: cb(player),
             name: colorFunc(
-                [`[${playerId}] ${player.name}`, champion, spell1, spell2, locked].join(' - ')
+                [`[${playerId}] ${player.name.toString()}`, champion, spell1, spell2, locked].join(' - ')
             )
         })
     }) as Choice<T>[]
 }
 
-type Context = {
+interface Context {
     signal: AbortSignal,
     clearPromptOnDone: boolean,
     controller: AbortController,
@@ -355,7 +354,7 @@ async function lobby_crash_report(ctx: Context){
         pageSize: 20,
     }, ctx)
     if(action === 'relaunch'){
-        /*await*/ game.relaunch(shutdownOptions)
+        game.relaunch()
         //return await lobby_wait_for_end(ctx)
         throw new AbortPromptError({ cause: lobby_wait_for_end })   
     } else if(action == 'exit'){

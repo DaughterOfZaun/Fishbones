@@ -68,7 +68,7 @@ const cid = CID.create(1, json.code,
     )
 )
 
-type HostPort = { host: string, port: number }
+interface HostPort { host: string, port: number }
 const derive = ({ host: ip, port }: HostPort) => {
     let v = 0
     if(isIPv4(ip)) v = 4
@@ -117,7 +117,7 @@ export async function createNode(port: number, opts: Required<AbortOptions>){
             listen: [
                 ...(DISABLE_UTP ? [] : [`/ip4/0.0.0.0/udp/${port}/utp`]),
                 ...(DISABLE_TCP ? [] : [`/ip4/0.0.0.0/tcp/${port}`]),
-                ...(DISABLE_NAT_MIGITATION ? [] : Array(10).fill(`/p2p-circuit`))
+                ...(DISABLE_NAT_MIGITATION ? [] : Array<string>(10).fill(`/p2p-circuit`))
                 //`/ip4/0.0.0.0/udp/${0}/webrtc-direct`,
                 //`/ip4/0.0.0.0/tcp/${0}/ws`,
                 //`/webrtc`,
@@ -290,7 +290,7 @@ export async function createNode(port: number, opts: Required<AbortOptions>){
 
     const transports = nc.transportManager.getTransports()
     for(const transport of transports){
-        const transport_dial = transport.dial
+        const transport_dial = transport.dial.bind(transport)
         transport.dial = async (ma, opts) => {
             
             const signalTimeout = AbortSignal.timeout(PER_ADDR_DIAL_TIMEOUT)
@@ -298,7 +298,7 @@ export async function createNode(port: number, opts: Required<AbortOptions>){
             setMaxListeners(Infinity, signal)
 
             try {
-                return await transport_dial.call(transport, ma, { ...opts, signal })
+                return await transport_dial(ma, { ...opts, signal })
             } catch(unk_err) {
                 if(signalTimeout.aborted){
                     //const err = unk_err as AbortError

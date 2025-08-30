@@ -3,10 +3,9 @@ import { promises as fs } from "node:fs"
 import type { AbortOptions } from '@libp2p/interface'
 import { console_log } from './data-shared'
 
-//export const cwd = process.cwd()
+export const cwd = process.cwd()
 //export const cwd = path.dirname(process.execPath)
-const isStandaloneBuild = globalThis.Deno?.build?.standalone //TODO: Bun
-export const cwd = isStandaloneBuild ? path.dirname(process.execPath) : process.cwd()
+//TODO: export const cwd = isStandaloneBuild ? path.dirname(process.execPath) : process.cwd()
 export const downloads = path.join(cwd, 'Fishbones_Data')
 
 //export const importMetaDirname = path.dirname(import.meta.dirname)

@@ -42,7 +42,7 @@ const idFromMultiaddr = (ma: Multiaddr): DialTarget => {
         if(peerIdStr == null){
             throw new Error('Circuit address does not contain the end PeerID.')
         }
-        return peerIdFromString(peerIdStr!)
+        return peerIdFromString(peerIdStr)
     }
     const { host, port, transport, family: v } = ma.toOptions()
     return `/ip${v}/${host}/${transport}/${port}` as AddrId
@@ -550,7 +550,7 @@ class Autodial implements Startable {
             if(filtered.some(info => info.connections!.some(isConnectionToOneOfCircuits))){
                 filtered = filtered.filter(info => {
                     info.connections = info.connections!.filter(isConnectionToOneOfCircuits)
-                    return info.connections!.length > 0
+                    return info.connections.length > 0
                 })
             }
         }

@@ -29,8 +29,8 @@ export async function launchServer(info: GameInfo, opts: Required<AbortOptions>,
         //detached: true,
     })
     
-    serverSubprocess.stdout.setEncoding('utf8').on('data', (chunk) => onData('[STDOUT]', chunk))
-    serverSubprocess.stderr.setEncoding('utf8').on('data', (chunk) => onData('[STDERR]', chunk))
+    serverSubprocess.stdout.setEncoding('utf8').on('data', (chunk: string) => onData('[STDOUT]', chunk))
+    serverSubprocess.stderr.setEncoding('utf8').on('data', (chunk: string) => onData('[STDERR]', chunk))
     function onData(src: string, chunk: string){
         logger.log(LOG_PREFIX, src, chunk)
     }

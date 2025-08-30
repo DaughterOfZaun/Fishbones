@@ -69,7 +69,7 @@ export const gcPkg = new class extends PkgInfoExe {
 
     dir = path.join(downloads, this.dirName)
     zip = path.join(downloads, this.zipName)
-    zipTorrentEmbded = gcZipTorrent
+    zipTorrentEmbded = String(gcZipTorrent)
     zipTorrent = `${this.zip}.torrent`
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
     zipMega = 'https://mega.nz/file/Hr5XEAqT#veo2lfRWK7RrLUdFBBqRdUvxwr_gd8UyUL0f6b4pHJ0'
@@ -108,7 +108,7 @@ const sdkArchMap: Record<string, string> = {
     'arm64': 'arm64',
 }
 const sdkArch = sdkArchMap[process.arch]
-if(!sdkArchMap) throw new Error(`Unsupported arch: ${process.arch}`)
+if(!sdkArch) throw new Error(`Unsupported arch: ${process.arch}`)
 
 //@ts-expect-error: Cannot find module or its corresponding type declarations.
 import sdkForLinuxZipTorrent from '../Fishbones_Data/dotnet-sdk-9.0.300-linux-x64.tar.gz.torrent' with { type: 'file' }
@@ -122,16 +122,16 @@ const sdkZipInfo = {
     'dotnet-sdk-9.0.300-win-x64.zip': {
         ihv1: '249a75bd3c8abba27b59fe42ab0771f77d6caee7',
         ihv2: '1220418d03e796bd159ed3ff24606a7b4948e520fbc4e93a172fc8a1798c51bc5647',
-        embdedTorrent: sdkForWinZipTorrent,
+        embdedTorrent: String(sdkForWinZipTorrent),
         size: 298580138,
     },
     'dotnet-sdk-9.0.300-linux-x64.tar.gz': {
         ihv1: 'f859eefcf797348b967220427a721655a9af0bc8',
         ihv2: '1220db828e2a00844b2ad1a457b03e521d24a0b03d4746b0e849bcf0ea1d2b34eb77',
-        embdedTorrent: sdkForLinuxZipTorrent,
+        embdedTorrent: String(sdkForLinuxZipTorrent),
         size: 217847129,
     },
-}[sdkZipName]!
+}[sdkZipName]
 if(!sdkZipInfo)
     throw new Error(`Unsupported dotnet-sdk-version-platform-arch.ext combination: ${sdkZipName}`)
 
@@ -140,14 +140,14 @@ export const sdkPkg = new class extends PkgInfoExe {
     noDedup = true
     zipExt = sdkZipExt
     zipName = sdkZipName
-    zipInfoHashV1 = sdkZipInfo.ihv1
-    zipInfoHashV2 = sdkZipInfo.ihv2
-    zipSize = sdkZipInfo.size
+    zipInfoHashV1 = sdkZipInfo!.ihv1
+    zipInfoHashV2 = sdkZipInfo!.ihv2
+    zipSize = sdkZipInfo!.size
     
     dir = path.join(downloads, this.dirName)
     zip = path.join(downloads, this.zipName)
     zipTorrent = `${this.zip}.torrent`
-    zipTorrentEmbded = sdkZipInfo.embdedTorrent
+    zipTorrentEmbded = sdkZipInfo!.embdedTorrent
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
 
     exeDir = this.dir
@@ -186,7 +186,7 @@ export const gsPkg = new class extends PkgInfoCSProj {
     
     dir = path.join(downloads, this.dirName)
     zip = path.join(downloads, this.zipName)
-    zipTorrentEmbded = gsPkgZipTorrent
+    zipTorrentEmbded = String(gsPkgZipTorrent)
     zipTorrent = `${this.zip}.torrent`
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
     zipMega = 'https://mega.nz/file/D35i0YaD#P08udvnbUByZHGBvCTbC1XDPkKdUGgp4xtravAlECbU'
@@ -236,7 +236,7 @@ for(const a of packages)
                 a.dirName, b.dirName
             )
 
-export function repairTorrents(opts: Required<AbortOptions>){
+export async function repairTorrents(opts: Required<AbortOptions>){
     return Promise.all(packages.map(async pkg => {
         if(!await fs_exists(pkg.zipTorrent, opts, false)) try {
             await fs_copyFile(pkg.zipTorrentEmbded, pkg.zipTorrent, opts)

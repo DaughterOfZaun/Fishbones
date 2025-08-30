@@ -24,7 +24,7 @@ import figures from '@inquirer/figures';
 import ansiEscapes from 'ansi-escapes';
 import { useCallback } from './use-callback';
 
-export type SelectTheme = {
+export interface SelectTheme {
     icon: { cursor: string };
     style: {
         disabled: (text: string) => string;

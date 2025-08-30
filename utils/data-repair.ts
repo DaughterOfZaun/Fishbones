@@ -26,23 +26,25 @@ export async function repair(opts: Required<AbortOptions>){
         repairAria2(opts),
     ] as Promise<unknown>[])
 
+    let gsExeIsMissing = false
     await Promise.all([
         Promise.all([
-            /*await*/ repairArchived(sdkPkg, opts),
+            repairArchived(sdkPkg, opts),
             (async () => {
-                if(!await fs_exists(gsPkg.dll, opts))
+                gsExeIsMissing = !await fs_exists(gsPkg.dll, opts)
+                if(gsExeIsMissing)
                     await repairArchived(gsPkg, opts)
             })(),
         ]).then(async () => {
-            if(!await fs_exists(gsPkg.dll, opts, false))
+            if(gsExeIsMissing)
                 await build(gsPkg, opts)
             await fs_ensureDir(gsPkg.infoDir, opts)
         }),
-        /*await*/ repairArchived(gcPkg, opts).then(async () => {
+        repairArchived(gcPkg, opts).then(async () => {
             //await fs_ensureDir(gcPkg.exeDir, opts)
             const d3dx9_39_dll = path.join(gcPkg.exeDir, 'd3dx9_39.dll')
             if(!await fs_exists(d3dx9_39_dll, opts, false))
-                await fs_copyFile(d3dx9_39_dll_embded, d3dx9_39_dll, opts)
+                await fs_copyFile(String(d3dx9_39_dll_embded), d3dx9_39_dll, opts)
         })
     ] as Promise<unknown>[])
 }
@@ -107,14 +109,14 @@ async function moveFoundFilesToDir(foundPkgDir: string, pkg: PkgInfo, opts: Requ
         Promise.allSettled(pkg.topLevelEntries.map(moveToPkgDir)),
         Promise.allSettled(pkg.topLevelEntriesOptional.map(moveToPkgDir)),
     ])
-    opts.signal.throwIfAborted()
-
-    function moveToPkgDir(fileName: string){
+    async function moveToPkgDir(fileName: string){
         return fs.rename(
-            path.join(foundPkgDir!, fileName),
+            path.join(foundPkgDir, fileName),
             path.join(pkg.dir, fileName),
         )
     }
+    opts.signal.throwIfAborted()
+
     let successfullyMovedRequiredFiles = true
     for(let i = 0; i < movingRequiredFilesResults.length; i++){
         const result = movingRequiredFilesResults[i]!

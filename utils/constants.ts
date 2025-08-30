@@ -21,6 +21,7 @@ export const LOBBY_PROTOCOL = `/lobby/${0}`
 export const PROXY_PROTOCOL = `/proxy/${0}`
 export const LOCALHOST = '127.0.0.1'
 
+// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export abstract class ValueDesc<I, E> {
     public name!: string
     public value?: I
@@ -33,7 +34,7 @@ export abstract class ValueDesc<I, E> {
 //type OmitFirst<T extends unknown[]> = T extends [unknown, ...infer R] ? R : never
 //type PickableValueConstructorArgs = OmitFirst<ConstructorParameters<typeof PickableValue>>
 //type PickableValueConstructor = new (...args: ConstructorParameters<typeof PickableValue>) => PickableValue
-type PickableValueStatics = { name: string, values: Record<number, string>, choices: SelectChoice<number>[] }
+interface PickableValueStatics { name: string, values: Record<number, string>, choices: SelectChoice<number>[] }
 export class PickableValue extends ValueDesc<number, number> {
     public value?: number
     public readonly name: string
@@ -511,6 +512,7 @@ export async function ufill<T extends object>(obj: T, { signal }: Required<Abort
         ...fieldChoices,
         { value: ['enter'] as Action, short: 'Enter', name: 'Enter' },
     ]
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     loop: while(true){
         for(const fieldChoice of fieldChoices){
             const key = fieldChoice.value[1]

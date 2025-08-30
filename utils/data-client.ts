@@ -39,8 +39,8 @@ export async function relaunchClient(opts: Required<AbortOptions>){
 
     clientSubprocess.addListener('exit', (code, signal) => logTerminationMsg(LOG_PREFIX, 'exited', code, signal))
 
-    clientSubprocess.stdout.setEncoding('utf8').on('data', (chunk) => onData('[STDOUT]', chunk))
-    clientSubprocess.stderr.setEncoding('utf8').on('data', (chunk) => onData('[STDERR]', chunk))
+    clientSubprocess.stdout.setEncoding('utf8').on('data', (chunk: string) => onData('[STDOUT]', chunk))
+    clientSubprocess.stderr.setEncoding('utf8').on('data', (chunk: string) => onData('[STDERR]', chunk))
     function onData(src: string, chunk: string){
         logger.log(LOG_PREFIX, src, chunk)
     }

@@ -11,9 +11,9 @@ import type { WriteonlyMessageStream } from './utils/pb-stream'
 import { launchClient, relaunchClient, stopClient } from './utils/data-client'
 import { launchServer, stopServer } from './utils/data-server'
 import { safeOptions, shutdownOptions } from './utils/data-process'
-import { console_log } from './utils/data-shared'
+import { logger } from './utils/data-shared'
 
-type GameEvents = {
+interface GameEvents {
     update: CustomEvent,
     kick: CustomEvent,
     start: CustomEvent,
@@ -51,7 +51,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     }
     
     protected readonly players = new Map<PlayerId, GamePlayer>()
-    protected players_count: number = 0
+    protected players_count = 0
     protected players_add(id: PlayerId, peerId: u|PeerId): GamePlayer {
         let player = this.players.get(id)
         if(!player){
@@ -80,10 +80,14 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     public launched = false
 
     protected cleanup(){
-        /*await*/ stopClient(safeOptions)
+        stopClient(safeOptions).catch(err => {
+            logger.log('An error occurred when stopping the client:', Bun.inspect(err))
+        })
         this.proxyClient?.disconnect()
         this.proxyClient = undefined
-        /*await*/ stopServer(safeOptions)
+        stopServer(safeOptions).catch(err => {
+            logger.log('An error occurred when stopping the server:', Bun.inspect(err))
+        })
         this.proxyServer?.stop()
         this.proxyServer = undefined
         
@@ -137,7 +141,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     }
     private handleJoinRequest(player: GamePlayer, { name }: LobbyRequestMessage.JoinRequest) {
 
-        const playerCounts: number[] = Array(Team.count).fill(0)
+        const playerCounts = Array<number>(Team.count).fill(0)
         this.players.forEach(player => {
             const i = player.team.value
             if(i != undefined) playerCounts[i]!++
@@ -196,32 +200,37 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         )
         return true
     }
-    private async launch(opts: Required<AbortOptions>){
+    private launch(){
         if(this.launched) return true
         this.launched = true
 
+        this.launchAsync(shutdownOptions).catch(err => {
+            logger.log('Failed to launch server:', Bun.inspect(err))
+        })
+
+        return true
+    }
+    private async launchAsync(opts: Required<AbortOptions>){
+        const players = this.getPlayers()
         this.broadcast(
             {
                 switchStateRequest: State.LAUNCHED,
                 peersRequests: [],
             },
-            this.players.values(),
+            players,
         )
         
-        let proc
         try {
-            proc = await launchServer(this.getGameInfo(), opts)
+            const proc = await launchServer(this.getGameInfo(), opts)
             proc.once('exit', this.onServerExit)
+            
+            this.proxyServer = new ProxyServer(this.node)
+            await this.proxyServer.start(proc.port, players.map(p => p.peerId!), opts)
         } catch(err) {
-            console_log('Failed to start server:', Bun.inspect(err))
+            logger.log('Failed to start server:', Bun.inspect(err))
             this.onServerExit()
             return false
         }
-
-        const players = this.getPlayers()
-
-        this.proxyServer = new ProxyServer(this.node)
-        await this.proxyServer.start(proc.port, players.map(p => p.peerId!), opts)
 
         let i = 1
         for(const player of players)
@@ -237,8 +246,6 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             },
             [ player ],
         )
-
-        return true
     }
     private onServerExit = (/*code, signal*/) => {
 
@@ -261,10 +268,14 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 this.started = false
                 this.launched = false
                 this.unlockAllPlayers()
-                /*await*/ stopClient(safeOptions)
+                stopClient(safeOptions).catch(err => {
+                    logger.log('An error occurred when stopping the client:', Bun.inspect(err))
+                })
                 this.proxyClient?.disconnect()
                 this.proxyClient = undefined
-                /*await*/ stopServer(safeOptions)
+                stopServer(safeOptions).catch(err => {
+                    logger.log('An error occurred when stopping the server:', Bun.inspect(err))
+                })
                 this.proxyServer?.stop()
                 this.proxyServer = undefined
                 this.safeDispatchEvent('stop')
@@ -281,11 +292,16 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 break
         }
     }
-    private async handleLaunchResponse(res: LobbyNotificationMessage.LaunchRequest, opts: Required<AbortOptions>){
+    private handleLaunchResponse(res: LobbyNotificationMessage.LaunchRequest){
         this.started = true
         this.launched = true
         this.safeDispatchEvent('launch')
 
+        this.handleLaunchResponseAsync(res, shutdownOptions).catch(err => {
+            logger.log('An error occurred while processing the launch notification', Bun.inspect(err))
+        })
+    }
+    private async handleLaunchResponseAsync(res: LobbyNotificationMessage.LaunchRequest, opts: Required<AbortOptions>){
         //const peer = await this.node.peerStore.get(this.ownerId, opts)
         //const ip = peer.addresses
         //    //.sort((a, b) => 0)
@@ -295,6 +311,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         //const { port, clientId } = res
         const { clientId } = res
         
+        //TODO: try-catch
         this.proxyClient = new ProxyClient(this.node)
         await this.proxyClient.connect(this.ownerId, this.proxyServer, opts)
         const port = this.proxyClient.getPort()!
@@ -303,22 +320,28 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         try {
             const proc = await launchClient(ip, port, key, clientId, opts)
             proc.once('exit', this.onClientExit)
+            return true
         } catch(err) {
-            console_log('Failed to start client:', Bun.inspect(err))
+            logger.log('Failed to start client:', Bun.inspect(err))
             this.onClientExit()
             return false
         }
     }
-    public async relaunch(opts: Required<AbortOptions>){
+    public relaunch(){
+        this.relaunchAsync(shutdownOptions).catch(err => {
+            logger.log('Failed to restart client:', Bun.inspect(err))
+        })
+    }
+    private async relaunchAsync(opts: Required<AbortOptions>){
         try {
             const proc = await relaunchClient(opts)
             proc.once('exit', this.onClientExit)
+            return true
         } catch(err) {
-            console_log('Failed to restart client:', Bun.inspect(err))
+            logger.log('Failed to restart client:', Bun.inspect(err))
             this.onClientExit()
             return false
         }
-        return true
     }
     private onClientExit = (/*code, signal*/) => {
         if(this.launched)
@@ -369,7 +392,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             if(players.every(p => !!p.lock.value)){
                 for(const player of players)
                     player.fillUnset()
-                /* await */ this.launch(shutdownOptions)
+                this.launch()
                 return
             }
         }
@@ -469,7 +492,8 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
 
     protected handleRequest(playerId: PlayerId, req: LobbyRequestMessage, stream: u|WriteonlyMessageStream<LobbyNotificationMessage, Stream>, peerId: PeerId){
         let player: u|GamePlayer
-        if(req.joinRequest && (player = this.players_add(playerId, peerId))){
+        if(req.joinRequest){
+            player = this.players_add(playerId, peerId)
             if(stream) player.stream = stream
             this.handleJoinRequest(player, req.joinRequest)
         }
@@ -485,7 +509,8 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             for(const res of ress.peersRequests){
                 let player: u|GamePlayer
                 const playerId = res.playerId as PlayerId
-                if(res.joinRequest && (player = this.players_add(playerId, undefined))){
+                if(res.joinRequest){
+                    player = this.players_add(playerId, undefined)
                     this.handleJoinResponse(player, res.joinRequest)
                 }
                 if(res.pickRequest && (player = this.players.get(playerId))){
@@ -501,7 +526,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             this.handleSwitchStateResponse(ress.switchStateRequest)
         }
         if(ress.launchRequest){
-            /*async*/ this.handleLaunchResponse(ress.launchRequest, shutdownOptions)
+            this.handleLaunchResponse(ress.launchRequest)
         }
         if(ress.kickRequest){
             this.handleKickRequest(ress.kickRequest)
@@ -523,7 +548,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             game: {
                 map: this.map.value ?? 1,
                 gameMode: this.mode.toString(),
-                mutators: Array(8).fill(''),
+                mutators: Array<string>(8).fill(''),
             },
             gameInfo: {
                 TICK_RATE: this.server.tickRate.value ?? 30,

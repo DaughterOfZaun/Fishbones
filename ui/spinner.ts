@@ -8,7 +8,7 @@ import type { PartialDeep } from '@inquirer/type';
 
 export type SpinnerTheme = object /*{}*/
 const spinnerTheme: SpinnerTheme = {}
-export type SpinnerConfig = {
+export interface SpinnerConfig {
     message: string
     theme?: PartialDeep<Theme<SpinnerTheme>>
 }

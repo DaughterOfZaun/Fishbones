@@ -23,7 +23,7 @@ const isUnicodeSupported = () => figures === mainSymbols
 
 const NO_RELAUNCH_ARG = '--no-relaunch'
 
-export async function launchTerminal(){
+export function launchTerminal(){
     if(process.argv.includes(NO_RELAUNCH_ARG)) return false
     else if(isUnicodeSupported()) return false
     else if(process.env['TERM_PROGRAM'] === 'mintty'){

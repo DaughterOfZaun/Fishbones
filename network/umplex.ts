@@ -76,10 +76,13 @@ export function shutdown(){
     container.refs = 0
 }
 
+const ignoreError = () => {}
+//const handlerErrorMsg = `An error occurred when calling the handler:`
+//const logHandlerError = (err: unknown) => console.log(handlerErrorMsg, err)
 export async function udpSocket(options: BunSocketOptions): Promise<BunSocket> {
     const { hostname, port, socket: handler } = options
 
-    console.assert(options.binaryType === BINARY_TYPE, 'options.binaryType === BINARY_TYPE')
+    //console.assert(options.binaryType === BINARY_TYPE, 'options.binaryType === BINARY_TYPE')
 
     container.socket = await (container.promise ??= Bun.udpSocket({
         binaryType: BINARY_TYPE,
@@ -88,20 +91,20 @@ export async function udpSocket(options: BunSocketOptions): Promise<BunSocket> {
         socket: {
             data: (socket, data, port, address) => {
                 for(const handler of container.handlers){
-                    if(handler.filter?.(data)){
-                        handler.data?.(socket, data, port, address)
+                    if(handler.filter(data)){
+                        handler.data?.(socket, data, port, address)?.catch(ignoreError)
                         break
                     }
                 }
             },
             drain: (socket) => {
                 for(const handler of container.handlers){
-                    handler.drain?.(socket)
+                    handler.drain?.(socket)?.catch(ignoreError)
                 }
             },
             error: (socket, error) => {
                 for(const handler of container.handlers){
-                    handler.error?.(socket, error)
+                    handler.error?.(socket, error)?.catch(ignoreError)
                 }
             },
         }
@@ -175,13 +178,13 @@ class BunSocketWrapper {
         
         this.handler = handler
 
-        if(this.handler)
-            container.handlers.add(this.handler)
+        //if(this.handler)
+        container.handlers.add(this.handler)
     }
 }
 
 type SocketType = "udp4" | "udp6";
-type SocketOptions = {
+interface SocketOptions {
     type: SocketType
     filter: DataFilter
 }
@@ -192,7 +195,7 @@ export function createSocket(options: SocketOptions, onMessage?: (msg: Buffer, r
     return socket
 }
 
-type SocketEvents = {
+interface SocketEvents {
     message: [ Buffer, RemoteInfo ],
     error: [ Error ],
     listening: [],
@@ -243,6 +246,8 @@ class Socket extends TypedEventEmitter<SocketEvents> {
             if(onListening) onListening.call(this)
             this.emit('listening')
         })
+        .catch(ignoreError)
+        
         return this
     }
 
