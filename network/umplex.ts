@@ -69,7 +69,7 @@ const container = new class BunSocketContainer {
     refs: number = 0
 }
 export function shutdown(){
-    container.socket.close()
+    container.socket?.close()
     container.socket = undefined!
     container.handlers.clear()
     container.promise = undefined

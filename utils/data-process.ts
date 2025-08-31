@@ -1,9 +1,9 @@
-import defer from 'p-defer'
-import type { ChildProcessWithoutNullStreams } from 'child_process'
+import type { ChildProcessWithoutNullStreams, SpawnOptionsWithoutStdio } from 'child_process'
 import type { AbortOptions } from '@libp2p/interface'
 import { console_log, logger } from './data-shared'
 import { ExitPromptError } from '@inquirer/core'
-export { spawn } from 'child_process'
+import { spawn as originalSpawn } from 'child_process'
+import defer from 'p-defer'
 
 export const ABORT_STAGE_TIMEOUT = 3_000
 export const TERMINATE_STAGE_TIMEOUT = 3_000
@@ -33,7 +33,8 @@ export function logTerminationMsg(prefix: string, action: string, code: null|num
 
 type ProcessEventHandler = (code: number | null, signal: NodeJS.Signals | null) => void
 
-type EventCallback = (...args: unknown[]) => void
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type EventCallback = (...args: any[]) => void
 interface Emitter {
     addListener: (event: string, callback: EventCallback) => void
     removeListener: (event: string, callback: EventCallback) => void
@@ -87,98 +88,55 @@ class Deferred<T> {
 export async function startProcess(
     logPrefix: string,
     proc: ChildProcess,
-    startDetector: (stdout: string) => boolean,
+    startDetectorStream: 'stdout' | 'stderr',
+    startDetector: (chunk: string) => boolean,
     opts: Required<AbortOptions>,
     timeoutMs: number = PROCESS_START_TIMEOUT,
 ): Promise<void> {
-
-    const deferred = defer<void>()
-    
-    const ondata = (chunk: string) => {
+    const deferred = new Deferred<void>(opts)
+    deferred.addListener(proc[startDetectorStream].setEncoding('utf8'), 'data', (chunk: string) => {
         if(startDetector(chunk))
             deferred.resolve()
-    }
-    const onexit: ProcessEventHandler = (code, signal) => {
+    })
+    deferred.addListener(proc, 'error', (err: Error) => deferred.reject(err))
+    deferred.addListener(proc, 'exit', <ProcessEventHandler>((code, signal) => {
         const msg = logTerminationMsg(logPrefix, 'died', code, signal)
         deferred.reject(new TerminationError(msg, { cause: { code, signal } }))
-    }
-    const onabort = () => {
-        deferred.reject(opts.signal.reason)
-    }
-
-    proc.addListener('exit', onexit)
-    proc.stdout.setEncoding('utf8').addListener('data', ondata)
-    opts.signal.addEventListener('abort', onabort)
-    const timeout = setTimeout(() => {
+    }))
+    deferred.setTimeout(() => {
         deferred.reject(new Error(`${logPrefix} did not start within ${timeoutMs}ms`))
     }, timeoutMs)
-    
-    return deferred.promise.finally(() => {
-        proc.removeListener('exit', onexit)
-        proc.stdout.removeListener('data', ondata)
-        opts.signal.removeEventListener('abort', onabort)
-        clearTimeout(timeout)
-    })
+    return deferred.promise
 }
 
 export async function successfulTermination(loggerPrefix: string, proc: ChildProcess, opts: Required<AbortOptions>, allowedExitCodes = [ 0 ]){
-    
-    const deferred = defer<void>()
-
-    const onerror = (err: Error) => deferred.reject(err)
-    //const onclose: ProcessEventHandler = (code, signal) => {
-    //    logTerminationMsg(loggerPrefix, 'closed', code, signal)
-    //}
-    const onexit: ProcessEventHandler = (code, signal) => {
+    const deferred = new Deferred<void>(opts)
+    deferred.addListener(proc, 'error', (err: Error) => deferred.reject(err))
+    deferred.addListener(proc, 'exit', <ProcessEventHandler>((code, signal) => {
         const msg = logTerminationMsg(loggerPrefix, 'exited', code, signal)
         if(!allowedExitCodes.includes(code!))
             deferred.reject(new TerminationError(msg, { cause: { code, signal } }))
         else deferred.resolve()
-    }
-    const onabort = () => {
-        deferred.reject(opts.signal.reason)
-    }
-
-    opts.signal.addEventListener('aborted', onabort)
-    proc.addListener('error', onerror)
-    //proc.addListener('close', onclose)
-    proc.addListener('exit', onexit)
-    
-    return deferred.promise.finally(() => {
-        opts.signal.removeEventListener('aborted', onabort)
-        proc.removeListener('error', onerror)
-        //proc.removeListener('close', onclose)
-        proc.removeListener('exit', onexit)
-    })
+    }))
+    return deferred.promise
 }
 
 export async function killSubprocess(loggerPrefix: string, proc: ChildProcess, opts: Required<AbortOptions>){
     const timeoutMs = PROCESS_EXIT_TIMEOUT
 
-    const deferred = defer<void>()
-
-    const onexit: ProcessEventHandler = (code, signal) => {
+    const deferred = new Deferred<void>(opts)
+    deferred.addListener(proc, 'exit', <ProcessEventHandler>((code, signal) => {
         logTerminationMsg(loggerPrefix, 'exited', code, signal)
         deferred.resolve()
-    }
-    const onabort = () => {
-        deferred.reject(opts.signal.reason)
-    }
-
-    proc.addListener('exit', onexit)
-    opts.signal.addEventListener('abort', onabort)
-    const timeout = setTimeout(() => {
+    }))
+    deferred.setTimeout(() => {
         proc.kill('SIGKILL')
         deferred.resolve()
     }, timeoutMs)
 
     proc.kill('SIGTERM')
 
-    return deferred.promise.finally(() => {
-        proc.removeListener('exit', onexit)
-        opts.signal.removeEventListener('abort', onabort)
-        clearTimeout(timeout)
-    })
+    return deferred.promise
 }
 
 export const shutdownController = new AbortController()
@@ -201,6 +159,7 @@ export const callShutdownHandlers = (force: boolean) => {
 const ABORT_ERR = 20
 const ERR_UNHANDLED_ERROR = 'ERR_UNHANDLED_ERROR'
 
+//process.on('exit', () => shutdown('event'))
 process.on('uncaughtException', (err: Error & { code?: string, context?: Error & { code?: number } }) => {
     if(
         //err.message.startsWith('Unhandled error. (') &&
@@ -210,8 +169,14 @@ process.on('uncaughtException', (err: Error & { code?: string, context?: Error &
         //err.context?.name === 'AbortError' &&
         //err.context?.message === 'The operation was aborted.'
     ){ /* Ignore */ } else {
-        console_log('An unexpected exception occurred:', Bun.inspect(err))
-        shutdown('exception')
+        const unwrapped = unwrapAbortError(err)
+        if(unwrapped instanceof ExitPromptError && shutdownStage === ShutdownStage.ABORT){
+            // Was no one listening to the signal?
+            shutdown('timeout')
+        } else {
+            console_log('An unexpected exception occurred:', Bun.inspect(err))
+            shutdown('exception')
+        }
     }
 })
 
@@ -238,25 +203,33 @@ export function setInsideUI(to: boolean){
     isInsideUI = to
 }
 
-export function shutdown(source: 'signal' | 'exception' | 'call' | 'timeout'){
-    logger.log(`Shutting down (stage ${shutdownStage}) due to ${source}`)
+export function shutdown(source: 'signal' | 'exception' | 'call' | 'timeout' | 'event'){
 
-    if(shutdownStage === ShutdownStage.NONE){
+    const setStage = (to: ShutdownStage) => {
+        logger.log(`Shutting down (stage ${shutdownStage}) due to ${source}`)
+        shutdownStage = to
+    }
+
+    if(source === 'event'){
+        setStage(ShutdownStage.KILL)
+        callShutdownHandlers(true)
+    } else if(shutdownStage === ShutdownStage.NONE){
         if(isInsideUI){
-            shutdownStage = ShutdownStage.ABORT
+            setStage(ShutdownStage.ABORT)
             setTimeout(() => shutdown('timeout'), ABORT_STAGE_TIMEOUT).unref()
             shutdownController.abort(new ExitPromptError())
         } else {
-            shutdownStage = ShutdownStage.TERMINATE
+            setStage(ShutdownStage.TERMINATE)
             setTimeout(() => shutdown('timeout'), TERMINATE_STAGE_TIMEOUT).unref()
             callShutdownHandlers(false)
         }
     } else if(source === 'timeout' || source === 'signal'){
         if(shutdownStage === ShutdownStage.ABORT){
-            shutdownStage = ShutdownStage.TERMINATE
+            setStage(ShutdownStage.TERMINATE)
             setTimeout(() => shutdown('timeout'), TERMINATE_STAGE_TIMEOUT).unref()
             callShutdownHandlers(false)
-        } else if(shutdownStage === ShutdownStage.KILL){
+        } else if(shutdownStage === ShutdownStage.TERMINATE){
+            setStage(ShutdownStage.KILL)
             callShutdownHandlers(true)
             process.exit()
         }
@@ -269,4 +242,39 @@ export function unwrapAbortError(err: unknown){
     && 'code' in err && err.code === 'ABORT_ERR'
     && 'cause' in err) return err.cause
     else return err
+}
+
+const activeProcesses = new Set<ChildProcess>()
+export function spawn(cmd: string, args: readonly string[], opts: SpawnOptionsWithoutStdio & { log: boolean, logPrefix: string }){
+    const proc = originalSpawn(cmd, args, opts)
+    
+    activeProcesses.add(proc)
+    proc.on('exit', (code, signal) => {
+        logTerminationMsg(opts.logPrefix, 'exited', code, signal)
+        activeProcesses.delete(proc)
+    })
+
+    if(opts.log){
+        proc.stdout.setEncoding('utf8').on('data', (chunk: string) => onData('[STDOUT]', chunk))
+        proc.stderr.setEncoding('utf8').on('data', (chunk: string) => onData('[STDERR]', chunk))
+        function onData(src: string, chunk: string){
+            chunk = chunk.trim()
+            if(chunk) //TODO: [#e69e0c 0B/20MiB(0%) CN:1 SD:0 DL:0B]
+                logger.log(opts.logPrefix, src, chunk)
+        }
+    }
+
+    return Object.assign(proc, { logPrefix: opts.logPrefix })
+}
+
+registerShutdownHandler((force) => {
+    for(const proc of activeProcesses)
+        proc.kill(force ? 'SIGKILL' : 'SIGTERM')
+    activeProcesses.clear()
+})
+
+export function killIfActive(proc?: ChildProcess){
+    if(proc && activeProcesses.delete(proc))
+        return proc.kill()
+    return false
 }

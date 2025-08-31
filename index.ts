@@ -5,6 +5,7 @@ import { TITLE } from './utils/constants'
 import { console_log, logger } from './utils/data-shared'
 import { registerShutdownHandler, setInsideUI, shutdown, shutdownOptions, unwrapAbortError } from './utils/data-process'
 import { repair } from './utils/data-repair'
+import * as umplex from './network/umplex'
 
 function getNamedArg(name: string, defaultValue: string){
     const index = process.argv.indexOf(name)
@@ -32,6 +33,7 @@ try {
         //await node.services.torrentPeerDiscovery?.stop()
         //await node_services_upnpNAT?.stop()
         await node.stop()
+        umplex.shutdown()
     })
 
     setInsideUI(true)

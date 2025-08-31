@@ -197,8 +197,10 @@ async function repairArchived(pkg: PkgInfo, opts: Required<AbortOptions>, ignore
             if(foundEntries.isSupersetOf(requiredEntres)){
                 if(foundEntries.isSubsetOf(requiredEntres.union(optionalEntries))){
                     console_log(`Moving "${foundPkgDir}" to "${pkg.dir}"...`)
-                    if(await fs_moveFile(foundPkgDir, pkg.dir, opts))
+                    if(await fs_moveFile(foundPkgDir, pkg.dir, opts)){
+                        //TODO: await fs_rmdir(path.dirname(foundPkgDir), opts)
                         return // OK
+                    }
                 } else {
                     console_log(`Moving files from "${foundPkgDir}" to "${pkg.dir}"...`)
                     if(await moveFoundFilesToDir(foundPkgDir, pkg, opts))

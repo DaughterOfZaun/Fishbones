@@ -1,8 +1,7 @@
 import path from 'node:path'
 import { champions, maps, modes, spells } from './constants'
 import { gsPkg, sdkPkg } from './data-packages'
-import { logger } from './data-shared'
-import { killSubprocess, registerShutdownHandler, spawn, startProcess, type ChildProcess } from './data-process'
+import { killSubprocess, spawn, startProcess, type ChildProcess } from './data-process'
 import { downloads, fs_exists, fs_readFile, fs_writeFile } from './data-fs'
 import type { GameInfo } from './game-info'
 import type { AbortOptions } from '@libp2p/interface'
@@ -10,9 +9,6 @@ import type { AbortOptions } from '@libp2p/interface'
 const LOG_PREFIX = 'SERVER'
 
 let serverSubprocess: ChildProcess | undefined
-registerShutdownHandler((force) => {
-    serverSubprocess?.kill(force ? 'SIGKILL' : 'SIGTERM')
-})
 
 export async function launchServer(info: GameInfo, opts: Required<AbortOptions>, port = 0){
     info.gameInfo.CONTENT_PATH = path.relative(gsPkg.dllDir, gsPkg.gcDir)
@@ -25,19 +21,15 @@ export async function launchServer(info: GameInfo, opts: Required<AbortOptions>,
     serverSubprocess = spawn(sdkPkg.exe, [
         gsPkg.dll, '--port', port.toString(), '--config', gsInfoRel,
     ], {
+        logPrefix: LOG_PREFIX,
         cwd: gsPkg.dllDir,
         //detached: true,
+        log: true,
     })
     
-    serverSubprocess.stdout.setEncoding('utf8').on('data', (chunk: string) => onData('[STDOUT]', chunk))
-    serverSubprocess.stderr.setEncoding('utf8').on('data', (chunk: string) => onData('[STDERR]', chunk))
-    function onData(src: string, chunk: string){
-        logger.log(LOG_PREFIX, src, chunk)
-    }
-
-    await startProcess(LOG_PREFIX, serverSubprocess, (stdout, /*stderr*/) => {
+    await startProcess(LOG_PREFIX, serverSubprocess, 'stdout', (chunk) => {
         //return /\b(?:Game)?Server (?:is )?ready\b/.test(stdout)
-        const match = stdout.match(/GameServer ready for clients to connect on Port: (?<port>\d+)/)
+        const match = chunk.match(/GameServer ready for clients to connect on Port: (?<port>\d+)/)
         if(match){
             port = parseInt(match.groups!['port']!)
             return true

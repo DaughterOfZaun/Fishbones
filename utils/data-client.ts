@@ -1,15 +1,11 @@
 import { gcPkg } from "./data-packages"
 import { sanitize_bfkey } from "./constants"
-import { logger } from "./data-shared"
-import { killSubprocess, logTerminationMsg, registerShutdownHandler, spawn, startProcess, type ChildProcess } from "./data-process"
+import { killSubprocess, spawn, startProcess, type ChildProcess } from "./data-process"
 import type { AbortOptions } from "@libp2p/interface"
 
 const LOG_PREFIX = 'CLIENT'
 
 let clientSubprocess: ChildProcess | undefined
-registerShutdownHandler((force) => {
-    clientSubprocess?.kill(force ? 'SIGKILL' : 'SIGTERM')
-})
 
 let launchArgs: [ ip: string, port: number, key: string, clientId: number ] | undefined
 export async function launchClient(ip: string, port: number, key: string, clientId: number, opts: Required<AbortOptions>){
@@ -26,26 +22,23 @@ export async function relaunchClient(opts: Required<AbortOptions>){
 
     await stopClient(opts)
 
+    const spawnOpts = {
+        logPrefix: LOG_PREFIX,
+        cwd: gcPkg.exeDir,
+        log: true,
+    }
     if(process.platform == 'win32')
-        clientSubprocess = spawn(gcPkg.exe, gcArgs, {
-            cwd: gcPkg.exeDir,
-        })
+        clientSubprocess = spawn(gcPkg.exe, gcArgs, spawnOpts)
     else if(process.platform == 'linux')
         clientSubprocess = spawn(
             'flatpak', [ 'run', '--command=bottles-cli', 'com.usebottles.bottles',
-                'run', '-b', 'Default Gaming', '-e', gcPkg.exe, gcArgsStr ]) //TODO: cwd
-        //clientSubprocess = spawn('bottles-cli', ['run', '-b', 'Default Gaming', '-p', 'League of Legends', '--args-replace', gcArgs])
+                'run', '-b', 'Default Gaming', '-e', gcPkg.exe, gcArgsStr ], spawnOpts) //TODO: cwd
+        //clientSubprocess = spawn('bottles-cli', ['run', '-b', 'Default Gaming', '-p', 'League of Legends', '--args-replace', gcArgs], spawnOpts)
     else throw new Error(`Unsupported platform: ${process.platform}`)
 
-    clientSubprocess.addListener('exit', (code, signal) => logTerminationMsg(LOG_PREFIX, 'exited', code, signal))
-
-    clientSubprocess.stdout.setEncoding('utf8').on('data', (chunk: string) => onData('[STDOUT]', chunk))
-    clientSubprocess.stderr.setEncoding('utf8').on('data', (chunk: string) => onData('[STDERR]', chunk))
-    function onData(src: string, chunk: string){
-        logger.log(LOG_PREFIX, src, chunk)
-    }
-
-    await startProcess(LOG_PREFIX, clientSubprocess, (chunk) => chunk.trim().length > 0, opts, 30_000)
+    await startProcess(LOG_PREFIX, clientSubprocess, 'stderr', (chunk) => {
+        return !!chunk.trim().length
+    }, opts, 30_000)
 
     return clientSubprocess
 }

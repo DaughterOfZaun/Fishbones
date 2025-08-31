@@ -2,8 +2,8 @@ import path from 'node:path'
 import { aria2, open, createWebSocket, type Conn } from 'maria2/dist/index.js'
 import { randomBytes } from '@libp2p/crypto'
 import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
-import { barOpts, logger, multibar } from './data-shared'
-import { killSubprocess, logTerminationMsg, registerShutdownHandler, spawn, startProcess, type ChildProcess } from './data-process'
+import { barOpts, multibar } from './data-shared'
+import { killSubprocess, spawn, startProcess, type ChildProcess } from './data-process'
 import { rwx_rx_rx, downloads, fs_chmod, fs_copyFile, fs_exists, fs_exists_and_size_eq, fs_readFile } from './data-fs'
 import type { AbortOptions } from '@libp2p/interface'
 import { getAnnounceAddrs } from './data-trackers'
@@ -44,10 +44,6 @@ let aria2conn: Conn //| undefined
 let aria2connPromise: Promise<Conn> | undefined
 let aria2secret: string | undefined
 let aria2port: number | undefined = 6800
-
-registerShutdownHandler((force) => {
-    aria2proc?.kill(force ? 'SIGKILL' : 'SIGSTOP')
-})
 
 async function startAria2(opts: Required<AbortOptions>){
 
@@ -90,20 +86,13 @@ async function startAria2(opts: Required<AbortOptions>){
             //`--max-connection-per-server=${5}`,
             //`--split=${4}`,
         ], {
+            logPrefix: LOG_PREFIX,
             cwd: downloads,
+            log: true,
         }) //TODO: Handle start fail. Maybe?
-        aria2proc.addListener('exit', (code, signal) => logTerminationMsg(LOG_PREFIX, 'exited', code, signal))
 
-        aria2proc.stdout.setEncoding('utf8').addListener('data', (chunk: string) => onData('[STDOUT]', chunk))
-        aria2proc.stderr.setEncoding('utf8').addListener('data', (chunk: string) => onData('[STDERR]', chunk))
-        function onData(src: string, chunk: string){
-            chunk = chunk.trim()
-            if(chunk && !/^\[#\w+ .*\]$/.test(chunk)) // [#e69e0c 0B/20MiB(0%) CN:1 SD:0 DL:0B]
-                logger.log(LOG_PREFIX, src, chunk)
-        }
-
-        aria2procPromise = startProcess(LOG_PREFIX, aria2proc, (stdout, /*stderr*/) => {
-            const match = stdout.match(/IPv4 RPC: listening on TCP port (?<port>\d+)/)
+        aria2procPromise = startProcess(LOG_PREFIX, aria2proc, 'stdout', (chunk) => {
+            const match = chunk.match(/IPv4 RPC: listening on TCP port (?<port>\d+)/)
             if(match){
                 aria2port = parseInt(match.groups!['port']!)
                 return true

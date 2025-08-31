@@ -5,11 +5,14 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import type { AddressInfo } from 'net'
 import { registerShutdownHandler } from './data-process'
 import type { AbortOptions } from '@libp2p/interface'
+import { logger } from './data-shared'
+
+const LOG_PREFIX = 'MEGA'
 
 type Fetch = (url: string | URL | Request, opts: BunFetchRequestInit | RequestInit | undefined) => Promise<Response>
 ;(Mega.API as { fetchModule?: Fetch })['fetchModule'] = async (url, opts) => {
     if(Math.random() >= 0){
-        console.log('fetch', url, opts)
+        logger.log(LOG_PREFIX, 'fetch', Bun.inspect(url), Bun.inspect(opts))
         //throw new Error('Test error')
     }
     //return undefined! as Response
@@ -63,12 +66,12 @@ api.request = async function request(json, cb, retryno){
         if(file){
             const res = cachedResponses.get(file)
             if(res && (Date.now() - res.time) <= CACHED_RESPONSE_LIFETIME){
-                console.log('cached res found', res)
+                logger.log(LOG_PREFIX, 'cached response found', Bun.inspect(res))
                 return Promise.resolve(res.data)
             }
             return api_request(json, (err, res) => {
                 if(!err && res){
-                    console.log('caching res', res)
+                    logger.log(LOG_PREFIX, 'caching response', Bun.inspect(res))
                     cachedResponses.set(file, { time: Date.now(), data: res })
                 }
                 cb?.(err, res)
@@ -119,7 +122,7 @@ let nextRequestId = 0
 function requestListener(req: IncomingMessage, res: ServerResponse){
     const id = nextRequestId++
 
-    console.log(id, req.method, 'REQUEST', req.headers)
+    logger.log(LOG_PREFIX, id, req.method ?? 'undefined', 'REQUEST', JSON.stringify(req.headers, null, 4))
 
     if(!req.url) return
     const file = files.get(req.url)
@@ -153,9 +156,9 @@ function requestListener(req: IncomingMessage, res: ServerResponse){
             //'content-digest': `sha-256=:${file.hash}:`,
         }
         res_headersSent = true
-        console.log(id, 'HEADERS', status, headers)
+        logger.log(LOG_PREFIX, id, 'HEADERS', status, JSON.stringify(headers, null, 4))
         res.writeHead(status, headers)
-        console.log(id, 'WRITE & PIPE')
+        logger.log(LOG_PREFIX, id, 'WRITE & PIPE')
         res.write(chunk)
         stream.pipe(res)
     })
@@ -169,17 +172,17 @@ function requestListener(req: IncomingMessage, res: ServerResponse){
                 const headers = {
                     'retry-after': err.timeLimit.toString()
                 }
-                console.log(id, 'HEADERS', 503, headers)
+                logger.log(LOG_PREFIX, id, 'HEADERS', 503, JSON.stringify(headers, null, 4))
                 res.writeHead(503 /*Service Unavailable*/, headers)
             } else if((status = err.message.match(/MEGA returned a (\d+) status code/)?.[1])){
-                console.log(id, 'HEADERS', status)
+                logger.log(LOG_PREFIX, id, 'HEADERS', status)
                 res.writeHead(parseInt(status))
             } else {
-                console.log(id, 'HEADERS', 502)
+                logger.log(LOG_PREFIX, id, 'HEADERS', 502)
                 res.writeHead(502 /*Bad Gateway*/)
             }
         }
-        console.log(id, 'CLOSE')
+        logger.log(LOG_PREFIX, id, 'CLOSE')
         stream.emit('close')
         //stream.destroy()
         stream.end()

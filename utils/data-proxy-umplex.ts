@@ -26,7 +26,7 @@ const openSockets = new Set<BunSocket>()
 registerShutdownHandler(() => {
     for(const socket of openSockets)
         socket.close()
-    //openSockets.clear()
+    openSockets.clear()
 })
 
 class Proxy {

@@ -63,10 +63,7 @@ const bindgen = () => {
 if(Math.random() == 1)
     bindgen()
 
-const {
-    symbols,
-    close
-} = dlopen(
+const library = dlopen(
     process.platform === 'linux' ? utpNativeModuleLinux : utpNativeModuleWindows as string,
     {
         utp_init: { args: [int /*version*/] as const, returns: ptr_t },
@@ -100,6 +97,7 @@ const {
     }
 )
 
+const { symbols } = library
 export const {
     //utp_init, // Wrapped.
     utp_destroy,
@@ -139,4 +137,4 @@ export const utp_create_socket = (...args: Parameters<(typeof symbols)['utp_crea
     return Number(symbols.utp_create_socket(...args)) as Pointer
 }
 
-export { close }
+export const close = library.close.bind(library)

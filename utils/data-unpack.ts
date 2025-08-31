@@ -1,6 +1,6 @@
 import { type PkgInfo } from './data-packages'
 import { barOpts, logger, multibar } from './data-shared'
-import { logTerminationMsg, registerShutdownHandler, spawn, successfulTermination, type ChildProcess } from './data-process'
+import { killIfActive, spawn, successfulTermination, type ChildProcess } from './data-process'
 import { rwx_rx_rx, downloads, fs_chmod, fs_copyFile, fs_ensureDir, fs_exists, fs_writeFile, fs_removeFile } from './data-fs'
 import type { AbortOptions } from '@libp2p/interface'
 import path from 'node:path'
@@ -59,12 +59,6 @@ enum s7zExitCodes {
 }
 
 let pid = 0
-const activeProcesses = new Set<ChildProcess>()
-registerShutdownHandler((force) => {
-    for(const proc of activeProcesses){
-        proc.kill(force ? 'SIGKILL' : 'SIGTERM')
-    }
-})
 
 export function appendPartialUnpackFileExt(path: string){
     return `${path}.being-unpacked`
@@ -84,7 +78,7 @@ export async function unpack(pkg: PkgInfo, opts: Required<AbortOptions>){
         ...barOpts,
     })
     
-    const s7zs: (ChildProcess & { i: number, id: number, logPrefix: string })[] = []
+    const s7zs: (ChildProcess & { logPrefix: string })[] = []
 
     try {
     
@@ -100,27 +94,28 @@ export async function unpack(pkg: PkgInfo, opts: Required<AbortOptions>){
         if(!pkg.noDedup) args.push('-spe')
         
         if(pkg.zipExt == '.tar.gz'){
-            s7zs[0] = Object.assign(spawn(s7zExe, ['x', '-so', '-tgzip', pkg.zip], {
-                stdio: [   null, 'pipe', 'pipe' ], signal,
-            }), { i: 0, id: pid, logPrefix: `7Z ${pid} ${0}` })
-            s7zs[1] = Object.assign(spawn(s7zExe, ['x', '-si', '-ttar', ...args], {
-                stdio: [ 'pipe', 'pipe', 'pipe' ], signal,
-            }), { i: 1, id: pid, logPrefix: `7Z ${pid} ${1}` })
+            s7zs[0] = spawn(s7zExe, ['x', '-so', '-tgzip', pkg.zip], {
+                stdio: [ null, 'pipe', 'pipe' ],
+                logPrefix: `7Z ${pid} ${0}`,
+                log: false,
+                signal,
+            })
+            s7zs[1] = spawn(s7zExe, ['x', '-si', '-ttar', ...args], {
+                stdio: [ 'pipe', 'pipe', 'pipe' ],
+                logPrefix: `7Z ${pid} ${1}`,
+                log: false,
+                signal,
+            })
             s7zs[0].stdout.pipe(s7zs[1].stdin)
         } else {
-            s7zs[0] = Object.assign(spawn(s7zExe, ['x', ...args, pkg.zip], {
+            s7zs[0] = spawn(s7zExe, ['x', ...args, pkg.zip], {
+                logPrefix: `7Z ${pid} ${0}`,
+                log: false,
                 signal,
-            }), { i: 0, id: pid, logPrefix: `7Z ${pid} ${0}` })
-        }
-        pid++
-        for(const proc of s7zs){
-            activeProcesses.add(proc)
-            proc.on('exit', (code, signal) => {
-                logTerminationMsg(proc.logPrefix, 'exited', code, signal)
-                activeProcesses.delete(proc)
             })
         }
-
+        pid++
+        
         connect(s7zs.length - 1, 'stdout')
         for(let i = 0; i < s7zs.length; i++)
             connect(i, 'stderr')
@@ -154,11 +149,7 @@ export async function unpack(pkg: PkgInfo, opts: Required<AbortOptions>){
         await fs_removeFile(lockfile, opts)
     
     } finally {
-        for(const proc of s7zs){
-            if(activeProcesses.delete(proc)){
-                proc.kill()
-            }
-        }
+        for(const proc of s7zs) killIfActive(proc)
         bar.update(bar.getTotal())
         bar.stop()
     }
