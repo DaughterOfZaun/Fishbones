@@ -44,11 +44,15 @@ export async function build(pkg: PkgInfoCSProj, opts: Required<AbortOptions>){
         await fs_writeFile(pkg.program, txt, fs_opts)
 
         sdkSubprocess = spawn(sdkPkg.exe, ['build', pkg.csProj], {
+            //env: Object.assign(process.env, { 'DOTNET_CLI_TELEMETRY_OPTOUT': '1' }),
             env: { 'DOTNET_CLI_TELEMETRY_OPTOUT': '1' },
             stdio: [ null, 'pipe', 'pipe' ],
             signal: opts.signal,
         })
-        sdkSubprocess.addListener('exit', (code, signal) => logTerminationMsg(LOG_PREFIX, 'exited', code, signal))
+        sdkSubprocess.addListener('exit', (code, signal) => {
+            logTerminationMsg(LOG_PREFIX, 'exited', code, signal)
+            sdkSubprocess = undefined
+        })
         
         sdkSubprocess.stdout.setEncoding('utf8').on('data', (chunk: string) => onData('[STDOUT]', chunk))
         sdkSubprocess.stderr.setEncoding('utf8').on('data', (chunk: string) => onData('[STDERR]', chunk))

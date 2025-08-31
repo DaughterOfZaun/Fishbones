@@ -359,7 +359,7 @@ export class Team extends PickableValue {
     public static readonly count = 2
     public static readonly choices = PickableValue.normalize(Team.values)
 
-    static colors = [ 'blue', 'red', 'green', 'yellow', 'magenta', 'cyan', 'white' ] as const
+    static colors = [ 'blueBright', 'redBright', 'greenBright', 'yellowBright', 'magentaBright', 'cyanBright', 'white' ] as const
     public color(): (typeof Team.colors)[number] | 'gray' {
         return (this.value != undefined) ? Team.colors[this.value] ?? 'white' : 'gray'
     }

@@ -67,7 +67,7 @@ const {
     symbols,
     close
 } = dlopen(
-    process.platform === 'linux' ? utpNativeModuleLinux : utpNativeModuleWindows,
+    process.platform === 'linux' ? utpNativeModuleLinux : utpNativeModuleWindows as string,
     {
         utp_init: { args: [int /*version*/] as const, returns: ptr_t },
         utp_destroy: { args: [ptr_t /*ctx*/] as const, returns: void_t },

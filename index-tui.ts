@@ -118,6 +118,7 @@ export async function main(node: LibP2PNode, opts: Required<AbortOptions>){
             const server = await LocalServer.create(node, opts)
             const game = await LocalGame.create(node, server, opts)
             let data: PBPeer.AdditionalData
+            let prevPlayerCount = 0
             try {
                 await game.startListening(opts)
                 game.join(name, undefined)
@@ -153,7 +154,6 @@ export async function main(node: LibP2PNode, opts: Required<AbortOptions>){
                 }
             }
 
-            let prevPlayerCount = 0
             function update(){
                 const gi = data.gameInfos[0]!
                 gi.players = game.getPlayersCount()
@@ -227,6 +227,8 @@ async function lobby(game: Game, opts: Required<AbortOptions>){
         launch: () => controller.abort(lobby_wait_for_end),
         stop: () => controller.abort(lobby_gather),
     }
+    //TODO: Rework the logic for switching views.
+    const views: View[] = [ null, lobby_pick, lobby_wait_for_start, lobby_crash_report, lobby_wait_for_end, lobby_gather ]
     const handlers_keys = Object.keys(handlers) as (keyof typeof handlers)[]
     for(const name of handlers_keys)
         game.addEventListener(name, handlers[name])
@@ -238,7 +240,7 @@ async function lobby(game: Game, opts: Required<AbortOptions>){
                 await view(ctx)
                 //break
             } catch(error) {
-                if (error instanceof AbortPromptError){
+                if (error instanceof AbortPromptError && views.includes(error.cause as View)){
                     controller = new AbortController()
                     ctx.signal = createSignal()
                     view = error.cause as View

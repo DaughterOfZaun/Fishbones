@@ -6,12 +6,15 @@ import { console_log } from "./data-shared"
 import { console_log_fs_err, cwd, downloads, fs_copyFile, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_rmdir } from './data-fs'
 import { readTrackersTxt } from "./data-trackers"
 import { appendPartialUnpackFileExt, DataError, repair7z, unpack } from "./data-unpack"
+import { TerminationError, unwrapAbortError } from "./data-process"
 import type { AbortOptions } from "@libp2p/interface"
 import { promises as fs } from 'fs'
 import path from 'node:path'
 
 //@ts-expect-error Cannot find module or its corresponding type declarations.
 import d3dx9_39_dll_embded from '../thirdparty/directx_Jun2010_redist/Aug2008_d3dx9_39_x64/d3dx9_39.dll' with { type: 'file' }
+
+const DOTNET_INSTALL_CORRUPT_EXIT_CODES = [ 130, 131, 142, ]
 
 export async function repair(opts: Required<AbortOptions>){
     //console.log('Running data check and repair...')
@@ -36,15 +39,27 @@ export async function repair(opts: Required<AbortOptions>){
                     await repairArchived(gsPkg, opts)
             })(),
         ]).then(async () => {
-            if(gsExeIsMissing)
-                await build(gsPkg, opts)
+            if(gsExeIsMissing){
+                try {
+                    await build(gsPkg, opts)
+                } catch(err) {
+                    if(err instanceof TerminationError){
+                        const exitCode = err.cause?.code ?? 0
+                        if(DOTNET_INSTALL_CORRUPT_EXIT_CODES.includes(exitCode)){
+                            console_log(`SDK installation is probably corrupted (exit code is ${exitCode})`)
+                            await repairArchived(sdkPkg, opts, true)
+                            await build(gsPkg, opts)
+                        } else throw err
+                    } else throw err
+                }
+            }
             await fs_ensureDir(gsPkg.infoDir, opts)
         }),
         repairArchived(gcPkg, opts).then(async () => {
             //await fs_ensureDir(gcPkg.exeDir, opts)
             const d3dx9_39_dll = path.join(gcPkg.exeDir, 'd3dx9_39.dll')
             if(!await fs_exists(d3dx9_39_dll, opts, false))
-                await fs_copyFile(String(d3dx9_39_dll_embded), d3dx9_39_dll, opts)
+                await fs_copyFile(d3dx9_39_dll_embded as string, d3dx9_39_dll, opts)
         })
     ] as Promise<unknown>[])
 }
@@ -84,6 +99,7 @@ async function getPotentialRoots(opts: Required<AbortOptions>){
     ]
 }
 
+//TODO: Compare files to PkgInfo.topLevelEntries
 async function findPackageDir(pkg: PkgInfo, opts: Required<AbortOptions>){
     const { dir: pkgDir, checkUnpackBy: filePath } = pkg
     console.assert(filePath.startsWith(downloads))
@@ -105,9 +121,24 @@ async function findPackageDir(pkg: PkgInfo, opts: Required<AbortOptions>){
 async function moveFoundFilesToDir(foundPkgDir: string, pkg: PkgInfo, opts: Required<AbortOptions>){
 
     await fs_ensureDir(pkg.dir, opts)
-    const [ movingRequiredFilesResults, movingOptionalFilesResults ] = await Promise.all([
-        Promise.allSettled(pkg.topLevelEntries.map(moveToPkgDir)),
-        Promise.allSettled(pkg.topLevelEntriesOptional.map(moveToPkgDir)),
+
+    let successfullyMovedRequiredFiles = true
+    await Promise.all([
+        pkg.topLevelEntries.map(async (fileName) => {
+            try {
+                await moveToPkgDir(fileName)
+            } catch(err) {
+                console_log_fs_err('Moving required file', fileName, err)
+                successfullyMovedRequiredFiles = false
+            }
+        }),
+        pkg.topLevelEntriesOptional.map(async (fileName) => {
+            try {
+                await moveToPkgDir(fileName)
+            } catch(err) {
+                console_log_fs_err('Moving optional file', fileName, err)
+            }
+        }),
     ])
     async function moveToPkgDir(fileName: string){
         return fs.rename(
@@ -115,24 +146,7 @@ async function moveFoundFilesToDir(foundPkgDir: string, pkg: PkgInfo, opts: Requ
             path.join(pkg.dir, fileName),
         )
     }
-    opts.signal.throwIfAborted()
-
-    let successfullyMovedRequiredFiles = true
-    for(let i = 0; i < movingRequiredFilesResults.length; i++){
-        const result = movingRequiredFilesResults[i]!
-        const fileName = pkg.topLevelEntries[i]!
-        if(result.status === 'rejected'){
-            console_log_fs_err('Moving required file', fileName, result.reason)
-            successfullyMovedRequiredFiles = false
-        }
-    }
-    for(let i = 0; i < movingOptionalFilesResults.length; i++){
-        const result = movingOptionalFilesResults[i]!
-        const fileName = pkg.topLevelEntriesOptional[i]!
-        if(result.status === 'rejected'){
-            console_log_fs_err('Moving optional file', fileName, result.reason)
-        }
-    }
+    //opts.signal.throwIfAborted()
 
     // Try to delete the folder if it is empty.
     await fs_rmdir(foundPkgDir, opts, false)
@@ -165,8 +179,9 @@ async function findPackageZip(pkg: PkgInfo, opts: Required<AbortOptions>){
     return undefined
 }
 
-async function repairArchived(pkg: PkgInfo, opts: Required<AbortOptions>){
+async function repairArchived(pkg: PkgInfo, opts: Required<AbortOptions>, ignoreUnpacked = false){
 
+    if(!ignoreUnpacked)
     if(await fs_exists(pkg.checkUnpackBy, opts)){
         const lockfile = appendPartialUnpackFileExt(pkg.zip)
         if(await fs_exists(lockfile, opts, false)){
@@ -176,9 +191,23 @@ async function repairArchived(pkg: PkgInfo, opts: Required<AbortOptions>){
     } else {
         const foundPkgDir = await findPackageDir(pkg, opts)
         if(foundPkgDir){
-            console_log(`Moving files from "${foundPkgDir}" to "${pkg.dir}"`)
-            if(await moveFoundFilesToDir(foundPkgDir, pkg, opts))
-                return // OK
+            const foundEntries = new Set(await fs.readdir(foundPkgDir))
+            const requiredEntres = new Set(pkg.topLevelEntries)
+            const optionalEntries = new Set(pkg.topLevelEntriesOptional)
+            if(foundEntries.isSupersetOf(requiredEntres)){
+                if(foundEntries.isSubsetOf(requiredEntres.union(optionalEntries))){
+                    console_log(`Moving "${foundPkgDir}" to "${pkg.dir}"...`)
+                    if(await fs_moveFile(foundPkgDir, pkg.dir, opts))
+                        return // OK
+                } else {
+                    console_log(`Moving files from "${foundPkgDir}" to "${pkg.dir}"...`)
+                    if(await moveFoundFilesToDir(foundPkgDir, pkg, opts))
+                        return // OK
+                }
+            } else {
+                const missingEntries = [...requiredEntres.difference(foundEntries)].join(', ')
+                console_log(`Skipping "${foundPkgDir}" because it does not contain some files: ${missingEntries}`)
+            }
         }
     }
 
@@ -209,7 +238,8 @@ async function tryToUnpack(pkg: PkgInfo, opts: Required<AbortOptions>){
     try {
         await unpack(pkg, opts)
         return true // OK
-    } catch(err) {
+    } catch(unk_err) {
+        const err = unwrapAbortError(unk_err)
         if(err instanceof DataError){
             console_log_fs_err('Unpacking', pkg.zip, err)
             return false

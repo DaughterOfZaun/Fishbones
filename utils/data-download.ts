@@ -28,12 +28,12 @@ export async function repairAria2(opts: Required<AbortOptions>){
     return Promise.all([
         (async () => {
             if(await fs_exists(ariaExe, opts)) return
-            await fs_copyFile(String(ariaExeEmbded), ariaExe, opts)
+            await fs_copyFile(ariaExeEmbded as string, ariaExe, opts)
             await fs_chmod(ariaExe, rwx_rx_rx, opts)
         })(),
         (async () => {
             if(await fs_exists(ariaConf, opts)) return
-            await fs_copyFile(String(ariaConfEmbded), ariaConf, opts)
+            await fs_copyFile(ariaConfEmbded as string, ariaConf, opts)
         })(),
     ])
 }
@@ -79,6 +79,11 @@ async function startAria2(opts: Required<AbortOptions>){
             `--dht-file-path=${'aria2.dht.dat'}`,
             `--dht-file-path6=${'aria2.dht6.dat'}`,
             `--log=${'aria2.log'}`,
+
+            // Stability tweaks
+            `--allow-piece-length-change=${true}`,
+            `--auto-file-renaming=${true}`,
+            `--allow-overwrite=${true}`,
 
             //TODO: These values are tweaked to download exactly two archives.
             //`--min-split-size=${512 * 1024 * 1024}`,
@@ -139,40 +144,51 @@ export async function download(pkg: PkgInfo, opts: Required<AbortOptions>){
     const bar = multibar.create(pkg.zipSize, 0, { operation: 'Downloading', filename: pkg.zipName }, barOpts)
     try {
     
-        if(pkg.zipMega)
-        await MegaProxy.start(opts)
-        await startAria2(opts)
-        
-        const args = {
-            'bt-save-metadata': true,
-            'bt-load-saved-metadata': true,
-            'rpc-save-upload-metadata': true,
-            dir: downloads,
-            out: pkg.zipName,
-        }
-
         const webSeeds = []
         if(pkg.zipWebSeed) webSeeds.push(pkg.zipWebSeed)
-        if(pkg.zipMega) webSeeds.push(MegaProxy.getURL(pkg))
-        
-        const b64 = await fs_readFile(pkg.zipTorrent, { ...opts, encoding: 'base64' })
-        const gid = b64 ? await aria2.addTorrent(aria2conn, b64, webSeeds, args) :
-            await aria2.addUri(aria2conn, [ pkg.zipMagnet ].concat(webSeeds), args)
-        opts.signal.throwIfAborted()
+        if(pkg.zipMega && !process.argv.includes('--no-mega')){
+            await MegaProxy.start(opts)
+            webSeeds.push(MegaProxy.getURL(pkg))
+        }
 
-        await forCompletion(gid, false, p => bar.update(p))
-        if(pkg.zipMega) MegaProxy.ungetURL()
+        try {
+            await startAria2(opts)
+            
+            const args = {
+                'bt-save-metadata': true,
+                'bt-load-saved-metadata': true,
+                'rpc-save-upload-metadata': true,
+                dir: downloads,
+                out: pkg.zipName,
+            }
+            
+            const b64 = await fs_readFile(pkg.zipTorrent, { ...opts, encoding: 'base64' })
+            let gid
+            try {
+                gid = b64 ? await aria2.addTorrent(aria2conn, b64, webSeeds, args) :
+                            await aria2.addUri(aria2conn, [ pkg.zipMagnet ].concat(webSeeds), args)
+            } catch(err) {
+                throw new Error(`Downloading of "${pkg.zipName}" failed.`, { cause: err })
+            }
+            opts.signal.throwIfAborted()
 
+            await forCompletion(gid, false, p => bar.update(p), pkg.zipName)
+            
+        } finally {
+            if(pkg.zipMega && !process.argv.includes('--no-mega')){
+                MegaProxy.ungetURL()
+            }
+        }
     } finally {
         bar.update(bar.getTotal())
         bar.stop()
     }
 
     if(!await fs_exists_and_size_eq(pkg.zip, pkg.zipSize, opts))
-        throw new Error(`Unable to download ${pkg.zipName}`)
+        throw new Error(`Unable to download "${pkg.zipName}"`)
 }
 
-async function forCompletion(gid: string, isMetadata: boolean, cb: (progress: number) => void){
+async function forCompletion(gid: string, isMetadata: boolean, cb: (progress: number) => void, fileName: string){
     
     const deferred = defer()
 
@@ -185,7 +201,7 @@ async function forCompletion(gid: string, isMetadata: boolean, cb: (progress: nu
             //if(status.status === 'error') onError({ gid, status: status.status })
             cb(Number(status.completedLength))
         } catch(err) {
-            deferred.reject(err)
+            deferred.reject(new Error(`Downloading of "${fileName}" failed.`, { cause: err }))
         }
     }
 
@@ -209,7 +225,7 @@ async function forCompletion(gid: string, isMetadata: boolean, cb: (progress: nu
                         deferred.resolve()
                     }
                 } catch(err) {
-                    deferred.reject(err)
+                    deferred.reject(new Error(`Downloading of "${fileName}" failed.`, { cause: err }))
                 }
             } else {
                 deferred.resolve()
@@ -219,7 +235,7 @@ async function forCompletion(gid: string, isMetadata: boolean, cb: (progress: nu
     
     function onError(notification: { gid: string, status?: string }) {
         if(notification.gid == gid){
-            deferred.reject()
+            deferred.reject(new Error(`Downloading of "${fileName}" failed.`))
         }
     }
 
@@ -231,5 +247,5 @@ async function forCompletion(gid: string, isMetadata: boolean, cb: (progress: nu
 }
 
 export function appendPartialDownloadFileExt(zip: string){
-    return `${zip}.aria2c`
+    return `${zip}.aria2`
 }

@@ -1,6 +1,6 @@
 import { type PkgInfo } from './data-packages'
 import { barOpts, logger, multibar } from './data-shared'
-import { registerShutdownHandler, spawn, successfulTermination, type ChildProcess } from './data-process'
+import { logTerminationMsg, registerShutdownHandler, spawn, successfulTermination, type ChildProcess } from './data-process'
 import { rwx_rx_rx, downloads, fs_chmod, fs_copyFile, fs_ensureDir, fs_exists, fs_writeFile, fs_removeFile } from './data-fs'
 import type { AbortOptions } from '@libp2p/interface'
 import path from 'node:path'
@@ -19,13 +19,13 @@ export async function repair7z(opts: Required<AbortOptions>){
         await Promise.all([
             (async () => {
                 if(!await fs_exists(s7zExe, opts)){
-                    await fs_copyFile(String(s7zExeEmbded), s7zExe, opts)
+                    await fs_copyFile(s7zExeEmbded as string, s7zExe, opts)
                     await fs_chmod(s7zExe, rwx_rx_rx, opts)
                 }
             })(),
             (async () => {
                 if(s7zDll && s7zDllEmbded && !await fs_exists(s7zDll, opts))
-                    await fs_copyFile(String(s7zDllEmbded), s7zDll, opts)
+                    await fs_copyFile(s7zDllEmbded as string, s7zDll, opts)
             })(),
         ])
     } catch(unk_err){
@@ -59,9 +59,9 @@ enum s7zExitCodes {
 }
 
 let pid = 0
-const s7zs: (ChildProcess & { id: number })[] = []
+const activeProcesses = new Set<ChildProcess>()
 registerShutdownHandler((force) => {
-    for(const proc of s7zs){
+    for(const proc of activeProcesses){
         proc.kill(force ? 'SIGKILL' : 'SIGTERM')
     }
 })
@@ -83,6 +83,9 @@ export async function unpack(pkg: PkgInfo, opts: Required<AbortOptions>){
         format: '{operation} {filename} |{bar}| {percentage}% | {duration_formatted}/{eta_formatted}',
         ...barOpts,
     })
+    
+    const s7zs: (ChildProcess & { i: number, id: number, logPrefix: string })[] = []
+
     try {
     
         await fs_ensureDir(pkg.dir, opts)
@@ -95,22 +98,28 @@ export async function unpack(pkg: PkgInfo, opts: Required<AbortOptions>){
 
         const args = ['-aoa', `-o${pkg.dir}`, '-bsp1']
         if(!pkg.noDedup) args.push('-spe')
-        s7zs.length = 0
-
+        
         if(pkg.zipExt == '.tar.gz'){
             s7zs[0] = Object.assign(spawn(s7zExe, ['x', '-so', '-tgzip', pkg.zip], {
                 stdio: [   null, 'pipe', 'pipe' ], signal,
-            }), { id: pid })
+            }), { i: 0, id: pid, logPrefix: `7Z ${pid} ${0}` })
             s7zs[1] = Object.assign(spawn(s7zExe, ['x', '-si', '-ttar', ...args], {
                 stdio: [ 'pipe', 'pipe', 'pipe' ], signal,
-            }), { id: pid })
+            }), { i: 1, id: pid, logPrefix: `7Z ${pid} ${1}` })
             s7zs[0].stdout.pipe(s7zs[1].stdin)
         } else {
             s7zs[0] = Object.assign(spawn(s7zExe, ['x', ...args, pkg.zip], {
                 signal,
-            }), { id: pid })
+            }), { i: 0, id: pid, logPrefix: `7Z ${pid} ${0}` })
         }
         pid++
+        for(const proc of s7zs){
+            activeProcesses.add(proc)
+            proc.on('exit', (code, signal) => {
+                logTerminationMsg(proc.logPrefix, 'exited', code, signal)
+                activeProcesses.delete(proc)
+            })
+        }
 
         connect(s7zs.length - 1, 'stdout')
         for(let i = 0; i < s7zs.length; i++)
@@ -118,7 +127,7 @@ export async function unpack(pkg: PkgInfo, opts: Required<AbortOptions>){
 
         function connect(i: number, src: 'stdout' | 'stderr'){
             const proc = s7zs[i]!
-            const logPrefix = `7Z ${proc.id} ${i} [${src.toUpperCase()}]`
+            const logPrefix = `${proc.logPrefix} [${src.toUpperCase()}]`
             proc[src].setEncoding('utf8').on('data', (chunk: string) => {
                 onData(logPrefix, src, chunk)
             })
@@ -134,18 +143,22 @@ export async function unpack(pkg: PkgInfo, opts: Required<AbortOptions>){
             }
             if(src === 'stderr' && !signal.aborted && s7zDataErrorMsgs.test(chunk)){
                 //s7zs.at(i)![src]!.removeAllListeners('data')
-                controller.abort(new DataError())
+                controller.abort(new DataError(`Unpacking of "${pkg.zipName}" failed.`))
                 logger.log(loggerPrefix, 'ABORTED')
             }
         }
 
-        await Promise.all(s7zs.map(async (proc, i) => successfulTermination(
-            `7Z ${proc.id} ${i}`, proc, opts, [ 0, s7zExitCodes.Warning ]
+        await Promise.all(s7zs.map(async (proc) => successfulTermination(
+            proc.logPrefix, proc, opts, [ 0, s7zExitCodes.Warning ]
         )))
         await fs_removeFile(lockfile, opts)
     
     } finally {
-        for(const proc of s7zs) proc.kill()
+        for(const proc of s7zs){
+            if(activeProcesses.delete(proc)){
+                proc.kill()
+            }
+        }
         bar.update(bar.getTotal())
         bar.stop()
     }

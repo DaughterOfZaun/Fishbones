@@ -57,8 +57,14 @@ export async function fs_ensureDir(path: string, opts: Required<AbortOptions>){
     opts.signal.throwIfAborted()
 }
 
+//TODO: { rethrow?: true } ?
 export async function fs_copyFile(src: string, dest: string, opts: Required<AbortOptions>){
-    await fs.writeFile(dest, await fs.readFile(src))
+    //const bytes = await fs.readFile(src)
+    const srcName = path.basename(src)
+    const bytes = await Bun.embeddedFiles.find(
+        blob => 'name' in blob && blob.name === srcName
+    )!.bytes() //HACK: Walkaround
+    await fs.writeFile(dest, bytes)
     opts.signal.throwIfAborted()
 }
 

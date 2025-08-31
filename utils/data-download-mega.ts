@@ -103,6 +103,7 @@ export function getURL(pkg: PkgInfo){
     urlsInUse++; return `http://${serverAddress.address}:${serverAddress.port}/${pkg.zipName}`
 }
 export function ungetURL(){
+    if(!server?.listening) return
     if(--urlsInUse == 0) stop()
 }
 
