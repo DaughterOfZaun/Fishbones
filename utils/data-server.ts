@@ -22,6 +22,7 @@ export async function launchServer(info: GameInfo, opts: Required<AbortOptions>,
         gsPkg.dll, '--port', port.toString(), '--config', gsInfoRel,
     ], {
         logPrefix: LOG_PREFIX,
+        //signal: opts.signal,
         cwd: gsPkg.dllDir,
         //detached: true,
         log: true,

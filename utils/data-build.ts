@@ -45,7 +45,7 @@ export async function build(pkg: PkgInfoCSProj, opts: Required<AbortOptions>){
             //env: { 'DOTNET_CLI_TELEMETRY_OPTOUT': '1' },
             stdio: [ null, 'pipe', 'pipe' ],
             logPrefix: LOG_PREFIX,
-            signal: opts.signal,
+            //signal: opts.signal,
             log: true,
         })
         

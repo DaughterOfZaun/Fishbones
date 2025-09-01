@@ -88,7 +88,8 @@ export async function unpack(pkg: PkgInfo, opts: Required<AbortOptions>){
         await fs_writeFile(lockfile, '', { ...opts, encoding: 'utf8' })
         
         const controller = new AbortController()
-        const signal = AbortSignal.any([ controller.signal, opts.signal ])
+        //const signal = AbortSignal.any([ controller.signal, opts.signal ])
+        const { signal } = controller
 
         const args = ['-aoa', `-o${pkg.dir}`, '-bsp1']
         if(!pkg.noDedup) args.push('-spe')

@@ -24,6 +24,7 @@ export async function relaunchClient(opts: Required<AbortOptions>){
 
     const spawnOpts = {
         logPrefix: LOG_PREFIX,
+        //signal: opts.signal,
         cwd: gcPkg.exeDir,
         log: true,
     }

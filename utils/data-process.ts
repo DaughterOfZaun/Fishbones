@@ -170,9 +170,9 @@ process.on('uncaughtException', (err: Error & { code?: string, context?: Error &
         //err.context?.message === 'The operation was aborted.'
     ){ /* Ignore */ } else {
         const unwrapped = unwrapAbortError(err)
-        if(unwrapped instanceof ExitPromptError && shutdownStage === ShutdownStage.ABORT){
-            // Was no one listening to the signal?
-            shutdown('timeout')
+        if(unwrapped instanceof ExitPromptError){
+            //TODO: Investigate.
+            shutdown('exception')
         } else {
             console_log('An unexpected exception occurred:', Bun.inspect(err))
             shutdown('exception')
@@ -206,7 +206,7 @@ export function setInsideUI(to: boolean){
 export function shutdown(source: 'signal' | 'exception' | 'call' | 'timeout' | 'event'){
 
     const setStage = (to: ShutdownStage) => {
-        logger.log(`Shutting down (stage ${shutdownStage}) due to ${source}`)
+        logger.log(`Shutting down (stage ${to}) due to ${source}`)
         shutdownStage = to
     }
 

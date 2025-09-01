@@ -87,6 +87,7 @@ async function startAria2(opts: Required<AbortOptions>){
             //`--split=${4}`,
         ], {
             logPrefix: LOG_PREFIX,
+            //signal: opts.signal,
             cwd: downloads,
             log: true,
         }) //TODO: Handle start fail. Maybe?

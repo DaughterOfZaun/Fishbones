@@ -48,7 +48,7 @@ try {
     
     const err = unwrapAbortError(unk_err)
     if(err instanceof ExitPromptError){
-        shutdown('signal')
+        shutdown('timeout')
     } else {
         console_log('A fatal error occurred:', Bun.inspect(err))
         shutdown('exception')
