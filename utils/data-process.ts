@@ -1,7 +1,8 @@
 import type { ChildProcessWithoutNullStreams, SpawnOptionsWithoutStdio } from 'child_process'
 import type { AbortOptions } from '@libp2p/interface'
-import { console_log, logger } from './data-shared'
-import { ExitPromptError } from '@inquirer/core'
+import { logger } from './data-shared'
+import { console_log } from '../ui/remote'
+import { ExitPromptError } from '../ui/remote'
 import { spawn as originalSpawn } from 'child_process'
 import defer from 'p-defer'
 

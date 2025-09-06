@@ -1,5 +1,4 @@
-import { input, checkbox, select } from "@inquirer/prompts"
-import type { Choice as SelectChoice } from "../ui/dynamic-select"
+import { input, checkbox, select, type Choice } from "../ui/remote"
 import type { AbortOptions } from "@libp2p/interface"
 type CheckboxChoice<T> = Extract<Parameters<typeof checkbox<T>>[0]['choices'][number], { value: T }>
 
@@ -34,12 +33,12 @@ export abstract class ValueDesc<I, E> {
 //type OmitFirst<T extends unknown[]> = T extends [unknown, ...infer R] ? R : never
 //type PickableValueConstructorArgs = OmitFirst<ConstructorParameters<typeof PickableValue>>
 //type PickableValueConstructor = new (...args: ConstructorParameters<typeof PickableValue>) => PickableValue
-interface PickableValueStatics { name: string, values: Record<number, string>, choices: SelectChoice<number>[] }
+interface PickableValueStatics { name: string, values: Record<number, string>, choices: Choice<number>[] }
 export class PickableValue extends ValueDesc<number, number> {
     public value?: number
     public readonly name: string
     private readonly values: Record<number, string>
-    private readonly choices: SelectChoice<number>[]
+    private readonly choices: Choice<number>[]
     private readonly enabledGetter?: () => Enabled
     //private readonly enabled?: Enabled
     constructor(value?: number, enabledGetter?: () => Enabled){
@@ -93,7 +92,7 @@ export class PickableValue extends ValueDesc<number, number> {
     public toString(): string {
         return (this.value != undefined) ? this.values[this.value]! : 'undefined'
     }
-    public static normalize(values: Record<number, string>): SelectChoice<number>[] {
+    public static normalize(values: Record<number, string>): Choice<number>[] {
         return Object.entries(values).map(([k, v]) => ({ value: Number(k), name: v }))
     }
     public setRandom(){

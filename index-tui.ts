@@ -1,12 +1,9 @@
-import select, { type Choice } from './ui/dynamic-select'
+import { spinner, select, type Choice, AbortPromptError, color } from './ui/remote'
 import { type Game } from './game'
-import color from 'yoctocolors-cjs'
-import { AbortPromptError } from '@inquirer/core'
 import { RemoteGame } from './game-remote'
 import { LocalGame } from './game-local'
 import type { GamePlayer, PPP } from './game-player'
 import { LocalServer, RemoteServer } from './server'
-import spinner from './ui/spinner'
 import type { Peer as PBPeer } from './message/peer'
 import type { LibP2PNode } from './index-node'
 import { TITLE } from './utils/constants'
@@ -66,7 +63,7 @@ export async function main(node: LibP2PNode, opts: Required<AbortOptions>){
             .join(' | ')
 
             if(game.password.isSet)
-                line = color.gray(line)
+                line = color('gray', line)
 
             return ({
                 value: ['join', game] as Action,
@@ -80,8 +77,8 @@ export async function main(node: LibP2PNode, opts: Required<AbortOptions>){
         })
         if(ret.length == 0){
             ret = pubsub.isStarted() ?
-                [ { value: ['noop'], name: color.gray('Waiting for the servers to appear...') } ] :
-                [ { value: ['noop'], name: color.red('Failed to initialize the network...') } ]
+                [ { value: ['noop'], name: color('gray', 'Waiting for the servers to appear...') } ] :
+                [ { value: ['noop'], name: color('red', 'Failed to initialize the network...') } ]
         }
         return ret.concat(defaultItems)
     }
@@ -186,7 +183,7 @@ export async function main(node: LibP2PNode, opts: Required<AbortOptions>){
 
 function playerChoices<T>(game: Game, cb: (player: GamePlayer) => T){
     return game.getPlayers().map(player => {
-        const colorFunc = color[player.team.color()]
+        const teamColor = player.team.color()
         const playerId = player.id.toString(16).padStart(8, '0')
         const champion = player.champion.toString()
         const spell1 = player.spell1.toString()
@@ -194,8 +191,8 @@ function playerChoices<T>(game: Game, cb: (player: GamePlayer) => T){
         const locked = player.lock.toString()
         return ({
             value: cb(player),
-            name: colorFunc(
-                [`[${playerId}] ${player.name.toString()}`, champion, spell1, spell2, locked].join(' - ')
+            name: color(
+                teamColor, [`[${playerId}] ${player.name.toString()}`, champion, spell1, spell2, locked].join(' - ')
             )
         })
     }) as Choice<T>[]

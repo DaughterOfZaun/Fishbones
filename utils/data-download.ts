@@ -2,7 +2,7 @@ import path from 'node:path'
 import { aria2, open, createWebSocket, type Conn } from 'maria2/dist/index.js'
 import { randomBytes } from '@libp2p/crypto'
 import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
-import { barOpts, multibar } from './data-shared'
+import { createBar } from '../ui/remote'
 import { killSubprocess, spawn, startProcess, type ChildProcess } from './data-process'
 import { rwx_rx_rx, downloads, fs_chmod, fs_copyFile, fs_exists, fs_exists_and_size_eq, fs_readFile } from './data-fs'
 import type { AbortOptions } from '@libp2p/interface'
@@ -74,7 +74,7 @@ async function startAria2(opts: Required<AbortOptions>){
             `--file-allocation=${'falloc'}`,
             `--dht-file-path=${'aria2.dht.dat'}`,
             `--dht-file-path6=${'aria2.dht6.dat'}`,
-            `--log=${'aria2.log'}`,
+            //`--log=${'aria2.log'}`,
 
             // Stability tweaks
             `--allow-piece-length-change=${true}`,
@@ -131,7 +131,7 @@ export async function download(pkg: PkgInfo, opts: Required<AbortOptions>){
     }
 
     //console.log(`Downloading ${pkg.zipName}...`)
-    const bar = multibar.create(pkg.zipSize, 0, { operation: 'Downloading', filename: pkg.zipName }, barOpts)
+    const bar = createBar('Downloading', pkg.zipName, pkg.zipSize)
     try {
     
         const webSeeds = []

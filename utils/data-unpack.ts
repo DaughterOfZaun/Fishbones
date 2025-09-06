@@ -1,5 +1,6 @@
 import { type PkgInfo } from './data-packages'
-import { barOpts, logger, multibar } from './data-shared'
+import { logger } from './data-shared'
+import { createBar } from '../ui/remote'
 import { killIfActive, spawn, successfulTermination, type ChildProcess } from './data-process'
 import { rwx_rx_rx, downloads, fs_chmod, fs_copyFile, fs_ensureDir, fs_exists, fs_writeFile, fs_removeFile } from './data-fs'
 import type { AbortOptions } from '@libp2p/interface'
@@ -73,10 +74,7 @@ export async function unpack(pkg: PkgInfo, opts: Required<AbortOptions>){
     }
     
     //console.log(`Unpacking ${pkg.zipName}...`)
-    const bar = multibar.create(100, 0, { operation: 'Unpacking', filename: pkg.zipName }, {
-        format: '{operation} {filename} |{bar}| {percentage}% | {duration_formatted}/{eta_formatted}',
-        ...barOpts,
-    })
+    const bar = createBar('Unpacking', pkg.zipName, 100)
     
     const s7zs: (ChildProcess & { logPrefix: string })[] = []
 

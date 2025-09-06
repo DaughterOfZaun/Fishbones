@@ -1,5 +1,5 @@
 import { sdkPkg, type PkgInfoCSProj } from "./data-packages"
-import { createInfiniteBar } from "./data-shared"
+import { createBar } from "../ui/remote"
 import type { AbortOptions } from "@libp2p/interface"
 import { fs_exists, fs_readFile, fs_writeFile, type ReadWriteFileOpts } from "./data-fs"
 import { killIfActive, spawn, successfulTermination, type ChildProcess } from "./data-process"
@@ -17,7 +17,7 @@ export async function build(pkg: PkgInfoCSProj, opts: Required<AbortOptions>){
     }
     
     //console_log(`Building ${pkg.dllName}...`)
-    const bar = createInfiniteBar('Building', pkg.dllName)
+    const bar = createBar('Building', pkg.dllName)
     try{
 
         let txt = (await fs_readFile(pkg.csProj, fs_opts))!

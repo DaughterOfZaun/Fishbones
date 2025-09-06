@@ -2,7 +2,7 @@ import { build } from "./data-build"
 import { download, appendPartialDownloadFileExt, repairAria2 } from "./data-download"
 import { gcPkg, gsPkg, PkgInfo, repairTorrents, sdkPkg } from "./data-packages"
 import { repairServerSettingsJsonc } from "./data-server"
-import { console_log } from "./data-shared"
+import { console_log } from "../ui/remote"
 import { console_log_fs_err, cwd, downloads, fs_copyFile, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_rmdir } from './data-fs'
 import { readTrackersTxt } from "./data-trackers"
 import { appendPartialUnpackFileExt, DataError, repair7z, unpack } from "./data-unpack"

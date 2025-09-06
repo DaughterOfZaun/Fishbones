@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { console_log, createInfiniteBar } from './data-shared'
+import { console_log, createBar } from '../ui/remote'
 import { downloads, fs_readFile, fs_writeFile } from './data-fs'
 import trackersTxtEmbded from '../Fishbones_Data/trackers.txt' with { type: 'file' }
 import type { AbortOptions } from '@libp2p/interface'
@@ -31,7 +31,7 @@ export async function readTrackersTxt(opts: Required<AbortOptions>){
 
 async function downloadTrackersTxt(opts: Required<AbortOptions>){
     //console.log(`Downloading ${trackersTxtName}...`)
-    const bar = createInfiniteBar('Downloading', trackersTxtName)
+    const bar = createBar('Downloading', trackersTxtName)
     
     let txt: string = ''
     let lastError: Error | undefined

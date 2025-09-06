@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { promises as fs } from "node:fs"
 import type { AbortOptions } from '@libp2p/interface'
-import { console_log } from './data-shared'
+import { console_log } from '../ui/remote'
 
 export const cwd = process.cwd()
 //export const cwd = path.dirname(process.execPath)
