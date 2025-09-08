@@ -6,6 +6,9 @@ import { console_log, ExitPromptError } from './ui/remote'
 import { registerShutdownHandler, setInsideUI, shutdown, shutdownOptions, unwrapAbortError } from './utils/data-process'
 import { repair } from './utils/data-repair'
 import * as umplex from './network/umplex'
+import * as RemoteUI from './ui/remote'
+
+if(RemoteUI.start()) process.exit(0)
 
 function getNamedArg(name: string, defaultValue: string){
     const index = process.argv.indexOf(name)

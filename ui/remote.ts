@@ -10,61 +10,134 @@ import { default as localSpinner } from './spinner'
 import path from 'node:path'
 import { downloads, fs_chmod, fs_copyFile, fs_exists, rwx_rx_rx } from '../utils/data-fs'
 import type { AbortOptions } from '@libp2p/interface'
-import type { BunSocket } from '../network/umplex'
-import { LOCALHOST } from '../utils/constants'
-
 
 export { type Choice, AbortPromptError, ExitPromptError }
 
-// eslint-disable-next-line @typescript-eslint/promise-function-async
-export const input: typeof localInput = (config, context) => {
-    //return Object.assign(new Promise<string>((res, rej) => {}), { cancel: () => {} })
-    return localInput(config, context)
+type JSONPrimitive = string | number | boolean | null | undefined
+type JSONValue = JSONPrimitive | JSONValue[] | { [key: string]: JSONValue }
+
+//const JSONRPC_GUI_ARG = "--jsonrpc-gui"
+//const jsonRpcDisabled = !process.argv.includes(JSONRPC_GUI_ARG)
+const jsonRpcDisabled = false
+
+let gid = 0
+function sendCall(method: string, ...params: JSONValue[]){
+    const id = gid++
+    process.stdout.write(JSON.stringify({ id, method, params }) + '\n', 'utf8')
+    //console.log(JSON.stringify({ id, method, params }))
+    return id
+}
+function sendNotification(method: string, ...params: JSONValue[]){
+    process.stdout.write(JSON.stringify({ method, params }) + '\n', 'utf8')
+    //console.log(JSON.stringify({ method, params }))
+}
+function sendFollowupNotification(method: string, id: number, ...params: JSONValue[]){
+    process.stdout.write(JSON.stringify({ id, method, params }) + '\n', 'utf8')
+    //console.log(JSON.stringify({ id, method, params }))
 }
 
-type CheckboxConfig<Value> = Parameters<typeof localCheckbox<Value>>[0]
-// eslint-disable-next-line @typescript-eslint/promise-function-async
-export const checkbox: typeof localCheckbox = <Value>(config: CheckboxConfig<Value>, context?: Context) => {
-   //return Object.assign(new Promise<Value[]>((res, rej) => {}), { cancel: () => {} })
-   return localCheckbox<Value>(config, context)
+type InputConfig = Parameters<typeof localInput>[0]
+export async function input(config: InputConfig, context?: Context): Promise<string> {
+    if(jsonRpcDisabled) return localInput(config, context)
+    return remoteInput('input', config, context)
 }
 
-type SelectConfig<Value> = Parameters<typeof localSelect<Value>>[0]
-// eslint-disable-next-line @typescript-eslint/promise-function-async
-export const select: typeof localSelect = <Value>(config: SelectConfig<Value>, context?: Context) => {
-    //return Object.assign(new Promise<Value>((res, rej) => {}), { cancel: () => {} })
-    return localSelect<Value>(config, context)
+type CheckboxConfig<Value> = Omit<Parameters<typeof localCheckbox<Value>>[0], 'choices'> & { choices: Choice<Value>[] }
+export async function checkbox<Value>(config: CheckboxConfig<Value>, context?: Context): Promise<Value[]> {
+    if(jsonRpcDisabled) return localCheckbox<Value>(config, context)
+
+    const values = config.choices.map(choice => choice.value)
+    const choices = config.choices.map((choice, i) => ({ ...choice, value: i }))
+    const is: number[] = await remoteInput('checkbox', { ...config, choices }, context)
+
+    return is.map(i => values[i]!)
 }
 
-// eslint-disable-next-line @typescript-eslint/promise-function-async
-export const spinner: typeof localSpinner = (config, context) => {
-    //return Object.assign(new Promise<unknown>((res, rej) => {}), { cancel: () => {} })
-    return localSpinner(config, context)
+type SelectConfig<Value> = Omit<Parameters<typeof localSelect<Value>>[0], 'choices'> & { choices: Choice<Value>[] }
+export async function select<Value>(config: SelectConfig<Value>, context?: Context): Promise<Value> {
+    if(jsonRpcDisabled) return localSelect<Value>(config, context)
+    
+    const values = config.choices.map(choice => choice.value)
+    const choices = config.choices.map((choice, i) => ({ ...choice, value: i }))
+    const i: number = await remoteInput('select', { ...config, choices }, context)
+    
+    return values[i]!
+}
+
+type SpinnerConfig = Parameters<typeof localSpinner>[0]
+export async function spinner(config: SpinnerConfig, context?: Context): Promise<unknown> {
+    if(jsonRpcDisabled) return localSpinner(config, context)
+    return remoteInput('spinner', config, context)
+}
+
+type CancellablePromise<Value> = Promise<Value> //& { cancel: () => void }
+type RemoteInputFuncName = 'spinner' | 'select' | 'checkbox' | 'input'
+async function remoteInput<Value extends JSONValue, Config>(name: RemoteInputFuncName, config: Config, context?: Context): CancellablePromise<Value> {
+    
+    const deferred = new Deferred<Value>()
+    
+    const id = sendCall(name, {
+        ...config, clearPromptOnDone: context?.clearPromptOnDone,
+    })
+
+    listeners.set(id, (err, result) => {
+        if(err) deferred.reject(new Error('', { cause: err }))
+        else deferred.resolve(result as Value)
+    })
+    deferred.addCleanupCallback(() => listeners.delete(id))
+
+    if(context?.signal){
+        deferred.addEventListener(context.signal, 'abort', () => {
+            sendFollowupNotification(`abort`, id)
+            deferred.reject(context.signal!.reason as Error)
+        })
+    }
+
+    return deferred.promise //as CancellablePromise<Value>
+    //return Object.assign(deferred.promise, {
+    //    cancel(){
+    //        sendFollowupNotification(`${name}.stop`, id)
+    //        deferred.reject(new CancelPromptError())
+    //    }
+    //})
 }
 
 type BrightColorName = 'blueBright'|'redBright'|'greenBright'|'yellowBright'|'magentaBright'|'cyanBright'
 type RegularColorName = 'blue'|'red'|'green'|'yellow'|'magenta'|'cyan'
 type ColorName = RegularColorName|BrightColorName|'white'|'gray'
-export const color = (name: ColorName, text: string) => {
-    return yoctocolor[name](text)
+export const color = (name: ColorName, text: string): string => {
+    if(jsonRpcDisabled) return yoctocolor[name](text)
+    return `[color=${name}]${text}[/color]`
 }
 
-export const createBar: typeof localBar = (operation, filename, size) => {
-    return localBar(operation, filename, size)
+interface SimpleBar {
+    getTotal(): number
+    update(v: number): void
+    stop(): void
+}
+export const createBar = (operation: string, filename: string, size?: number): SimpleBar => {
+    if(jsonRpcDisabled) return localBar(operation, filename, size)
+    const id = sendCall('bar.create', operation, filename, size)
+    return {
+        getTotal(){ return size ?? 0 },
+        update(v){ sendFollowupNotification('bar.update', id, v) },
+        stop(){ sendFollowupNotification('bar.stop', id) },
+    }
 }
 
 export const console_log: typeof localLog = (...args) => {
-    return localLog(...args)
+    if(jsonRpcDisabled) return localLog(...args)
+    sendNotification('console.log', ...args)
 }
 
 //@ts-expect-error Cannot find module or its corresponding type declarations.
 import godotExeEmbded from '/home/user/.local/share/godot/export_templates/4.5.rc1/linux_release.x86_64' with { type: 'file' }
 //@ts-expect-error Cannot find module or its corresponding type declarations.
-import godotPckEmbded from '../dist/Fishbones.UI.pck' with { type: 'file' }
-import { registerShutdownHandler, spawn, type ChildProcess } from '../utils/data-process'
+import godotPckEmbded from '../dist/RemoteUI.zip' with { type: 'file' }
+import { Deferred, spawn } from '../utils/data-process'
 
 const godotExe = path.join(downloads, 'godot.exe')
-const godotPck = path.join(downloads, 'Fishbones.UI.pck')
+const godotPck = path.join(downloads, 'RemoteUI.zip')
 export async function repairUIRenderer(opts: Required<AbortOptions>){
     return Promise.all([
         (async () => {
@@ -81,37 +154,41 @@ export async function repairUIRenderer(opts: Required<AbortOptions>){
     ])
 }
 
-let proc: ChildProcess | undefined
-let socket: BunSocket | undefined
-registerShutdownHandler(() => socket?.close())
-
-export async function start(opts: Required<AbortOptions>){
-    let remotePort: number | undefined
-    socket = await Bun.udpSocket({
-        binaryType: 'buffer',
-        hostname: LOCALHOST,
-        socket: {
-           data(socket, data, port, address){
-                if(address != LOCALHOST) return
-                if(remotePort && remotePort != port) return
-
-                const obj: unknown = JSON.parse(data.toString('utf8'))
-                if(typeof obj != 'object' || obj == null) return
-                if(!('method' in obj)) return
-                if(obj.method === "started")
-                    remotePort = port
-
-
-           },
-           error(socket, error) {
-              //TODO: Handle.
-           },
-        }
-    })
-    opts.signal.throwIfAborted()
-    proc = spawn(godotExe, [ '--main-pack', godotPck, '--', '--port', socket.address.port.toString() ], { log: false, logPrefix: 'GODOT' })
+const listeners = new Map<number, (err?: { code?: number, message?: string }, result?: JSONValue) => void>()
+export function start(): boolean {
+    if(jsonRpcDisabled){
+        //TODO: Pass --exe ${current process path} and its args.
+        spawn(godotExe, [ '--main-pack', godotPck ], {
+            log: false, logPrefix: 'GODOT',
+            detached: true,
+        })
+        return true
+    } else {
+        process.stdin.addListener('data', onData)
+        return false
+    }
 }
 
 export function stop(){
+    process.stdin.removeListener('data', onData)
+}
 
+type JRPCResponse =
+    { id: number, error: { code: number, message: string }, result: undefined } |
+    { id: number, error: undefined, result: JSONValue }
+//type JRPCRequest = { id?: number, method: string, params: JSONValue[] }
+//type JSONRPCMessage = JRPCResponse | JRPCRequest
+
+function onData(data: Buffer){
+    const lines = data.toString('utf8').split('\n')
+    for(let line of lines){
+        line = line.trim()
+        if(line.startsWith('{') && line.endsWith('}')){
+            const obj = JSON.parse(line) as JRPCResponse
+            if(typeof obj.id === 'number'){
+                const listener = listeners.get(obj.id)
+                listener?.(obj.error, obj.result)
+            }
+        }
+    }
 }

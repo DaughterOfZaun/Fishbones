@@ -1,31 +1,44 @@
-class_name ServerNode
-extends Node
+class_name ServerNode extends Node
 
-var peer := PacketPeerUDP.new()
-var jrpc := JSONRPC.new()
+const JSONRPC_GUI_ARG = "--jsonrpc-gui"
+
+var stdio: FileAccess
 var json := JSON.new()
+var jrpc := JSONRPC.new()
 var methods: Dictionary[String, Callable] = {}
 
 func _ready() -> void:
-    var args := OS.get_cmdline_user_args()
-    var port_arg_index := args.find("--port")
-    assert(port_arg_index < args.size())
-    var port := int(args[port_arg_index + 1])
+    var args := OS.get_cmdline_args()
+    var exe_arg_index := args.find("--exe")
+    assert(exe_arg_index < args.size())
+    var exe := args[exe_arg_index + 1]
 
-    peer.connect_to_host("127.0.0.1", port)
-    
-    var notification_string := JSON.stringify(jrpc.make_notification("started", []))
-    peer.put_packet(notification_string.to_utf8_buffer())
+    var dict := OS.execute_with_pipe(exe, PackedStringArray([ JSONRPC_GUI_ARG ]), false)
+    stdio = dict["stdio"]
+
+    methods["log"] = func(...params: Array[Variant]) -> void: print('log', params)
+    methods["bar.create"] = func(operation: String, filename: String, size: int) -> void: print('bar.create', operation, filename, size)
+    methods["bar.update"] = func(value: float) -> void: print('bar.update', value)
+    methods["bar.stop"] = func() -> void: print('bar.stop')
+    methods["spinner"] = func(config: Variant) -> void: print('spinner', config)
+    methods["select"] = func(config: Variant) -> void: print('select', config)
+    methods["checkbox"] = func(config: Variant) -> void: print('checkbox', config)
+    methods["input"] = func(config: Variant) -> void: print('input', config)
+    methods["abort"] = func() -> void: print('abort')
 
 func _process(_delta: float) -> void:
-    while peer.get_available_packet_count() > 0:
-        _process_packet(peer.get_packet())
+    while stdio:
+        var line := stdio.get_line()
+        if !line: break
 
-func _process_packet(array_bytes: PackedByteArray) -> void:
-    var packet_string := array_bytes.get_string_from_utf8()
+        line = line.strip_edges()
+        if line.begins_with('{') && line.ends_with('}'):
+            _process_packet(line)
+
+func _process_packet(packet_string: String) -> void:
     var response_string := await _process_string(packet_string)
     if response_string.is_empty(): return
-    peer.put_packet(response_string.to_utf8_buffer())
+    stdio.store_string(response_string)
 
 #src: godot/blob/master/modules/jsonrpc/jsonrpc.cpp
 func _process_string(input: String) -> String:
@@ -71,4 +84,4 @@ func _process_action(action: Variant) -> Variant:
 
 func answer(id: Variant, result: Variant) -> void:
     var response_string := JSON.stringify(jrpc.make_response(result, id))
-    peer.put_packet(response_string.to_utf8_buffer())
+    stdio.store_string(response_string)

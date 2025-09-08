@@ -23,6 +23,10 @@ gdscript/warnings/unsafe_method_access=1
 gdscript/warnings/unsafe_call_argument=1
 gdscript/warnings/return_value_discarded=1
 
+[editor]
+
+run/main_run_args="--exe ../dist/index.exe"
+
 [rendering]
 
 renderer/rendering_method="gl_compatibility"

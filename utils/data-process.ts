@@ -46,18 +46,18 @@ interface EventEmitter {
     removeEventListener: (event: string, callback: EventCallback) => void
 }
 
-class Deferred<T> {
-    promise: Promise<T>
-    resolve: (value: T) => void
-    reject: (err?: Error) => void
-    constructor(opts?: Required<AbortOptions>){
+export class Deferred<T> {
+    public readonly promise: Promise<T>
+    public readonly resolve: (value: T) => void
+    public readonly reject: (err?: Error) => void
+    constructor(opts?: AbortOptions){
         const { promise, resolve, reject } = defer<T>()
         this.promise = promise
         this.resolve = (value) => { this.cleanup(); resolve(value) }
         this.reject = (err) => { this.cleanup(); reject(err) }
         if(opts && opts.signal){
             this.addEventListener(opts.signal, 'abort', () => {
-                this.reject(opts.signal.reason as Error)
+                this.reject(opts.signal?.reason as Error)
             })
         }
     }
@@ -76,6 +76,10 @@ class Deferred<T> {
         const timeout = setTimeout(callback, ms)
         this.timeouts.push(timeout)
     }
+    callbacks: (() => void)[] = []
+    public addCleanupCallback(callback: () => void){
+        this.callbacks.push(callback)
+    }
     private cleanup(){
         for(const [ obj, event, callback ] of this.listeners)
             obj.removeListener(event, callback)
@@ -83,6 +87,8 @@ class Deferred<T> {
             obj.removeEventListener(event, callback)
         for(const timeout of this.timeouts)
             clearTimeout(timeout)
+        for(const callback of this.callbacks)
+            callback()
     }
 }
 
