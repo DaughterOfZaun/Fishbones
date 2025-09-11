@@ -92,25 +92,27 @@ export async function unpack(pkg: PkgInfo, opts: Required<AbortOptions>){
         const args = ['-aoa', `-o${pkg.dir}`, '-bsp1']
         if(!pkg.noDedup) args.push('-spe')
         
+        const spawnOpts = {
+            cwd: downloads,
+            log: false,
+            signal,
+        }
         if(pkg.zipExt == '.tar.gz'){
             s7zs[0] = spawn(s7zExe, ['x', '-so', '-tgzip', pkg.zip], {
                 stdio: [ null, 'pipe', 'pipe' ],
                 logPrefix: `7Z ${pid} ${0}`,
-                log: false,
-                signal,
+                ...spawnOpts,
             })
             s7zs[1] = spawn(s7zExe, ['x', '-si', '-ttar', ...args], {
                 stdio: [ 'pipe', 'pipe', 'pipe' ],
                 logPrefix: `7Z ${pid} ${1}`,
-                log: false,
-                signal,
+                ...spawnOpts,
             })
             s7zs[0].stdout.pipe(s7zs[1].stdin)
         } else {
             s7zs[0] = spawn(s7zExe, ['x', ...args, pkg.zip], {
                 logPrefix: `7Z ${pid} ${0}`,
-                log: false,
-                signal,
+                ...spawnOpts,
             })
         }
         pid++

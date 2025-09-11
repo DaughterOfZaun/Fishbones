@@ -28,6 +28,9 @@ try {
                 description: DESCRIPTION,
                 copyright: COPYRIGHT,
             },
+        },
+        define: {
+            'process.env.IS_COMPILED': 'true',
         }
     })
 

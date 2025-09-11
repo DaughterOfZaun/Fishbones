@@ -5,6 +5,7 @@ import { console_log } from '../ui/remote'
 import { ExitPromptError } from '../ui/remote'
 import { spawn as originalSpawn } from 'child_process'
 import defer from 'p-defer'
+//import { downloads } from './data-fs'
 
 export const ABORT_STAGE_TIMEOUT = 3_000
 export const TERMINATE_STAGE_TIMEOUT = 3_000
@@ -193,9 +194,11 @@ if (process.platform !== 'win32')
     signals.push('SIGALRM', 'SIGABRT', 'SIGVTALRM', 'SIGXCPU', 'SIGXFSZ', 'SIGUSR2', 'SIGTRAP', 'SIGSYS', 'SIGQUIT', 'SIGIOT')
 if (process.platform === 'linux')
     signals.push('SIGIO', 'SIGPOLL', 'SIGPWR', 'SIGSTKFLT');
-for(const signal of signals){
+for(const signal of signals)
     process.on(signal, () => shutdown('signal'))
-}
+
+for(const stream of ['stdin', 'stdout', 'stderr'] as const)
+    process[stream].on('close', () => shutdown('call'))
 
 enum ShutdownStage {
     NONE = 0,
@@ -253,6 +256,7 @@ export function unwrapAbortError(err: unknown){
 
 const activeProcesses = new Set<ChildProcess>()
 export function spawn(cmd: string, args: readonly string[], opts: SpawnOptionsWithoutStdio & { log: boolean, logPrefix: string }){
+    //opts = { cwd: downloads, ...opts }
     const proc = originalSpawn(cmd, args, opts)
     
     activeProcesses.add(proc)

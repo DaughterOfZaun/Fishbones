@@ -3,18 +3,17 @@ import { promises as fs } from "node:fs"
 import type { AbortOptions } from '@libp2p/interface'
 import { console_log } from '../ui/remote'
 
-export const cwd = process.cwd()
+//export const cwd = process.cwd()
 //export const cwd = path.dirname(process.execPath)
-//TODO: export const cwd = isStandaloneBuild ? path.dirname(process.execPath) : process.cwd()
+export const cwd = path.dirname(process.env.IS_COMPILED ? process.execPath : Bun.main)
 export const downloads = path.join(cwd, 'Fishbones_Data')
-
-//export const importMetaDirname = path.dirname(import.meta.dirname)
-//export const importMetaDirname = `/tmp/deno-compile-index`
 
 export const rwx_rx_rx =
     fs.constants.S_IRUSR | fs.constants.S_IWUSR | fs.constants.S_IXUSR |
     fs.constants.S_IRGRP | fs.constants.S_IXGRP |
     fs.constants.S_IROTH | fs.constants.S_IXOTH
+
+//TODO: function tryAndCatch<T>(initial: T, func: () => T, opts: Required<AbortOptions>, log = true, rethrow = false, allowed = [ 'EEXIST' ]): T {}
 
 //TODO: Check type (dir/file).
 export async function fs_exists(path: string, opts: Required<AbortOptions>, log = true): Promise<boolean> {

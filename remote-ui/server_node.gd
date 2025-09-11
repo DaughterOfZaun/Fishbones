@@ -3,6 +3,8 @@ class_name ServerNode extends Node
 const JSONRPC_GUI_ARG = "--jsonrpc-gui"
 
 var stdio: FileAccess
+var stderr: FileAccess
+var pid: int = 0
 var json := JSON.new()
 var jrpc := JSONRPC.new()
 var methods: Dictionary[String, Callable] = {}
@@ -15,25 +17,46 @@ func _ready() -> void:
 
     var dict := OS.execute_with_pipe(exe, PackedStringArray([ JSONRPC_GUI_ARG ]), false)
     stdio = dict["stdio"]
+    stderr = dict["stderr"]
+    pid = dict["pid"]
 
-    methods["log"] = func(...params: Array[Variant]) -> void: print('log', params)
-    methods["bar.create"] = func(operation: String, filename: String, size: int) -> void: print('bar.create', operation, filename, size)
-    methods["bar.update"] = func(value: float) -> void: print('bar.update', value)
-    methods["bar.stop"] = func() -> void: print('bar.stop')
-    methods["spinner"] = func(config: Variant) -> void: print('spinner', config)
-    methods["select"] = func(config: Variant) -> void: print('select', config)
-    methods["checkbox"] = func(config: Variant) -> void: print('checkbox', config)
-    methods["input"] = func(config: Variant) -> void: print('input', config)
-    methods["abort"] = func() -> void: print('abort')
+#     get_tree().set_auto_accept_quit(false)
+
+# func _notification(what: int) -> void:
+#     if what == NOTIFICATION_WM_CLOSE_REQUEST:
+#         if stderr: stderr.close()
+#         if stdio: stdio.close()
+#         if pid: OS.kill(pid)
+#         get_tree().quit()
+
+func _init() -> void:
+    methods["console.log"] = func(...params: Array[Variant]) -> void: print('console.log ', params)
+    methods["bar.create"] = func(operation: String, filename: String, size: int) -> void: print('bar.create ', operation, ' ', filename, ' ', size)
+    methods["bar.update"] = func(value: float) -> void: print('bar.update ', value)
+    methods["bar.stop"] = func() -> void: print('bar.stop ')
+    methods["spinner"] = func(config: Variant) -> void: print('spinner ', config)
+    methods["select"] = func(config: Variant) -> void: print('select ', config)
+    methods["checkbox"] = func(config: Variant) -> void: print('checkbox ', config)
+    methods["input"] = func(config: Variant) -> void: print('input ', config)
+    methods["abort"] = func() -> void: print('abort ')
 
 func _process(_delta: float) -> void:
     while stdio:
         var line := stdio.get_line()
+        #var err := stdio.get_error() #14
+        #print(err, line)
+
         if !line: break
 
         line = line.strip_edges()
         if line.begins_with('{') && line.ends_with('}'):
             _process_packet(line)
+
+    #TODO:
+    #while stderr:
+    #    var line := stderr.get_as_text()
+    #    if !line: break
+    #    print('ERROR: ', line)
 
 func _process_packet(packet_string: String) -> void:
     var response_string := await _process_string(packet_string)
@@ -62,21 +85,24 @@ func _process_action(action: Variant) -> Variant:
     if dict == null:
         return jrpc.make_response_error(JSONRPC.INVALID_REQUEST, "Invalid Request")
     
-    var method := dict.get("method", null) as String
-    if method == null:
+    var var_method: Variant = dict.get("method", null) as String
+    if var_method == null:
         return jrpc.make_response_error(JSONRPC.INVALID_REQUEST, "Invalid Request")
-    
+    var method: String = var_method
+
     var id: Variant = dict.get("id", null)
 
-    var callable: Callable = methods.get(method)
-    if !callable:
+    var var_callable: Variant = methods.get(method) as Callable
+    if var_callable == null:
         return jrpc.make_response_error(JSONRPC.METHOD_NOT_FOUND, "Method not found: " + method, id)
+    var callable: Callable = var_callable
 
-    var args := dict.get("params", null) as Array
-    if args == null: args = []
+    var var_args: Variant = dict.get("params", null) as Array
+    if var_args == null: var_args = []
+    var args: Array = var_args
 
     last_call_id = id
-    var call_ret: Variant = await callable.callv(args)
+    var _call_ret: Variant = await callable.callv(args)
 
     #if id == null: return null
     #return jrpc.make_response(call_ret, id)

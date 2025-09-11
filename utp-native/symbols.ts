@@ -1,9 +1,11 @@
 import { dlopen, type Pointer } from "bun:ffi"
 
 //@ts-expect-error Cannot find module or its corresponding type declarations.
-import utpNativeModuleWindows from '../node_modules/utp-native/deps/libutp/libutp.dll' with { type: 'file' }
 //const utpNativeModuleWindows =  '../node_modules/utp-native/prebuilds/win32-x64/node.napi.node'
-const utpNativeModuleLinux = './node_modules/utp-native/prebuilds/linux-x64/node.napi.node'
+import utpNativeModuleWindows from '../node_modules/utp-native/deps/libutp/libutp.dll' with { type: 'file' }
+//@ts-expect-error Cannot find module or its corresponding type declarations.
+//const utpNativeModuleLinux = './node_modules/utp-native/prebuilds/linux-x64/node.napi.node'
+import utpNativeModuleLinux from '../node_modules/utp-native/prebuilds/linux-x64/node.napi.node' with { type: 'file' }
 
 const is64Bit = ['arm64', 'ppc64', 'x64', 's390x'].includes(process.arch)
 
@@ -64,7 +66,9 @@ if(Math.random() == 1)
     bindgen()
 
 const library = dlopen(
-    process.platform === 'linux' ? utpNativeModuleLinux : utpNativeModuleWindows as string,
+    process.platform === 'linux' ?
+        utpNativeModuleLinux as string :
+        utpNativeModuleWindows as string,
     {
         utp_init: { args: [int /*version*/] as const, returns: ptr_t },
         utp_destroy: { args: [ptr_t /*ctx*/] as const, returns: void_t },

@@ -161,6 +161,7 @@ export function start(): boolean {
         spawn(godotExe, [ '--main-pack', godotPck ], {
             log: false, logPrefix: 'GODOT',
             detached: true,
+            cwd: downloads,
         })
         return true
     } else {

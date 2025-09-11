@@ -46,6 +46,7 @@ export async function build(pkg: PkgInfoCSProj, opts: Required<AbortOptions>){
             stdio: [ null, 'pipe', 'pipe' ],
             logPrefix: LOG_PREFIX,
             //signal: opts.signal,
+            cwd: pkg.dir,
             log: true,
         })
         
