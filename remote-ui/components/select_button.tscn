@@ -1,0 +1,34 @@
+[gd_scene load_steps=2 format=3 uid="uid://dqhddudj7oakb"]
+
+[ext_resource type="Script" uid="uid://dvvd2du1idyqr" path="res://components/select_button.gd" id="1_rqpuy"]
+
+[node name="MarginContainer" type="MarginContainer" node_paths=PackedStringArray("label", "button")]
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 31.0
+grow_horizontal = 2
+script = ExtResource("1_rqpuy")
+label = NodePath("MarginContainer/RichTextLabel")
+button = NodePath("Button")
+
+[node name="Button" type="Button" parent="."]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="RichTextLabel" type="RichTextLabel" parent="MarginContainer"]
+clip_contents = false
+layout_mode = 2
+mouse_filter = 2
+bbcode_enabled = true
+text = "[color=green]START[/color]"
+fit_content = true
+scroll_active = false
+horizontal_alignment = 1
+vertical_alignment = 1

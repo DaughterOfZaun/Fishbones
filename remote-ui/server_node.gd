@@ -9,6 +9,14 @@ var json := JSON.new()
 var jrpc := JSONRPC.new()
 var methods: Dictionary[String, Callable] = {}
 
+@export var bar: PackedScene
+@export var spinner: PackedScene
+@export var select: PackedScene
+@export var checkbox: PackedScene
+@export var input: PackedScene
+
+var handlers: Dictionary[Variant, InputHandler] = {}
+
 func _ready() -> void:
     var args := OS.get_cmdline_args()
     var exe_arg_index := args.find("--exe")
@@ -30,15 +38,59 @@ func _ready() -> void:
 #         get_tree().quit()
 
 func _init() -> void:
-    methods["console.log"] = func(...params: Array[Variant]) -> void: print('console.log ', params)
-    methods["bar.create"] = func(operation: String, filename: String, size: int) -> void: print('bar.create ', operation, ' ', filename, ' ', size)
-    methods["bar.update"] = func(value: float) -> void: print('bar.update ', value)
-    methods["bar.stop"] = func() -> void: print('bar.stop ')
-    methods["spinner"] = func(config: Variant) -> void: print('spinner ', config)
-    methods["select"] = func(config: Variant) -> void: print('select ', config)
-    methods["checkbox"] = func(config: Variant) -> void: print('checkbox ', config)
-    methods["input"] = func(config: Variant) -> void: print('input ', config)
-    methods["abort"] = func() -> void: print('abort ')
+    
+    methods["console.log"] = func(...params: Array[Variant]) -> void:
+        print('console.log', ' ', params)
+    
+    methods["bar.create"] = func(operation: String, filename: String, size: int) -> void:
+        var config := {
+            operation: operation,
+            filename: filename,
+            size: size,
+        }
+        print('bar.create', ' ', last_call_id, ' ', config)
+        create_element('bar', bar, config)
+    
+    methods["bar.update"] = func(value: float) -> void:
+        print('bar.update', ' ', last_call_id, ' ', value)
+        var instance: Bar = handlers[last_call_id]
+        instance.update(value)
+    
+    methods["bar.stop"] = func() -> void:
+        print('bar.stop', ' ', last_call_id)
+        handlers[last_call_id].abort()
+    
+    methods["spinner"] = func(config: Dictionary) -> void:
+        create_element('spinner', spinner, config)
+    
+    methods["select"] = func(config: Dictionary) -> void:
+        create_element('select', select, config)
+    
+    methods["select.update"] = func(choices: Array) -> void:
+        print('select.update', ' ', last_call_id, ' ', choices)
+        var instance: Select = handlers[last_call_id]
+        instance.update(choices)
+    
+    methods["checkbox"] = func(config: Dictionary) -> void:
+        create_element('checkbox', checkbox, config)
+    
+    methods["input"] = func(config: Dictionary) -> void:
+        create_element('input', input, config)
+    
+    methods["abort"] = func() -> void:
+        print('abort', ' ', last_call_id)
+        handlers[last_call_id].abort()
+
+func bind(cb: Callable, arg0: Variant) -> Callable:
+    return func(arg1: Variant) -> Variant:
+        return cb.call(arg0, arg1) 
+
+func create_element(el_name: String, scene: PackedScene, config: Dictionary) -> void:
+    print(el_name, ' ', last_call_id, ' ', config)
+    var instance: InputHandler = scene.instantiate()
+    instance.init(config, bind(answer, last_call_id))
+    handlers[last_call_id] = instance
+    add_child(instance)
 
 func _process(_delta: float) -> void:
     while stdio:
@@ -111,3 +163,5 @@ func _process_action(action: Variant) -> Variant:
 func answer(id: Variant, result: Variant) -> void:
     var response_string := JSON.stringify(jrpc.make_response(result, id))
     stdio.store_string(response_string)
+    handlers[last_call_id].abort()
+    handlers.erase(id)
