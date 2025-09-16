@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://d0qel3eda2pfu"]
+
+[ext_resource type="Script" uid="uid://knq4br85s16b" path="res://components/checkbox_button.gd" id="1_lywuv"]
+
+[node name="CheckBox" type="CheckBox"]
+text = "Checkbox"
+alignment = 1
+script = ExtResource("1_lywuv")

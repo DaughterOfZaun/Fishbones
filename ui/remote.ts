@@ -16,9 +16,9 @@ export { type Choice, AbortPromptError, ExitPromptError }
 type JSONPrimitive = string | number | boolean | null | undefined
 type JSONValue = JSONPrimitive | JSONValue[] | { [key: string]: JSONValue }
 
-//const JSONRPC_GUI_ARG = "--jsonrpc-gui"
-//const jsonRpcDisabled = !process.argv.includes(JSONRPC_GUI_ARG)
-const jsonRpcDisabled = false
+const JSONRPC_GUI_ARG = "--jsonrpc-gui"
+const jsonRpcDisabled = !process.argv.includes(JSONRPC_GUI_ARG)
+//const jsonRpcDisabled = false
 
 let gid = 0
 function sendCall(method: string, ...params: JSONValue[]){
@@ -74,6 +74,9 @@ type CancellablePromise<Value> = Promise<Value> //& { cancel: () => void }
 type RemoteInputFuncName = 'spinner' | 'select' | 'checkbox' | 'input'
 async function remoteInput<Value extends JSONValue, Config>(name: RemoteInputFuncName, config: Config, context?: Context): CancellablePromise<Value> {
     
+    if(context?.signal?.aborted)
+        return Promise.reject(new AbortPromptError({ cause: context.signal.reason }))
+
     const deferred = new Deferred<Value>()
     
     const id = sendCall(name, {
@@ -81,6 +84,8 @@ async function remoteInput<Value extends JSONValue, Config>(name: RemoteInputFun
     })
 
     listeners.set(id, (err, result) => {
+        //if(context?.signal?.aborted)
+        //    deferred.reject(new AbortPromptError({ cause: context.signal!.reason }))
         if(err) deferred.reject(new Error('', { cause: err }))
         else deferred.resolve(result as Value)
     })
@@ -89,7 +94,7 @@ async function remoteInput<Value extends JSONValue, Config>(name: RemoteInputFun
     if(context?.signal){
         deferred.addEventListener(context.signal, 'abort', () => {
             sendFollowupNotification(`abort`, id)
-            deferred.reject(context.signal!.reason as Error)
+            deferred.reject(new AbortPromptError({ cause: context.signal!.reason }))
         })
     }
 
@@ -107,6 +112,7 @@ type RegularColorName = 'blue'|'red'|'green'|'yellow'|'magenta'|'cyan'
 type ColorName = RegularColorName|BrightColorName|'white'|'gray'
 export const color = (name: ColorName, text: string): string => {
     if(jsonRpcDisabled) return yoctocolor[name](text)
+    name = name.replace('Bright', '') as ColorName
     return `[color=${name}]${text}[/color]`
 }
 
@@ -157,6 +163,8 @@ export async function repairUIRenderer(opts: Required<AbortOptions>){
 const listeners = new Map<number, (err?: { code?: number, message?: string }, result?: JSONValue) => void>()
 export function start(): boolean {
     if(jsonRpcDisabled){
+        return false
+
         //TODO: Pass --exe ${current process path} and its args.
         spawn(godotExe, [ '--main-pack', godotPck ], {
             log: false, logPrefix: 'GODOT',

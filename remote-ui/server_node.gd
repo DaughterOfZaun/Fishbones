@@ -113,6 +113,7 @@ func _process(_delta: float) -> void:
 func _process_packet(packet_string: String) -> void:
     var response_string := await _process_string(packet_string)
     if response_string.is_empty(): return
+    print('response', ' ', response_string)
     stdio.store_string(response_string)
 
 #src: godot/blob/master/modules/jsonrpc/jsonrpc.cpp
@@ -162,6 +163,7 @@ func _process_action(action: Variant) -> Variant:
 
 func answer(id: Variant, result: Variant) -> void:
     var response_string := JSON.stringify(jrpc.make_response(result, id))
+    print('response', ' ', response_string)
     stdio.store_string(response_string)
     handlers[last_call_id].abort()
     handlers.erase(id)

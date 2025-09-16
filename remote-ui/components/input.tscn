@@ -1,0 +1,49 @@
+[gd_scene load_steps=4 format=3 uid="uid://dvt48ppax2q6h"]
+
+[ext_resource type="Script" uid="uid://dwwcdcy34fqo" path="res://components/input.gd" id="1_ir820"]
+[ext_resource type="Script" uid="uid://g0xm6t4lg6i8" path="res://components/select.gd" id="2_2uv3n"]
+[ext_resource type="PackedScene" uid="uid://dqhddudj7oakb" path="res://components/select_button.tscn" id="3_8588a"]
+
+[node name="CenterContainer" type="CenterContainer" node_paths=PackedStringArray("label", "field", "button")]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_ir820")
+label = NodePath("PanelContainer/MarginContainer/VBoxContainer/Label")
+field = NodePath("PanelContainer/MarginContainer/VBoxContainer/LineEdit")
+button = NodePath("PanelContainer/MarginContainer/VBoxContainer/Button")
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="PanelContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer/MarginContainer" node_paths=PackedStringArray("label")]
+layout_mode = 2
+theme_override_constants/separation = 12
+script = ExtResource("2_2uv3n")
+label = NodePath("Label")
+button = ExtResource("3_8588a")
+
+[node name="Label" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Enter player name"
+horizontal_alignment = 1
+vertical_alignment = 2
+
+[node name="LineEdit" type="LineEdit" parent="PanelContainer/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+size_flags_vertical = 4
+alignment = 1
+
+[node name="Button" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Continue"

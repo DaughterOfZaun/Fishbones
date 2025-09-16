@@ -1,8 +1,10 @@
-[gd_scene load_steps=4 format=3 uid="uid://c88cdpgvxg8v2"]
+[gd_scene load_steps=6 format=3 uid="uid://c88cdpgvxg8v2"]
 
 [ext_resource type="Script" uid="uid://dys8mpxtgwbfe" path="res://server_node.gd" id="1_ig7tw"]
 [ext_resource type="PackedScene" uid="uid://bc7b31q6ren3" path="res://components/select.tscn" id="2_0xm2m"]
 [ext_resource type="PackedScene" uid="uid://d272wt2h2fnv2" path="res://components/bar.tscn" id="3_h2yge"]
+[ext_resource type="PackedScene" uid="uid://dvt48ppax2q6h" path="res://components/input.tscn" id="4_1bvp3"]
+[ext_resource type="PackedScene" uid="uid://b8uviqmtnb8t0" path="res://components/checkbox.tscn" id="5_lquwl"]
 
 [node name="Control" type="ColorRect"]
 anchors_preset = 15
@@ -12,7 +14,10 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 1)
 script = ExtResource("1_ig7tw")
+bar = ExtResource("3_h2yge")
 select = ExtResource("2_0xm2m")
+checkbox = ExtResource("5_lquwl")
+input = ExtResource("4_1bvp3")
 
 [node name="Label" type="Label" parent="."]
 visible = false
@@ -70,7 +75,3 @@ layout_mode = 2
 
 [node name="MarginContainer" parent="MarginContainer/VBoxContainer/VBoxContainer" instance=ExtResource("3_h2yge")]
 layout_mode = 2
-
-[node name="ScrollContainer" parent="." instance=ExtResource("2_0xm2m")]
-visible = false
-layout_mode = 1
