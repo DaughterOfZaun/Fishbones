@@ -7,9 +7,10 @@ import { createBar as localBar, console_log as localLog } from './progress'
 import { default as localSelect, type Choice } from './dynamic-select'
 import { default as localSpinner } from './spinner'
 
-import path from 'node:path'
-import { downloads, fs_chmod, fs_copyFile, fs_exists, rwx_rx_rx } from '../utils/data-fs'
-import type { AbortOptions } from '@libp2p/interface'
+//import path from 'node:path'
+//import { downloads, fs_chmod, fs_copyFile, fs_exists, rwx_rx_rx } from '../utils/data-fs'
+import { Deferred, registerShutdownHandler } from '../utils/data-process'
+//import type { AbortOptions } from '@libp2p/interface'
 
 export { type Choice, AbortPromptError, ExitPromptError }
 
@@ -135,12 +136,11 @@ export const console_log: typeof localLog = (...args) => {
     if(jsonRpcDisabled) return localLog(...args)
     sendNotification('console.log', ...args)
 }
-
+/*
 //@ts-expect-error Cannot find module or its corresponding type declarations.
 import godotExeEmbded from '/home/user/.local/share/godot/export_templates/4.5.rc1/linux_release.x86_64' with { type: 'file' }
 //@ts-expect-error Cannot find module or its corresponding type declarations.
 import godotPckEmbded from '../dist/RemoteUI.zip' with { type: 'file' }
-import { Deferred, spawn } from '../utils/data-process'
 
 const godotExe = path.join(downloads, 'godot.exe')
 const godotPck = path.join(downloads, 'RemoteUI.zip')
@@ -159,12 +159,12 @@ export async function repairUIRenderer(opts: Required<AbortOptions>){
         })(),
     ])
 }
-
+*/
 const listeners = new Map<number, (err?: { code?: number, message?: string }, result?: JSONValue) => void>()
 export function start(): boolean {
     if(jsonRpcDisabled){
         return false
-
+        /*
         //TODO: Pass --exe ${current process path} and its args.
         spawn(godotExe, [ '--main-pack', godotPck ], {
             log: false, logPrefix: 'GODOT',
@@ -172,11 +172,16 @@ export function start(): boolean {
             cwd: downloads,
         })
         return true
+        */
     } else {
         process.stdin.addListener('data', onData)
         return false
     }
 }
+
+registerShutdownHandler(() => {
+    sendNotification('exit')
+})
 
 export function stop(){
     process.stdin.removeListener('data', onData)

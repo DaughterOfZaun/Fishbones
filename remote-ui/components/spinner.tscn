@@ -1,0 +1,90 @@
+[gd_scene load_steps=6 format=3 uid="uid://dupn3umgvnkgk"]
+
+[ext_resource type="Script" uid="uid://bsmqr8f010ico" path="res://components/spinner.gd" id="1_q4b70"]
+
+[sub_resource type="ButtonGroup" id="ButtonGroup_vljty"]
+
+[sub_resource type="Animation" id="Animation_5cohb"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:self_modulate:a")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [1.0]
+}
+
+[sub_resource type="Animation" id="Animation_q4b70"]
+resource_name = "slow_flicker"
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:self_modulate:a")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.5, 1),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 1.0, 0.0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_egw64"]
+_data = {
+&"RESET": SubResource("Animation_5cohb"),
+&"slow_flicker": SubResource("Animation_q4b70")
+}
+
+[node name="CenterContainer" type="CenterContainer" node_paths=PackedStringArray("label")]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_q4b70")
+label = NodePath("PanelContainer/MarginContainer/HBoxContainer/Label")
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="PanelContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="HBoxContainer" type="HBoxContainer" parent="PanelContainer/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="MarginContainer" type="MarginContainer" parent="PanelContainer/MarginContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="CheckBox1" type="CheckBox" parent="PanelContainer/MarginContainer/HBoxContainer/MarginContainer"]
+layout_mode = 2
+disabled = true
+button_group = SubResource("ButtonGroup_vljty")
+
+[node name="CheckBox2" type="CheckBox" parent="PanelContainer/MarginContainer/HBoxContainer/MarginContainer"]
+layout_mode = 2
+disabled = true
+button_pressed = true
+button_group = SubResource("ButtonGroup_vljty")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="PanelContainer/MarginContainer/HBoxContainer/MarginContainer/CheckBox2"]
+libraries = {
+&"": SubResource("AnimationLibrary_egw64")
+}
+autoplay = "slow_flicker"
+speed_scale = 0.5
+
+[node name="Label" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer"]
+layout_mode = 2
+text = "Waiting for the game to end..."

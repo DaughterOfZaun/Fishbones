@@ -10,6 +10,7 @@ func init(config: Dictionary, cb: Callable) -> void:
         var instance: CheckboxButton = checkbox.instantiate()
         instance.text = choice['name']
         instance.value = choice['value']
+        instance.disabled = choice.get('disabled', false)
         container.add_child(instance)
     button.pressed.connect(submit)
     label.text = config['message']
@@ -22,6 +23,3 @@ func submit() -> void:
         if child.is_visible() && child.is_pressed():
             values.append(child.value)
     callback.call(values)
-
-func abort() -> void:
-    queue_free()

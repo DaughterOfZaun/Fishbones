@@ -14,6 +14,3 @@ func init(config: Dictionary, cb: Callable) -> void:
 var callback: Callable
 func submit(_new_text: String = '') -> void:
     callback.call(field.text)
-
-func abort() -> void:
-    queue_free()

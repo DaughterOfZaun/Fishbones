@@ -1,7 +1,8 @@
-[gd_scene load_steps=6 format=3 uid="uid://c88cdpgvxg8v2"]
+[gd_scene load_steps=7 format=3 uid="uid://c88cdpgvxg8v2"]
 
 [ext_resource type="Script" uid="uid://dys8mpxtgwbfe" path="res://server_node.gd" id="1_ig7tw"]
 [ext_resource type="PackedScene" uid="uid://bc7b31q6ren3" path="res://components/select.tscn" id="2_0xm2m"]
+[ext_resource type="PackedScene" uid="uid://dupn3umgvnkgk" path="res://components/spinner.tscn" id="3_7mycd"]
 [ext_resource type="PackedScene" uid="uid://d272wt2h2fnv2" path="res://components/bar.tscn" id="3_h2yge"]
 [ext_resource type="PackedScene" uid="uid://dvt48ppax2q6h" path="res://components/input.tscn" id="4_1bvp3"]
 [ext_resource type="PackedScene" uid="uid://b8uviqmtnb8t0" path="res://components/checkbox.tscn" id="5_lquwl"]
@@ -15,9 +16,21 @@ grow_vertical = 2
 color = Color(0, 0, 0, 1)
 script = ExtResource("1_ig7tw")
 bar = ExtResource("3_h2yge")
+spinner = ExtResource("3_7mycd")
 select = ExtResource("2_0xm2m")
 checkbox = ExtResource("5_lquwl")
 input = ExtResource("4_1bvp3")
+embded_file_0 = "res://embedded/7z.dll"
+embded_file_1 = "res://embedded/7z.exe"
+embded_file_2 = "res://embedded/aria2.conf"
+embded_file_3 = "res://embedded/aria2c.exe"
+embded_file_4 = "res://embedded/Chronobreak.GameServer.7z.torrent"
+embded_file_5 = "res://embedded/d3dx9_39.dll"
+embded_file_6 = "res://embedded/dotnet-sdk-9.0.300-linux-x64.tar.gz.torrent"
+embded_file_7 = "res://embedded/dotnet-sdk-9.0.300-win-x64.zip.torrent"
+embded_file_8 = "res://embedded/League of Legends_UNPACKED.7z.torrent"
+embded_file_9 = "res://embedded/libutp.dll"
+embded_file_x = "res://embedded/trackers.txt"
 
 [node name="Label" type="Label" parent="."]
 visible = false

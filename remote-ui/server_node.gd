@@ -17,6 +17,20 @@ var methods: Dictionary[String, Callable] = {}
 
 var handlers: Dictionary[Variant, InputHandler] = {}
 
+@export_group('Embded Files', 'embded_file_')
+@export_file var embded_file_0: String
+@export_file var embded_file_1: String
+@export_file var embded_file_2: String
+@export_file var embded_file_3: String
+@export_file var embded_file_4: String
+@export_file var embded_file_5: String
+@export_file var embded_file_6: String
+@export_file var embded_file_7: String
+@export_file var embded_file_8: String
+@export_file var embded_file_9: String
+@export_file var embded_file_x: String
+@export_group('')
+
 func _ready() -> void:
     var args := OS.get_cmdline_args()
     var exe_arg_index := args.find("--exe")
@@ -80,6 +94,9 @@ func _init() -> void:
     methods["abort"] = func() -> void:
         print('abort', ' ', last_call_id)
         handlers[last_call_id].abort()
+
+    methods["exit"] = func() -> void:
+        get_tree().quit()
 
 func bind(cb: Callable, arg0: Variant) -> Callable:
     return func(arg1: Variant) -> Variant:
