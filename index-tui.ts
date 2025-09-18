@@ -21,7 +21,7 @@ export async function main(node: LibP2PNode, opts: Required<AbortOptions>){
     type Action = ['join', RemoteGame] | ['host'] | ['exit'] | ['noop']
     
     const getChoices = () => {
-        let ret = pspd.getPeersWithData()
+        let ret: Choice<Action>[] = pspd.getPeersWithData()
         .filter(pwd => pwd.data?.serverSettings)
         //.filter(pwd => {
         //    const gi = pwd.data?.gameInfos[0]
@@ -77,8 +77,8 @@ export async function main(node: LibP2PNode, opts: Required<AbortOptions>){
         })
         if(ret.length == 0){
             ret = pubsub.isStarted() ?
-                [ { value: ['noop'], name: color('gray', 'Waiting for the servers to appear...') } ] :
-                [ { value: ['noop'], name: color('red', 'Failed to initialize the network...') } ]
+                [ { value: ['noop'], name: color('white', 'Waiting for the servers to appear...'), disabled: true } ] :
+                [ { value: ['noop'], name: color('red', 'Failed to initialize the network...') , disabled: true } ]
         }
         return ret.concat(defaultItems)
     }
@@ -190,10 +190,11 @@ function playerChoices<T>(game: Game, cb: (player: GamePlayer) => T){
         const spell2 = player.spell2.toString()
         const locked = player.lock.toString()
         return ({
+            disabled: true,
             value: cb(player),
             name: color(
                 teamColor, [`[${playerId}] ${player.name.toString()}`, champion, spell1, spell2, locked].join(' - ')
-            )
+            ),
         })
     }) as Choice<T>[]
 }

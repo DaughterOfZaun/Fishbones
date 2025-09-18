@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://c88cdpgvxg8v2"]
+[gd_scene load_steps=8 format=3 uid="uid://c88cdpgvxg8v2"]
 
 [ext_resource type="Script" uid="uid://dys8mpxtgwbfe" path="res://server_node.gd" id="1_ig7tw"]
 [ext_resource type="PackedScene" uid="uid://bc7b31q6ren3" path="res://components/select.tscn" id="2_0xm2m"]
@@ -6,8 +6,9 @@
 [ext_resource type="PackedScene" uid="uid://d272wt2h2fnv2" path="res://components/bar.tscn" id="3_h2yge"]
 [ext_resource type="PackedScene" uid="uid://dvt48ppax2q6h" path="res://components/input.tscn" id="4_1bvp3"]
 [ext_resource type="PackedScene" uid="uid://b8uviqmtnb8t0" path="res://components/checkbox.tscn" id="5_lquwl"]
+[ext_resource type="PackedScene" uid="uid://cmq3d2g3odndm" path="res://components/console.tscn" id="7_272bh"]
 
-[node name="Control" type="ColorRect"]
+[node name="Control" type="ColorRect" node_paths=PackedStringArray("stage_1", "console_1", "bars_container", "stage_2", "console_2", "show_console_toggle", "container")]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -31,6 +32,13 @@ embded_file_7 = "res://embedded/dotnet-sdk-9.0.300-win-x64.zip.torrent"
 embded_file_8 = "res://embedded/League of Legends_UNPACKED.7z.torrent"
 embded_file_9 = "res://embedded/libutp.dll"
 embded_file_x = "res://embedded/trackers.txt"
+stage_1 = NodePath("MarginContainer")
+console_1 = NodePath("MarginContainer/VBoxContainer/Console")
+bars_container = NodePath("MarginContainer/VBoxContainer/VBoxContainer")
+stage_2 = NodePath("MarginContainer2")
+console_2 = NodePath("MarginContainer2/PanelContainer/MarginContainer3/Console")
+show_console_toggle = NodePath("Button")
+container = NodePath("Control")
 
 [node name="Label" type="Label" parent="."]
 visible = false
@@ -48,6 +56,14 @@ grow_horizontal = 2
 grow_vertical = 2
 text = "FISHBONES"
 
+[node name="Control" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
 [node name="MarginContainer" type="MarginContainer" parent="."]
 visible = false
 layout_mode = 1
@@ -64,19 +80,8 @@ theme_override_constants/margin_bottom = 24
 [node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
 layout_mode = 2
 
-[node name="Console" type="RichTextLabel" parent="MarginContainer/VBoxContainer"]
-unique_name_in_owner = true
+[node name="Console" parent="MarginContainer/VBoxContainer" instance=ExtResource("7_272bh")]
 layout_mode = 2
-size_flags_vertical = 3
-focus_mode = 2
-bbcode_enabled = true
-text = "TEST"
-scroll_following = true
-autowrap_mode = 1
-context_menu_enabled = true
-vertical_alignment = 2
-justification_flags = 0
-selection_enabled = true
 
 [node name="HSeparator" type="HSeparator" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
@@ -87,4 +92,49 @@ custom_minimum_size = Vector2(0, 93)
 layout_mode = 2
 
 [node name="MarginContainer" parent="MarginContainer/VBoxContainer/VBoxContainer" instance=ExtResource("3_h2yge")]
+visible = false
 layout_mode = 2
+
+[node name="MarginContainer2" type="MarginContainer" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="PanelContainer" type="PanelContainer" parent="MarginContainer2"]
+layout_mode = 2
+
+[node name="MarginContainer3" type="MarginContainer" parent="MarginContainer2/PanelContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="Console" parent="MarginContainer2/PanelContainer/MarginContainer3" instance=ExtResource("7_272bh")]
+layout_mode = 2
+
+[node name="Button" type="Button" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 1.0
+anchor_top = 0.79600006
+anchor_right = 1.0
+anchor_bottom = 0.79600006
+offset_left = -32.0
+offset_top = -16.308044
+offset_bottom = 15.691956
+grow_horizontal = 0
+grow_vertical = 2
+pivot_offset = Vector2(32, 16.5)
+toggle_mode = true
+text = "!"
+expand_icon = true

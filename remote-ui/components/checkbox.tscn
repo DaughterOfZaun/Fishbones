@@ -42,10 +42,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 alignment = 1
 
-[node name="CheckBox" parent="PanelContainer/MarginContainer/VBoxContainer/VBoxContainer" instance=ExtResource("2_aci7a")]
-visible = false
-layout_mode = 2
-
 [node name="Button" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
 text = "Continue"

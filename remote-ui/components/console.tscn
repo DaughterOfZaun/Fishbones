@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://cmq3d2g3odndm"]
+
+[node name="Console" type="RichTextLabel"]
+size_flags_vertical = 3
+focus_mode = 2
+bbcode_enabled = true
+scroll_following = true
+autowrap_mode = 1
+context_menu_enabled = true
+vertical_alignment = 2
+justification_flags = 0
+selection_enabled = true

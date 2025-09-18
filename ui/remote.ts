@@ -179,6 +179,7 @@ export function start(): boolean {
     }
 }
 
+if(!jsonRpcDisabled)
 registerShutdownHandler(() => {
     sendNotification('exit')
 })

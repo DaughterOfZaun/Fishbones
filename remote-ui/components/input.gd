@@ -11,6 +11,9 @@ func init(config: Dictionary, cb: Callable) -> void:
     label.text = config['message']
     callback = cb
 
+    field.select_all.call_deferred()
+    field.edit.call_deferred()
+
 var callback: Callable
 func submit(_new_text: String = '') -> void:
     callback.call(field.text)

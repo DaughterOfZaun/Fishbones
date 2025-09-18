@@ -1,4 +1,4 @@
-class_name ServerNode extends Node
+class_name ServerNode extends Control
 
 const JSONRPC_GUI_ARG = "--jsonrpc-gui"
 
@@ -31,6 +31,34 @@ var handlers: Dictionary[Variant, InputHandler] = {}
 @export_file var embded_file_x: String
 @export_group('')
 
+@export_group("Stage 1")
+@export var stage_1: Control
+@export var console_1: RichTextLabel
+@export var bars_container: Container
+@export_group('')
+
+@export_group("Stage 2")
+@export var stage_2: Control
+@export var console_2: RichTextLabel
+@export var show_console_toggle: Button
+@export_group('')
+
+@export var container: Control
+
+var stage := 0
+var console := console_1
+func set_stage(to: int) -> void:
+    if stage == to: return
+    stage = to
+
+    if to == 1 && stage == 0:
+        stage_1.visible = true
+    
+    if to == 2:
+        console = console_2
+        console_2.text = console_1.text
+        show_console_toggle.visible = true
+
 func _ready() -> void:
     var args := OS.get_cmdline_args()
     var exe_arg_index := args.find("--exe")
@@ -42,6 +70,11 @@ func _ready() -> void:
     stderr = dict["stderr"]
     pid = dict["pid"]
 
+    show_console_toggle.toggled.connect(
+        func(toggled_on: bool) -> void:
+            stage_2.visible = toggled_on
+    )
+
 #     get_tree().set_auto_accept_quit(false)
 
 # func _notification(what: int) -> void:
@@ -50,11 +83,13 @@ func _ready() -> void:
 #         if stdio: stdio.close()
 #         if pid: OS.kill(pid)
 #         get_tree().quit()
-
+    
 func _init() -> void:
     
     methods["console.log"] = func(...params: Array[Variant]) -> void:
         print('console.log', ' ', params)
+        console.append_text(" ".join(params))
+        set_stage(1)
     
     methods["bar.create"] = func(operation: String, filename: String, size: int) -> void:
         var config := {
@@ -63,7 +98,8 @@ func _init() -> void:
             size: size,
         }
         print('bar.create', ' ', last_call_id, ' ', config)
-        create_element('bar', bar, config)
+        create_element('bar', bar, config, bars_container)
+        set_stage(1)
     
     methods["bar.update"] = func(value: float) -> void:
         print('bar.update', ' ', last_call_id, ' ', value)
@@ -76,9 +112,11 @@ func _init() -> void:
     
     methods["spinner"] = func(config: Dictionary) -> void:
         create_element('spinner', spinner, config)
+        set_stage(2)
     
     methods["select"] = func(config: Dictionary) -> void:
         create_element('select', select, config)
+        set_stage(2)
     
     methods["select.update"] = func(choices: Array) -> void:
         print('select.update', ' ', last_call_id, ' ', choices)
@@ -87,27 +125,30 @@ func _init() -> void:
     
     methods["checkbox"] = func(config: Dictionary) -> void:
         create_element('checkbox', checkbox, config)
+        set_stage(2)
     
     methods["input"] = func(config: Dictionary) -> void:
         create_element('input', input, config)
-    
+        set_stage(2)
+
     methods["abort"] = func() -> void:
         print('abort', ' ', last_call_id)
         handlers[last_call_id].abort()
 
     methods["exit"] = func() -> void:
+        print('exit')
         get_tree().quit()
 
 func bind(cb: Callable, arg0: Variant) -> Callable:
     return func(arg1: Variant) -> Variant:
         return cb.call(arg0, arg1) 
 
-func create_element(el_name: String, scene: PackedScene, config: Dictionary) -> void:
+func create_element(el_name: String, scene: PackedScene, config: Dictionary, container: Control = self.container) -> void:
     print(el_name, ' ', last_call_id, ' ', config)
     var instance: InputHandler = scene.instantiate()
     instance.init(config, bind(answer, last_call_id))
     handlers[last_call_id] = instance
-    add_child(instance)
+    container.add_child(instance)
 
 func _process(_delta: float) -> void:
     while stdio:

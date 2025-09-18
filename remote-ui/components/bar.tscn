@@ -2,18 +2,19 @@
 
 [ext_resource type="Script" uid="uid://bfvvtycwsklnw" path="res://components/bar.gd" id="1_a5le7"]
 
-[node name="MarginContainer" type="MarginContainer"]
+[node name="MarginContainer" type="MarginContainer" node_paths=PackedStringArray("bar", "label")]
 anchors_preset = 10
 anchor_right = 1.0
 offset_bottom = 31.0
 grow_horizontal = 2
 script = ExtResource("1_a5le7")
+bar = NodePath("ProgressBar")
+label = NodePath("MarginContainer/HBoxContainer/Label1")
 
 [node name="ProgressBar" type="ProgressBar" parent="."]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 1
-value = 50.0
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 2
@@ -28,9 +29,9 @@ layout_mode = 2
 [node name="Label1" type="Label" parent="MarginContainer/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 0
-text = "Unpacking League of Legends.7z..."
 
 [node name="Control" type="Control" parent="MarginContainer/HBoxContainer"]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 
