@@ -7,19 +7,21 @@ import { createBar as localBar, console_log as localLog } from './progress'
 import { default as localSelect, type Choice } from './dynamic-select'
 import { default as localSpinner } from './spinner'
 
-//import path from 'node:path'
-//import { downloads, fs_chmod, fs_copyFile, fs_exists, rwx_rx_rx } from '../utils/data-fs'
-import { Deferred, registerShutdownHandler } from '../utils/data-process'
-//import type { AbortOptions } from '@libp2p/interface'
+import path from 'node:path'
+import { downloads, fs_chmod, fs_copyFile, fs_exists, rwx_rx_rx } from '../utils/data-fs'
+import { Deferred, originalSpawn, registerShutdownHandler, startProcess } from '../utils/data-process'
+import type { AbortOptions } from '@libp2p/interface'
 
 export { type Choice, AbortPromptError, ExitPromptError }
 
 type JSONPrimitive = string | number | boolean | null | undefined
 type JSONValue = JSONPrimitive | JSONValue[] | { [key: string]: JSONValue }
 
-const JSONRPC_GUI_ARG = "--jsonrpc-gui"
-const jsonRpcDisabled = !process.argv.includes(JSONRPC_GUI_ARG)
-//const jsonRpcDisabled = false
+const CONSOLE_UI_ARG = "--console-ui"
+const JSONRPC_UI_ARG = "--jsonrpc-ui"
+
+export const guiDisabled = process.argv.includes(CONSOLE_UI_ARG)
+export const jsonRpcDisabled = !process.argv.includes(JSONRPC_UI_ARG)
 
 let gid = 0
 function sendCall(method: string, ...params: JSONValue[]){
@@ -136,13 +138,14 @@ export const console_log: typeof localLog = (...args) => {
     if(jsonRpcDisabled) return localLog(...args)
     sendNotification('console.log', ...args)
 }
-/*
+
 //@ts-expect-error Cannot find module or its corresponding type declarations.
-import godotExeEmbded from '/home/user/.local/share/godot/export_templates/4.5.rc1/linux_release.x86_64' with { type: 'file' }
+//import godotExeEmbded from '/home/user/.local/share/godot/export_templates/4.5.rc1/linux_release.x86_64' with { type: 'file' }
+import godotExeEmbded from '/home/user/.local/share/godot/export_templates/4.5.rc1/windows_release_x86_64.exe' with { type: 'file' }
 //@ts-expect-error Cannot find module or its corresponding type declarations.
 import godotPckEmbded from '../dist/RemoteUI.zip' with { type: 'file' }
 
-const godotExe = path.join(downloads, 'godot.exe')
+const godotExe = path.join(downloads, 'Godot_v4.5-rc1_win64.exe')
 const godotPck = path.join(downloads, 'RemoteUI.zip')
 export async function repairUIRenderer(opts: Required<AbortOptions>){
     return Promise.all([
@@ -159,24 +162,27 @@ export async function repairUIRenderer(opts: Required<AbortOptions>){
         })(),
     ])
 }
-*/
+
 const listeners = new Map<number, (err?: { code?: number, message?: string }, result?: JSONValue) => void>()
-export function start(): boolean {
-    if(jsonRpcDisabled){
-        return false
-        /*
+
+export async function repairAndStart(repairEnabled: boolean, opts: Required<AbortOptions>): Promise<boolean> {
+    if(!guiDisabled)
+    if(!jsonRpcDisabled){
+        process.stdin.addListener('data', onData)
+    } else {
+        if(repairEnabled){
+            await repairUIRenderer(opts)
+        }
         //TODO: Pass --exe ${current process path} and its args.
-        spawn(godotExe, [ '--main-pack', godotPck ], {
-            log: false, logPrefix: 'GODOT',
+        const proc = originalSpawn(godotExe, [ '--main-pack', godotPck ], {
+            //log: false, logPrefix: 'GODOT',
             detached: true,
             cwd: downloads,
         })
+        await startProcess('GODOT', proc, 'stdout', (chunk) => chunk.includes('Godot Engine'), opts)
         return true
-        */
-    } else {
-        process.stdin.addListener('data', onData)
-        return false
     }
+    return false
 }
 
 if(!jsonRpcDisabled)

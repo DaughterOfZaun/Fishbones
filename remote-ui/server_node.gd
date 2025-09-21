@@ -1,6 +1,6 @@
 class_name ServerNode extends Control
 
-const JSONRPC_GUI_ARG = "--jsonrpc-gui"
+const JSONRPC_GUI_ARG = "--jsonrpc-ui"
 
 var stdio: FileAccess
 var stderr: FileAccess
@@ -28,8 +28,24 @@ var handlers: Dictionary[Variant, InputHandler] = {}
 @export_file var embded_file_7: String
 @export_file var embded_file_8: String
 @export_file var embded_file_9: String
-@export_file var embded_file_x: String
+@export_file var embded_file_a: String
+@export_file var embded_file_b: String
 @export_group('')
+
+var embded_files := [
+    embded_file_0,
+    embded_file_1,
+    embded_file_2,
+    embded_file_3,
+    embded_file_4,
+    embded_file_5,
+    embded_file_6,
+    embded_file_7,
+    embded_file_8,
+    embded_file_9,
+    embded_file_a,
+    embded_file_b,
+]
 
 @export_group("Stage 1")
 @export var stage_1: Control

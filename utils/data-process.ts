@@ -254,14 +254,19 @@ export function unwrapAbortError(err: unknown){
     else return err
 }
 
+export { originalSpawn }
 const activeProcesses = new Set<ChildProcess>()
+const detachedProcesses = new Set<ChildProcess>()
 export function spawn(cmd: string, args: readonly string[], opts: SpawnOptionsWithoutStdio & { log: boolean, logPrefix: string }){
     //opts = { cwd: downloads, ...opts }
     const proc = originalSpawn(cmd, args, opts)
     
+    if(opts.detached)
+    detachedProcesses.add(proc)
     activeProcesses.add(proc)
     proc.on('exit', (code, signal) => {
         logTerminationMsg(opts.logPrefix, 'exited', code, signal)
+        detachedProcesses.delete(proc)
         activeProcesses.delete(proc)
     })
 
@@ -279,13 +284,14 @@ export function spawn(cmd: string, args: readonly string[], opts: SpawnOptionsWi
 }
 
 registerShutdownHandler((force) => {
-    for(const proc of activeProcesses)
+    for(const proc of activeProcesses.difference(detachedProcesses))
         proc.kill(force ? 'SIGKILL' : 'SIGTERM')
-    activeProcesses.clear()
+    //detachedProcesses.clear()
+    //activeProcesses.clear()
 })
 
 export function killIfActive(proc?: ChildProcess){
-    if(proc && activeProcesses.delete(proc))
+    if(proc && activeProcesses.has(proc))
         return proc.kill()
     return false
 }

@@ -7,8 +7,7 @@ import { registerShutdownHandler, setInsideUI, shutdown, shutdownOptions, unwrap
 import { repair } from './utils/data-repair'
 import * as umplex from './network/umplex'
 import * as RemoteUI from './ui/remote'
-
-if(RemoteUI.start()) process.exit(0)
+import type { AbortOptions } from '@libp2p/interface'
 
 function getNamedArg(name: string, defaultValue: string){
     const index = process.argv.indexOf(name)
@@ -19,15 +18,17 @@ function getNamedArg(name: string, defaultValue: string){
 
 logger.log(`${'-'.repeat(35)} ${TITLE} started ${'-'.repeat(35)}`)
 
-try {
-    if(!process.argv.includes('--no-repair')){
-        setInsideUI(true)
-        await repair(shutdownOptions)
-        setInsideUI(false)
+async function index(opts: Required<AbortOptions>){
+
+    const repairEnabled = !process.argv.includes('--no-repair')
+    if(await RemoteUI.repairAndStart(repairEnabled, opts)){
+        return //process.exit(0)
+    } else if(repairEnabled){
+        await repair(opts)
     }
 
     const port = parseInt(getNamedArg('--port', '5119'))
-    const node = await createNode(port, shutdownOptions)
+    const node = await createNode(port, opts)
     //console.log('node.peerId is', node.peerId.toString())
     registerShutdownHandler(async () => {
         //await node.services.pubsubPeerWithDataDiscovery?.beforeStop()
@@ -39,10 +40,14 @@ try {
         umplex.shutdown()
     })
 
-    setInsideUI(true)
-    await main(node, shutdownOptions)
-    setInsideUI(false)
+    await main(node, opts)
+}
 
+try {
+
+    setInsideUI(true)
+    await index(shutdownOptions)
+    setInsideUI(false)
     shutdown('call')
 
 } catch(unk_err: unknown) {

@@ -62,9 +62,12 @@ async function startAria2(opts: Required<AbortOptions>){
             `--rpc-listen-all=${false}`,
             `--rpc-allow-origin-all=${false}`,
             `--rpc-secret=${aria2secret}`,
-            `--bt-save-metadata=${true}`,
-            `--bt-load-saved-metadata=${true}`,
-            `--rpc-save-upload-metadata=${true}`,
+            
+            // All *.torrent files are embded now.
+            //`--bt-save-metadata=${true}`,
+            //`--bt-load-saved-metadata=${true}`,
+            //`--rpc-save-upload-metadata=${true}`,
+            
             //`--input-file=${ariaSession}`,
             //`--save-session=${ariaSession}`,
             `--check-integrity=${true}`,

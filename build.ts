@@ -4,6 +4,13 @@ import { $ } from 'bun'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { COPYRIGHT, DESCRIPTION, HIDE_CONSOLE, ICON, NAME, OUTDIR, OUTFILE, PUBLISHER, TARGET, TITLE, VERSION } from './utils/constants'
+const OUTDIR_FILE = path.join(OUTDIR, OUTFILE)
+
+//import { NtExecutable } from 'pe-library'
+//const PE_HEADER_OFFSET_LOCATION = 0x3c
+//const SUBSYSTEM_OFFSET = 0x5c
+//const CONSOLE_SUBSYSTEM = 0x3
+//const GUI_SUBSYSTEM = 0x2
 
 await $`mv node_modules node_modules_linux_npm`
 await $`mv node_modules_win_npm node_modules`
@@ -11,7 +18,7 @@ try {
     await patch()
     //await build_libUTP()
 
-    //await $`bun build --compile --sourcemap --target="${TARGET}" --outfile="${path.join(OUTDIR, OUTFILE)}" 'index.ts'`
+    //await $`bun build --compile --sourcemap --target="${TARGET}" --outfile="${OUTDIR_FILE}" 'index.ts'`
     await Bun.build({
         entrypoints: [ './index.ts' ],
         sourcemap: true,
@@ -35,9 +42,9 @@ try {
     })
 
     //await $`bun build --sourcemap --target="bun" --outdir="${OUTDIR}" 'index-failsafe.ts'`
-    //await $`bun build --compile --sourcemap --target="${TARGET}" --outfile="${path.join(OUTDIR, OUTFILE)}" './dist/index-failsafe.js' './dist/index.js'`
+    //await $`bun build --compile --sourcemap --target="${TARGET}" --outfile="${OUTDIR_FILE}" './dist/index-failsafe.js' './dist/index.js'`
 
-    //console.log(`bun build --compile --target="${TARGET}" --outfile="${path.join(OUTDIR, OUTFILE)}" --windows-icon="${ICON}" --windows-title="${TITLE}" --windows-publisher="${PUBLISHER}" --windows-version="${VERSION}" --windows-description="${DESCRIPTION}" --windows-copyright="${COPYRIGHT}" 'index.ts'`)
+    //console.log(`bun build --compile --target="${TARGET}" --outfile="${OUTDIR_FILE}" --windows-icon="${ICON}" --windows-title="${TITLE}" --windows-publisher="${PUBLISHER}" --windows-version="${VERSION}" --windows-description="${DESCRIPTION}" --windows-copyright="${COPYRIGHT}" 'index.ts'`)
     //await $`flatpak run --command='bottles-cli' com.usebottles.bottles run -b 'Default Gaming' -e ${path.join(__dirname, 'bun.exe')} "build --compile --target='${TARGET}' --outfile='${path.join(__dirname, OUTDIR, OUTFILE)}' --windows-icon='${ICON}' --windows-title='${TITLE}' --windows-publisher='${PUBLISHER}' --windows-version='${VERSION}' --windows-description='${DESCRIPTION}' --windows-copyright='${COPYRIGHT}' --root='${__dirname}' '${path.join(__dirname, 'index.ts')}'"`
     if(process.argv.includes('--release')){
         const wine = `flatpak run --command='bottles-cli' com.usebottles.bottles run -b 'Default Gaming' -e`
@@ -52,8 +59,32 @@ try {
             `--set-version-string "CompanyName" "${PUBLISHER}"`,
             `--set-version-string "LegalCopyright" "${COPYRIGHT}"`,
         ]
-        await $`${{ raw: wine }} './rcedit-x64.exe' '${path.join(OUTDIR, OUTFILE)} ${{ raw: args.join(' ') }}'`
+        await $`${{ raw: wine }} './rcedit-x64.exe' '${OUTDIR_FILE} ${{ raw: args.join(' ') }}'`
     }
+    
+    /*
+    const exe = await fs.readFile(OUTDIR_FILE)
+    const ntExe = NtExecutable.from(exe, { ignoreCert: true })
+    const ntExeHeader = ntExe.newHeader.optionalHeader
+    console.log('Current subsystem is', ntExeHeader.subsystem)
+    if(ntExeHeader.subsystem !== GUI_SUBSYSTEM){
+        ntExeHeader.subsystem = GUI_SUBSYSTEM
+        await fs.writeFile(OUTDIR_FILE, Buffer.from(ntExe.generate()))
+    }
+    */
+    /*
+    const exe = await fs.readFile(OUTDIR_FILE)
+
+    const peHeaderOffset = exe.readUInt32LE(PE_HEADER_OFFSET_LOCATION)
+    const subsystemOffset = peHeaderOffset + SUBSYSTEM_OFFSET
+    const currentSubsystem = exe.readUInt16LE(subsystemOffset)
+
+    console.log('Current subsystem is', currentSubsystem)
+    if(currentSubsystem !== GUI_SUBSYSTEM){
+        exe.writeUInt16LE(GUI_SUBSYSTEM, subsystemOffset)
+        await fs.writeFile(OUTDIR_FILE, exe)
+    }
+    */
 
     await $`chmod 666 ./dist/Fishbones.exe`
 } finally {
