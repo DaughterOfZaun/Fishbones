@@ -38,6 +38,9 @@ import { setMaxListeners } from 'main-event'
 import { TimeoutError, type AbortOptions, type Address, type PeerId, type PeerInfo } from '@libp2p/interface'
 
 import { certifiedAddressesFirst, circuitRelayAddressesLast, loopbackAddressLast, publicAddressesFirst, reliableTransportsFirst } from './node_modules/libp2p/src/connection-manager/address-sorter.ts'
+
+import { args } from './utils/args.ts'
+
 const utpTransportFirst = (a: Address, b: Address) => {
     return +UTPMatcher.exactMatch(b.multiaddr)
         -  +UTPMatcher.exactMatch(a.multiaddr) as (-1 | 0 | 1)
@@ -99,13 +102,13 @@ let DISABLE_TORRENT = true
 DISABLE_UTP = false
 DISABLE_MDNS = false
 DISABLE_AUTODIAL = false
-if(process.argv.includes('--online')){
+if(args.globalDiscovery.enabled){
     DISABLE_TCP = false
     DISABLE_DHT = false
     DISABLE_BOOTSTRAP = false
     DISABLE_NAT_MIGITATION = false
     DISABLE_CONTENT_DISCOVERY = false
-    if(process.argv.includes('--torrent')){
+    if(args.torrentDiscovery.enabled){
         DISABLE_TORRENT = false
     }
 }

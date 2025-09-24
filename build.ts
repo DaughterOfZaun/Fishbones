@@ -12,8 +12,13 @@ const OUTDIR_FILE = path.join(OUTDIR, OUTFILE)
 //const CONSOLE_SUBSYSTEM = 0x3
 //const GUI_SUBSYSTEM = 0x2
 
-await $`mv node_modules node_modules_linux_npm`
-await $`mv node_modules_win_npm node_modules`
+const platform: 'linux' | 'windows' = (Math.random() != 1) ? 'linux' : 'windows'
+const target = `bun-${platform}-x64` as const
+
+if(platform === 'windows'){
+    await $`mv node_modules node_modules_linux_npm`
+    await $`mv node_modules_win_npm node_modules`
+}
 try {
     await patch()
     //await build_libUTP()
@@ -24,7 +29,7 @@ try {
         sourcemap: true,
         outdir: OUTDIR,
         compile: {
-            target: TARGET,
+            target: target,
             outfile: OUTFILE,
             windows: {
                 hideConsole: HIDE_CONSOLE,
@@ -86,10 +91,12 @@ try {
     }
     */
 
-    await $`chmod 666 ./dist/Fishbones.exe`
+    await $`chmod +x ./dist/Fishbones.exe`
 } finally {
-    await $`mv node_modules node_modules_win_npm`
-    await $`mv node_modules_linux_npm node_modules`
+    if(platform === 'windows'){
+        await $`mv node_modules node_modules_win_npm`
+        await $`mv node_modules_linux_npm node_modules`
+    }
 }
 
 async function build_libUTP(){

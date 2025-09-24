@@ -3,6 +3,7 @@ import { createBar } from "../ui/remote"
 import type { AbortOptions } from "@libp2p/interface"
 import { fs_exists, fs_readFile, fs_writeFile, type ReadWriteFileOpts } from "./data-fs"
 import { killIfActive, spawn, successfulTermination, type ChildProcess } from "./data-process"
+import { args } from "./args"
 
 const LOG_PREFIX = 'SDK'
 
@@ -11,7 +12,7 @@ let sdkSubprocess: ChildProcess | undefined
 export async function build(pkg: PkgInfoCSProj, opts: Required<AbortOptions>){
     const fs_opts: ReadWriteFileOpts = { ...opts, encoding: 'utf8', rethrow: true }
 
-    if(process.argv.includes('--no-build')){
+    if(!args.build.enabled){
         console.log(`Pretending to build ${pkg.dllName}...`)
         return
     }

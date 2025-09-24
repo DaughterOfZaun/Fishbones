@@ -6,6 +6,7 @@ import yoctocolor from 'yoctocolors-cjs'
 import { createBar as localBar, console_log as localLog } from './progress'
 import { default as localSelect, type Choice } from './dynamic-select'
 import { default as localSpinner } from './spinner'
+import { args } from '../utils/args'
 
 import path from 'node:path'
 import { downloads, fs_chmod, fs_copyFile, fs_exists, rwx_rx_rx } from '../utils/data-fs'
@@ -17,11 +18,8 @@ export { type Choice, AbortPromptError, ExitPromptError }
 type JSONPrimitive = string | number | boolean | null | undefined
 type JSONValue = JSONPrimitive | JSONValue[] | { [key: string]: JSONValue }
 
-const CONSOLE_UI_ARG = "--console-ui"
-const JSONRPC_UI_ARG = "--jsonrpc-ui"
-
-export const guiDisabled = process.argv.includes(CONSOLE_UI_ARG)
-export const jsonRpcDisabled = !process.argv.includes(JSONRPC_UI_ARG)
+export const guiDisabled = !args.gui.enabled
+export const jsonRpcDisabled = !args.jRPCUI.enabled
 
 let gid = 0
 function sendCall(method: string, ...params: JSONValue[]){
@@ -165,12 +163,11 @@ export async function repairUIRenderer(opts: Required<AbortOptions>){
 
 const listeners = new Map<number, (err?: { code?: number, message?: string }, result?: JSONValue) => void>()
 
-export async function repairAndStart(repairEnabled: boolean, opts: Required<AbortOptions>): Promise<boolean> {
-    if(!guiDisabled)
+export async function repairAndStart(opts: Required<AbortOptions>): Promise<boolean> {
     if(!jsonRpcDisabled){
         process.stdin.addListener('data', onData)
-    } else {
-        if(repairEnabled){
+    } else if(!guiDisabled){
+        if(args.repair.enabled){
             await repairUIRenderer(opts)
         }
         //TODO: Pass --exe ${current process path} and its args.

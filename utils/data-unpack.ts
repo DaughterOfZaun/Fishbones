@@ -4,6 +4,7 @@ import { createBar } from '../ui/remote'
 import { killIfActive, spawn, successfulTermination, type ChildProcess } from './data-process'
 import { rwx_rx_rx, downloads, fs_chmod, fs_copyFile, fs_ensureDir, fs_exists, fs_writeFile, fs_removeFile } from './data-fs'
 import type { AbortOptions } from '@libp2p/interface'
+import { args } from './args'
 import path from 'node:path'
 
 //@ts-expect-error Cannot find module or its corresponding type declarations.
@@ -68,7 +69,7 @@ export function appendPartialUnpackFileExt(path: string){
 export class DataError extends Error {}
 export async function unpack(pkg: PkgInfo, opts: Required<AbortOptions>){
     
-    if(process.argv.includes('--no-unpack')){
+    if(!args.unpack){
         console.log(`Pretending to unpack ${pkg.zipName}...`)
         return
     }

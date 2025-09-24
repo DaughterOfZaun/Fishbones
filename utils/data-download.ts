@@ -9,6 +9,7 @@ import type { AbortOptions } from '@libp2p/interface'
 import { getAnnounceAddrs } from './data-trackers'
 import type { PkgInfo } from './data-packages'
 import * as MegaProxy from './data-download-mega'
+import { args } from './args'
 import defer from 'p-defer'
 
 const LOG_PREFIX = 'ARIA2C'
@@ -126,7 +127,7 @@ export async function stopAria2(opts: Required<AbortOptions>){
 
 export async function download(pkg: PkgInfo, opts: Required<AbortOptions>){
 
-    if(process.argv.includes('--no-download')){
+    if(!args.download.enabled){
         console.log(`Pretending to download ${pkg.zipName}...`)
         //await new Promise<void>(res => { if(Math.random() === 0) res() })
         //throw new Error('Unable to download file, offline mode enabled')
@@ -139,7 +140,7 @@ export async function download(pkg: PkgInfo, opts: Required<AbortOptions>){
     
         const webSeeds = []
         if(pkg.zipWebSeed) webSeeds.push(pkg.zipWebSeed)
-        if(pkg.zipMega && !process.argv.includes('--no-mega')){
+        if(pkg.zipMega && args.megaDownload.enabled){
             await MegaProxy.start(opts)
             webSeeds.push(MegaProxy.getURL(pkg))
         }
@@ -168,7 +169,7 @@ export async function download(pkg: PkgInfo, opts: Required<AbortOptions>){
             await forCompletion(gid, false, p => bar.update(p), pkg.zipName)
             
         } finally {
-            if(pkg.zipMega && !process.argv.includes('--no-mega')){
+            if(pkg.zipMega && args.megaDownload.enabled){
                 MegaProxy.ungetURL()
             }
         }

@@ -23,6 +23,7 @@ export const LOCALHOST = '127.0.0.1'
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export abstract class ValueDesc<I, E> {
     public name!: string
+    public desc?: string
     public value?: I
     abstract encode(): E
     abstract decodeInplace(v: E): boolean
@@ -505,7 +506,7 @@ export async function ufill<T extends object>(obj: T, { signal }: Required<Abort
     let selected: u|Action = undefined
     const fieldChoices = fields.map(key => {
         const obj_key = obj[key] as ValueDesc<unknown, unknown>
-        return { value: ['edit', key] as ActionEdit, short: obj_key.name, name: '' }
+        return { value: ['edit', key] as ActionEdit, short: obj_key.name, name: '', description: obj_key.desc }
     })
     const choices = [
         ...fieldChoices,

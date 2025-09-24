@@ -1,6 +1,7 @@
 class_name ServerNode extends Control
 
-const JSONRPC_GUI_ARG = "--jsonrpc-ui"
+const NO_RELAUNCH_ARG = "--no-gui"
+const JSONRPC_GUI_ARG = "--jrpc-ui"
 
 var stdio: FileAccess
 var stderr: FileAccess
@@ -81,7 +82,7 @@ func _ready() -> void:
     assert(exe_arg_index < args.size())
     var exe := args[exe_arg_index + 1]
 
-    var dict := OS.execute_with_pipe(exe, PackedStringArray([ JSONRPC_GUI_ARG ]), false)
+    var dict := OS.execute_with_pipe(exe, PackedStringArray([ NO_RELAUNCH_ARG, JSONRPC_GUI_ARG ]), false)
     stdio = dict["stdio"]
     stderr = dict["stderr"]
     pid = dict["pid"]
