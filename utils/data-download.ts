@@ -148,7 +148,7 @@ export async function download(pkg: PkgInfo, opts: Required<AbortOptions>){
         try {
             await startAria2(opts)
             
-            const args = {
+            const aria2args = {
                 'bt-save-metadata': true,
                 'bt-load-saved-metadata': true,
                 'rpc-save-upload-metadata': true,
@@ -156,11 +156,15 @@ export async function download(pkg: PkgInfo, opts: Required<AbortOptions>){
                 out: pkg.zipName,
             }
             
-            const b64 = await fs_readFile(pkg.zipTorrent, { ...opts, encoding: 'base64' })
             let gid
             try {
-                gid = b64 ? await aria2.addTorrent(aria2conn, b64, webSeeds, args) :
-                            await aria2.addUri(aria2conn, [ pkg.zipMagnet ].concat(webSeeds), args)
+                if(args.torrentDownload){
+                    const b64 = await fs_readFile(pkg.zipTorrent, { ...opts, encoding: 'base64' })
+                    gid = b64 ? await aria2.addTorrent(aria2conn, b64, webSeeds, aria2args) :
+                                await aria2.addUri(aria2conn, [ pkg.zipMagnet ].concat(webSeeds), aria2args)
+                } else {
+                    gid = await aria2.addUri(aria2conn, webSeeds, aria2args)
+                }
             } catch(err) {
                 throw new Error(`Downloading of "${pkg.zipName}" failed.`, { cause: err })
             }

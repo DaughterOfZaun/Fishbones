@@ -10,7 +10,7 @@ func init(config: Dictionary, cb: Callable) -> void:
         var instance: CheckboxButton = checkbox.instantiate()
         instance.text = choice['name']
         instance.value = choice['value']
-        instance.button_pressed = choice['checked']
+        instance.button_pressed = choice.get('checked', false)
         instance.disabled = choice.get('disabled', false)
         container.add_child(instance)
     button.pressed.connect(submit)

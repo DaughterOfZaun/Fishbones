@@ -48,33 +48,18 @@ var embded_files := [
     embded_file_b,
 ]
 
-@export_group("Stage 1")
-@export var stage_1: Control
-@export var console_1: RichTextLabel
-@export var bars_container: Container
-@export_group('')
-
-@export_group("Stage 2")
-@export var stage_2: Control
-@export var console_2: RichTextLabel
-@export var show_console_toggle: Button
-@export_group('')
-
 @export var container: Control
+@export var bars_container: Container
+@export var show_console_toggle: Button
+@export var console_container: Container
+@export var console: RichTextLabel
 
-var stage := 0
-var console := console_1
-func set_stage(to: int) -> void:
-    if stage == to: return
-    stage = to
-
-    if to == 1 && stage == 0:
-        stage_1.visible = true
-    
-    if to == 2:
-        console = console_2
-        console_2.text = console_1.text
-        show_console_toggle.visible = true
+var active_bars_count := 0
+func inc_active_bars_count(by: int) -> void:
+    active_bars_count += by
+    bars_container.visible = active_bars_count > 0
+    console_container.visible = active_bars_count > 0 || show_console_toggle.button_pressed
+    show_console_toggle.visible = active_bars_count <= 0
 
 func _ready() -> void:
     var args := OS.get_cmdline_args()
@@ -87,9 +72,11 @@ func _ready() -> void:
     stderr = dict["stderr"]
     pid = dict["pid"]
 
+    inc_active_bars_count(0)
     show_console_toggle.toggled.connect(
         func(toggled_on: bool) -> void:
-            stage_2.visible = toggled_on
+            console_container.visible = toggled_on
+            show_console_toggle.text = 'x' if toggled_on else '!'
     )
 
 #     get_tree().set_auto_accept_quit(false)
@@ -105,18 +92,17 @@ func _init() -> void:
     
     methods["console.log"] = func(...params: Array[Variant]) -> void:
         print('console.log', ' ', params)
-        console.append_text(" ".join(params))
-        set_stage(1)
+        console.append_text(" ".join(params).replace('\n', '[br]') + '\n')
     
     methods["bar.create"] = func(operation: String, filename: String, size: int) -> void:
         var config := {
-            operation: operation,
-            filename: filename,
-            size: size,
+            'operation': operation,
+            'filename': filename,
+            'size': size,
         }
         print('bar.create', ' ', last_call_id, ' ', config)
         create_element('bar', bar, config, bars_container)
-        set_stage(1)
+        inc_active_bars_count(+1)
     
     methods["bar.update"] = func(value: float) -> void:
         print('bar.update', ' ', last_call_id, ' ', value)
@@ -126,14 +112,13 @@ func _init() -> void:
     methods["bar.stop"] = func() -> void:
         print('bar.stop', ' ', last_call_id)
         handlers[last_call_id].abort()
+        inc_active_bars_count(-1)
     
     methods["spinner"] = func(config: Dictionary) -> void:
         create_element('spinner', spinner, config)
-        set_stage(2)
     
     methods["select"] = func(config: Dictionary) -> void:
         create_element('select', select, config)
-        set_stage(2)
     
     methods["select.update"] = func(choices: Array) -> void:
         print('select.update', ' ', last_call_id, ' ', choices)
@@ -142,11 +127,9 @@ func _init() -> void:
     
     methods["checkbox"] = func(config: Dictionary) -> void:
         create_element('checkbox', checkbox, config)
-        set_stage(2)
     
     methods["input"] = func(config: Dictionary) -> void:
         create_element('input', input, config)
-        set_stage(2)
 
     methods["abort"] = func() -> void:
         print('abort', ' ', last_call_id)

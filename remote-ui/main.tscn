@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://c88cdpgvxg8v2"]
+[gd_scene load_steps=11 format=3 uid="uid://c88cdpgvxg8v2"]
 
 [ext_resource type="Script" uid="uid://dys8mpxtgwbfe" path="res://server_node.gd" id="1_ig7tw"]
 [ext_resource type="PackedScene" uid="uid://bc7b31q6ren3" path="res://components/select.tscn" id="2_0xm2m"]
@@ -6,9 +6,17 @@
 [ext_resource type="PackedScene" uid="uid://d272wt2h2fnv2" path="res://components/bar.tscn" id="3_h2yge"]
 [ext_resource type="PackedScene" uid="uid://dvt48ppax2q6h" path="res://components/input.tscn" id="4_1bvp3"]
 [ext_resource type="PackedScene" uid="uid://b8uviqmtnb8t0" path="res://components/checkbox.tscn" id="5_lquwl"]
+[ext_resource type="Texture2D" uid="uid://0et06t4e4fkf" path="res://sr_platform.jpg" id="7_5vw27"]
 [ext_resource type="PackedScene" uid="uid://cmq3d2g3odndm" path="res://components/console.tscn" id="7_272bh"]
+[ext_resource type="Shader" uid="uid://c4ougvurpqa1d" path="res://simple_blur.gdshader" id="7_kek77"]
 
-[node name="Control" type="ColorRect" node_paths=PackedStringArray("stage_1", "console_1", "bars_container", "stage_2", "console_2", "show_console_toggle", "container")]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_kek77"]
+shader = ExtResource("7_kek77")
+shader_parameter/samples = 35
+shader_parameter/lod = 3
+shader_parameter/tint_color = Color(0, 0, 0, 0)
+
+[node name="Control" type="ColorRect" node_paths=PackedStringArray("container", "bars_container", "show_console_toggle", "console_container", "console")]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -33,13 +41,30 @@ embded_file_8 = "res://embedded/dotnet-sdk-9.0.300-win-x64.zip.torrent"
 embded_file_9 = "res://embedded/League of Legends_UNPACKED.7z.torrent"
 embded_file_a = "res://embedded/libutp.dll"
 embded_file_b = "res://embedded/trackers.txt"
-stage_1 = NodePath("MarginContainer")
-console_1 = NodePath("MarginContainer/VBoxContainer/Console")
-bars_container = NodePath("MarginContainer/VBoxContainer/VBoxContainer")
-stage_2 = NodePath("MarginContainer2")
-console_2 = NodePath("MarginContainer2/PanelContainer/MarginContainer3/Console")
-show_console_toggle = NodePath("Button")
-container = NodePath("Control")
+container = NodePath("Container")
+bars_container = NodePath("ConsoleContainer/VBoxContainer/BarsContainer")
+show_console_toggle = NodePath("ShowConsoleToggle")
+console_container = NodePath("ConsoleContainer")
+console = NodePath("ConsoleContainer/VBoxContainer/PanelContainer/MarginContainer/Console")
+
+[node name="TextureRect" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("7_5vw27")
+stretch_mode = 6
+
+[node name="ColorRect" type="ColorRect" parent="TextureRect"]
+material = SubResource("ShaderMaterial_kek77")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="Label" type="Label" parent="."]
 visible = false
@@ -57,7 +82,7 @@ grow_horizontal = 2
 grow_vertical = 2
 text = "FISHBONES"
 
-[node name="Control" type="Control" parent="."]
+[node name="Container" type="Control" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -65,76 +90,65 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="."]
-visible = false
+[node name="ConsoleContainer" type="MarginContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 24
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 24
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="ConsoleContainer"]
 layout_mode = 2
 
-[node name="Console" parent="MarginContainer/VBoxContainer" instance=ExtResource("7_272bh")]
+[node name="PanelContainer" type="PanelContainer" parent="ConsoleContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="ConsoleContainer/VBoxContainer/PanelContainer"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="Console" parent="ConsoleContainer/VBoxContainer/PanelContainer/MarginContainer" instance=ExtResource("7_272bh")]
+layout_mode = 2
+theme_override_constants/paragraph_separation = 6
+theme_override_font_sizes/normal_font_size = 13
+theme_override_font_sizes/bold_font_size = 13
+theme_override_font_sizes/bold_italics_font_size = 13
+theme_override_font_sizes/italics_font_size = 13
+theme_override_font_sizes/mono_font_size = 13
+
+[node name="BarsContainer" type="VBoxContainer" parent="ConsoleContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 121)
 layout_mode = 2
 
-[node name="HSeparator" type="HSeparator" parent="MarginContainer/VBoxContainer"]
+[node name="HSeparator" type="HSeparator" parent="ConsoleContainer/VBoxContainer/BarsContainer"]
 layout_mode = 2
 theme_override_constants/separation = 24
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 93)
-layout_mode = 2
-
-[node name="MarginContainer" parent="MarginContainer/VBoxContainer/VBoxContainer" instance=ExtResource("3_h2yge")]
+[node name="MarginContainer" parent="ConsoleContainer/VBoxContainer/BarsContainer" instance=ExtResource("3_h2yge")]
 visible = false
 layout_mode = 2
 
-[node name="MarginContainer2" type="MarginContainer" parent="."]
-visible = false
+[node name="ShowConsoleToggle" type="Button" parent="."]
 layout_mode = 1
-anchors_preset = 15
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 12
-
-[node name="PanelContainer" type="PanelContainer" parent="MarginContainer2"]
-layout_mode = 2
-
-[node name="MarginContainer3" type="MarginContainer" parent="MarginContainer2/PanelContainer"]
-layout_mode = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 12
-
-[node name="Console" parent="MarginContainer2/PanelContainer/MarginContainer3" instance=ExtResource("7_272bh")]
-layout_mode = 2
-
-[node name="Button" type="Button" parent="."]
-visible = false
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 1.0
-anchor_top = 0.79600006
-anchor_right = 1.0
-anchor_bottom = 0.79600006
 offset_left = -32.0
-offset_top = -16.308044
-offset_bottom = 15.691956
+offset_top = -137.0
+offset_bottom = -105.0
 grow_horizontal = 0
-grow_vertical = 2
+grow_vertical = 0
 pivot_offset = Vector2(32, 16.5)
 toggle_mode = true
 text = "!"

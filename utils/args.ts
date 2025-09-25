@@ -5,10 +5,10 @@ export class Args {
     torrentDiscovery = new Option('torrent-discovery', false, '(Experimental) Search for servers on the global Internet via BitTorrent')
     port = new Parameter('port', 5119, 'Set custom UDP port number to use')
 
-    repair = new Option('repair', true, '(Debug option) Download+Unpack+Build missing files')
-    download = new Option('download', true, '(Debug option) Download missing files')
-    unpack = new Option('unpack', true, '(Debug option) Unpack missing files')
-    build = new Option('build', true, '(Debug option) Build missing files')
+    repair = new Option('repair', true, '(Debug) Download+Unpack+Build missing files')
+    download = new Option('download', true, '(Debug) Download missing files')
+    unpack = new Option('unpack', true, '(Debug) Unpack missing files')
+    build = new Option('build', true, '(Debug) Build missing files')
     
     setup = new Option('setup', true, 'Ask about custom arguments at startup')
     gui = new Option('gui', true, 'Restart with GUI')
