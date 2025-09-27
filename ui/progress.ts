@@ -81,7 +81,7 @@ function createInfiniteBar(operation: string, filename: string){
     return bar
 }
 
-export function createBar(operation: string, filename: string, size?: number){
+export function createBar(operation: string, filename: string, size: number = 0){
     return (size && isFinite(size)) ?
         createFiniteBar(operation, filename, size) :
         createInfiniteBar(operation, filename)

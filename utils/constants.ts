@@ -10,8 +10,8 @@ export const NAME = 'Fishbones'
 export const OUTFILE = `${NAME}.exe`
 export const HIDE_CONSOLE = true
 export const ICON = 'icon.ico'
-export const VERSION = '0.0.2.1'
-export const TITLE = `${NAME} v0.02-fix1`
+export const VERSION = '0.0.3.0'
+export const TITLE = `${NAME} v0.03`
 export const PUBLISHER = "Jinx"
 export const DESCRIPTION = "Yet another LeagueSandbox launcher with a twist"
 export const COPYRIGHT = "AGPLv3"
@@ -461,6 +461,10 @@ export class Enabled extends ValueDesc<number[], number[]>{
         return true
     }
     async uinput(opts: Required<AbortOptions>) {
+        
+        for(const choice of this.choices)
+            choice.checked = this.value.includes(choice.value)
+
         this.value = await checkbox({
             message: `Check ${this.name}`,
             choices: this.choices,

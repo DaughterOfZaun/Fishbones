@@ -61,13 +61,26 @@ func inc_active_bars_count(by: int) -> void:
     console_container.visible = active_bars_count > 0 || show_console_toggle.button_pressed
     show_console_toggle.visible = active_bars_count <= 0
 
-func _ready() -> void:
-    var args := OS.get_cmdline_args()
-    var exe_arg_index := args.find("--exe")
-    assert(exe_arg_index < args.size())
-    var exe := args[exe_arg_index + 1]
+func get_named_arg(args: PackedStringArray, name: String, default: String) -> String:
+    var arg_index := args.find(name)
+    return args[arg_index + 1] \
+    if arg_index >= 0 && arg_index < args.size() \
+    else default
 
-    var dict := OS.execute_with_pipe(exe, PackedStringArray([ NO_RELAUNCH_ARG, JSONRPC_GUI_ARG ]), false)
+func _ready() -> void:
+
+    #printerr('Godot Engine started')
+
+    #var args := OS.get_cmdline_args()
+    var exe_args := OS.get_cmdline_user_args()
+    #var exe := get_named_arg(args, "--exe", "../Fishbones.exe")
+    #var exe_args_str := get_named_arg(args, "--exe-args", '[]')
+    #var exe_args := JSON.parse_string(exe_args_str) as Array
+    #if exe_args == null: exe_args = []
+    var exe := exe_args[0]; exe_args.remove_at(0)
+    exe_args.append_array([ NO_RELAUNCH_ARG, JSONRPC_GUI_ARG ])
+    
+    var dict := OS.execute_with_pipe(exe, exe_args, false)
     stdio = dict["stdio"]
     stderr = dict["stderr"]
     pid = dict["pid"]
@@ -91,7 +104,7 @@ func _ready() -> void:
 func _init() -> void:
     
     methods["console.log"] = func(...params: Array[Variant]) -> void:
-        print('console.log', ' ', params)
+        #print('console.log', ' ', params)
         console.append_text(" ".join(params).replace('\n', '[br]') + '\n')
     
     methods["bar.create"] = func(operation: String, filename: String, size: int) -> void:
@@ -100,17 +113,17 @@ func _init() -> void:
             'filename': filename,
             'size': size,
         }
-        print('bar.create', ' ', last_call_id, ' ', config)
+        #print('bar.create', ' ', last_call_id, ' ', config)
         create_element('bar', bar, config, bars_container)
         inc_active_bars_count(+1)
     
     methods["bar.update"] = func(value: float) -> void:
-        print('bar.update', ' ', last_call_id, ' ', value)
+        #print('bar.update', ' ', last_call_id, ' ', value)
         var instance: Bar = handlers[last_call_id]
         instance.update(value)
     
     methods["bar.stop"] = func() -> void:
-        print('bar.stop', ' ', last_call_id)
+        #print('bar.stop', ' ', last_call_id)
         handlers[last_call_id].abort()
         inc_active_bars_count(-1)
     
@@ -121,7 +134,7 @@ func _init() -> void:
         create_element('select', select, config)
     
     methods["select.update"] = func(choices: Array) -> void:
-        print('select.update', ' ', last_call_id, ' ', choices)
+        #print('select.update', ' ', last_call_id, ' ', choices)
         var instance: Select = handlers[last_call_id]
         instance.update(choices)
     
@@ -132,29 +145,40 @@ func _init() -> void:
         create_element('input', input, config)
 
     methods["abort"] = func() -> void:
-        print('abort', ' ', last_call_id)
+        #print('abort', ' ', last_call_id)
         handlers[last_call_id].abort()
 
     methods["exit"] = func() -> void:
-        print('exit')
+        #print('exit')
         get_tree().quit()
 
 func bind(cb: Callable, arg0: Variant) -> Callable:
     return func(arg1: Variant) -> Variant:
         return cb.call(arg0, arg1) 
 
-func create_element(el_name: String, scene: PackedScene, config: Dictionary, container: Control = self.container) -> void:
-    print(el_name, ' ', last_call_id, ' ', config)
+func create_element(_el_name: String, scene: PackedScene, config: Dictionary, container: Control = self.container) -> void:
+    #print(el_name, ' ', last_call_id, ' ', config)
     var instance: InputHandler = scene.instantiate()
     instance.init(config, bind(answer, last_call_id))
     handlers[last_call_id] = instance
     container.add_child(instance)
 
 func _process(_delta: float) -> void:
+
+    if !OS.is_process_running(pid):
+        console.append_text(
+            '[color=light_coral]Process exited with code {code}[/color]'
+            .format({ 'code': OS.get_process_exit_code(pid) })
+        )
+        show_console_toggle.button_pressed = true
+        console_container.visible = true
+        set_process(false)
+        return
+
     while stdio:
         var line := stdio.get_line()
-        #var err := stdio.get_error() #14
-        #print(err, line)
+        #var err := stdio.get_error()
+        #if err != 14: print(err, ' ', line)
 
         if !line: break
 
@@ -171,7 +195,7 @@ func _process(_delta: float) -> void:
 func _process_packet(packet_string: String) -> void:
     var response_string := await _process_string(packet_string)
     if response_string.is_empty(): return
-    print('response', ' ', response_string)
+    #print('response', ' ', response_string)
     stdio.store_string(response_string)
 
 #src: godot/blob/master/modules/jsonrpc/jsonrpc.cpp
@@ -221,7 +245,7 @@ func _process_action(action: Variant) -> Variant:
 
 func answer(id: Variant, result: Variant) -> void:
     var response_string := JSON.stringify(jrpc.make_response(result, id))
-    print('response', ' ', response_string)
+    #print('response', ' ', response_string)
     stdio.store_string(response_string)
     handlers[last_call_id].abort()
     handlers.erase(id)

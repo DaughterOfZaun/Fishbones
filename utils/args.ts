@@ -22,18 +22,41 @@ export class Args {
         this.torrentDiscovery,
         this.port,
     ]
+
+    all = [
+        ...this.customizable,
+        
+        this.repair,
+        this.download,
+        this.unpack,
+        this.build,
+        
+        this.setup,
+        this.gui,
+
+        this.jRPCUI,
+    ]
+
+    toArray(): string[] {
+        return this.all.filter(arg => arg.enabled != arg.enabledByDefault).flatMap(arg => arg.toArray())
+    }
 }
 
 class Option {
     public readonly name: string
     public readonly desc?: string
-    public enabled = false
+    public enabled: boolean
+    public enabledByDefault: boolean
     constructor(name: string, value: boolean, desc?: string){
+        this.enabledByDefault = value
         if(process.argv.includes(`--${name}`)) value = true
         if(process.argv.includes(`--no-${name}`)) value = false
+        this.enabled = value
         this.name = name
         this.desc = desc
-        this.enabled = value
+    }
+    toArray(){
+        return [ `--${this.name}` ]
     }
 }
 
@@ -45,6 +68,9 @@ class Parameter extends Option {
         const valid = isFinite(parsed) && parsed >= 0
         super(name, valid, desc)
         this.value = valid ? parsed : value
+    }
+    toArray(){
+        return [ `--${this.name}`, this.value.toString() ]
     }
 }
 

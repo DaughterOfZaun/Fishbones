@@ -4,16 +4,16 @@ import type { Context } from '@inquirer/type'
 import yoctocolor from 'yoctocolors-cjs'
 
 import { createBar as localBar, console_log as localLog } from './progress'
-import { default as localSelect, type Choice } from './dynamic-select'
+import { default as localSelect, type Choice as SelectChoice } from './dynamic-select'
 import { default as localSpinner } from './spinner'
 import { args } from '../utils/args'
 
 import path from 'node:path'
 import { downloads, fs_chmod, fs_copyFile, fs_exists, rwx_rx_rx } from '../utils/data-fs'
-import { Deferred, originalSpawn, registerShutdownHandler, startProcess } from '../utils/data-process'
+import { Deferred, originalSpawn, registerShutdownHandler } from '../utils/data-process'
 import type { AbortOptions } from '@libp2p/interface'
 
-export { type Choice, AbortPromptError, ExitPromptError }
+export { type SelectChoice as Choice, AbortPromptError, ExitPromptError }
 
 type JSONPrimitive = string | number | boolean | null | undefined
 type JSONValue = JSONPrimitive | JSONValue[] | { [key: string]: JSONValue }
@@ -43,7 +43,8 @@ export async function input(config: InputConfig, context?: Context): Promise<str
     return remoteInput('input', config, context)
 }
 
-type CheckboxConfig<Value> = Omit<Parameters<typeof localCheckbox<Value>>[0], 'choices'> & { choices: Choice<Value>[] }
+type CheckboxChoice<Value> = Extract<Parameters<typeof localCheckbox<Value>>[0]['choices'][number], { value: Value }>
+type CheckboxConfig<Value> = Omit<Parameters<typeof localCheckbox<Value>>[0], 'choices'> & { choices: CheckboxChoice<Value>[] }
 export async function checkbox<Value>(config: CheckboxConfig<Value>, context?: Context): Promise<Value[]> {
     if(jsonRpcDisabled) return localCheckbox<Value>(config, context)
 
@@ -54,7 +55,7 @@ export async function checkbox<Value>(config: CheckboxConfig<Value>, context?: C
     return is.map(i => values[i]!)
 }
 
-type SelectConfig<Value> = Omit<Parameters<typeof localSelect<Value>>[0], 'choices'> & { choices: Choice<Value>[] }
+type SelectConfig<Value> = Omit<Parameters<typeof localSelect<Value>>[0], 'choices'> & { choices: SelectChoice<Value>[] }
 export async function select<Value>(config: SelectConfig<Value>, context?: Context): Promise<Value> {
     if(jsonRpcDisabled) return localSelect<Value>(config, context)
     
@@ -122,12 +123,16 @@ interface SimpleBar {
     update(v: number): void
     stop(): void
 }
-export const createBar = (operation: string, filename: string, size?: number): SimpleBar => {
+export const createBar = (operation: string, filename: string, size: number = 0): SimpleBar => {
     if(jsonRpcDisabled) return localBar(operation, filename, size)
     const id = sendCall('bar.create', operation, filename, size)
+    let value = 0
     return {
         getTotal(){ return size ?? 0 },
-        update(v){ sendFollowupNotification('bar.update', id, v) },
+        update(v){
+            if(v == value) return; value = v
+            sendFollowupNotification('bar.update', id, v)
+        },
         stop(){ sendFollowupNotification('bar.stop', id) },
     }
 }
@@ -138,12 +143,12 @@ export const console_log: typeof localLog = (...args) => {
 }
 
 //@ts-expect-error Cannot find module or its corresponding type declarations.
-//import godotExeEmbded from '/home/user/.local/share/godot/export_templates/4.5.rc1/linux_release.x86_64' with { type: 'file' }
-import godotExeEmbded from '/home/user/.local/share/godot/export_templates/4.5.rc1/windows_release_x86_64.exe' with { type: 'file' }
+//import godotExeEmbded from '/home/user/.local/share/godot/export_templates/4.5.stable/linux_release.x86_64' with { type: 'file' }
+import godotExeEmbded from '/home/user/.local/share/godot/export_templates/4.5.stable/windows_release_x86_64.exe' with { type: 'file' }
 //@ts-expect-error Cannot find module or its corresponding type declarations.
 import godotPckEmbded from '../dist/RemoteUI.zip' with { type: 'file' }
 
-const godotExe = path.join(downloads, 'Godot_v4.5-rc1_win64.exe')
+const godotExe = path.join(downloads, 'Godot_v4.5-stable_win64.exe')
 const godotPck = path.join(downloads, 'RemoteUI.zip')
 export async function repairUIRenderer(opts: Required<AbortOptions>){
     return Promise.all([
@@ -170,14 +175,20 @@ export async function repairAndStart(opts: Required<AbortOptions>): Promise<bool
         if(args.repair.enabled){
             await repairUIRenderer(opts)
         }
-        //TODO: Pass --exe ${current process path} and its args.
-        const proc = originalSpawn(godotExe, [ '--main-pack', godotPck ], {
-            //log: false, logPrefix: 'GODOT',
+        const proc = originalSpawn(godotExe, [
+            '--main-pack', godotPck,
+            //'--exe', process.execPath,
+            //'--exe-args', JSON.stringify(args.toArray()),
+            '--log-file', 'godot.log.txt',
+            '--', process.execPath, ...args.toArray(),
+        ], {
+            //log: true, logPrefix: 'GODOT',
+            stdio: 'inherit',
             detached: true,
             cwd: downloads,
         })
-        await startProcess('GODOT', proc, 'stdout', (chunk) => chunk.includes('Godot Engine'), opts)
-        return true
+        //await startProcess('GODOT', proc, 'stderr', (chunk) => chunk.includes('Godot Engine started'), opts)
+        return !!proc
     }
     return false
 }

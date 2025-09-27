@@ -12,7 +12,13 @@ const OUTDIR_FILE = path.join(OUTDIR, OUTFILE)
 //const CONSOLE_SUBSYSTEM = 0x3
 //const GUI_SUBSYSTEM = 0x2
 
-const platform: 'linux' | 'windows' = (Math.random() != 1) ? 'linux' : 'windows'
+// const supportedPlatforms = [ 'linux' , 'windows' ]
+// type SupportedPlatforms = 'linux' | 'windows'
+const platform: string = process.argv[2] ?? 'linux'
+//if(!supportedPlatforms.includes(platform))
+if(platform !== 'linux' && platform !== 'windows')
+    throw new Error()
+
 const target = `bun-${platform}-x64` as const
 
 if(platform === 'windows'){
@@ -20,7 +26,8 @@ if(platform === 'windows'){
     await $`mv node_modules_win_npm node_modules`
 }
 try {
-    await patch()
+    //await patch()
+    //await build_godot()
     //await build_libUTP()
 
     //await $`bun build --compile --sourcemap --target="${TARGET}" --outfile="${OUTDIR_FILE}" 'index.ts'`
@@ -98,6 +105,13 @@ try {
         await $`mv node_modules_linux_npm node_modules`
     }
 }
+
+async function build_godot(){
+    await $`/home/user/Programs/Godot/Godot_v4.5-stable_linux.x86_64 \
+    --export-pack 'Windows Desktop' ../dist/RemoteUI.zip \
+    --path ./remote-ui \
+    --headless`
+ }
 
 async function build_libUTP(){
     $.cwd('./node_modules/utp-native/deps/libutp')

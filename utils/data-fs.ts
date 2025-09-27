@@ -35,7 +35,7 @@ export async function fs_exists_and_size_eq(path: string, size: number, opts: Re
         const stat = await fs.stat(path)
         result = stat.size == size
         if(!result && log){
-            console_log('File size mismatch:', stat.size, 'vs', size, path)
+            console_log(`File size mismatch (${stat.size} vs ${size}):\n${path}`)
         }
     } catch (err) {
         if(log)
@@ -157,5 +157,5 @@ const FS_ERR_CODES: Record<string, string> = {
 export function console_log_fs_err(operation: string, path: string, unk_err: unknown){
     const err = unk_err as ErrnoException
     const desc = (err.code && FS_ERR_CODES[err.code]) ?? 'Unknown'
-    console_log(operation, `failed. ${desc}:`, path)
+    console_log(`${operation} failed. ${desc}:\n${path}`)
 }
