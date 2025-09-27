@@ -1,19 +1,14 @@
 import { type PkgInfo } from './data-packages'
 import { logger } from './data-shared'
-import { createBar } from '../ui/remote'
+import { createBar, fs_copyFile } from '../ui/remote'
 import { killIfActive, spawn, successfulTermination, type ChildProcess } from './data-process'
-import { rwx_rx_rx, downloads, fs_chmod, fs_copyFile, fs_ensureDir, fs_exists, fs_writeFile, fs_removeFile } from './data-fs'
+import { rwx_rx_rx, downloads, fs_chmod, fs_ensureDir, fs_exists, fs_writeFile, fs_removeFile } from './data-fs'
 import type { AbortOptions } from '@libp2p/interface'
 import { args } from './args'
 import path from 'node:path'
 
-//@ts-expect-error Cannot find module or its corresponding type declarations.
-//import s7zExeEmbedded from '../node_modules/7z-bin/bin/linux/x64/7zzs' with { type: 'file' }
-import s7zExeEmbedded from '../node_modules/7z-bin/bin/win/x64/7z.exe' with { type: 'file' }
+import { s7zExeEmbedded, s7zDllEmbedded } from './embedded'
 const s7zExe = path.join(downloads, '7z.exe')
-
-//@ts-expect-error Cannot find module or its corresponding type declarations.
-import s7zDllEmbedded from '../node_modules/7z-bin/bin/win/x64/7z.dll' with { type: 'file' }
 const s7zDll = path.join(downloads, '7z.dll')
 
 export async function repair7z(opts: Required<AbortOptions>){

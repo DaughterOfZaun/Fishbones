@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { console_log, createBar } from '../ui/remote'
 import { downloads, fs_readFile, fs_writeFile } from './data-fs'
-import trackersTxtEmbedded from '../Fishbones_Data/trackers.txt' with { type: 'file' }
+import { trackersTxtEmbedded } from './embedded'
 import type { AbortOptions } from '@libp2p/interface'
 
 const trackersTxtName = 'trackers.txt'

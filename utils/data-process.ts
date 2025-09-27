@@ -152,13 +152,13 @@ export const shutdownOptions = { signal: shutdownController.signal }
 export const safeOptions = { signal: (new AbortController()).signal }
 
 // Kind of global event bus.
-type ShutdownHandler = (force: boolean) => void | Promise<void>
+type ShutdownHandler = (force: boolean, source: ShutdownSource) => void | Promise<void>
 const shutdownHandlers: ShutdownHandler[] = []
 export function registerShutdownHandler(handler: ShutdownHandler){
     shutdownHandlers.push(handler)
 }
-export const callShutdownHandlers = (force: boolean) => {
-    Promise.allSettled(shutdownHandlers.map(async (handler) => handler(force)?.catch(logError))).catch(logError)
+export const callShutdownHandlers = (force: boolean, source: ShutdownSource) => {
+    Promise.allSettled(shutdownHandlers.map(async (handler) => handler(force, source)?.catch(logError))).catch(logError)
     function logError(err: unknown){
         logger.log('An error occurred while calling the shutdown handler:', Bun.inspect(err))
     }
@@ -213,7 +213,8 @@ export function setInsideUI(to: boolean){
     isInsideUI = to
 }
 
-export function shutdown(source: 'signal' | 'exception' | 'call' | 'timeout' | 'event'){
+type ShutdownSource = 'signal' | 'exception' | 'call' | 'timeout' | 'event'
+export function shutdown(source: ShutdownSource){
 
     const setStage = (to: ShutdownStage) => {
         logger.log(`Shutting down (stage ${to}) due to ${source}`)
@@ -222,7 +223,7 @@ export function shutdown(source: 'signal' | 'exception' | 'call' | 'timeout' | '
 
     if(source === 'event'){
         setStage(ShutdownStage.KILL)
-        callShutdownHandlers(true)
+        callShutdownHandlers(true, source)
     } else if(shutdownStage === ShutdownStage.NONE){
         if(isInsideUI){
             setStage(ShutdownStage.ABORT)
@@ -231,16 +232,16 @@ export function shutdown(source: 'signal' | 'exception' | 'call' | 'timeout' | '
         } else {
             setStage(ShutdownStage.TERMINATE)
             setTimeout(() => shutdown('timeout'), TERMINATE_STAGE_TIMEOUT).unref()
-            callShutdownHandlers(false)
+            callShutdownHandlers(false, source)
         }
     } else if(source === 'timeout' || source === 'signal'){
         if(shutdownStage === ShutdownStage.ABORT){
             setStage(ShutdownStage.TERMINATE)
             setTimeout(() => shutdown('timeout'), TERMINATE_STAGE_TIMEOUT).unref()
-            callShutdownHandlers(false)
+            callShutdownHandlers(false, source)
         } else if(shutdownStage === ShutdownStage.TERMINATE){
             setStage(ShutdownStage.KILL)
-            callShutdownHandlers(true)
+            callShutdownHandlers(true, source)
             process.exit()
         }
     }

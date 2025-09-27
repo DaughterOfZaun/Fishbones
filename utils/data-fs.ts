@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { promises as fs } from "node:fs"
+import { promises as fs, mkdirSync as fs_mkdirSync } from "node:fs"
 import type { AbortOptions } from '@libp2p/interface'
 import { console_log } from '../ui/remote'
 
@@ -7,6 +7,7 @@ import { console_log } from '../ui/remote'
 //export const cwd = path.dirname(process.execPath)
 export const cwd = path.dirname(process.env.IS_COMPILED ? process.execPath : Bun.main)
 export const downloads = path.join(cwd, 'Fishbones_Data')
+fs_ensureDirSync(downloads) //TODO: Fix. Just to be extra sure.
 
 export const rwx_rx_rx =
     fs.constants.S_IRUSR | fs.constants.S_IWUSR | fs.constants.S_IXUSR |
@@ -54,6 +55,16 @@ export async function fs_ensureDir(path: string, opts: Required<AbortOptions>){
             throw err
     }
     opts.signal.throwIfAborted()
+}
+
+export function fs_ensureDirSync(path: string){
+    try {
+        fs_mkdirSync(path)
+    } catch(unk_err) {
+        const err = unk_err as ErrnoException
+        if(err.code != 'EEXIST')
+            throw err
+    }
 }
 
 //TODO: { rethrow?: true } ?

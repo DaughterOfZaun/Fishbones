@@ -29,11 +29,9 @@ var handlers: Dictionary[Variant, InputHandler] = {}
 @export_file var embedded_file_7: String
 @export_file var embedded_file_8: String
 @export_file var embedded_file_9: String
-@export_file var embedded_file_a: String
-@export_file var embedded_file_b: String
 @export_group('')
 
-var embedded_files := [
+@onready var embedded_files: Array[String] = [
     embedded_file_0,
     embedded_file_1,
     embedded_file_2,
@@ -44,8 +42,6 @@ var embedded_files := [
     embedded_file_7,
     embedded_file_8,
     embedded_file_9,
-    embedded_file_a,
-    embedded_file_b,
 ]
 
 @export var container: Control
@@ -67,6 +63,10 @@ func get_named_arg(args: PackedStringArray, name: String, default: String) -> St
     if arg_index >= 0 && arg_index < args.size() \
     else default
 
+var cwd := OS.get_executable_path().get_base_dir()
+var downloads := cwd.path_join("Fishbones_Data")
+var embedded_files_by_name: Dictionary[String, String] = {}
+
 func _ready() -> void:
 
     #printerr('Godot Engine started')
@@ -77,7 +77,17 @@ func _ready() -> void:
     #var exe_args_str := get_named_arg(args, "--exe-args", '[]')
     #var exe_args := JSON.parse_string(exe_args_str) as Array
     #if exe_args == null: exe_args = []
-    var exe := exe_args[0]; exe_args.remove_at(0); if !exe_args: exe_args = '../Fishbones.exe'
+    #var exe := exe_args[0]; exe_args.remove_at(0); if !exe: exe = '../Fishbones.exe'
+    
+    DirAccess.make_dir_absolute(downloads)
+
+    for file in embedded_files:
+        embedded_files_by_name[file.get_file()] = file
+    
+    var exe := cwd.path_join(embedded_file_0.get_file())
+    if !FileAccess.file_exists(exe):
+        DirAccess.copy_absolute(embedded_file_0, exe)
+
     exe_args.append_array([ NO_RELAUNCH_ARG, JSONRPC_GUI_ARG ])
     
     var dict := OS.execute_with_pipe(exe, exe_args, false)
@@ -102,11 +112,22 @@ func _ready() -> void:
 #         get_tree().quit()
     
 func _init() -> void:
-    
+
     methods["console.log"] = func(...params: Array[Variant]) -> void:
         #print('console.log', ' ', params)
         console.append_text(" ".join(params).replace('\n', '[br]') + '\n')
-    
+
+    methods["copy"] = func(config: Dictionary) -> void:
+        var from: String = config['from']
+        var to: String = config['to']
+
+        var id: Variant = last_call_id
+        from = embedded_files_by_name[from.get_file()]
+        to = downloads.path_join(to.get_file())
+        var err := DirAccess.copy_absolute(from, to)
+        if err != OK: reject(id, err, error_string(err))
+        else: resolve(id, err)
+
     methods["bar.create"] = func(operation: String, filename: String, size: int) -> void:
         var config := {
             'operation': operation,
@@ -146,7 +167,7 @@ func _init() -> void:
 
     methods["abort"] = func() -> void:
         #print('abort', ' ', last_call_id)
-        handlers[last_call_id].abort()
+        abort_handler(last_call_id)
 
     methods["exit"] = func() -> void:
         #print('exit')
@@ -159,11 +180,28 @@ func bind(cb: Callable, arg0: Variant) -> Callable:
 func create_element(_el_name: String, scene: PackedScene, config: Dictionary, container: Control = self.container) -> void:
     #print(el_name, ' ', last_call_id, ' ', config)
     var instance: InputHandler = scene.instantiate()
-    instance.init(config, bind(answer, last_call_id))
+    instance.init(config, bind(resolve, last_call_id))
     handlers[last_call_id] = instance
     container.add_child(instance)
 
 func _process(_delta: float) -> void:
+
+    while stdio:
+        var line := stdio.get_line()
+        var err := stdio.get_error()
+        if err != 14: print(err, ' ', line)
+
+        if !line: break
+
+        line = line.strip_edges()
+        if line.begins_with('{') && line.ends_with('}'):
+            _process_packet(line)
+
+    #TODO:
+    while stderr:
+       var line := stderr.get_as_text()
+       if !line: break
+       print('ERROR: ', line)
 
     if !OS.is_process_running(pid):
         console.append_text(
@@ -175,28 +213,12 @@ func _process(_delta: float) -> void:
         set_process(false)
         return
 
-    while stdio:
-        var line := stdio.get_line()
-        #var err := stdio.get_error()
-        #if err != 14: print(err, ' ', line)
-
-        if !line: break
-
-        line = line.strip_edges()
-        if line.begins_with('{') && line.ends_with('}'):
-            _process_packet(line)
-
-    #TODO:
-    #while stderr:
-    #    var line := stderr.get_as_text()
-    #    if !line: break
-    #    print('ERROR: ', line)
-
 func _process_packet(packet_string: String) -> void:
     var response_string := await _process_string(packet_string)
     if response_string.is_empty(): return
     #print('response', ' ', response_string)
     stdio.store_string(response_string)
+    stdio.flush()
 
 #src: godot/blob/master/modules/jsonrpc/jsonrpc.cpp
 func _process_string(input: String) -> String:
@@ -243,9 +265,23 @@ func _process_action(action: Variant) -> Variant:
     #return jrpc.make_response(call_ret, id)
     return null
 
-func answer(id: Variant, result: Variant) -> void:
+func resolve(id: Variant, result: Variant = null) -> void:
     var response_string := JSON.stringify(jrpc.make_response(result, id))
-    #print('response', ' ', response_string)
+    print('resolve', ' ', response_string)
     stdio.store_string(response_string)
-    handlers[last_call_id].abort()
-    handlers.erase(id)
+    abort_handler(id)
+    stdio.flush()
+
+func reject(id: Variant, code: int, message: String) -> void:
+    var response_string := JSON.stringify(jrpc.make_response_error(code, message, id))
+    print('reject', ' ', response_string)
+    stdio.store_string(response_string)
+    abort_handler(id)
+    stdio.flush()
+
+var null_InputHandler := InputHandler.new() #HACK:
+func abort_handler(id: Variant) -> void:
+    var handler: InputHandler = handlers.get(id, null_InputHandler)
+    if handler != null_InputHandler:
+        handlers.erase(id)
+        handler.abort()

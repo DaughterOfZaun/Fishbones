@@ -15,8 +15,9 @@ config/description="Yet another LeagueSandbox launcher with a twist"
 config/version="0.0.3.0"
 run/main_scene="uid://c88cdpgvxg8v2"
 run/print_header=false
+config/use_custom_user_dir=true
+config/custom_user_dir_name="Fishbones_Data"
 config/features=PackedStringArray("4.5", "GL Compatibility")
-run/flush_stdout_on_print=true
 run/low_processor_mode=true
 config/icon="uid://otwgmcv7cmt7"
 config/windows_native_icon="res://icon.ico"
@@ -35,6 +36,7 @@ gdscript/warnings/return_value_discarded=1
 [editor]
 
 run/main_run_args="-- ../dist/Fishbones.exe"
+export/convert_text_resources_to_binary=false
 
 [rendering]
 

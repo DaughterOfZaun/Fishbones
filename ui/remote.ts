@@ -6,6 +6,7 @@ import yoctocolor from 'yoctocolors-cjs'
 import { createBar as localBar, console_log as localLog } from './progress'
 import { default as localSelect, type Choice as SelectChoice } from './dynamic-select'
 import { default as localSpinner } from './spinner'
+import { logger } from '../utils/data-shared'
 import { args } from '../utils/args'
 
 import path from 'node:path'
@@ -72,8 +73,13 @@ export async function spinner(config: SpinnerConfig, context?: Context): Promise
     return remoteInput('spinner', config, context)
 }
 
+export { extractFile as fs_copyFile }
+const extractFile: typeof fs_copyFile = async (from, to, opts) => {
+    await remoteInput('copy', { from, to }, opts)
+}
+
 type CancellablePromise<Value> = Promise<Value> //& { cancel: () => void }
-type RemoteInputFuncName = 'spinner' | 'select' | 'checkbox' | 'input'
+type RemoteInputFuncName = 'spinner' | 'select' | 'checkbox' | 'input' | 'copy'
 async function remoteInput<Value extends JSONValue, Config>(name: RemoteInputFuncName, config: Config, context?: Context): CancellablePromise<Value> {
     
     if(context?.signal?.aborted)
@@ -81,9 +87,7 @@ async function remoteInput<Value extends JSONValue, Config>(name: RemoteInputFun
 
     const deferred = new Deferred<Value>()
     
-    const id = sendCall(name, {
-        ...config, clearPromptOnDone: context?.clearPromptOnDone,
-    })
+    const id = sendCall(name, config as JSONValue) //TODO: Fix types.
 
     listeners.set(id, (err, result) => {
         //if(context?.signal?.aborted)
@@ -140,13 +144,10 @@ export const createBar = (operation: string, filename: string, size: number = 0)
 export const console_log: typeof localLog = (...args) => {
     if(jsonRpcDisabled) return localLog(...args)
     sendNotification('console.log', ...args)
+    logger.log(...args)
 }
 
-//@ts-expect-error Cannot find module or its corresponding type declarations.
-//import godotExeEmbedded from '/home/user/.local/share/godot/export_templates/4.5.stable/linux_release.x86_64' with { type: 'file' }
-import godotExeEmbedded from '/home/user/.local/share/godot/export_templates/4.5.stable/windows_release_x86_64.exe' with { type: 'file' }
-//@ts-expect-error Cannot find module or its corresponding type declarations.
-import godotPckEmbedded from '../dist/RemoteUI.pck' with { type: 'file' }
+import { godotExeEmbedded, godotPckEmbedded } from '../utils/embedded'
 
 const godotExe = path.join(downloads, 'Godot_v4.5-stable_win64.exe')
 const godotPck = path.join(downloads, 'Godot_v4.5-stable_win64.pck')
@@ -201,8 +202,9 @@ export async function repairAndStart(opts: Required<AbortOptions>): Promise<bool
 }
 
 if(!jsonRpcDisabled)
-registerShutdownHandler(() => {
-    sendNotification('exit')
+registerShutdownHandler((force, source) => {
+    if(source === 'call')
+        sendNotification('exit')
 })
 
 export function stop(){
@@ -220,6 +222,7 @@ function onData(data: Buffer){
     for(let line of lines){
         line = line.trim()
         if(line.startsWith('{') && line.endsWith('}')){
+            logger.log(line)
             const obj = JSON.parse(line) as JRPCResponse
             if(typeof obj.id === 'number'){
                 const listener = listeners.get(obj.id)

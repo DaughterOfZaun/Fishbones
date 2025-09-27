@@ -2,6 +2,7 @@ export const TARGET = 'bun-windows-x64'
 export const OUTDIR = 'dist'
 export const NAME = 'Fishbones'
 export const OUTFILE = `${NAME}.exe`
+export const OUTFILE_CLI = `${NAME}-CLI.exe`
 export const HIDE_CONSOLE = true
 export const ICON = 'icon.ico'
 export const VERSION = '0.0.3.0'

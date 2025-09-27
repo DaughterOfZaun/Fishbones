@@ -2,10 +2,8 @@
 import path from 'node:path'
 import { downloads, fs_copyFile, fs_ensureDir } from "./data-fs"
 
-////@ts-expect-error Cannot find module or its corresponding type declarations.
-import minttyExeEmbedded from '../thirdparty/mintty-msys2/mintty.exe' with { type: 'file' }
-////@ts-expect-error Cannot find module or its corresponding type declarations.
-import msysDllEmbedded from '../thirdparty/mintty-msys2/msys-2.0.dll' with { type: 'file' }
+import { minttyExeEmbedded, msysDllEmbedded } from './embedded'
+
 async function repairTerminal(){
     await fs_ensureDir(downloads)
     const minttyExe = path.join(downloads, 'mintty.exe')

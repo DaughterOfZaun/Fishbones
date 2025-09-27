@@ -3,8 +3,8 @@
 import { $ } from 'bun'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
-import { COPYRIGHT, DESCRIPTION, HIDE_CONSOLE, ICON, NAME, OUTDIR, OUTFILE, PUBLISHER, TARGET, TITLE, VERSION } from './utils/constants-build'
-const OUTDIR_FILE = path.join(OUTDIR, OUTFILE)
+import { COPYRIGHT, DESCRIPTION, HIDE_CONSOLE, ICON, NAME, OUTDIR, OUTFILE, OUTFILE_CLI, PUBLISHER, TARGET, TITLE, VERSION } from './utils/constants-build'
+const OUTDIR_FILE_CLI = path.join(OUTDIR, OUTFILE_CLI)
 
 //import { NtExecutable } from 'pe-library'
 //const PE_HEADER_OFFSET_LOCATION = 0x3c
@@ -30,7 +30,7 @@ if(platform === 'windows'){
 }
 try {
     //await patch()
-    await build_godot()
+    //await build_godot_pck()
     //await build_libUTP()
 
     //await $`bun build --compile --sourcemap --target="${TARGET}" --outfile="${OUTDIR_FILE}" 'index.ts'`
@@ -40,7 +40,7 @@ try {
         outdir: OUTDIR,
         compile: {
             target: target,
-            outfile: OUTFILE,
+            outfile: OUTFILE_CLI,
             windows: {
                 hideConsole: HIDE_CONSOLE,
                 icon: ICON,
@@ -60,21 +60,22 @@ try {
     //await $`bun build --compile --sourcemap --target="${TARGET}" --outfile="${OUTDIR_FILE}" './dist/index-failsafe.js' './dist/index.js'`
 
     //console.log(`bun build --compile --target="${TARGET}" --outfile="${OUTDIR_FILE}" --windows-icon="${ICON}" --windows-title="${TITLE}" --windows-publisher="${PUBLISHER}" --windows-version="${VERSION}" --windows-description="${DESCRIPTION}" --windows-copyright="${COPYRIGHT}" 'index.ts'`)
-    //await $`flatpak run --command='bottles-cli' com.usebottles.bottles run -b 'Default Gaming' -e ${path.join(__dirname, 'bun.exe')} "build --compile --target='${TARGET}' --outfile='${path.join(__dirname, OUTDIR, OUTFILE)}' --windows-icon='${ICON}' --windows-title='${TITLE}' --windows-publisher='${PUBLISHER}' --windows-version='${VERSION}' --windows-description='${DESCRIPTION}' --windows-copyright='${COPYRIGHT}' --root='${__dirname}' '${path.join(__dirname, 'index.ts')}'"`
+    //await $`flatpak run --command='bottles-cli' com.usebottles.bottles run -b 'Default Gaming' -e ${path.join(__dirname, 'bun.exe')} "build --compile --target='${TARGET}' --outfile='${path.join(__dirname, OUTDIR, OUTFILE_CLI)}' --windows-icon='${ICON}' --windows-title='${TITLE}' --windows-publisher='${PUBLISHER}' --windows-version='${VERSION}' --windows-description='${DESCRIPTION}' --windows-copyright='${COPYRIGHT}' --root='${__dirname}' '${path.join(__dirname, 'index.ts')}'"`
     if(process.argv.includes('release')){
         const wine = `flatpak run --command='bottles-cli' com.usebottles.bottles run -b 'Default Gaming' -e`
         const args = [
+            OUTDIR_FILE_CLI,
             `--set-icon "${ICON}"`,
             `--set-file-version "${VERSION}"`,
             `--set-product-version "${VERSION}"`,
             `--set-version-string "FileDescription" "${DESCRIPTION}"`,
             `--set-version-string "InternalName" "${NAME}"`,
-            `--set-version-string "OriginalFilename" "${OUTFILE}"`,
+            `--set-version-string "OriginalFilename" "${OUTFILE_CLI}"`,
             `--set-version-string "ProductName" "${NAME}"`,
             `--set-version-string "CompanyName" "${PUBLISHER}"`,
             `--set-version-string "LegalCopyright" "${COPYRIGHT}"`,
         ]
-        await $`${{ raw: wine }} './rcedit-x64.exe' '${OUTDIR_FILE} ${{ raw: args.join(' ') }}'`
+        await $`${{ raw: wine }} './rcedit-x64.exe' '${{ raw: args.join(' ') }}'`
     }
     
     /*
@@ -101,7 +102,12 @@ try {
     }
     */
 
-    await $`chmod +x ./dist/Fishbones.exe`
+    await $`chmod +x ${OUTDIR_FILE_CLI}`
+    await $`cp ${OUTDIR_FILE_CLI} remote-ui/embedded/${OUTFILE_CLI}`
+
+    if(process.argv.includes('godot'))
+        await build_godot_exe()
+
 } finally {
     if(platform === 'windows'){
         await $`mv node_modules node_modules_win_npm`
@@ -109,7 +115,14 @@ try {
     }
 }
 
-async function build_godot(){
+async function build_godot_exe(){
+    await $`/home/user/Programs/Godot/Godot_v4.5-stable_linux.x86_64 \
+    --export-debug 'Windows Desktop' ${path.join('..', OUTDIR, OUTFILE)} \
+    --path ./remote-ui \
+    --headless`
+ }
+
+async function build_godot_pck(){
     await $`/home/user/Programs/Godot/Godot_v4.5-stable_linux.x86_64 \
     --export-pack 'Windows Desktop' ../dist/RemoteUI.pck \
     --path ./remote-ui \

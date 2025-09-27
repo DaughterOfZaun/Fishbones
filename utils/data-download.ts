@@ -2,9 +2,9 @@ import path from 'node:path'
 import { aria2, open, createWebSocket, type Conn } from 'maria2/dist/index.js'
 import { randomBytes } from '@libp2p/crypto'
 import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
-import { createBar } from '../ui/remote'
+import { createBar, fs_copyFile } from '../ui/remote'
 import { killSubprocess, spawn, startProcess, type ChildProcess } from './data-process'
-import { rwx_rx_rx, downloads, fs_chmod, fs_copyFile, fs_exists, fs_exists_and_size_eq, fs_readFile } from './data-fs'
+import { rwx_rx_rx, downloads, fs_chmod, fs_exists, fs_exists_and_size_eq, fs_readFile } from './data-fs'
 import type { AbortOptions } from '@libp2p/interface'
 import { getAnnounceAddrs } from './data-trackers'
 import type { PkgInfo } from './data-packages'
@@ -14,13 +14,7 @@ import defer from 'p-defer'
 
 const LOG_PREFIX = 'ARIA2C'
 
-//@ts-expect-error Cannot find module or its corresponding type declarations.
-//import ariaExeEmbedded from '../thirdparty/Motrix/extra/linux/x64/engine/aria2c' with { type: 'file' }
-import ariaExeEmbedded from '../thirdparty/Motrix/extra/win32/x64/engine/aria2c.exe' with { type: 'file' }
-
-//@ts-expect-error Cannot find module or its corresponding type declarations.
-//import ariaConfEmbedded from '../thirdparty/Motrix/extra/linux/x64/engine/aria2.conf' with { type: 'file' }
-import ariaConfEmbedded from '../thirdparty/Motrix/extra/win32/x64/engine/aria2.conf' with { type: 'file' }
+import { ariaExeEmbedded, ariaConfEmbedded } from './embedded'
 
 const ariaExe = path.join(downloads, 'aria2c.exe')
 const ariaConf = path.join(downloads, 'aria2.conf')
