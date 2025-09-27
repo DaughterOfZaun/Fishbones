@@ -15,12 +15,12 @@ import defer from 'p-defer'
 const LOG_PREFIX = 'ARIA2C'
 
 //@ts-expect-error Cannot find module or its corresponding type declarations.
-//import ariaExeEmbded from '../thirdparty/Motrix/extra/linux/x64/engine/aria2c' with { type: 'file' }
-import ariaExeEmbded from '../thirdparty/Motrix/extra/win32/x64/engine/aria2c.exe' with { type: 'file' }
+//import ariaExeEmbedded from '../thirdparty/Motrix/extra/linux/x64/engine/aria2c' with { type: 'file' }
+import ariaExeEmbedded from '../thirdparty/Motrix/extra/win32/x64/engine/aria2c.exe' with { type: 'file' }
 
 //@ts-expect-error Cannot find module or its corresponding type declarations.
-//import ariaConfEmbded from '../thirdparty/Motrix/extra/linux/x64/engine/aria2.conf' with { type: 'file' }
-import ariaConfEmbded from '../thirdparty/Motrix/extra/win32/x64/engine/aria2.conf' with { type: 'file' }
+//import ariaConfEmbedded from '../thirdparty/Motrix/extra/linux/x64/engine/aria2.conf' with { type: 'file' }
+import ariaConfEmbedded from '../thirdparty/Motrix/extra/win32/x64/engine/aria2.conf' with { type: 'file' }
 
 const ariaExe = path.join(downloads, 'aria2c.exe')
 const ariaConf = path.join(downloads, 'aria2.conf')
@@ -29,12 +29,12 @@ export async function repairAria2(opts: Required<AbortOptions>){
     return Promise.all([
         (async () => {
             if(await fs_exists(ariaExe, opts)) return
-            await fs_copyFile(ariaExeEmbded as string, ariaExe, opts)
+            await fs_copyFile(ariaExeEmbedded as string, ariaExe, opts)
             await fs_chmod(ariaExe, rwx_rx_rx, opts)
         })(),
         (async () => {
             if(await fs_exists(ariaConf, opts)) return
-            await fs_copyFile(ariaConfEmbded as string, ariaConf, opts)
+            await fs_copyFile(ariaConfEmbedded as string, ariaConf, opts)
         })(),
     ])
 }
@@ -64,7 +64,7 @@ async function startAria2(opts: Required<AbortOptions>){
             `--rpc-allow-origin-all=${false}`,
             `--rpc-secret=${aria2secret}`,
             
-            // All *.torrent files are embded now.
+            // All *.torrent files are embedded now.
             //`--bt-save-metadata=${true}`,
             //`--bt-load-saved-metadata=${true}`,
             //`--rpc-save-upload-metadata=${true}`,

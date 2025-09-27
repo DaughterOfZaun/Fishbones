@@ -1,0 +1,11 @@
+export const TARGET = 'bun-windows-x64'
+export const OUTDIR = 'dist'
+export const NAME = 'Fishbones'
+export const OUTFILE = `${NAME}.exe`
+export const HIDE_CONSOLE = true
+export const ICON = 'icon.ico'
+export const VERSION = '0.0.3.0'
+export const TITLE = `${NAME} v0.03`
+export const PUBLISHER = "Jinx"
+export const DESCRIPTION = "Yet another LeagueSandbox launcher with a twist"
+export const COPYRIGHT = "AGPLv3"

@@ -1,6 +1,6 @@
 import { createNode } from './index-node'
 import { main } from './index-tui'
-import { TITLE } from './utils/constants'
+import { TITLE } from './utils/constants-build'
 import { logger } from './utils/data-shared'
 import { checkbox, console_log, ExitPromptError, input } from './ui/remote'
 import { registerShutdownHandler, setInsideUI, shutdown, shutdownOptions, unwrapAbortError } from './utils/data-process'

@@ -6,7 +6,7 @@ import type { GamePlayer, PPP } from './game-player'
 import { LocalServer, RemoteServer } from './server'
 import type { Peer as PBPeer } from './message/peer'
 import type { LibP2PNode } from './index-node'
-import { TITLE } from './utils/constants'
+import { TITLE } from './utils/constants-build'
 import type { AbortOptions } from '@libp2p/interface'
 
 export async function main(node: LibP2PNode, opts: Required<AbortOptions>){

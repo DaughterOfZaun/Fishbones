@@ -24,7 +24,7 @@ export abstract class PkgInfo {
 
     abstract dir: string
     abstract zip: string
-    abstract zipTorrentEmbded: string
+    abstract zipTorrentEmbedded: string
     abstract zipTorrent: string
     abstract zipMagnet: string
     
@@ -69,7 +69,7 @@ export const gcPkg = new class extends PkgInfoExe {
 
     dir = path.join(downloads, this.dirName)
     zip = path.join(downloads, this.zipName)
-    zipTorrentEmbded = gcZipTorrent as string
+    zipTorrentEmbedded = gcZipTorrent as string
     zipTorrent = `${this.zip}.torrent`
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
     zipMega = 'https://mega.nz/file/Hr5XEAqT#veo2lfRWK7RrLUdFBBqRdUvxwr_gd8UyUL0f6b4pHJ0'
@@ -122,13 +122,13 @@ const sdkZipInfo = {
     'dotnet-sdk-9.0.300-win-x64.zip': {
         ihv1: '249a75bd3c8abba27b59fe42ab0771f77d6caee7',
         ihv2: '1220418d03e796bd159ed3ff24606a7b4948e520fbc4e93a172fc8a1798c51bc5647',
-        embdedTorrent: sdkForWinZipTorrent as string,
+        embeddedTorrent: sdkForWinZipTorrent as string,
         size: 298580138,
     },
     'dotnet-sdk-9.0.300-linux-x64.tar.gz': {
         ihv1: 'f859eefcf797348b967220427a721655a9af0bc8',
         ihv2: '1220db828e2a00844b2ad1a457b03e521d24a0b03d4746b0e849bcf0ea1d2b34eb77',
-        embdedTorrent: sdkForLinuxZipTorrent as string,
+        embeddedTorrent: sdkForLinuxZipTorrent as string,
         size: 217847129,
     },
 }[sdkZipName]
@@ -147,7 +147,7 @@ export const sdkPkg = new class extends PkgInfoExe {
     dir = path.join(downloads, this.dirName)
     zip = path.join(downloads, this.zipName)
     zipTorrent = `${this.zip}.torrent`
-    zipTorrentEmbded = sdkZipInfo!.embdedTorrent
+    zipTorrentEmbedded = sdkZipInfo!.embeddedTorrent
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
 
     exeDir = this.dir
@@ -186,7 +186,7 @@ export const gsPkg = new class extends PkgInfoCSProj {
     
     dir = path.join(downloads, this.dirName)
     zip = path.join(downloads, this.zipName)
-    zipTorrentEmbded = gsPkgZipTorrent as string
+    zipTorrentEmbedded = gsPkgZipTorrent as string
     zipTorrent = `${this.zip}.torrent`
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
     zipMega = 'https://mega.nz/file/D35i0YaD#P08udvnbUByZHGBvCTbC1XDPkKdUGgp4xtravAlECbU'
@@ -239,9 +239,9 @@ for(const a of packages)
 export async function repairTorrents(opts: Required<AbortOptions>){
     return Promise.all(packages.map(async pkg => {
         if(!await fs_exists(pkg.zipTorrent, opts)) try {
-            await fs_copyFile(pkg.zipTorrentEmbded, pkg.zipTorrent, opts)
+            await fs_copyFile(pkg.zipTorrentEmbedded, pkg.zipTorrent, opts)
         } catch(err) {
-            console_log_fs_err('Extracting embded torrent file', `${pkg.zipTorrentEmbded} -> ${pkg.zipTorrent}`, err)
+            console_log_fs_err('Extracting embedded torrent file', `${pkg.zipTorrentEmbedded} -> ${pkg.zipTorrent}`, err)
         }
         await fs_moveFile(path.join(downloads, `${pkg.zipInfoHashV1}.torrent`), pkg.zipTorrent, opts, false)
     }))

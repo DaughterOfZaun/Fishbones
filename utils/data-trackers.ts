@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { console_log, createBar } from '../ui/remote'
 import { downloads, fs_readFile, fs_writeFile } from './data-fs'
-import trackersTxtEmbded from '../Fishbones_Data/trackers.txt' with { type: 'file' }
+import trackersTxtEmbedded from '../Fishbones_Data/trackers.txt' with { type: 'file' }
 import type { AbortOptions } from '@libp2p/interface'
 
 const trackersTxtName = 'trackers.txt'
@@ -55,7 +55,7 @@ async function downloadTrackersTxt(opts: Required<AbortOptions>){
         if(lastError)
             console_log('Downloading torrent-tracker list failed:\n', Bun.inspect(lastError))
         console_log('Using built-in list of torrent-trackers')
-        txt = (await fs_readFile(trackersTxtEmbded, { ...opts, encoding: 'utf8', rethrow: true }))!
+        txt = (await fs_readFile(trackersTxtEmbedded, { ...opts, encoding: 'utf8', rethrow: true }))!
         return setTrackers(txt)
     }
 }

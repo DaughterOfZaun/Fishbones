@@ -177,14 +177,14 @@ process.on('uncaughtException', (err: Error & { code?: string, context?: Error &
         //err.context?.name === 'AbortError' &&
         //err.context?.message === 'The operation was aborted.'
     ){ /* Ignore */ } else {
-        const unwrapped = unwrapAbortError(err)
-        if(unwrapped instanceof ExitPromptError){
+        //const unwrapped = unwrapAbortError(err)
+        //if(unwrapped instanceof ExitPromptError){
             //TODO: Investigate.
-            shutdown('exception')
-        } else {
+        //    shutdown('exception')
+        //} else {
             console_log('An unexpected exception occurred:', Bun.inspect(err))
             shutdown('exception')
-        }
+        //}
     }
 })
 

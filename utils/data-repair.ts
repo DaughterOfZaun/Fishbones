@@ -12,7 +12,7 @@ import { promises as fs } from 'fs'
 import path from 'node:path'
 
 //@ts-expect-error Cannot find module or its corresponding type declarations.
-import d3dx9_39_dll_embded from '../thirdparty/directx_Jun2010_redist/Aug2008_d3dx9_39_x64/d3dx9_39.dll' with { type: 'file' }
+import d3dx9_39_dll_embedded from '../thirdparty/directx_Jun2010_redist/Aug2008_d3dx9_39_x64/d3dx9_39.dll' with { type: 'file' }
 
 const DOTNET_INSTALL_CORRUPT_EXIT_CODES = [ 130, 131, 142, ]
 
@@ -59,7 +59,7 @@ export async function repair(opts: Required<AbortOptions>){
             //await fs_ensureDir(gcPkg.exeDir, opts)
             const d3dx9_39_dll = path.join(gcPkg.exeDir, 'd3dx9_39.dll')
             if(!await fs_exists(d3dx9_39_dll, opts, false))
-                await fs_copyFile(d3dx9_39_dll_embded as string, d3dx9_39_dll, opts)
+                await fs_copyFile(d3dx9_39_dll_embedded as string, d3dx9_39_dll, opts)
         })
     ] as Promise<unknown>[])
 }

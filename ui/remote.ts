@@ -143,24 +143,24 @@ export const console_log: typeof localLog = (...args) => {
 }
 
 //@ts-expect-error Cannot find module or its corresponding type declarations.
-//import godotExeEmbded from '/home/user/.local/share/godot/export_templates/4.5.stable/linux_release.x86_64' with { type: 'file' }
-import godotExeEmbded from '/home/user/.local/share/godot/export_templates/4.5.stable/windows_release_x86_64.exe' with { type: 'file' }
+//import godotExeEmbedded from '/home/user/.local/share/godot/export_templates/4.5.stable/linux_release.x86_64' with { type: 'file' }
+import godotExeEmbedded from '/home/user/.local/share/godot/export_templates/4.5.stable/windows_release_x86_64.exe' with { type: 'file' }
 //@ts-expect-error Cannot find module or its corresponding type declarations.
-import godotPckEmbded from '../dist/RemoteUI.zip' with { type: 'file' }
+import godotPckEmbedded from '../dist/RemoteUI.pck' with { type: 'file' }
 
 const godotExe = path.join(downloads, 'Godot_v4.5-stable_win64.exe')
-const godotPck = path.join(downloads, 'RemoteUI.zip')
+const godotPck = path.join(downloads, 'Godot_v4.5-stable_win64.pck')
 export async function repairUIRenderer(opts: Required<AbortOptions>){
     return Promise.all([
         (async () => {
             if(!await fs_exists(godotExe, opts)){
-                await fs_copyFile(godotExeEmbded as string, godotExe, opts)
+                await fs_copyFile(godotExeEmbedded as string, godotExe, opts)
                 await fs_chmod(godotExe, rwx_rx_rx, opts)
             }
         })(),
         (async () => {
             if(!await fs_exists(godotPck, opts)){
-                await fs_copyFile(godotPckEmbded as string, godotPck, opts)
+                await fs_copyFile(godotPckEmbedded as string, godotPck, opts)
             }
         })(),
     ])
@@ -175,20 +175,27 @@ export async function repairAndStart(opts: Required<AbortOptions>): Promise<bool
         if(args.repair.enabled){
             await repairUIRenderer(opts)
         }
-        const proc = originalSpawn(godotExe, [
+        const exeArgs = [
             '--main-pack', godotPck,
             //'--exe', process.execPath,
             //'--exe-args', JSON.stringify(args.toArray()),
             '--log-file', 'godot.log.txt',
             '--', process.execPath, ...args.toArray(),
-        ], {
+        ]
+        const exeOpts = {
             //log: true, logPrefix: 'GODOT',
-            stdio: 'inherit',
             detached: true,
             cwd: downloads,
+            //shell: true,
+        }
+        console.log('Spawning detached process', 0)
+        const proc = originalSpawn(godotExe, exeArgs, {
+        //const proc = Bun.spawnSync([godotExe, ...exeArgs], {
+            ...exeOpts, stdio: ['ignore', 'ignore', 'ignore'],
         })
+        proc.unref()
         //await startProcess('GODOT', proc, 'stderr', (chunk) => chunk.includes('Godot Engine started'), opts)
-        return !!proc
+        return true
     }
     return false
 }

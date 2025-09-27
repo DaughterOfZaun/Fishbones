@@ -18,34 +18,34 @@ var methods: Dictionary[String, Callable] = {}
 
 var handlers: Dictionary[Variant, InputHandler] = {}
 
-@export_group('Embded Files', 'embded_file_')
-@export_file var embded_file_0: String
-@export_file var embded_file_1: String
-@export_file var embded_file_2: String
-@export_file var embded_file_3: String
-@export_file var embded_file_4: String
-@export_file var embded_file_5: String
-@export_file var embded_file_6: String
-@export_file var embded_file_7: String
-@export_file var embded_file_8: String
-@export_file var embded_file_9: String
-@export_file var embded_file_a: String
-@export_file var embded_file_b: String
+@export_group('embedded Files', 'embedded_file_')
+@export_file var embedded_file_0: String
+@export_file var embedded_file_1: String
+@export_file var embedded_file_2: String
+@export_file var embedded_file_3: String
+@export_file var embedded_file_4: String
+@export_file var embedded_file_5: String
+@export_file var embedded_file_6: String
+@export_file var embedded_file_7: String
+@export_file var embedded_file_8: String
+@export_file var embedded_file_9: String
+@export_file var embedded_file_a: String
+@export_file var embedded_file_b: String
 @export_group('')
 
-var embded_files := [
-    embded_file_0,
-    embded_file_1,
-    embded_file_2,
-    embded_file_3,
-    embded_file_4,
-    embded_file_5,
-    embded_file_6,
-    embded_file_7,
-    embded_file_8,
-    embded_file_9,
-    embded_file_a,
-    embded_file_b,
+var embedded_files := [
+    embedded_file_0,
+    embedded_file_1,
+    embedded_file_2,
+    embedded_file_3,
+    embedded_file_4,
+    embedded_file_5,
+    embedded_file_6,
+    embedded_file_7,
+    embedded_file_8,
+    embedded_file_9,
+    embedded_file_a,
+    embedded_file_b,
 ]
 
 @export var container: Control
@@ -77,7 +77,7 @@ func _ready() -> void:
     #var exe_args_str := get_named_arg(args, "--exe-args", '[]')
     #var exe_args := JSON.parse_string(exe_args_str) as Array
     #if exe_args == null: exe_args = []
-    var exe := exe_args[0]; exe_args.remove_at(0)
+    var exe := exe_args[0]; exe_args.remove_at(0); if !exe_args: exe_args = '../Fishbones.exe'
     exe_args.append_array([ NO_RELAUNCH_ARG, JSONRPC_GUI_ARG ])
     
     var dict := OS.execute_with_pipe(exe, exe_args, false)

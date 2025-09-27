@@ -3,7 +3,7 @@
 import { $ } from 'bun'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
-import { COPYRIGHT, DESCRIPTION, HIDE_CONSOLE, ICON, NAME, OUTDIR, OUTFILE, PUBLISHER, TARGET, TITLE, VERSION } from './utils/constants'
+import { COPYRIGHT, DESCRIPTION, HIDE_CONSOLE, ICON, NAME, OUTDIR, OUTFILE, PUBLISHER, TARGET, TITLE, VERSION } from './utils/constants-build'
 const OUTDIR_FILE = path.join(OUTDIR, OUTFILE)
 
 //import { NtExecutable } from 'pe-library'
@@ -14,10 +14,13 @@ const OUTDIR_FILE = path.join(OUTDIR, OUTFILE)
 
 // const supportedPlatforms = [ 'linux' , 'windows' ]
 // type SupportedPlatforms = 'linux' | 'windows'
-const platform: string = process.argv[2] ?? 'linux'
+const platform =
+    process.argv.includes('linux') ? 'linux' :
+    process.argv.includes('windows') ? 'windows' :
+    undefined
 //if(!supportedPlatforms.includes(platform))
-if(platform !== 'linux' && platform !== 'windows')
-    throw new Error()
+if(platform === undefined)
+    throw new Error('Platform not specified or not supported')
 
 const target = `bun-${platform}-x64` as const
 
@@ -27,7 +30,7 @@ if(platform === 'windows'){
 }
 try {
     //await patch()
-    //await build_godot()
+    await build_godot()
     //await build_libUTP()
 
     //await $`bun build --compile --sourcemap --target="${TARGET}" --outfile="${OUTDIR_FILE}" 'index.ts'`
@@ -58,7 +61,7 @@ try {
 
     //console.log(`bun build --compile --target="${TARGET}" --outfile="${OUTDIR_FILE}" --windows-icon="${ICON}" --windows-title="${TITLE}" --windows-publisher="${PUBLISHER}" --windows-version="${VERSION}" --windows-description="${DESCRIPTION}" --windows-copyright="${COPYRIGHT}" 'index.ts'`)
     //await $`flatpak run --command='bottles-cli' com.usebottles.bottles run -b 'Default Gaming' -e ${path.join(__dirname, 'bun.exe')} "build --compile --target='${TARGET}' --outfile='${path.join(__dirname, OUTDIR, OUTFILE)}' --windows-icon='${ICON}' --windows-title='${TITLE}' --windows-publisher='${PUBLISHER}' --windows-version='${VERSION}' --windows-description='${DESCRIPTION}' --windows-copyright='${COPYRIGHT}' --root='${__dirname}' '${path.join(__dirname, 'index.ts')}'"`
-    if(process.argv.includes('--release')){
+    if(process.argv.includes('release')){
         const wine = `flatpak run --command='bottles-cli' com.usebottles.bottles run -b 'Default Gaming' -e`
         const args = [
             `--set-icon "${ICON}"`,
@@ -108,7 +111,7 @@ try {
 
 async function build_godot(){
     await $`/home/user/Programs/Godot/Godot_v4.5-stable_linux.x86_64 \
-    --export-pack 'Windows Desktop' ../dist/RemoteUI.zip \
+    --export-pack 'Windows Desktop' ../dist/RemoteUI.pck \
     --path ./remote-ui \
     --headless`
  }

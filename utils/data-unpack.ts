@@ -8,12 +8,12 @@ import { args } from './args'
 import path from 'node:path'
 
 //@ts-expect-error Cannot find module or its corresponding type declarations.
-//import s7zExeEmbded from '../node_modules/7z-bin/bin/linux/x64/7zzs' with { type: 'file' }
-import s7zExeEmbded from '../node_modules/7z-bin/bin/win/x64/7z.exe' with { type: 'file' }
+//import s7zExeEmbedded from '../node_modules/7z-bin/bin/linux/x64/7zzs' with { type: 'file' }
+import s7zExeEmbedded from '../node_modules/7z-bin/bin/win/x64/7z.exe' with { type: 'file' }
 const s7zExe = path.join(downloads, '7z.exe')
 
 //@ts-expect-error Cannot find module or its corresponding type declarations.
-import s7zDllEmbded from '../node_modules/7z-bin/bin/win/x64/7z.dll' with { type: 'file' }
+import s7zDllEmbedded from '../node_modules/7z-bin/bin/win/x64/7z.dll' with { type: 'file' }
 const s7zDll = path.join(downloads, '7z.dll')
 
 export async function repair7z(opts: Required<AbortOptions>){
@@ -21,13 +21,13 @@ export async function repair7z(opts: Required<AbortOptions>){
         await Promise.all([
             (async () => {
                 if(!await fs_exists(s7zExe, opts)){
-                    await fs_copyFile(s7zExeEmbded as string, s7zExe, opts)
+                    await fs_copyFile(s7zExeEmbedded as string, s7zExe, opts)
                     await fs_chmod(s7zExe, rwx_rx_rx, opts)
                 }
             })(),
             (async () => {
-                if(s7zDll && s7zDllEmbded && !await fs_exists(s7zDll, opts))
-                    await fs_copyFile(s7zDllEmbded as string, s7zDll, opts)
+                if(s7zDll && s7zDllEmbedded && !await fs_exists(s7zDll, opts))
+                    await fs_copyFile(s7zDllEmbedded as string, s7zDll, opts)
             })(),
         ])
     } catch(unk_err){
