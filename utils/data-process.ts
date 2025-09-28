@@ -111,9 +111,12 @@ export async function startProcess(
         const msg = logTerminationMsg(logPrefix, 'died', code, signal)
         deferred.reject(new TerminationError(msg, { cause: { code, signal } }))
     }))
+    if(isFinite(timeoutMs))
     deferred.setTimeout(() => {
         deferred.reject(new Error(`${logPrefix} did not start within ${timeoutMs}ms`))
+        void killSubprocess(logPrefix, proc, opts) //TODO: Find a better solution.
     }, timeoutMs)
+    //TODO: killSubprocess on opts.signal.aborted
     return deferred.promise
 }
 

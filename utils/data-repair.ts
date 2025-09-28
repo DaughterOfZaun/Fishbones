@@ -57,7 +57,7 @@ export async function repair(opts: Required<AbortOptions>){
         repairArchived(gcPkg, opts).then(async () => {
             //await fs_ensureDir(gcPkg.exeDir, opts)
             const d3dx9_39_dll = path.join(gcPkg.exeDir, 'd3dx9_39.dll')
-            if(!await fs_exists(d3dx9_39_dll, opts, false))
+            if(!await fs_exists(d3dx9_39_dll, opts, true))
                 await fs_copyFile(d3dx9_39_dll_embedded as string, d3dx9_39_dll, opts)
         })
     ] as Promise<unknown>[])

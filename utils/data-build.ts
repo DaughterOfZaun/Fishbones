@@ -26,6 +26,7 @@ export async function build(pkg: PkgInfoCSProj, opts: Required<AbortOptions>){
         await fs_writeFile(pkg.csProj, txt, fs_opts)
 
         txt = (await fs_readFile(pkg.program, fs_opts))!
+        /*
         const nl2 = '\n        '
         const nl3 = '\n            '
         const lines = [
@@ -39,6 +40,8 @@ export async function build(pkg: PkgInfoCSProj, opts: Required<AbortOptions>){
             .join(nl2)
         )
         txt = txt.replace(`${nl3}Banner();\n`, `${nl3}//Banner();\n`)
+        */
+        txt = txt.replace(/(Console\.SetWindowSize)/, '//$1')
         await fs_writeFile(pkg.program, txt, fs_opts)
 
         sdkSubprocess = spawn(sdkPkg.exe, ['build', pkg.csProj], {

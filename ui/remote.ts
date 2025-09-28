@@ -222,7 +222,7 @@ function onData(data: Buffer){
     for(let line of lines){
         line = line.trim()
         if(line.startsWith('{') && line.endsWith('}')){
-            logger.log(line)
+            //logger.log(line)
             const obj = JSON.parse(line) as JRPCResponse
             if(typeof obj.id === 'number'){
                 const listener = listeners.get(obj.id)

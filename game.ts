@@ -546,30 +546,40 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         return {
             gameId: 0,
             game: {
-                map: this.map.value ?? 1,
+                map: this.map.value ?? 4,
                 gameMode: this.mode.toString(),
                 mutators: Array<string>(8).fill(''),
+                dataPackage: 'AvCsharp-Scripts',
             },
             gameInfo: {
                 TICK_RATE: this.server.tickRate.value ?? 30,
-                FORCE_START_TIMER: 60, //TODO: Unhardcode
-                USE_CACHE: true,
+                CLIENT_VERSION: '1.0.0.126',
+                FORCE_START_TIMER: 180, //TODO: Unhardcode
+                KEEP_ALIVE_WHEN_EMPTY: false,
                 IS_DAMAGE_TEXT_GLOBAL: false,
-                ENABLE_CONTENT_LOADING_LOGS: false,
                 SUPRESS_SCRIPT_NOT_FOUND_LOGS: true,
                 CHEATS_ENABLED: this.features.isCheatsEnabled,
                 MANACOSTS_ENABLED: this.features.isManacostsEnabled,
                 COOLDOWNS_ENABLED: this.features.isCooldownsEnabled,
                 MINION_SPAWNS_ENABLED: this.features.isMinionsEnabled,
-                LOG_IN_PACKETS: false,
-                LOG_OUT_PACKETS: false,
-                CONTENT_PATH: "../../../../Content/GameClient",
+                CONTENT_PATH: "../../../../Content",
+                DEPLOY_FOLDER: '',
                 ENDGAME_HTTP_POST_ADDRESS: "",
-                scriptAssemblies: [
-                    "ScriptsCore",
-                    "CBProject-Converted",
-                    "Chronobreak-Scripts"
-                ]
+                APIKEYDROPBOX: "",
+                USERNAMEOFREPLAYMAN: "",
+                PASSWORDOFREPLAYMAN: "",
+                ENABLE_LAUNCHER: false,
+                LAUNCHER_ADRESS_AND_PORT: "",
+                AB_CLIENT: false,
+                ENABLE_LOG_AND_CONSOLEWRITELINE: false,
+                ENABLE_LOG_BehaviourTree: false,
+                ENABLE_LOG_PKT: false,
+                ENABLE_REPLAY: false,
+                ENABLE_ALLOCATION_TRACKER: false,
+                SCRIPT_ASSEMBLIES: [
+                    "AvLua-Converted",
+                    "AvCsharp-Scripts",
+                ],
             },
             players: this.getPlayers().map((player, i) => ({
                 playerId: i + 1,
@@ -582,6 +592,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 summoner1: `Summoner${player.spell1.toString()}`,
                 summoner2: `Summoner${player.spell2.toString()}`,
                 ribbon: 2, // Unused
+                useDoomSpells: false,
                 icon: Math.floor(Math.random() * 743),
                 runes,
                 talents,

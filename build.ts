@@ -12,16 +12,18 @@ const OUTDIR_FILE_CLI = path.join(OUTDIR, OUTFILE_CLI)
 //const CONSOLE_SUBSYSTEM = 0x3
 //const GUI_SUBSYSTEM = 0x2
 
+const release = process.argv.includes('release') ? 'release' : 'debug'
+
 // const supportedPlatforms = [ 'linux' , 'windows' ]
 // type SupportedPlatforms = 'linux' | 'windows'
 const platform =
     process.argv.includes('linux') ? 'linux' :
     process.argv.includes('windows') ? 'windows' :
     undefined
-//if(!supportedPlatforms.includes(platform))
-if(platform === undefined)
-    throw new Error('Platform not specified or not supported')
-
+    //if(!supportedPlatforms.includes(platform))
+    if(platform === undefined)
+        throw new Error('Platform not specified or not supported')
+    
 const target = `bun-${platform}-x64` as const
 
 if(platform === 'windows'){
@@ -117,7 +119,7 @@ try {
 
 async function build_godot_exe(){
     await $`/home/user/Programs/Godot/Godot_v4.5-stable_linux.x86_64 \
-    --export-debug 'Windows Desktop' ${path.join('..', OUTDIR, OUTFILE)} \
+    --export-${{ raw: release }} 'Windows Desktop' ${path.join('..', OUTDIR, OUTFILE)} \
     --path ./remote-ui \
     --headless`
  }

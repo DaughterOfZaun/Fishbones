@@ -57,8 +57,8 @@ export abstract class PkgInfoCSProj extends PkgInfo {
     abstract program: string
 }
 
-import { gcZipTorrentEmbedded } from './embedded'
-export const gcPkg = new class extends PkgInfoExe {
+import { gc420ZipTorrentEmbedded } from './embedded'
+export const gc420Pkg = new class extends PkgInfoExe {
     dirName = 'League of Legends_UNPACKED'
     noDedup = false
     zipExt = '.7z'
@@ -69,7 +69,7 @@ export const gcPkg = new class extends PkgInfoExe {
 
     dir = path.join(downloads, this.dirName)
     zip = path.join(downloads, this.zipName)
-    zipTorrentEmbedded = gcZipTorrentEmbedded as string
+    zipTorrentEmbedded = gc420ZipTorrentEmbedded as string
     zipTorrent = `${this.zip}.torrent`
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
     zipMega = 'https://mega.nz/file/Hr5XEAqT#veo2lfRWK7RrLUdFBBqRdUvxwr_gd8UyUL0f6b4pHJ0'
@@ -88,6 +88,47 @@ export const gcPkg = new class extends PkgInfoExe {
         '2018-07-07_18-41-50_League of Legends.log',
         '2018-07-07_18-37-57_League of Legends.log',
         '2018-07-07_18-36-35_League of Legends.log',
+    ]
+}()
+
+import { gcZipTorrentEmbedded } from './embedded'
+export const gcPkg = new class extends PkgInfoExe {
+    dirName = 'playable_client_126'
+    noDedup = false
+    zipExt = '.7z'
+    zipName = `${this.dirName}${this.zipExt}`
+    zipInfoHashV1 = '875201f4a9920ffd7c9bff6c9a2ad59e28f041ae'
+    zipInfoHashV2 = '6ccbb2911b07b2c084beb666d22018159845b3eae180b989d75b354af39c8af3'
+    zipSize = 898175547
+
+    dir = path.join(downloads, this.dirName)
+    zip = path.join(downloads, this.zipName)
+    zipTorrentEmbedded = gcZipTorrentEmbedded as string
+    zipTorrent = `${this.zip}.torrent`
+    zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
+    zipMega = 'https://mega.nz/file/uqRmkCKC#nJFZ2hAYqTq5q-T1PExXPpu0aX4ALjjZj2SZ4q9yCpk'
+
+    exeDir = this.dir
+    exe = path.join(this.exeDir, 'League of Legends.exe')
+
+    topLevelEntries = [
+        'LEVELS',
+        'DATA',
+        'util.dll',
+        'tbb.dll',
+        'rads.dll',
+        'League of Legends.exe',
+        'launcher.maestro.dll',
+        'fmodex.dll',
+        'fmod_event.dll',
+        'dbghelp.dll',
+        'client.ver',
+        'bugsplatrc.dll',
+        'bugsplat.dll',
+        'BsSndRpt.exe',
+    ]
+    topLevelEntriesOptional = [
+        'launch_client.bat',
     ]
 }()
 
@@ -170,8 +211,8 @@ export const sdkPkg = new class extends PkgInfoExe {
     ]
 }()
 
-import { gsPkgZipTorrentEmbedded } from './embedded'
-export const gsPkg = new class extends PkgInfoCSProj {
+import { gs420PkgZipTorrentEmbedded } from './embedded'
+export const gs420Pkg = new class extends PkgInfoCSProj {
     dirName = 'GameServer'
     noDedup = false
     zipExt = '.7z'
@@ -182,7 +223,7 @@ export const gsPkg = new class extends PkgInfoCSProj {
     
     dir = path.join(downloads, this.dirName)
     zip = path.join(downloads, this.zipName)
-    zipTorrentEmbedded = gsPkgZipTorrentEmbedded as string
+    zipTorrentEmbedded = gs420PkgZipTorrentEmbedded as string
     zipTorrent = `${this.zip}.torrent`
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
     zipMega = 'https://mega.nz/file/D35i0YaD#P08udvnbUByZHGBvCTbC1XDPkKdUGgp4xtravAlECbU'
@@ -218,6 +259,56 @@ export const gsPkg = new class extends PkgInfoCSProj {
         'README.md',
         'LICENSE',
         'GameServer.sln.DotSettings',
+    ]
+}()
+
+import { gsPkgZipTorrentEmbedded } from './embedded'
+export const gsPkg = new class extends PkgInfoCSProj {
+    dirName = 'ChildrenOfTheGrave-Gameserver'
+    noDedup = false
+    zipExt = '.7z'
+    zipName = `${this.dirName}${this.zipExt}`
+    zipInfoHashV1 = '83155823dd0deb73cab3127dfbcfeb4091050f4f'
+    zipInfoHashV2 = 'b84a60529bca79815d8858ec6430d180590b37516a8a84af8d4c1c97a0ce7bfd'
+    zipSize = 16682132
+    
+    dir = path.join(downloads, this.dirName)
+    zip = path.join(downloads, this.zipName)
+    zipTorrentEmbedded = gsPkgZipTorrentEmbedded as string
+    zipTorrent = `${this.zip}.torrent`
+    zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
+    zipMega = 'https://mega.nz/file/Oz5lDKiQ#RWwgpmkdUn1MrqLg8p8idkPj8Z0mxzFYgPzCmAi55Is'
+
+    projName = 'ChildrenOfTheGraveServerConsole'
+    csProjDir = path.join(this.dir, this.projName)
+    
+    target = 'Debug'
+    netVer = 'net9.0'
+    csProj = path.join(this.csProjDir, `${this.projName}.csproj`)
+    dllDir = path.join(this.csProjDir, 'bin', this.target, this.netVer)
+    dllName = `${this.projName}.dll`
+    dll = path.join(this.dllDir, this.dllName)
+    
+    infoDir = path.join(this.dllDir, 'Settings')
+    gcDir = path.join(this.dir, 'Content', 'GameClient')
+
+    program = path.join(this.csProjDir, 'Program.cs')
+
+    topLevelEntries = [
+        'QuadTree',
+        'MirrorImage',
+        'LENet',
+        'Content',
+        'ChildrenOfTheGraveServerConsole',
+        'ChildrenOfTheGraveLibrary',
+        'ChildrenOfTheGraveEnumNetwork',
+    ]
+    topLevelEntriesOptional = [
+        'bin',
+        'obj',
+        'doc',
+        'ChildrenOfTheGraveServer.sln.DotSettings',
+        'ChildrenOfTheGraveServer.sln',
     ]
 }()
 

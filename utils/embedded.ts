@@ -6,10 +6,14 @@ export const godotPckEmbedded = 'res://embedded/Godot_v4.5-stable_win64.pck'
 export const ariaExeEmbedded = 'res://embedded/aria2c.exe'
 export const ariaConfEmbedded = 'res://embedded/aria2.conf'
 
-export const gcZipTorrentEmbedded = 'res://embedded/League of Legends_UNPACKED.7z.torrent'
+export const gc420ZipTorrentEmbedded = 'res://embedded/League of Legends_UNPACKED.7z.torrent'
+export const gs420PkgZipTorrentEmbedded = 'res://embedded/Chronobreak.GameServer.7z.torrent'
+
+export const gcZipTorrentEmbedded = 'res://embedded/playable_client_126.7z.torrent'
+export const gsPkgZipTorrentEmbedded = 'res://embedded/ChildrenOfTheGrave-Gameserver.7z.torrent'
+
 export const sdkForWinZipTorrentEmbedded = 'res://embedded/dotnet-sdk-9.0.300-win-x64.zip.torrent'
 export const sdkForLinuxZipTorrentEmbedded = 'res://embedded/dotnet-sdk-9.0.300-linux-x64.tar.gz.torrent'
-export const gsPkgZipTorrentEmbedded = 'res://embedded/Chronobreak.GameServer.7z.torrent'
 
 export const d3dx9_39_dll_embedded = 'res://embedded/d3dx9_39.dll'
 

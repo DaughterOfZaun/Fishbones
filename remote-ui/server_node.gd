@@ -64,7 +64,8 @@ func get_named_arg(args: PackedStringArray, name: String, default: String) -> St
     else default
 
 var cwd := OS.get_executable_path().get_base_dir()
-var downloads := cwd.path_join("Fishbones_Data")
+var downloads_dir_name := "Fishbones_Data"
+var downloads := cwd.path_join(downloads_dir_name)
 var embedded_files_by_name: Dictionary[String, String] = {}
 
 func _ready() -> void:
@@ -110,7 +111,7 @@ func _ready() -> void:
 #         if stdio: stdio.close()
 #         if pid: OS.kill(pid)
 #         get_tree().quit()
-    
+
 func _init() -> void:
 
     methods["console.log"] = func(...params: Array[Variant]) -> void:
@@ -121,12 +122,30 @@ func _init() -> void:
         var from: String = config['from']
         var to: String = config['to']
 
+        var err := OK
         var id: Variant = last_call_id
-        from = embedded_files_by_name[from.get_file()]
-        to = downloads.path_join(to.get_file())
-        var err := DirAccess.copy_absolute(from, to)
-        if err != OK: reject(id, err, error_string(err))
-        else: resolve(id, err)
+        
+        from = embedded_files_by_name.get(from.get_file(), "")
+        if from.is_empty():
+            err = ERR_FILE_NOT_FOUND
+            reject(id, err, error_string(err))
+            return
+        
+        #console.append_text('downloads: ' + downloads + '\n')
+        #console.append_text('to: ' + to + '\n')
+
+        #to = downloads.path_join(to.get_file())
+        #if !to.begins_with(downloads) || to.contains('..'): 
+        if !to.contains(downloads_dir_name) || to.contains('..'):
+            err = ERR_FILE_NO_PERMISSION
+            reject(id, err, error_string(err))
+            return
+        
+        err = DirAccess.copy_absolute(from, to)
+        if err != OK:
+            reject(id, err, error_string(err))
+        else:
+            resolve(id, err)
 
     methods["bar.create"] = func(operation: String, filename: String, size: int) -> void:
         var config := {
@@ -217,7 +236,7 @@ func _process_packet(packet_string: String) -> void:
     var response_string := await _process_string(packet_string)
     if response_string.is_empty(): return
     #print('response', ' ', response_string)
-    stdio.store_string(response_string)
+    stdio.store_string(response_string + '\n')
     stdio.flush()
 
 #src: godot/blob/master/modules/jsonrpc/jsonrpc.cpp
@@ -268,14 +287,14 @@ func _process_action(action: Variant) -> Variant:
 func resolve(id: Variant, result: Variant = null) -> void:
     var response_string := JSON.stringify(jrpc.make_response(result, id))
     print('resolve', ' ', response_string)
-    stdio.store_string(response_string)
+    stdio.store_string(response_string + '\n')
     abort_handler(id)
     stdio.flush()
 
 func reject(id: Variant, code: int, message: String) -> void:
     var response_string := JSON.stringify(jrpc.make_response_error(code, message, id))
     print('reject', ' ', response_string)
-    stdio.store_string(response_string)
+    stdio.store_string(response_string + '\n')
     abort_handler(id)
     stdio.flush()
 
