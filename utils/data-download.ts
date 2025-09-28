@@ -11,10 +11,9 @@ import type { PkgInfo } from './data-packages'
 import * as MegaProxy from './data-download-mega'
 import { args } from './args'
 import defer from 'p-defer'
+import embedded from './embedded'
 
 const LOG_PREFIX = 'ARIA2C'
-
-import { ariaExeEmbedded, ariaConfEmbedded } from './embedded'
 
 const ariaExe = path.join(downloads, 'aria2c.exe')
 const ariaConf = path.join(downloads, 'aria2.conf')
@@ -23,12 +22,12 @@ export async function repairAria2(opts: Required<AbortOptions>){
     return Promise.all([
         (async () => {
             if(await fs_exists(ariaExe, opts)) return
-            await fs_copyFile(ariaExeEmbedded as string, ariaExe, opts)
+            await fs_copyFile(embedded.ariaExe, ariaExe, opts)
             await fs_chmod(ariaExe, rwx_rx_rx, opts)
         })(),
         (async () => {
             if(await fs_exists(ariaConf, opts)) return
-            await fs_copyFile(ariaConfEmbedded as string, ariaConf, opts)
+            await fs_copyFile(embedded.ariaConf, ariaConf, opts)
         })(),
     ])
 }
@@ -47,17 +46,33 @@ async function startAria2(opts: Required<AbortOptions>){
     if(!aria2procPromise){
         aria2secret = uint8ArrayToString(randomBytes(8), 'base32')
         aria2proc = spawn(ariaExe, [
-            `--enable-dht=${true}`,
-            `--enable-dht6=${true}`,
-            `--enable-peer-exchange=${true}`,
-            //`--dht-listen-port=${6881}`,
-            `--conf-path=${ariaConf}`,
+
             `--enable-rpc=${true}`,
             //`--rpc-listen-port=${6800}`,
             `--rpc-listen-all=${false}`,
             `--rpc-allow-origin-all=${false}`,
             `--rpc-secret=${aria2secret}`,
+
+            //`--conf-path=${ariaConf}`,
+            //`--log=${'aria2.log'}`,
             
+            `--enable-dht=${true}`,
+            `--enable-dht6=${true}`,
+            //`--dht-listen-port=${6881}`,
+            `--dht-file-path=${'aria2.dht.dat'}`,
+            `--dht-file-path6=${'aria2.dht6.dat'}`,
+            `--dht-entry-point=${'dht.transmissionbt.com:6881'}`,
+            `--dht-entry-point6=${'dht.transmissionbt.com:6881'}`,
+            
+            `--bt-exclude-tracker=${'*'}`,
+            `--bt-tracker=${trackers.join(',')}`,
+            //`--bt-tracker-timeout=${10}`,
+            //`--bt-tracker-connect-timeout=${10}`,
+
+            `--enable-peer-exchange=${true}`,
+            
+            `--bt-enable-lpd=${true}`,
+
             // All *.torrent files are embedded now.
             //`--bt-save-metadata=${true}`,
             //`--bt-load-saved-metadata=${true}`,
@@ -65,14 +80,13 @@ async function startAria2(opts: Required<AbortOptions>){
             
             //`--input-file=${ariaSession}`,
             //`--save-session=${ariaSession}`,
+            
+            //`--dir=${downloads}`,            
             `--check-integrity=${true}`,
-            //`--dir=${downloads}`,
-            `--bt-exclude-tracker=${'*'}`,
-            `--bt-tracker=${trackers.join(',')}`,
+            `--bt-hash-check-seed=${true}`,
             `--file-allocation=${'falloc'}`,
-            `--dht-file-path=${'aria2.dht.dat'}`,
-            `--dht-file-path6=${'aria2.dht6.dat'}`,
-            //`--log=${'aria2.log'}`,
+
+            `--summary-interval=${0}`,
 
             // Stability tweaks
             `--allow-piece-length-change=${true}`,

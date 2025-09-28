@@ -10,8 +10,7 @@ import { TerminationError, unwrapAbortError } from "./data-process"
 import type { AbortOptions } from "@libp2p/interface"
 import { promises as fs } from 'fs'
 import path from 'node:path'
-
-import { d3dx9_39_dll_embedded } from './embedded'
+import embedded from './embedded'
 
 const DOTNET_INSTALL_CORRUPT_EXIT_CODES = [ 130, 131, 142, ]
 
@@ -38,6 +37,8 @@ export async function repair(opts: Required<AbortOptions>){
                     await repairArchived(gsPkg, opts)
             })(),
         ]).then(async () => {
+            // Allow packages to contain already built exe.
+            gsExeIsMissing = !await fs_exists(gsPkg.dll, opts)
             if(gsExeIsMissing){
                 try {
                     await build(gsPkg, opts)
@@ -58,7 +59,7 @@ export async function repair(opts: Required<AbortOptions>){
             //await fs_ensureDir(gcPkg.exeDir, opts)
             const d3dx9_39_dll = path.join(gcPkg.exeDir, 'd3dx9_39.dll')
             if(!await fs_exists(d3dx9_39_dll, opts, true))
-                await fs_copyFile(d3dx9_39_dll_embedded as string, d3dx9_39_dll, opts)
+                await fs_copyFile(embedded.d3dx9_39_dll, d3dx9_39_dll, opts)
         })
     ] as Promise<unknown>[])
 }
@@ -229,8 +230,11 @@ async function repairArchived(pkg: PkgInfo, opts: Required<AbortOptions>, ignore
         }
     }
 
-    //console.log('downloading %s', pkg.zipMagnet)
-    await download(pkg, opts)
+    if(pkg.zipEmbded){
+        await fs_copyFile(pkg.zipEmbded, pkg.zip, opts)
+    } else {
+        await download(pkg, opts)
+    }
     await unpack(pkg, opts)
 }
 

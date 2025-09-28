@@ -1,8 +1,9 @@
 import path from 'node:path'
 import { console_log, createBar } from '../ui/remote'
 import { downloads, fs_readFile, fs_writeFile } from './data-fs'
-import { trackersTxtEmbedded } from './embedded'
 import type { AbortOptions } from '@libp2p/interface'
+import { logger } from './data-shared'
+import embedded from './embedded'
 
 const trackersTxtName = 'trackers.txt'
 const trackersTxt = path.join(downloads, trackersTxtName)
@@ -29,7 +30,7 @@ export async function readTrackersTxt(opts: Required<AbortOptions>){
     return txt ? setTrackers(txt) : await downloadTrackersTxt(opts)
 }
 
-async function downloadTrackersTxt(opts: Required<AbortOptions>){
+export async function downloadTrackersTxt(opts: Required<AbortOptions>){
     //console.log(`Downloading ${trackersTxtName}...`)
     const bar = createBar('Downloading', trackersTxtName)
     
@@ -38,7 +39,10 @@ async function downloadTrackersTxt(opts: Required<AbortOptions>){
     try {
         for(const url of trackerListsURLS){
             try {
-                txt = await (await fetch(url, opts)).text()
+                logger.log('fetching', url)
+                const signal = AbortSignal.any([ opts.signal, AbortSignal.timeout(10_000) ])
+                const data = await fetch(url, { signal })
+                txt = await data.text()
                 break
             } catch(err) {
                 lastError = err as Error
@@ -55,7 +59,7 @@ async function downloadTrackersTxt(opts: Required<AbortOptions>){
         if(lastError)
             console_log('Downloading torrent-tracker list failed:\n', Bun.inspect(lastError))
         console_log('Using built-in list of torrent-trackers')
-        txt = (await fs_readFile(trackersTxtEmbedded, { ...opts, encoding: 'utf8', rethrow: true }))!
+        txt = (await fs_readFile(embedded.trackersTxt, { ...opts, encoding: 'utf8', rethrow: true }))!
         return setTrackers(txt)
     }
 }

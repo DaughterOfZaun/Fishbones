@@ -5,6 +5,7 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { COPYRIGHT, DESCRIPTION, HIDE_CONSOLE, ICON, NAME, OUTDIR, OUTFILE, OUTFILE_CLI, PUBLISHER, TARGET, TITLE, VERSION } from './utils/constants-build'
 const OUTDIR_FILE_CLI = path.join(OUTDIR, OUTFILE_CLI)
+import { config } from './utils/embedded-config'
 
 //import { NtExecutable } from 'pe-library'
 //const PE_HEADER_OFFSET_LOCATION = 0x3c
@@ -19,12 +20,44 @@ const release = process.argv.includes('release') ? 'release' : 'debug'
 const platform =
     process.argv.includes('linux') ? 'linux' :
     process.argv.includes('windows') ? 'windows' :
-    undefined
+    undefined!
     //if(!supportedPlatforms.includes(platform))
-    if(platform === undefined)
-        throw new Error('Platform not specified or not supported')
+if(platform === undefined)
+    throw new Error('Platform not specified or not supported')
     
 const target = `bun-${platform}-x64` as const
+
+await $`rm ./remote-ui/embedded/*`
+
+const embeddedJson: Record<string, string> = {}
+for(const [key, keyConfig] of Object.entries(config)){
+    let from =
+        (typeof keyConfig === 'string') ? keyConfig :
+        (platform in keyConfig) ? keyConfig[platform]! : ''
+    
+    if(from){
+        from = path.resolve(from)
+        let fileName = path.basename(from)
+        if(!fileName.includes('.')) fileName += '.exe'
+        const to = `./remote-ui/embedded/${fileName}`
+        embeddedJson[key] = to.replace('./remote-ui/', 'res://')
+        //console.log(`ln -sf "${from}" "${to}"`)
+        await $`ln -sf ${from} ${to}`
+    } else {
+        embeddedJson[key] = ''
+    }
+}
+
+await fs.writeFile('./dist/embedded.json', JSON.stringify(embeddedJson, null, 4), 'utf8')
+
+let tscn = await fs.readFile('./remote-ui/main.tscn', 'utf8')
+const embeddedFiles = Object.values(embeddedJson).filter(file => !!file).toSorted()
+tscn = tscn.replace(/(embedded_file_\w+ = ".*"\n)+/g, embeddedFiles.map((file, i) => {
+    return `embedded_file_${i} = "${file}"\n`
+}).join(''))
+await fs.writeFile('./remote-ui/main.tscn', tscn, 'utf8')
+
+//process.exit()
 
 if(platform === 'windows'){
     await $`mv node_modules node_modules_linux_npm`
@@ -63,7 +96,7 @@ try {
 
     //console.log(`bun build --compile --target="${TARGET}" --outfile="${OUTDIR_FILE}" --windows-icon="${ICON}" --windows-title="${TITLE}" --windows-publisher="${PUBLISHER}" --windows-version="${VERSION}" --windows-description="${DESCRIPTION}" --windows-copyright="${COPYRIGHT}" 'index.ts'`)
     //await $`flatpak run --command='bottles-cli' com.usebottles.bottles run -b 'Default Gaming' -e ${path.join(__dirname, 'bun.exe')} "build --compile --target='${TARGET}' --outfile='${path.join(__dirname, OUTDIR, OUTFILE_CLI)}' --windows-icon='${ICON}' --windows-title='${TITLE}' --windows-publisher='${PUBLISHER}' --windows-version='${VERSION}' --windows-description='${DESCRIPTION}' --windows-copyright='${COPYRIGHT}' --root='${__dirname}' '${path.join(__dirname, 'index.ts')}'"`
-    if(process.argv.includes('release')){
+    if(platform === 'windows' && release === 'release'){
         const wine = `flatpak run --command='bottles-cli' com.usebottles.bottles run -b 'Default Gaming' -e`
         const args = [
             OUTDIR_FILE_CLI,
@@ -118,8 +151,12 @@ try {
 }
 
 async function build_godot_exe(){
+    const preset = ({
+        windows: 'Windows Desktop',
+        linux: 'Linux Desktop',
+    } as const)[platform]
     await $`/home/user/Programs/Godot/Godot_v4.5-stable_linux.x86_64 \
-    --export-${{ raw: release }} 'Windows Desktop' ${path.join('..', OUTDIR, OUTFILE)} \
+    --export-${{ raw: release }} ${preset} ${path.join('..', OUTDIR, OUTFILE)} \
     --path ./remote-ui \
     --headless`
  }

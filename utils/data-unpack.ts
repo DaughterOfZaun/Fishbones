@@ -6,8 +6,8 @@ import { rwx_rx_rx, downloads, fs_chmod, fs_ensureDir, fs_exists, fs_writeFile, 
 import type { AbortOptions } from '@libp2p/interface'
 import { args } from './args'
 import path from 'node:path'
+import embedded from './embedded'
 
-import { s7zExeEmbedded, s7zDllEmbedded } from './embedded'
 const s7zExe = path.join(downloads, '7z.exe')
 const s7zDll = path.join(downloads, '7z.dll')
 
@@ -16,13 +16,13 @@ export async function repair7z(opts: Required<AbortOptions>){
         await Promise.all([
             (async () => {
                 if(!await fs_exists(s7zExe, opts)){
-                    await fs_copyFile(s7zExeEmbedded as string, s7zExe, opts)
+                    await fs_copyFile(embedded.s7zExe, s7zExe, opts)
                     await fs_chmod(s7zExe, rwx_rx_rx, opts)
                 }
             })(),
             (async () => {
-                if(s7zDll && s7zDllEmbedded && !await fs_exists(s7zDll, opts))
-                    await fs_copyFile(s7zDllEmbedded as string, s7zDll, opts)
+                if(s7zDll && embedded.s7zDll && !await fs_exists(s7zDll, opts))
+                    await fs_copyFile(embedded.s7zDll, s7zDll, opts)
             })(),
         ])
     } catch(unk_err){

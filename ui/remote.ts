@@ -8,6 +8,7 @@ import { default as localSelect, type Choice as SelectChoice } from './dynamic-s
 import { default as localSpinner } from './spinner'
 import { logger } from '../utils/data-shared'
 import { args } from '../utils/args'
+import embedded from '../utils/embedded'
 
 import path from 'node:path'
 import { downloads, fs_chmod, fs_copyFile, fs_exists, rwx_rx_rx } from '../utils/data-fs'
@@ -147,21 +148,19 @@ export const console_log: typeof localLog = (...args) => {
     logger.log(...args)
 }
 
-import { godotExeEmbedded, godotPckEmbedded } from '../utils/embedded'
-
 const godotExe = path.join(downloads, 'Godot_v4.5-stable_win64.exe')
 const godotPck = path.join(downloads, 'Godot_v4.5-stable_win64.pck')
 export async function repairUIRenderer(opts: Required<AbortOptions>){
     return Promise.all([
         (async () => {
             if(!await fs_exists(godotExe, opts)){
-                await fs_copyFile(godotExeEmbedded as string, godotExe, opts)
+                await fs_copyFile(embedded.godotExe, godotExe, opts)
                 await fs_chmod(godotExe, rwx_rx_rx, opts)
             }
         })(),
         (async () => {
             if(!await fs_exists(godotPck, opts)){
-                await fs_copyFile(godotPckEmbedded as string, godotPck, opts)
+                await fs_copyFile(embedded.godotPck, godotPck, opts)
             }
         })(),
     ])

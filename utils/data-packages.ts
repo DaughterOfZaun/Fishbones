@@ -2,6 +2,7 @@ import path from 'node:path'
 import type { AbortOptions } from '@libp2p/interface'
 import { console_log_fs_err, downloads, fs_exists, fs_moveFile } from './data-fs'
 import { fs_copyFile } from '../ui/remote'
+import embedded from './embedded'
 
 const magnet = (ihv1?: string, ihv2?: string, fname?: string, size?: number) => {
     const parts: string[] = []
@@ -34,6 +35,7 @@ export abstract class PkgInfo {
     abstract topLevelEntriesOptional: string[]
     
     zipWebSeed?: string
+    zipEmbded?: string
     zipMega?: string
 }
 
@@ -57,7 +59,6 @@ export abstract class PkgInfoCSProj extends PkgInfo {
     abstract program: string
 }
 
-import { gc420ZipTorrentEmbedded } from './embedded'
 export const gc420Pkg = new class extends PkgInfoExe {
     dirName = 'League of Legends_UNPACKED'
     noDedup = false
@@ -69,7 +70,7 @@ export const gc420Pkg = new class extends PkgInfoExe {
 
     dir = path.join(downloads, this.dirName)
     zip = path.join(downloads, this.zipName)
-    zipTorrentEmbedded = gc420ZipTorrentEmbedded as string
+    zipTorrentEmbedded = embedded.gc420ZipTorrent
     zipTorrent = `${this.zip}.torrent`
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
     zipMega = 'https://mega.nz/file/Hr5XEAqT#veo2lfRWK7RrLUdFBBqRdUvxwr_gd8UyUL0f6b4pHJ0'
@@ -91,7 +92,6 @@ export const gc420Pkg = new class extends PkgInfoExe {
     ]
 }()
 
-import { gcZipTorrentEmbedded } from './embedded'
 export const gcPkg = new class extends PkgInfoExe {
     dirName = 'playable_client_126'
     noDedup = false
@@ -103,7 +103,7 @@ export const gcPkg = new class extends PkgInfoExe {
 
     dir = path.join(downloads, this.dirName)
     zip = path.join(downloads, this.zipName)
-    zipTorrentEmbedded = gcZipTorrentEmbedded as string
+    zipTorrentEmbedded = embedded.gcZipTorrent
     zipTorrent = `${this.zip}.torrent`
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
     zipMega = 'https://mega.nz/file/uqRmkCKC#nJFZ2hAYqTq5q-T1PExXPpu0aX4ALjjZj2SZ4q9yCpk'
@@ -151,8 +151,6 @@ const sdkArchMap: Record<string, string> = {
 const sdkArch = sdkArchMap[process.arch]
 if(!sdkArch) throw new Error(`Unsupported arch: ${process.arch}`)
 
-import { sdkForLinuxZipTorrentEmbedded, sdkForWinZipTorrentEmbedded } from './embedded'
-
 const sdkName = `dotnet-sdk-${sdkVer}-${sdkPlatform}-${sdkArch}`
 const sdkZipExt = (sdkPlatform == 'win') ? '.zip' : '.tar.gz'
 const sdkZipName = `${sdkName}${sdkZipExt}`
@@ -160,13 +158,13 @@ const sdkZipInfo = {
     'dotnet-sdk-9.0.300-win-x64.zip': {
         ihv1: '249a75bd3c8abba27b59fe42ab0771f77d6caee7',
         ihv2: '1220418d03e796bd159ed3ff24606a7b4948e520fbc4e93a172fc8a1798c51bc5647',
-        embeddedTorrent: sdkForWinZipTorrentEmbedded as string,
+        embeddedTorrent: embedded.sdkForWinZipTorrent,
         size: 298580138,
     },
     'dotnet-sdk-9.0.300-linux-x64.tar.gz': {
         ihv1: 'f859eefcf797348b967220427a721655a9af0bc8',
         ihv2: '1220db828e2a00844b2ad1a457b03e521d24a0b03d4746b0e849bcf0ea1d2b34eb77',
-        embeddedTorrent: sdkForLinuxZipTorrentEmbedded as string,
+        embeddedTorrent: embedded.sdkForLinuxZipTorrent,
         size: 217847129,
     },
 }[sdkZipName]
@@ -211,7 +209,6 @@ export const sdkPkg = new class extends PkgInfoExe {
     ]
 }()
 
-import { gs420PkgZipTorrentEmbedded } from './embedded'
 export const gs420Pkg = new class extends PkgInfoCSProj {
     dirName = 'GameServer'
     noDedup = false
@@ -223,7 +220,7 @@ export const gs420Pkg = new class extends PkgInfoCSProj {
     
     dir = path.join(downloads, this.dirName)
     zip = path.join(downloads, this.zipName)
-    zipTorrentEmbedded = gs420PkgZipTorrentEmbedded as string
+    zipTorrentEmbedded = embedded.gs420PkgZipTorrent
     zipTorrent = `${this.zip}.torrent`
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
     zipMega = 'https://mega.nz/file/D35i0YaD#P08udvnbUByZHGBvCTbC1XDPkKdUGgp4xtravAlECbU'
@@ -262,7 +259,6 @@ export const gs420Pkg = new class extends PkgInfoCSProj {
     ]
 }()
 
-import { gsPkgZipTorrentEmbedded } from './embedded'
 export const gsPkg = new class extends PkgInfoCSProj {
     dirName = 'ChildrenOfTheGrave-Gameserver'
     noDedup = false
@@ -274,10 +270,11 @@ export const gsPkg = new class extends PkgInfoCSProj {
     
     dir = path.join(downloads, this.dirName)
     zip = path.join(downloads, this.zipName)
-    zipTorrentEmbedded = gsPkgZipTorrentEmbedded as string
+    zipTorrentEmbedded = embedded.gsPkgZipTorrent
     zipTorrent = `${this.zip}.torrent`
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
     zipMega = 'https://mega.nz/file/Oz5lDKiQ#RWwgpmkdUn1MrqLg8p8idkPj8Z0mxzFYgPzCmAi55Is'
+    zipEmbded = embedded.gsPkgZip
 
     projName = 'ChildrenOfTheGraveServerConsole'
     csProjDir = path.join(this.dir, this.projName)

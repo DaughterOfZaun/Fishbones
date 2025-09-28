@@ -1,16 +1,15 @@
 /*
 import path from 'node:path'
 import { downloads, fs_copyFile, fs_ensureDir } from "./data-fs"
-
-import { minttyExeEmbedded, msysDllEmbedded } from './embedded'
+import embedded from './embedded'
 
 async function repairTerminal(){
     await fs_ensureDir(downloads)
     const minttyExe = path.join(downloads, 'mintty.exe')
     const msysDll = path.join(downloads, 'msys-2.0.dll')
     await Promise.all([
-        fs_copyFile(minttyExeEmbedded, minttyExe),
-        fs_copyFile(msysDllEmbedded, msysDll),
+        fs_copyFile(embedded.minttyExe, minttyExe),
+        fs_copyFile(embedded.msysDll, msysDll),
     ])
 }
 */

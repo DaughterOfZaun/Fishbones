@@ -10,15 +10,19 @@ var json := JSON.new()
 var jrpc := JSONRPC.new()
 var methods: Dictionary[String, Callable] = {}
 
+@export_group("Spawnable Components")
 @export var bar: PackedScene
 @export var spinner: PackedScene
 @export var select: PackedScene
 @export var checkbox: PackedScene
 @export var input: PackedScene
+@export_group("")
 
 var handlers: Dictionary[Variant, InputHandler] = {}
 
-@export_group('embedded Files', 'embedded_file_')
+@export_file var embedded_exe: String
+
+@export_group('Embedded Files', 'embedded_file_')
 @export_file var embedded_file_0: String
 @export_file var embedded_file_1: String
 @export_file var embedded_file_2: String
@@ -29,6 +33,14 @@ var handlers: Dictionary[Variant, InputHandler] = {}
 @export_file var embedded_file_7: String
 @export_file var embedded_file_8: String
 @export_file var embedded_file_9: String
+@export_file var embedded_file_a: String
+@export_file var embedded_file_b: String
+@export_file var embedded_file_c: String
+@export_file var embedded_file_d: String
+@export_file var embedded_file_e: String
+@export_file var embedded_file_f: String
+@export_file var embedded_file_g: String
+@export_file var embedded_file_h: String
 @export_group('')
 
 @onready var embedded_files: Array[String] = [
@@ -44,11 +56,13 @@ var handlers: Dictionary[Variant, InputHandler] = {}
     embedded_file_9,
 ]
 
+@export_group("Static Elements")
 @export var container: Control
 @export var bars_container: Container
 @export var show_console_toggle: Button
 @export var console_container: Container
 @export var console: RichTextLabel
+@export_group("")
 
 var active_bars_count := 0
 func inc_active_bars_count(by: int) -> void:
@@ -85,9 +99,9 @@ func _ready() -> void:
     for file in embedded_files:
         embedded_files_by_name[file.get_file()] = file
     
-    var exe := cwd.path_join(embedded_file_0.get_file())
+    var exe := cwd.path_join(embedded_exe.get_file())
     if !FileAccess.file_exists(exe):
-        DirAccess.copy_absolute(embedded_file_0, exe)
+        DirAccess.copy_absolute(embedded_exe, exe)
 
     exe_args.append_array([ NO_RELAUNCH_ARG, JSONRPC_GUI_ARG ])
     
