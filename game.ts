@@ -1,4 +1,4 @@
-import { blowfishKey, FeaturesEnabled, GameMap as GameMap, GameMode as GameMode, LOCALHOST, Name, Password, PlayerCount, Rank, runes, talents, Team, type u } from './utils/constants'
+import { blowfishKey, FeaturesEnabled, GameMap as GameMap, GameMode as GameMode, LOCALHOST, Name, Password, PlayerCount, runes, talents, Team, type u } from './utils/constants'
 import { TypedEventEmitter, type AbortOptions, type Libp2p, type PeerId, type Stream } from '@libp2p/interface'
 import { GamePlayer, type PlayerId, type PPP } from './game-player'
 import type { Peer as PBPeer } from './message/peer'
@@ -52,10 +52,10 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     
     protected readonly players = new Map<PlayerId, GamePlayer>()
     protected players_count = 0
-    protected players_add(id: PlayerId, peerId: u|PeerId): GamePlayer {
+    protected players_add(id: PlayerId, peerId: u|PeerId, isBot?: boolean): GamePlayer {
         let player = this.players.get(id)
         if(!player){
-            player = new GamePlayer(this, id, peerId)
+            player = new GamePlayer(this, id, peerId, isBot)
             this.players.set(id, player)
         }
         return player
@@ -139,8 +139,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             joinRequest: { name, password },
         })
     }
-    private handleJoinRequest(player: GamePlayer, { name }: LobbyRequestMessage.JoinRequest) {
-
+    protected assignTeamTo(player: GamePlayer){
         const playerCounts = Array<number>(Team.count).fill(0)
         this.players.forEach(player => {
             const i = player.team.value
@@ -149,8 +148,12 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         const minPlayers = playerCounts.reduce((a, c) => Math.min(a, c))
         const team = playerCounts.indexOf(minPlayers)
 
-        player.name.decodeInplace(name)
         player.team.value = team
+    }
+    private handleJoinRequest(player: GamePlayer, { name }: LobbyRequestMessage.JoinRequest) {
+
+        player.name.decodeInplace(name)
+        this.assignTeamTo(player)
 
         this.broadcast(
             {
@@ -225,7 +228,8 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             proc.once('exit', this.onServerExit)
             
             this.proxyServer = new ProxyServer(this.node)
-            await this.proxyServer.start(proc.port, players.map(p => p.peerId!), opts)
+            const peerIds = players.filter(p => !!p.peerId).map(p => p.peerId!)
+            await this.proxyServer.start(proc.port, peerIds, opts)
         } catch(err) {
             logger.log('Failed to start server:', Bun.inspect(err))
             this.onServerExit()
@@ -348,8 +352,8 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             this.safeDispatchEvent('crash')
     }
 
-    public async pick(prop: PPP, opts: Required<AbortOptions>) {
-        const player = this.getPlayer()
+    public async pick(prop: PPP, opts: Required<AbortOptions>, player?: GamePlayer) {
+        player ??= this.getPlayer()
         if(!player) return false
         const pdesc = player[prop]
         await pdesc.uinput(opts)
@@ -490,9 +494,9 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         return ret
     }
 
-    protected handleRequest(playerId: PlayerId, req: LobbyRequestMessage, stream: u|WriteonlyMessageStream<LobbyNotificationMessage, Stream>, peerId: PeerId){
+    protected handleRequest(playerId: PlayerId, req: LobbyRequestMessage, stream: u|WriteonlyMessageStream<LobbyNotificationMessage, Stream>, peerId: u|PeerId){
         let player: u|GamePlayer
-        if(req.joinRequest){
+        if(req.joinRequest && peerId){
             player = this.players_add(playerId, peerId)
             if(stream) player.stream = stream
             this.handleJoinRequest(player, req.joinRequest)
@@ -582,18 +586,19 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 ],
             },
             players: this.getPlayers().map((player, i) => ({
-                playerId: i + 1,
+                playerId: player.isBot ? -1 : (i + 1),
+                AIDifficulty: player.isBot ? (player.ai.value ?? 0) : undefined,
                 blowfishKey, //TODO: Unhardcode. Security
-                rank: Rank.random() ?? "DIAMOND",
-                name: player.name.value ?? `Player ${i + 1}`,
+                rank: /*Rank.random() ??*/ "DIAMOND",
+                name: player.isBot ? `${player.champion.toString()} Bot` : (player.name.value ?? `Player ${i + 1}`),
                 champion: player.champion.toString(), //TODO: Fix
                 team: player.team.toString().toUpperCase(),
                 skin: 0,
-                summoner1: `Summoner${player.spell1.toString()}`,
-                summoner2: `Summoner${player.spell2.toString()}`,
+                summoner1: player.isBot ? `SummonerHeal` : `Summoner${player.spell1.toString()}`,
+                summoner2: player.isBot ? `SummonerFlash` : `Summoner${player.spell2.toString()}`,
                 ribbon: 2, // Unused
                 useDoomSpells: false,
-                icon: Math.floor(Math.random() * 743),
+                icon: 0, //Math.floor(Math.random() * 29),
                 runes,
                 talents,
             }))

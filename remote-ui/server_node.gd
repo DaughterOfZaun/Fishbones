@@ -77,10 +77,16 @@ func get_named_arg(args: PackedStringArray, name: String, default: String) -> St
     if arg_index >= 0 && arg_index < args.size() \
     else default
 
-var cwd := OS.get_executable_path().get_base_dir()
+var current_exe := OS.get_executable_path()
+var cwd := current_exe.get_base_dir()
 var downloads_dir_name := "Fishbones_Data"
 var downloads := cwd.path_join(downloads_dir_name)
 var embedded_files_by_name: Dictionary[String, String] = {}
+
+const rwx = \
+    FileAccess.UNIX_READ_OWNER |\
+    FileAccess.UNIX_WRITE_OWNER |\
+    FileAccess.UNIX_EXECUTE_OWNER
 
 func _ready() -> void:
 
@@ -98,14 +104,16 @@ func _ready() -> void:
 
     for file in embedded_files:
         embedded_files_by_name[file.get_file()] = file
-    
-    var exe := cwd.path_join(embedded_exe.get_file())
-    if !FileAccess.file_exists(exe):
-        DirAccess.copy_absolute(embedded_exe, exe)
+
+    var extracted_exe := cwd.path_join(embedded_exe.get_file())
+    #if !FileAccess.file_exists(extracted_exe):
+    if FileAccess.get_modified_time(extracted_exe) < FileAccess.get_modified_time(current_exe):
+        DirAccess.copy_absolute(embedded_exe, extracted_exe)
+        FileAccess.set_unix_permissions(extracted_exe, rwx)
 
     exe_args.append_array([ NO_RELAUNCH_ARG, JSONRPC_GUI_ARG ])
     
-    var dict := OS.execute_with_pipe(exe, exe_args, false)
+    var dict := OS.execute_with_pipe(extracted_exe, exe_args, false)
     stdio = dict["stdio"]
     stderr = dict["stderr"]
     pid = dict["pid"]

@@ -181,7 +181,7 @@ export async function main(node: LibP2PNode, opts: Required<AbortOptions>){
     }
 }
 
-function playerChoices<T>(game: Game, cb: (player: GamePlayer) => T){
+function playerChoices<T>(game: Game, cb: (player: GamePlayer) => { value: T, disabled?: boolean }){
     return game.getPlayers().map(player => {
         const teamColor = player.team.color()
         const playerId = player.id.toString(16).padStart(8, '0')
@@ -189,9 +189,10 @@ function playerChoices<T>(game: Game, cb: (player: GamePlayer) => T){
         const spell1 = player.spell1.toString()
         const spell2 = player.spell2.toString()
         const locked = player.lock.toString()
+        const { value, disabled } = cb(player)
         return ({
-            disabled: true,
-            value: cb(player),
+            disabled,
+            value,
             name: color(
                 teamColor, [`[${playerId}] ${player.name.toString()}`, champion, spell1, spell2, locked].join(' - ')
             ),
@@ -252,17 +253,23 @@ async function lobby(game: Game, opts: Required<AbortOptions>){
 }
 
 async function lobby_gather(ctx: Context){
-    const { game } = ctx
 
-    type Action = ['noop'] | ['start'] | ['exit']
+    const { game } = ctx
+    const localGame = game instanceof LocalGame ? game : undefined
+
+    type Action = ['start'] | ['moderate', GamePlayer] | ['add_bot'] | ['exit']
     
     const getChoices = () => ([
-        { value: ['start'] as Action, name: 'Start Game', disabled: !game.canStart },
-        ...playerChoices<Action>(game, () => ['noop'] as Action),
+        { value: ['start'] as Action, name: 'Start Game', disabled: !localGame },
+        ...playerChoices<Action>(game, (player) => ({
+            value: ['moderate', player] as Action,
+            disabled: !localGame || localGame.getPlayer() == player,
+        })),
+        { value: ['add_bot'] as Action, name: 'Add Bot', disabled: !localGame },
         { value: ['exit'] as Action, name: 'Quit' },
     ])
     loop: while(true){
-        const [action] = await select<Action>({
+        const action_param = await select<Action>({
             message: 'Waiting for players...',
             choices: getChoices(),
             cb: (setItem) => {
@@ -272,13 +279,52 @@ async function lobby_gather(ctx: Context){
             },
             pageSize: 20,
         }, ctx)
-        if(action == 'start'){
-            game.start()
+        
+        const action = action_param[0]
+        const player = action_param[1]!
+
+        if(localGame && action == 'start'){
+            localGame.start()
             break loop
-        } else if(action == 'noop'){
-            continue
+        } else if(localGame && action == 'moderate'){
+            await lobby_gather_moderate(localGame, player, ctx)
+        } else if(localGame && action == 'add_bot'){
+            await localGame.addBot(ctx)
         } else if(action == 'exit'){
             throw new AbortPromptError({ cause: null })
+        }
+    }
+}
+
+async function lobby_gather_moderate(localGame: LocalGame, player: GamePlayer, ctx: Context) {
+
+    type Action = ['pick', PPP] | ['kick'] | ['exit']
+
+    loop: while(true){
+        const action_param = await select<Action>({
+            message: `Select an action for ${player.name.toString()}`,
+            choices: [
+                ...(['champion', 'ai'] as PPP[]).map(prop => ({
+                    value: ['pick', prop] as Action,
+                    name: `${player[prop].name}: ${player[prop].toString()}`,
+                    disabled: !player.isBot
+                })),
+                { value: ['kick'] as Action, name: `Kick` },
+                { value: ['exit'] as Action, name: 'Done' },
+            ],
+            pageSize: 20,
+        }, ctx)
+
+        const action = action_param[0]
+        const prop = action_param[1]!
+        
+        if(action == 'pick'){
+            await localGame.pick(prop, ctx, player)
+        } else if(action === 'kick'){
+            await localGame.kick(player)
+            break loop
+        } else if(action === 'exit'){
+            break loop
         }
     }
 }
@@ -296,7 +342,7 @@ async function lobby_pick(ctx: Context){
             ...(['champion', 'spell1', 'spell2'] as PPP[]).map(ppp => (
                 { value: ['pick', ppp] as Action, name: `${player[ppp].name}: ${player[ppp].toString()}`, disabled }
             )),
-            ...playerChoices<Action>(game, () => ['noop'] as Action),
+            ...playerChoices<Action>(game, () => ({ value: ['noop'] as Action })),
             { value: ['exit'] as Action, name: 'Quit' },
         ]
     }

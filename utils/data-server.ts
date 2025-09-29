@@ -71,12 +71,14 @@ export async function stopServer(opts: Required<AbortOptions>){
 const serverSettingsJson = path.join(downloads, 'server-settings.jsonc')
 type ServerSettings = Record<'maps' | 'modes' | 'champions' | 'spells', number[]>
 let serverSettings: ServerSettings | undefined
+
 export async function repairServerSettingsJsonc(opts: Required<AbortOptions>){
     if(await fs_exists(serverSettingsJson, opts)) return
     const txt = getServerSettingsJsonc()
     await fs_writeFile(serverSettingsJson, txt, { ...opts, encoding: 'utf8' })
     return parseServerSettings(txt)
 }
+
 function getServerSettingsJsonc(){
     const line = (i: number, name: string, enabled: boolean) => '        ' + (enabled ? '' : '//') + `${i}, // ${name}`
     return `{
@@ -94,13 +96,20 @@ ${ spells.map(([, name, enabled], i) => line(i, name, enabled)).join('\n') }
     ],
 }`.trim()
 }
+
 function parseServerSettings(txt: string){
     txt = txt.replace(/\n? *\/\/.*/g, '').replace(/,(?=[\s\n]*[\]}])/g, '')
     return serverSettings = JSON.parse(txt) as ServerSettings
 }
+
 export async function getServerSettings(opts: Required<AbortOptions>){
     if(serverSettings) return serverSettings
     let txt = await fs_readFile(serverSettingsJson, { encoding : 'utf8', ...opts })
     txt ||= getServerSettingsJsonc()
     return parseServerSettings(txt)
+}
+
+export async function saveServerSettings(opts: Required<AbortOptions>){
+    const txt = JSON.stringify(serverSettings, null, 4)
+    await fs_writeFile(serverSettingsJson, txt, { ...opts, encoding: 'utf8' })
 }

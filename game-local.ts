@@ -34,6 +34,34 @@ export class LocalGame extends Game {
         return true
     }
 
+    public async addBot(opts: Required<AbortOptions>){
+        
+        const playerId = this.takePlayerId()
+        const bot = this.players_add(playerId, undefined, true)
+        
+        bot.name.value = 'Bot'
+        this.assignTeamTo(bot)
+        bot.lock.value = +true
+
+        this.broadcast(
+            {
+                peersRequests: [{
+                    playerId,
+                    joinRequest: {
+                        name: bot.name.encode(),
+                    },
+                    pickRequest: {
+                        team: bot.team.encode(),
+                        lock: bot.lock.encode(),
+                    }
+                }]
+            },
+            this.players.values()
+        )
+        for(const key of ['champion', 'ai'] as const)
+            await this.pick(key, opts, bot)
+    }
+
     private handleIncomingStream: StreamHandler = async ({ stream, connection }) => {
         const wrapped = pbStream(stream).pb(LobbyRequestMessage, LobbyNotificationMessage)
 
@@ -74,11 +102,28 @@ export class LocalGame extends Game {
                     }
                 }
             )
-            this.freePlayerId(peerId, playerId)
+            this.freePlayerId(playerId, peerId)
             this.handleRequest(playerId, { leaveRequest: true }, undefined, peerId)
         } catch(err) {
             this.log.error(err)
         }
+    }
+
+    public async kick(player: GamePlayer){
+        
+        const wrapped = player.stream
+        const stream = player.stream?.unwrap().unwrap()
+        const playerId = player.id
+        const peerId = player.peerId
+
+        if(wrapped)
+            await wrapped.write({ kickRequest: KickReason.MAKER_DECISION, peersRequests: [] })
+        if(stream)
+            stream.close().catch(err => this.log.error(err))
+        if(this.playerIds.has(playerId))
+            this.freePlayerId(playerId, peerId)
+        if(this.players.has(playerId))
+            this.handleRequest(playerId, { leaveRequest: true }, undefined, peerId)
     }
 
     protected stream_write(req: LobbyRequestMessage): boolean {
@@ -87,12 +132,12 @@ export class LocalGame extends Game {
     }
     protected broadcast(msg: LobbyNotificationMessage, to: Iterable<GamePlayer>, ignore?: GamePlayer): void {
         for(const player of to){
-            if(player == ignore) continue
-            if(player.stream){
+            if(player === ignore) continue
+            if(player.id === this.playerId){
+                this.handleResponse(msg)
+            } else if(player.stream){
                 player.stream.write(msg)
                     .catch(err => this.log.error(err))
-            } else {
-                this.handleResponse(msg)
             }
         }
     }
@@ -117,16 +162,22 @@ export class LocalGame extends Game {
     private peerIdToPlayerId(peerId: PeerId){
         let playerId = this.peerIdToPlayerIdMap.get(peerId)
         if(!playerId){
-            do {
-                playerId = ((Math.random() * (2 ** 31)) | 0) as PlayerId
-            } while(!playerId || this.playerIds.has(playerId));
-            this.playerIds.add(playerId)
+            playerId = this.takePlayerId()
             this.peerIdToPlayerIdMap.set(peerId, playerId)
         }
         return playerId
     }
-    private freePlayerId(peerId: PeerId, playerId: PlayerId){
-        this.peerIdToPlayerIdMap.delete(peerId)
+    private takePlayerId(){
+        let playerId
+        do {
+            playerId = ((Math.random() * (2 ** 31)) | 0) as PlayerId
+        } while(!playerId || this.playerIds.has(playerId));
+        this.playerIds.add(playerId)
+        return playerId
+    }
+    private freePlayerId(playerId: PlayerId, peerId?: PeerId){
+        if(peerId)
+            this.peerIdToPlayerIdMap.delete(peerId)
         this.playerIds.delete(playerId)
     }
 }

@@ -139,7 +139,7 @@ class Proxy {
                         }
                         if(peer.external.closed){
                             log.error('internal socket: dropping pkt from %s:%d because external socket is closed', address, port)
-                        } else {
+                        } else /*if(peer.port && peer.host)*/ {
                             log.trace('internal socket: redirecting pkt from %s:%d through %s:%d to %s:%d', address, port, peer.external.hostname, peer.external.port, peer.host, peer.port)
                             peer.external.send(data, peer.port, peer.host)
                         }

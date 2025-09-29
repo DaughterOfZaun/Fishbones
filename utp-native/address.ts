@@ -72,7 +72,7 @@ export class UTPAddress {
         }
     }
 
-    static fromPointer(ptr: Pointer) {
+    static fromPointer(ptr: Pointer){
         const family = read.u16(ptr, 0)
         const port = read_u16BE(ptr, 2)
         const host = (family == AddressFamily.INET) ? [

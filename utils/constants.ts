@@ -128,7 +128,7 @@ export class GameMode extends PickableValue {
 }
 
 // short, name, enabled by default
-export const champions: [string, string, 'Working' | 'Playable' | 'Buggy' | 'Unimplemented' | false ][] = [
+export const champions: [string, string, 'Working' | 'Playable' | 'Buggy' | 'Unimplemented' | 'Non-existent' ][] = [
     ["Alistar", "Alistar", "Working"],
     ["Annie", "Annie", "Working"],
     ["Ashe", "Ashe", "Playable"],
@@ -220,90 +220,90 @@ export const champions: [string, string, 'Working' | 'Playable' | 'Buggy' | 'Uni
     ["Ahri", "Ahri", "Unimplemented"],
     ["Viktor", "Viktor", "Unimplemented"],
     ["Sejuani", "Sejuani", "Unimplemented"],
-    ["Ziggs", "Ziggs", false],
-    ["Nautilus", "Nautilus", false],
-    ["Fiora", "Fiora", false],
-    ["Lulu", "Lulu", false],
-    ["Hecarim", "Hecarim", false],
-    ["Varus", "Varus", false],
-    ["Darius", "Darius", false],
-    ["Draven", "Draven", false],
-    ["Jayce", "Jayce", false],
-    ["Zyra", "Zyra", false],
-    ["Diana", "Diana", false],
-    ["Rengar", "Rengar", false],
-    ["Syndra", "Syndra", false],
-    ["Khazix", "Kha'Zix", false],
-    ["Elise", "Elise", false],
-    ["Zed", "Zed", false],
-    ["Nami", "Nami", false],
-    ["Vi", "Vi", false],
-    ["Thresh", "Thresh", false],
-    ["Quinn", "Quinn", false],
-    ["Zac", "Zac", false],
-    ["Lissandra", "Lissandra", false],
-    ["Aatrox", "Aatrox", false],
-    ["Lucian", "Lucian", false],
-    ["Jinx", "Jinx", false],
-    ["Yasuo", "Yasuo", false],
-    ["Velkoz", "Vel'Koz", false],
-    ["Braum", "Braum", false],
-    ["Gnar", "Gnar", false],
-    ["Azir", "Azir", false],
-    ["Kalista", "Kalista", false],
-    ["RekSai", "Rek'Sai", false],
-    ["Bard", "Bard", false],
-    ["Ekko", "Ekko", false],
-    ["TahmKench", "Tahm Kench", false],
-    ["Kindred", "Kindred", false],
-    ["Illaoi", "Illaoi", false],
-    ["Jhin", "Jhin", false],
-    ["AurelionSol", "Aurelion Sol", false],
-    ["Taliyah", "Taliyah", false],
-    ["Kled", "Kled", false],
-    ["Ivern", "Ivern", false],
-    ["Camille", "Camille", false],
-    ["Rakan", "Rakan", false],
-    ["Xayah", "Xayah", false],
-    ["Kayn", "Kayn", false],
-    ["Ornn", "Ornn", false],
-    ["Zoe", "Zoe", false],
-    ["KaiSa", "Kai'Sa", false],
-    ["Pyke", "Pyke", false],
-    ["Neeko", "Neeko", false],
-    ["Sylas", "Sylas", false],
-    ["Yuumi", "Yuumi", false],
-    ["Qiyana", "Qiyana", false],
-    ["Senna", "Senna", false],
-    ["Aphelios", "Aphelios", false],
-    ["Sett", "Sett", false],
-    ["Lillia", "Lillia", false],
-    ["Yone", "Yone", false],
-    ["Samira", "Samira", false],
-    ["Seraphine", "Seraphine", false],
-    ["Rell", "Rell", false],
-    ["Viego", "Viego", false],
-    ["Gwen", "Gwen", false],
-    ["Akshan", "Akshan", false],
-    ["Vex", "Vex", false],
-    ["Zeri", "Zeri", false],
-    ["RenataGlasc", "Renata Glasc", false],
-    ["BelVeth", "Bel'Veth", false],
-    ["Nilah", "Nilah", false],
-    ["KSante", "K'Sante", false],
-    ["Milio", "Milio", false],
-    ["Naafiri", "Naafiri", false],
-    ["Briar", "Briar", false],
-    ["Hwei", "Hwei", false],
-    ["Smolder", "Smolder", false],
-    ["Aurora", "Aurora", false],
-    ["Ambessa", "Ambessa", false],
-    ["Mel", "Mel", false],
+    ["Ziggs", "Ziggs", "Non-existent"],
+    ["Nautilus", "Nautilus", "Non-existent"],
+    ["Fiora", "Fiora", "Non-existent"],
+    ["Lulu", "Lulu", "Non-existent"],
+    ["Hecarim", "Hecarim", "Non-existent"],
+    ["Varus", "Varus", "Non-existent"],
+    ["Darius", "Darius", "Non-existent"],
+    ["Draven", "Draven", "Non-existent"],
+    ["Jayce", "Jayce", "Non-existent"],
+    ["Zyra", "Zyra", "Non-existent"],
+    ["Diana", "Diana", "Non-existent"],
+    ["Rengar", "Rengar", "Non-existent"],
+    ["Syndra", "Syndra", "Non-existent"],
+    ["Khazix", "Kha'Zix", "Non-existent"],
+    ["Elise", "Elise", "Non-existent"],
+    ["Zed", "Zed", "Non-existent"],
+    ["Nami", "Nami", "Non-existent"],
+    ["Vi", "Vi", "Non-existent"],
+    ["Thresh", "Thresh", "Non-existent"],
+    ["Quinn", "Quinn", "Non-existent"],
+    ["Zac", "Zac", "Non-existent"],
+    ["Lissandra", "Lissandra", "Non-existent"],
+    ["Aatrox", "Aatrox", "Non-existent"],
+    ["Lucian", "Lucian", "Non-existent"],
+    ["Jinx", "Jinx", "Non-existent"],
+    ["Yasuo", "Yasuo", "Non-existent"],
+    ["Velkoz", "Vel'Koz", "Non-existent"],
+    ["Braum", "Braum", "Non-existent"],
+    ["Gnar", "Gnar", "Non-existent"],
+    ["Azir", "Azir", "Non-existent"],
+    ["Kalista", "Kalista", "Non-existent"],
+    ["RekSai", "Rek'Sai", "Non-existent"],
+    ["Bard", "Bard", "Non-existent"],
+    ["Ekko", "Ekko", "Non-existent"],
+    ["TahmKench", "Tahm Kench", "Non-existent"],
+    ["Kindred", "Kindred", "Non-existent"],
+    ["Illaoi", "Illaoi", "Non-existent"],
+    ["Jhin", "Jhin", "Non-existent"],
+    ["AurelionSol", "Aurelion Sol", "Non-existent"],
+    ["Taliyah", "Taliyah", "Non-existent"],
+    ["Kled", "Kled", "Non-existent"],
+    ["Ivern", "Ivern", "Non-existent"],
+    ["Camille", "Camille", "Non-existent"],
+    ["Rakan", "Rakan", "Non-existent"],
+    ["Xayah", "Xayah", "Non-existent"],
+    ["Kayn", "Kayn", "Non-existent"],
+    ["Ornn", "Ornn", "Non-existent"],
+    ["Zoe", "Zoe", "Non-existent"],
+    ["KaiSa", "Kai'Sa", "Non-existent"],
+    ["Pyke", "Pyke", "Non-existent"],
+    ["Neeko", "Neeko", "Non-existent"],
+    ["Sylas", "Sylas", "Non-existent"],
+    ["Yuumi", "Yuumi", "Non-existent"],
+    ["Qiyana", "Qiyana", "Non-existent"],
+    ["Senna", "Senna", "Non-existent"],
+    ["Aphelios", "Aphelios", "Non-existent"],
+    ["Sett", "Sett", "Non-existent"],
+    ["Lillia", "Lillia", "Non-existent"],
+    ["Yone", "Yone", "Non-existent"],
+    ["Samira", "Samira", "Non-existent"],
+    ["Seraphine", "Seraphine", "Non-existent"],
+    ["Rell", "Rell", "Non-existent"],
+    ["Viego", "Viego", "Non-existent"],
+    ["Gwen", "Gwen", "Non-existent"],
+    ["Akshan", "Akshan", "Non-existent"],
+    ["Vex", "Vex", "Non-existent"],
+    ["Zeri", "Zeri", "Non-existent"],
+    ["RenataGlasc", "Renata Glasc", "Non-existent"],
+    ["BelVeth", "Bel'Veth", "Non-existent"],
+    ["Nilah", "Nilah", "Non-existent"],
+    ["KSante", "K'Sante", "Non-existent"],
+    ["Milio", "Milio", "Non-existent"],
+    ["Naafiri", "Naafiri", "Non-existent"],
+    ["Briar", "Briar", "Non-existent"],
+    ["Hwei", "Hwei", "Non-existent"],
+    ["Smolder", "Smolder", "Non-existent"],
+    ["Aurora", "Aurora", "Non-existent"],
+    ["Ambessa", "Ambessa", "Non-existent"],
+    ["Mel", "Mel", "Non-existent"],
 ] //as const
 export class Champion extends PickableValue {
     public static readonly name = 'Champion'
     public static readonly values = champions.map(([short,,]) => short)
-    public static readonly choices = champions.map(([short, name,], i) => ({ value: i, short, name }))
+    public static readonly choices = champions.map(([short, name, state], i) => ({ value: i, short, name: `${name} (${state})` }))
 }
 
 // short, name, enabled by default
@@ -371,7 +371,7 @@ export class PlayerCount extends PickableValue {
 
 export class TickRate extends PickableValue {
     public static readonly name = 'Tick Rate'
-    public static values = Object.fromEntries([30, 60, 15].map(v => [ v, `${v} fps`]))
+    public static values = Object.fromEntries([15, 30, 60, 120].map(v => [ v, `${v} fps`]))
     public static readonly choices = PickableValue.normalize(TickRate.values)
 }
 
@@ -490,7 +490,8 @@ export type KeysByValue<T, V> = Exclude<{ [K in keyof T]: T[K] extends V ? K : u
 
 export type DescKeys<T> = KeysByValue<T, ValueDesc<unknown, unknown>>
 export async function ufill<T extends object>(obj: T, { signal }: Required<AbortOptions>, /*fields?: DescKeys<T>[]*/): Promise<T> {
-    const fields = (Object.keys(obj) as (keyof T)[]).filter(key => obj[key] instanceof ValueDesc) as unknown as DescKeys<T>[]
+    const fields = (Object.keys(obj) as (keyof T)[])
+        .filter(key => obj[key] instanceof ValueDesc) as unknown as DescKeys<T>[]
     const opts = {
         clearPromptOnDone: true,
         signal,
@@ -676,4 +677,12 @@ export class FeaturesEnabled extends Enabled {
         if(!this.isMinionsEnabled) ret += '[NO MINIONS]'
         return ret
     }
+}
+
+export class AIDifficulty extends PickableValue {
+    public static readonly name = 'AI Difficulty'
+    public static readonly values = [
+        "Newbie", "Intermediate", "Advanced"
+    ]
+    public static readonly choices = PickableValue.normalize(AIDifficulty.values)
 }

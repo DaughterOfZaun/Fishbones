@@ -1,4 +1,4 @@
-import { Champion, Lock, Name, PickableValue, SummonerSpell, Team, type KeysByValue } from './utils/constants'
+import { AIDifficulty, Champion, Lock, Name, PickableValue, SummonerSpell, Team, type KeysByValue } from './utils/constants'
 import { type PeerId, type Stream } from '@libp2p/interface'
 import { LobbyNotificationMessage, PickRequest } from './message/lobby'
 import type { Game } from './game'
@@ -13,15 +13,17 @@ export class GamePlayer {
     private readonly game: Game
     public readonly id: PlayerId
     public readonly peerId?: PeerId
+    public readonly isBot: boolean
     
-    name = new Name('Player')
+    public readonly name = new Name('Player')
 
     stream?: WriteonlyMessageStream<LobbyNotificationMessage, Stream>
     
-    constructor(game: Game, id: PlayerId, peerId?: PeerId){
+    constructor(game: Game, id: PlayerId, peerId?: PeerId, isBot?: boolean){
         this.game = game
         this.id = id
         this.peerId = peerId
+        this.isBot = !!isBot
     }
     
     public readonly team = new Team() //TODO: disallow uinput & decodeInplace
@@ -29,6 +31,7 @@ export class GamePlayer {
     public readonly spell1 = new SummonerSpell(undefined, () => this.game.server.spells)
     public readonly spell2 = new SummonerSpell(undefined, () => this.game.server.spells)
     public readonly lock = new Lock() //TODO: Hide in test
+    public readonly ai = new AIDifficulty()
 
     public encode(ppp?: PPP): PickRequest {
         return ppp ? ({ [ppp]: this[ppp].encode() }) :

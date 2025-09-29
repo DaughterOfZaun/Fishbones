@@ -119,8 +119,11 @@ type RegularColorName = 'blue'|'red'|'green'|'yellow'|'magenta'|'cyan'
 type ColorName = RegularColorName|BrightColorName|'white'|'gray'
 export const color = (name: ColorName, text: string): string => {
     if(jsonRpcDisabled) return yoctocolor[name](text)
-    name = name.replace('Bright', '') as ColorName
-    return `[color=${name}]${text}[/color]`
+    const color = name
+        .replace('Bright', '')
+        .replace('red', '#dc77d3')
+        .replace('blue', '#4594fb')
+    return `[color=${color}]${text}[/color]`
 }
 
 interface SimpleBar {
