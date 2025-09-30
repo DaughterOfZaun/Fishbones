@@ -1,10 +1,8 @@
-
-import { JSCallback, toBuffer, type Pointer } from "bun:ffi";
-
 import * as utp_callback_arguments from './structs/utp_callback_arguments'
 import { UTPContext } from "./context";
 import { UTPSocket } from "./socket";
-import { ptr_t, uint64, utp_init, utp_set_callback } from "./symbols";
+import { utp_init, utp_set_callback } from "./symbols";
+import { asPointer, JSCallback, ptr_t, toBuffer, uint64, type Pointer } from "./ffi";
 import { UTPCallback } from "./enums";
 import { UTPAddress } from "./address";
 
@@ -15,16 +13,16 @@ const utp_callback_arguments_get_buf = (args: Pointer) => {
     //console.log('utp_callback_arguments_get_buf', 'ptr', buf_ptr)
     const len = utp_callback_arguments.get_len(args)
     //console.log('utp_callback_arguments_get_buf', 'len', len)
-    const buf = toBuffer(buf_ptr, 0, Number(len))
+    const buf = toBuffer(buf_ptr, 0, len)
     //console.log('utp_callback_arguments_get_buf', 'buf', buf)
     return buf
 }
 const utp_callback_arguments_get_address = (args: Pointer) => UTPAddress.fromPointer(utp_callback_arguments.get_address(args))
 
-const callback_definition = { args: [ptr_t /*args*/], returns: uint64 }
+const callback_definition = { args: [ptr_t /*args*/] as const, returns: uint64 }
 
 const callback_log = new JSCallback((args: Pointer) => {
-    args = Number(args) as Pointer
+    args = asPointer(args)
     //console.log('callback_log')
     const context = utp_callback_arguments_get_context(args)
     const socket = utp_callback_arguments_get_socket(args)
@@ -33,7 +31,7 @@ const callback_log = new JSCallback((args: Pointer) => {
 }, callback_definition)
 
 const callback_sendto = new JSCallback((args: Pointer) => {
-    args = Number(args) as Pointer
+    args = asPointer(args)
     //console.log('callback_sendto')
     const context = utp_callback_arguments_get_context(args)
     const socket = utp_callback_arguments_get_socket(args)
@@ -44,7 +42,7 @@ const callback_sendto = new JSCallback((args: Pointer) => {
 }, callback_definition)
 
 const callback_on_error = new JSCallback((args: Pointer) => {
-    args = Number(args) as Pointer
+    args = asPointer(args)
     //console.log('callback_on_error')
     const context = utp_callback_arguments_get_context(args)
     const socket = utp_callback_arguments_get_socket(args)
@@ -53,7 +51,7 @@ const callback_on_error = new JSCallback((args: Pointer) => {
 }, callback_definition)
 
 const callback_on_state_change = new JSCallback((args: Pointer) => {
-    args = Number(args) as Pointer
+    args = asPointer(args)
     //console.log('callback_on_state_change')
     const context = utp_callback_arguments_get_context(args)
     const socket = utp_callback_arguments_get_socket(args)
@@ -62,7 +60,7 @@ const callback_on_state_change = new JSCallback((args: Pointer) => {
 }, callback_definition)
 
 const callback_on_read = new JSCallback((args: Pointer) => {
-    args = Number(args) as Pointer
+    args = asPointer(args)
     //console.log('callback_on_read')
     const context = utp_callback_arguments_get_context(args)
     const socket = utp_callback_arguments_get_socket(args)
@@ -71,7 +69,7 @@ const callback_on_read = new JSCallback((args: Pointer) => {
 }, callback_definition)
 
 const callback_on_firewall = new JSCallback((args: Pointer) => {
-    args = Number(args) as Pointer
+    args = asPointer(args)
     //console.log('callback_on_firewall')
     const context = utp_callback_arguments_get_context(args)
     const address = utp_callback_arguments_get_address(args)
@@ -79,7 +77,7 @@ const callback_on_firewall = new JSCallback((args: Pointer) => {
 }, callback_definition)
 
 const callback_on_accept = new JSCallback((args: Pointer) => {
-    args = Number(args) as Pointer
+    args = asPointer(args)
     //console.log('callback_on_accept')
     const context = utp_callback_arguments_get_context(args)
     const socket = utp_callback_arguments_get_socket(args)

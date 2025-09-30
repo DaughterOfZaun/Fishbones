@@ -27,47 +27,56 @@ if(platform === undefined)
     
 const target = `bun-${platform}-x64` as const
 
-await $`rm ./remote-ui/embedded/*`
+async function build_embeds(){
 
-const embeddedJson: Record<string, string> = {}
-for(const [key, keyConfig] of Object.entries(config)){
-    let from =
-        (typeof keyConfig === 'string') ? keyConfig :
-        (platform in keyConfig) ? keyConfig[platform]! : ''
-    
-    if(from){
-        from = path.resolve(from)
-        let fileName = path.basename(from)
-        if(!fileName.includes('.')) fileName += '.exe'
-        const to = `./remote-ui/embedded/${fileName}`
-        embeddedJson[key] = to.replace('./remote-ui/', 'res://')
-        //console.log(`ln -sf "${from}" "${to}"`)
-        await $`ln -sf ${from} ${to}`
-    } else {
-        embeddedJson[key] = ''
+    await $`rm ./remote-ui/embedded/*`
+
+    const embeddedJson: Record<string, string> = {}
+    for(const [key, keyConfig] of Object.entries(config)){
+        let from =
+            (typeof keyConfig === 'string') ? keyConfig :
+            (platform in keyConfig) ? keyConfig[platform]! : ''
+        
+        if(from){
+            from = path.resolve(from)
+            let fileName = path.basename(from)
+            if(!fileName.includes('.')) fileName += '.exe'
+            const to = `./remote-ui/embedded/${fileName}`
+            embeddedJson[key] = to.replace('./remote-ui/', 'res://')
+            //console.log(`ln -sf "${from}" "${to}"`)
+            await $`ln -sf ${from} ${to}`
+        } else {
+            embeddedJson[key] = ''
+        }
     }
+
+    await fs.writeFile('./dist/embedded.json', JSON.stringify(embeddedJson, null, 4), 'utf8')
+
+    let tscn = await fs.readFile('./remote-ui/main.tscn', 'utf8')
+    const embeddedFiles = Object.values(embeddedJson).filter(file => !!file).toSorted()
+    tscn = tscn.replace(/(embedded_file_\w+ = ".*"\n)+/g, embeddedFiles.map((file, i) => {
+        return `embedded_file_${i} = "${file}"\n`
+    }).join(''))
+    await fs.writeFile('./remote-ui/main.tscn', tscn, 'utf8')
 }
 
-await fs.writeFile('./dist/embedded.json', JSON.stringify(embeddedJson, null, 4), 'utf8')
+if(process.argv.includes('embeds'))
+    await build_embeds()
 
-let tscn = await fs.readFile('./remote-ui/main.tscn', 'utf8')
-const embeddedFiles = Object.values(embeddedJson).filter(file => !!file).toSorted()
-tscn = tscn.replace(/(embedded_file_\w+ = ".*"\n)+/g, embeddedFiles.map((file, i) => {
-    return `embedded_file_${i} = "${file}"\n`
-}).join(''))
-await fs.writeFile('./remote-ui/main.tscn', tscn, 'utf8')
+if(process.argv.includes('patch-modules'))
+    await patch_npm_modules()
 
-//process.exit()
+//await build_godot_pck()
 
+if(process.argv.includes('libutp'))
+    await build_libUTP()
+
+if(process.argv.includes('bun')){
 if(platform === 'windows'){
     await $`mv node_modules node_modules_linux_npm`
     await $`mv node_modules_win_npm node_modules`
 }
 try {
-    //await patch()
-    //await build_godot_pck()
-    //await build_libUTP()
-
     //await $`bun build --compile --sourcemap --target="${TARGET}" --outfile="${OUTDIR_FILE}" 'index.ts'`
     await Bun.build({
         entrypoints: [ './index.ts' ],
@@ -140,15 +149,16 @@ try {
     await $`chmod +x ${OUTDIR_FILE_CLI}`
     await $`cp ${OUTDIR_FILE_CLI} remote-ui/embedded/${OUTFILE_CLI}`
 
-    if(process.argv.includes('godot'))
-        await build_godot_exe()
-
-} finally {
-    if(platform === 'windows'){
-        await $`mv node_modules node_modules_win_npm`
-        await $`mv node_modules_linux_npm node_modules`
+    } finally {
+        if(platform === 'windows'){
+            await $`mv node_modules node_modules_win_npm`
+            await $`mv node_modules_linux_npm node_modules`
+        }
     }
 }
+
+if(process.argv.includes('godot'))
+    await build_godot_exe()
 
 async function build_godot_exe(){
     const preset = ({
@@ -171,17 +181,23 @@ async function build_godot_pck(){
 async function build_libUTP(){
     $.cwd('./node_modules/utp-native/deps/libutp')
     try {
-        //zig build-lib -dynamic -lc -lc++ -target x86_64-windows-gnu -lws2_32
         const objs = ['utp_internal.o', 'utp_utils.o', 'utp_hash.o', 'utp_callbacks.o', 'utp_api.o', 'utp_packedsockaddr.o',]
-        const gpp = 'x86_64-w64-mingw32-g++ -Wall -DPOSIX -g -fno-exceptions -O3 -fPIC -fno-rtti -Wno-sign-compare -fpermissive'
-        await Promise.all(objs.map(async (obj) => $`${{ raw: gpp }} -c -o ${obj} ${obj.replace(/\.o$/, '.cpp')}`))
-        await $`${{ raw: gpp }} -o libutp.dll -shared ${{ raw: objs.join(' ') }} -lws2_32 -static -static-libgcc -static-libstdc++`
+        if(platform === 'windows'){
+            //zig build-lib -dynamic -lc -lc++ -target x86_64-windows-gnu -lws2_32
+            const gpp = `x86_64-w64-mingw32-g++ -Wall -DPOSIX -g -fno-exceptions -O3 -fPIC -fno-rtti -Wno-sign-compare -fpermissive` // -D_DEBUG -DUTP_DEBUG_LOGGING
+            await Promise.all(objs.map(async (obj) => $`${{ raw: gpp }} -c -o ${obj} ${obj.replace(/\.o$/, '.cpp')}`))
+            await $`${{ raw: gpp }} -o libutp.dll -shared ${{ raw: objs.join(' ') }} -lws2_32 -static -static-libgcc -static-libstdc++`
+        } else if(platform === 'linux'){
+            const gpp = `g++ -Wall -DPOSIX -g -fno-exceptions -O3 -fPIC -fno-rtti -Wno-sign-compare -fpermissive` // -D_DEBUG -DUTP_DEBUG_LOGGING
+            await Promise.all(objs.map(async (obj) => $`${{ raw: gpp }} -c -o ${obj} ${obj.replace(/\.o$/, '.cpp')}`))
+            await $`${{ raw: gpp }} -o libutp.so -shared ${{ raw: objs.join(' ') }}`
+        }
     } finally {
         $.cwd()
     }
 }
 
-async function patch(){
+async function patch_npm_modules(){
     await Promise.all([
         patch_achingbrain_ssdp(),
         patch_node_datachannel(),

@@ -1,4 +1,4 @@
-import { ptr, type Pointer } from "bun:ffi";
+import { ptr, type Pointer } from './ffi'
 import type { UTPAddress } from "./address"
 import { UTPSocket } from "./socket"
 import { utp_check_timeouts, utp_context_get_option, utp_context_set_option, utp_create_socket, utp_destroy, utp_issue_deferred_acks, utp_process_icmp_error, utp_process_icmp_fragmentation, utp_process_udp } from "./symbols";

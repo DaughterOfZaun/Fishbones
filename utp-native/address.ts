@@ -1,5 +1,5 @@
 import { isIPv4, isIPv6 } from '@chainsafe/is-ip'
-import { read, type Pointer } from 'bun:ffi'
+import { read, type Pointer } from './ffi'
 import os from 'node:os'
 
 export enum AddressFamily {
@@ -16,7 +16,9 @@ export const determineAddressFamily = (host: string) => {
 
 type BELE = 'BE' | 'LE'
 const BELE: BELE = os.endianness()
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
 Buffer.prototype.writeUint16 = Buffer.prototype[`writeUint16${BELE}`]
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
 Buffer.prototype.writeUint32 = Buffer.prototype[`writeUint32${BELE}`]
 type BufferType = ReturnType<(typeof Buffer<ArrayBuffer>)['alloc']>
 declare global {
@@ -75,7 +77,8 @@ export class UTPAddress {
     static fromPointer(ptr: Pointer){
         const family = read.u16(ptr, 0)
         const port = read_u16BE(ptr, 2)
-        const host = (family == AddressFamily.INET) ? [
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-enum-comparison
+        const host = (family === AddressFamily.INET) ? [
             read.u8(ptr, 4 + 0),
             read.u8(ptr, 4 + 1),
             read.u8(ptr, 4 + 2),

@@ -1,26 +1,12 @@
-import { dlopen, type Pointer } from "bun:ffi"
+import { callback, dlopen, asPointer, int, ptr_t, size_t, socklen_t, ssize_t, uint16, void_t, type Pointer } from "./ffi"
 
 //@ts-expect-error Cannot find module or its corresponding type declarations.
-//const utpNativeModuleWindows =  '../node_modules/utp-native/prebuilds/win32-x64/node.napi.node'
+//const utpNativeModuleWindows =  './node_modules/utp-native/deps/libutp/libutp.dll'
 import utpNativeModuleWindows from '../node_modules/utp-native/deps/libutp/libutp.dll' with { type: 'file' }
 
 //@ts-expect-error Cannot find module or its corresponding type declarations.
-//const utpNativeModuleLinux = './node_modules/utp-native/prebuilds/linux-x64/node.napi.node'
-import utpNativeModuleLinux from '../node_modules/utp-native/prebuilds/linux-x64/node.napi.node' with { type: 'file' }
-
-const is64Bit = ['arm64', 'ppc64', 'x64', 's390x'].includes(process.arch)
-
-export const int = 'int' as const
-//export const ptr_t = 'ptr' as const
-//export const ptr_t = 'uint64_t' as const
-export const ptr_t = is64Bit ? 'uint64_t' as const : 'uint32_t' as const
-export const void_t = 'void' as const
-export const ssize_t = is64Bit ? 'int64_t' as const : 'int32_t' as const
-export const size_t = is64Bit ? 'uint64_t' as const : 'uint32_t' as const
-export const socklen_t = 'uint32_t' as const
-export const uint16 = 'uint16_t' as const
-export const callback = 'callback' as const
-export const uint64 = 'uint64_t' as const
+//const utpNativeModuleLinux = './node_modules/utp-native/deps/libutp/libutp.so'
+import utpNativeModuleLinux from '../node_modules/utp-native/deps/libutp/libutp.so' with { type: 'file' }
 
 let src = `
 utp_context*	utp_init						(int version);
@@ -132,14 +118,15 @@ export const {
     //utp_get_context,
     utp_shutdown,
     utp_close,
+//} = Object.fromEntries(Object.entries(symbols).map(([k, v]) => [ k, wrap(k, v)]))
 } = symbols
 
 export const utp_init = (...args: Parameters<(typeof symbols)['utp_init']>): Pointer => {
-    return Number(symbols.utp_init(...args)) as Pointer
+    return asPointer(symbols.utp_init(...args))
 }
 
 export const utp_create_socket = (...args: Parameters<(typeof symbols)['utp_create_socket']>): Pointer => {
-    return Number(symbols.utp_create_socket(...args)) as Pointer
+    return asPointer(symbols.utp_create_socket(...args))
 }
 
 export const close = library.close.bind(library)

@@ -1,7 +1,7 @@
-import { ptr, type Pointer } from "bun:ffi";
-import type { UTPAddress } from "./address";
-import { utp_close, utp_connect, utp_getsockopt, utp_read_drained, utp_setsockopt, utp_shutdown, utp_write } from "./symbols";
-import type { UTPOptions, UTPShutdown } from "./enums";
+import { ptr, type Pointer } from './ffi'
+import type { UTPAddress } from "./address"
+import { utp_close, utp_connect, utp_getsockopt, utp_read_drained, utp_setsockopt, utp_shutdown, utp_write } from "./symbols"
+import type { UTPOptions, UTPShutdown } from "./enums"
 
 const sockets = new Map<Pointer, UTPSocket>()
 

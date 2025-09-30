@@ -1,4 +1,4 @@
-import { type Pointer, read } from 'bun:ffi'
+import { read, sizeof, type Pointer } from '../ffi'
 
 /*
 typedef struct {
@@ -24,29 +24,21 @@ typedef struct {
 } utp_callback_arguments;
 */
 
-const is64Bit = ['arm64', 'ppc64', 'x64', 's390x'].includes(process.arch)
-
-const bits = is64Bit ? 64 : 32
-const sizeof_ptr_t = bits / 8
-const sizeof_size_t = bits / 8
-const sizeof_uint32 = 32 / 8
-const sizeof_int = 32 / 8
-
 let offset = 0
-const context_offset = offset; offset += sizeof_ptr_t; export const get_context = (args: Pointer) => read.ptr(args, context_offset) as Pointer
-const socket_offset = offset; offset += sizeof_ptr_t; export const get_socket = (args: Pointer) => read.ptr(args, socket_offset) as Pointer
-const len_offset = offset; offset += sizeof_size_t; export const get_len = (args: Pointer) => read.ptr(args, len_offset)
-const flags_offset = offset; offset += sizeof_uint32; export const get_flags = (args: Pointer) => read.u32(args, flags_offset)
-const callback_type_offset = offset; offset += sizeof_int; export const get_callback_type = (args: Pointer) => read.i32(args, callback_type_offset)
-const buf_offset = offset; offset += sizeof_ptr_t; export const get_buf = (args: Pointer) => read.ptr(args, buf_offset) as Pointer
+const context_offset = offset; offset += sizeof.ptr_t; export const get_context = (args: Pointer) => read.ptr(args, context_offset)
+const socket_offset = offset; offset += sizeof.ptr_t; export const get_socket = (args: Pointer) => read.ptr(args, socket_offset)
+const len_offset = offset; offset += sizeof.size_t; export const get_len = (args: Pointer) => read.ptr(args, len_offset)
+const flags_offset = offset; offset += sizeof.uint32; export const get_flags = (args: Pointer) => read.u32(args, flags_offset)
+const callback_type_offset = offset; offset += sizeof.int; export const get_callback_type = (args: Pointer) => read.i32(args, callback_type_offset)
+const buf_offset = offset; offset += sizeof.ptr_t; export const get_buf = (args: Pointer) => read.ptr(args, buf_offset)
 
 const first_union_offset = offset;
-offset = Math.max(offset, first_union_offset + sizeof_ptr_t); export const get_address = (args: Pointer) => read.ptr(args, first_union_offset) as Pointer
-offset = Math.max(offset, first_union_offset + sizeof_int); export const get_send = (args: Pointer) => read.i32(args, first_union_offset)
-offset = Math.max(offset, first_union_offset + sizeof_int); export const get_sample_ms = (args: Pointer) => read.i32(args, first_union_offset)
-offset = Math.max(offset, first_union_offset + sizeof_int); export const get_error_code = (args: Pointer) => read.i32(args, first_union_offset)
-offset = Math.max(offset, first_union_offset + sizeof_int); export const get_state = (args: Pointer) => read.i32(args, first_union_offset)
+offset = Math.max(offset, first_union_offset + sizeof.ptr_t); export const get_address = (args: Pointer) => read.ptr(args, first_union_offset)
+offset = Math.max(offset, first_union_offset + sizeof.int); export const get_send = (args: Pointer) => read.i32(args, first_union_offset)
+offset = Math.max(offset, first_union_offset + sizeof.int); export const get_sample_ms = (args: Pointer) => read.i32(args, first_union_offset)
+offset = Math.max(offset, first_union_offset + sizeof.int); export const get_error_code = (args: Pointer) => read.i32(args, first_union_offset)
+offset = Math.max(offset, first_union_offset + sizeof.int); export const get_state = (args: Pointer) => read.i32(args, first_union_offset)
 
 const second_union_offset = offset;
-offset = Math.max(offset, second_union_offset + sizeof_uint32); export const get_address_len = (args: Pointer) => read.u32(args, second_union_offset)
-offset = Math.max(offset, second_union_offset + sizeof_int); export const get_type = (args: Pointer) => read.i32(args, second_union_offset)
+offset = Math.max(offset, second_union_offset + sizeof.uint32); export const get_address_len = (args: Pointer) => read.u32(args, second_union_offset)
+offset = Math.max(offset, second_union_offset + sizeof.int); export const get_type = (args: Pointer) => read.i32(args, second_union_offset)
