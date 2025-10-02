@@ -261,7 +261,8 @@ export function unwrapAbortError(err: unknown){
 export { originalSpawn }
 const activeProcesses = new Set<ChildProcess>()
 const detachedProcesses = new Set<ChildProcess>()
-export function spawn(cmd: string, args: readonly string[], opts: SpawnOptionsWithoutStdio & { log: boolean, logPrefix: string }){
+type SpawnOptions = SpawnOptionsWithoutStdio & { log: boolean, logPrefix: string }
+export function spawn(cmd: string, args: readonly string[], opts: SpawnOptions){
     //opts = { cwd: downloads, ...opts }
     const proc = originalSpawn(cmd, args, opts)
     
@@ -285,6 +286,15 @@ export function spawn(cmd: string, args: readonly string[], opts: SpawnOptionsWi
     }
 
     return Object.assign(proc, { logPrefix: opts.logPrefix })
+}
+
+export async function exec(cmd: string, args: string[], opts: SpawnOptions & Required<AbortOptions>){
+    const proc = spawn(cmd, args, opts)
+    let stdout = '', stderr = ''
+    proc.stdout.setEncoding('utf8').on('data', (chunk) => stdout += chunk)
+    proc.stderr.setEncoding('utf8').on('data', (chunk) => stderr += chunk)
+    await successfulTermination(opts.logPrefix, proc, opts)
+    return { stdout, stderr }
 }
 
 registerShutdownHandler((force) => {

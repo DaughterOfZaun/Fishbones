@@ -263,6 +263,7 @@ export const gs420Pkg = new class extends PkgInfoCSProj {
 export interface PkgInfoGit extends PkgInfo {
     gitRevision: string
     gitOrigin: string
+    gitBranch: string
 }
 
 export const gsPkg = new class extends PkgInfoCSProj {
@@ -284,6 +285,7 @@ export const gsPkg = new class extends PkgInfoCSProj {
 
     gitRevision = '4592f1379ddaa972ce0b5dc6cebb9caf09c812ab'
     gitOrigin = 'https://gitgud.io/skelsoft/brokenwings.git'
+    gitBranch = 'master'
 
     projName = 'ChildrenOfTheGraveServerConsole'
     csProjDir = path.join(this.dir, this.projName)

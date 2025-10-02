@@ -13,7 +13,6 @@ import path from 'node:path'
 import embedded from './embedded'
 import os from 'os'
 import { runPostInstall, update } from "./data-update"
-import { args } from "./args"
 
 const DOTNET_INSTALL_CORRUPT_EXIT_CODES = [ 130, 131, 142, ]
 
@@ -44,12 +43,11 @@ export async function repair(opts: Required<AbortOptions>){
             })(),
         ]).then(async () => {
 
-            if(args.update.enabled)
-                await update(gsPkg, opts)
+            const updated = await update(gsPkg, opts)
 
             // Allow packages to contain already built exe.
             gsExeIsMissing = !await fs_exists(gsPkg.dll, opts)
-            if(gsExeIsMissing){
+            if(gsExeIsMissing || updated){
                 try {
                     await build(gsPkg, opts)
                 } catch(err) {
