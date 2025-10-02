@@ -35,4 +35,8 @@ export const config = {
     godotExe: '', //'/home/user/.local/share/godot/export_templates/4.5.stable/windows_release_x86_64.exe',
     godotPck: '', //'./dist/RemoteUI.pck',
 
+    gitZip: {
+        //windows: './thirdparty/git/PortableGit-2.51.0.2-64-bit.7z.exe'
+    }
+
 } as const

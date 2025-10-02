@@ -126,7 +126,7 @@ export const color = (name: ColorName, text: string): string => {
     return `[color=${color}]${text}[/color]`
 }
 
-interface SimpleBar {
+export interface SimpleBar {
     getTotal(): number
     update(v: number): void
     stop(): void

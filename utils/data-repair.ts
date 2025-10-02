@@ -1,6 +1,6 @@
 import { build } from "./data-build"
 import { download, appendPartialDownloadFileExt, repairAria2 } from "./data-download"
-import { gcPkg, gsPkg, PkgInfo, repairTorrents, sdkPkg } from "./data-packages"
+import { gcPkg, gitPkg, gsPkg, PkgInfo, repairTorrents, sdkPkg } from "./data-packages"
 import { repairServerSettingsJsonc } from "./data-server"
 import { console_log, fs_copyFile } from "../ui/remote"
 import { console_log_fs_err, cwd, downloads, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_rmdir } from './data-fs'
@@ -11,6 +11,9 @@ import type { AbortOptions } from "@libp2p/interface"
 import { promises as fs } from 'fs'
 import path from 'node:path'
 import embedded from './embedded'
+import os from 'os'
+import { runPostInstall, update } from "./data-update"
+import { args } from "./args"
 
 const DOTNET_INSTALL_CORRUPT_EXIT_CODES = [ 130, 131, 142, ]
 
@@ -27,16 +30,23 @@ export async function repair(opts: Required<AbortOptions>){
         repairAria2(opts),
     ] as Promise<unknown>[])
 
-    let gsExeIsMissing = false
+    let gsExeIsMissing = !await fs_exists(gsPkg.dll, opts)
     await Promise.all([
         Promise.all([
             repairArchived(sdkPkg, opts),
+            repairArchived(gsPkg, opts),
             (async () => {
-                gsExeIsMissing = !await fs_exists(gsPkg.dll, opts)
-                if(gsExeIsMissing)
-                    await repairArchived(gsPkg, opts)
+                if(os.platform() === 'win32')
+                    return repairArchived(gitPkg, opts).then(async () => {
+                        if(await fs_exists(gitPkg.postInstall, opts, false))
+                            await runPostInstall(opts)
+                    })
             })(),
         ]).then(async () => {
+
+            if(args.update.enabled)
+                await update(gsPkg, opts)
+
             // Allow packages to contain already built exe.
             gsExeIsMissing = !await fs_exists(gsPkg.dll, opts)
             if(gsExeIsMissing){
@@ -62,6 +72,8 @@ export async function repair(opts: Required<AbortOptions>){
                 await fs_copyFile(embedded.d3dx9_39_dll, d3dx9_39_dll, opts)
         })
     ] as Promise<unknown>[])
+
+    //TODO: await fs.cp(gsPkg.gcDir, gcPkg.exeDir, { recursive: true })
 }
 
 // cwd = Z:
@@ -124,6 +136,7 @@ async function moveFoundFilesToDir(foundPkgDir: string, pkg: PkgInfo, opts: Requ
 
     let successfullyMovedRequiredFiles = true
     await Promise.all([
+        // eslint-disable-next-line @typescript-eslint/await-thenable
         pkg.topLevelEntries.map(async (fileName) => {
             try {
                 await moveToPkgDir(fileName)
@@ -132,6 +145,7 @@ async function moveFoundFilesToDir(foundPkgDir: string, pkg: PkgInfo, opts: Requ
                 successfullyMovedRequiredFiles = false
             }
         }),
+        // eslint-disable-next-line @typescript-eslint/await-thenable
         pkg.topLevelEntriesOptional.map(async (fileName) => {
             try {
                 await moveToPkgDir(fileName)

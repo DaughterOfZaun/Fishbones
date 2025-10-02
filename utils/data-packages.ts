@@ -13,6 +13,7 @@ const magnet = (ihv1?: string, ihv2?: string, fname?: string, size?: number) => 
     return `magnet:?${parts.join('&')}`
 }
 
+//TODO: PkgInfoDownloadable/Embedded
 export abstract class PkgInfo {
     abstract dirName: string
     abstract noDedup: boolean
@@ -259,6 +260,11 @@ export const gs420Pkg = new class extends PkgInfoCSProj {
     ]
 }()
 
+export interface PkgInfoGit extends PkgInfo {
+    gitRevision: string
+    gitOrigin: string
+}
+
 export const gsPkg = new class extends PkgInfoCSProj {
     dirName = 'ChildrenOfTheGrave-Gameserver'
     noDedup = false
@@ -275,6 +281,9 @@ export const gsPkg = new class extends PkgInfoCSProj {
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
     zipMega = 'https://mega.nz/file/Oz5lDKiQ#RWwgpmkdUn1MrqLg8p8idkPj8Z0mxzFYgPzCmAi55Is'
     zipEmbded = embedded.gsPkgZip
+
+    gitRevision = '4592f1379ddaa972ce0b5dc6cebb9caf09c812ab'
+    gitOrigin = 'https://gitgud.io/skelsoft/brokenwings.git'
 
     projName = 'ChildrenOfTheGraveServerConsole'
     csProjDir = path.join(this.dir, this.projName)
@@ -309,7 +318,49 @@ export const gsPkg = new class extends PkgInfoCSProj {
     ]
 }()
 
-export const packages = [gsPkg, gcPkg, sdkPkg]
+export const gitPkg = new class extends PkgInfoExe {
+    dirName = 'PortableGit'
+    
+    zipExt = '.7z.exe'
+    zipName = 'PortableGit-2.51.0.2-64-bit.7z.exe'
+    zipWebSeed = `https://github.com/git-for-windows/git/releases/download/v2.51.0.windows.2/${this.zipName}`
+    //zipEmbded = embedded.gitZip
+    noDedup = true
+    
+    dir = path.join(downloads, this.dirName)
+    zip = path.join(downloads, this.zipName)
+    
+    postInstallRelative = path.join(this.dirName, 'post-install.bat')
+    postInstall = path.join(downloads, this.postInstallRelative)
+
+    exeDir = path.join(this.dir, 'bin')
+    exe = path.join(this.exeDir, 'git.exe')
+
+    zipInfoHashV1 = ''
+    zipInfoHashV2 = ''
+    zipSize = 60539504
+    zipTorrentEmbedded = ''
+    zipTorrent = ''
+    zipMagnet = ''
+    topLevelEntries = [
+        'cmd',
+        'mingw64',
+        'etc',
+        'bin',
+        'usr',
+        'git-cmd.exe',
+        'git-bash.exe',
+    ]
+    topLevelEntriesOptional = [
+        'tmp',
+        'dev',
+        'LICENSE.txt',
+        'README.portable',
+        'post-install.bat',
+    ]
+}
+
+export const packages = [ gsPkg, gcPkg, sdkPkg, gitPkg ]
 
 for(const a of packages)
     for(const b of packages)
@@ -321,7 +372,9 @@ for(const a of packages)
             )
 
 export async function repairTorrents(opts: Required<AbortOptions>){
-    return Promise.all(packages.map(async pkg => {
+    return Promise.all(packages.filter(pkg => {
+        return pkg.zipTorrent && pkg.zipTorrentEmbedded
+    }).map(async pkg => {
         if(!await fs_exists(pkg.zipTorrent, opts)) try {
             await fs_copyFile(pkg.zipTorrentEmbedded, pkg.zipTorrent, opts)
         } catch(err) {

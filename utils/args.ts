@@ -3,13 +3,14 @@ export class Args {
     torrentDownload = new Option('torrent-download', true, 'Download files via BitTorrent')
     globalDiscovery = new Option('global-discovery', false, '(Experimental) Search for servers on the global Internet')
     torrentDiscovery = new Option('torrent-discovery', false, '(Experimental) Search for servers on the global Internet via BitTorrent')
+    update = new Option('update', false, 'Try downloading updates from the git repository')
     port = new Parameter('port', 5119, 'Set custom UDP port number to use')
 
     repair = new Option('repair', true, '(Debug) Download+Unpack+Build missing files')
     download = new Option('download', true, '(Debug) Download missing files')
     unpack = new Option('unpack', true, '(Debug) Unpack missing files')
     build = new Option('build', true, '(Debug) Build missing files')
-    
+
     setup = new Option('setup', true, 'Ask about custom arguments at startup')
     gui = new Option('gui', true, 'Restart with GUI')
 
@@ -18,8 +19,9 @@ export class Args {
     customizable = [
         this.megaDownload,
         this.torrentDownload,
-        this.globalDiscovery,
-        this.torrentDiscovery,
+        //this.globalDiscovery,
+        //this.torrentDiscovery,
+        this.update,
         this.port,
     ]
 

@@ -13,6 +13,8 @@ node_modules
 /node_modules_linux_deno
 /node_modules_bak
 
+/thirdparty
+
 # output
 out
 dist
