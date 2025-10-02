@@ -19,38 +19,23 @@ export async function build(pkg: PkgInfoCSProj, opts: Required<AbortOptions>){
     
     //console_log(`Building ${pkg.dllName}...`)
     const bar = createBar('Building', pkg.dllName)
-    try{
+    let program, programWasPatched = false
+    try {
+        
+        program = (await fs_readFile(pkg.program, fs_opts))!
+        const patched = program.replace(/(?<!\/\/)(Console\.SetWindowSize)/, '//$1')
+        if(patched != program){
+            await fs_writeFile(pkg.program, patched, fs_opts)
+            programWasPatched = true
+        }
 
-        let txt = (await fs_readFile(pkg.csProj, fs_opts))!
-        txt = txt.replace(/(?<=<TargetFramework>)(?:.|\n)*?(?=<\/TargetFramework>)/g, pkg.netVer)
-        await fs_writeFile(pkg.csProj, txt, fs_opts)
-
-        txt = (await fs_readFile(pkg.program, fs_opts))!
-        /*
-        const nl2 = '\n        '
-        const nl3 = '\n            '
-        const lines = [
-            '[DllImport("kernel32.dll")]',
-            'private static extern IntPtr GetConsoleWindow();',
-        ]
-        txt = txt.replace(
-            lines.join(nl2),
-            lines.map(line => `//${line}`)
-            .concat(`private static IntPtr GetConsoleWindow(){ return IntPtr.Zero; }`)
-            .join(nl2)
-        )
-        txt = txt.replace(`${nl3}Banner();\n`, `${nl3}//Banner();\n`)
-        */
-        txt = txt.replace(/(Console\.SetWindowSize)/, '//$1')
-        await fs_writeFile(pkg.program, txt, fs_opts)
-
-        sdkSubprocess = spawn(sdkPkg.exe, ['build', pkg.csProj], {
+        sdkSubprocess = spawn(sdkPkg.exe, ['build', '.' /*pkg.csProj*/], {
             env: Object.assign(process.env, { 'DOTNET_CLI_TELEMETRY_OPTOUT': '1' }),
             //env: { 'DOTNET_CLI_TELEMETRY_OPTOUT': '1' },
             stdio: [ null, 'pipe', 'pipe' ],
             logPrefix: LOG_PREFIX,
             //signal: opts.signal,
-            cwd: pkg.dir,
+            cwd: pkg.csProjDir,
             log: true,
         })
         
@@ -60,6 +45,10 @@ export async function build(pkg: PkgInfoCSProj, opts: Required<AbortOptions>){
         bar.stop()
         killIfActive(sdkSubprocess)
         sdkSubprocess = undefined
+        
+        // Revert patch.
+        if(program && programWasPatched)
+            await fs_writeFile(pkg.program, program, fs_opts)
     }
 
     if(!await fs_exists(pkg.dll, opts))

@@ -1,9 +1,27 @@
 import path from 'node:path'
-import { createWriteStream as fs_createWriteStream, WriteStream } from "node:fs"
-import { cwd, downloads } from './data-fs'
+import {
+    WriteStream,
+    createWriteStream as fs_createWriteStream,
+    mkdirSync as fs_mkdirSync
+} from "node:fs"
 
-const cwdWin = cwd.replaceAll('/', '\\')
-const cwdLin = cwd.replaceAll('\\', '/')
+//export const cwd = process.cwd()
+//export const cwd = path.dirname(process.execPath)
+export const cwd = path.dirname(process.env.IS_COMPILED ? process.execPath : Bun.main)
+export const cwdWin = cwd.replaceAll('/', '\\') // For logger.
+export const cwdLin = cwd.replaceAll('\\', '/') // For logger.
+export const downloads = path.join(cwd, 'Fishbones_Data')
+fs_ensureDirSync(downloads) //TODO: Fix. Just to be extra sure.
+
+export function fs_ensureDirSync(path: string){
+    try {
+        fs_mkdirSync(path)
+    } catch(unk_err) {
+        const err = unk_err as ErrnoException
+        if(err.code != 'EEXIST')
+            throw err
+    }
+}
 
 export const logger = new class Logger {
     private stream?: WriteStream

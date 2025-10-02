@@ -81,8 +81,9 @@ async function startAria2(opts: Required<AbortOptions>){
             //`--input-file=${ariaSession}`,
             //`--save-session=${ariaSession}`,
             
-            //`--dir=${downloads}`,            
+            //`--dir=${downloads}`,
             `--check-integrity=${true}`,
+            `--check-certificate=${false}`,
             `--bt-hash-check-seed=${true}`,
             `--file-allocation=${'falloc'}`,
 
@@ -166,10 +167,13 @@ export async function download(pkg: PkgInfo, opts: Required<AbortOptions>){
             
             let gid
             try {
-                if(args.torrentDownload){
-                    const b64 = await fs_readFile(pkg.zipTorrent, { ...opts, encoding: 'base64' })
-                    gid = b64 ? await aria2.addTorrent(aria2conn, b64, webSeeds, aria2args) :
-                                await aria2.addUri(aria2conn, [ pkg.zipMagnet ].concat(webSeeds), aria2args)
+                let b64
+                if(args.torrentDownload && pkg.zipTorrent && (
+                    b64 = await fs_readFile(pkg.zipTorrent, { ...opts, encoding: 'base64' })
+                )){
+                    gid = await aria2.addTorrent(aria2conn, b64, webSeeds, aria2args)
+                } else if(args.torrentDownload && pkg.zipMagnet){
+                    gid = await aria2.addUri(aria2conn, [ pkg.zipMagnet, ...webSeeds], aria2args)
                 } else {
                     gid = await aria2.addUri(aria2conn, webSeeds, aria2args)
                 }

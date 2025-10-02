@@ -53,6 +53,7 @@ export abstract class PkgInfoCSProj extends PkgInfo {
     abstract target: string
     abstract netVer: string
     abstract csProj: string
+    abstract csProjDir: string
     abstract dllDir: string
     abstract dllName: string
     abstract dll: string
@@ -337,13 +338,14 @@ export const gitPkg = new class extends PkgInfoExe {
 
     exeDir = path.join(this.dir, 'bin')
     exe = path.join(this.exeDir, 'git.exe')
-
-    zipInfoHashV1 = ''
-    zipInfoHashV2 = ''
+    
     zipSize = 60539504
-    zipTorrentEmbedded = ''
-    zipTorrent = ''
-    zipMagnet = ''
+    zipInfoHashV1 = 'd8100b57f4aea2df80dbda17afbb58749dc259d9'
+    zipInfoHashV2 = '02a56579cd8c21df86b44c6b28009a1a9b532b363081e520ef9043fb8d12a464'
+    zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
+    zipTorrentEmbedded = embedded.gitZipTorrent
+    zipTorrent = `${this.zip}.torrent`
+
     topLevelEntries = [
         'cmd',
         'mingw64',

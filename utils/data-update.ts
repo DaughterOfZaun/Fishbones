@@ -1,8 +1,7 @@
 import type { AbortOptions } from "@libp2p/interface"
-import { spawn, successfulTermination } from "./data-process"
+import { spawn, successfulTermination, TerminationError } from "./data-process"
 import { gitPkg, type PkgInfoGit } from "./data-packages"
 import { console_log, createBar } from "../ui/remote"
-import { logger } from "./data-shared"
 import { fs_exists } from "./data-fs"
 import { args } from "./args"
 import path from "node:path"
@@ -13,12 +12,16 @@ export async function runPostInstall(opts: Required<AbortOptions>){
     try {
         const logPrefix = "GIT POST-INSTALL CMD"
         const proc = spawn(
-            'cmd.exe', [ '/c', gitPkg.postInstall ], {
+            //gitPkg.postInstall, [],
+            'git-bash.exe', [ '--no-needs-console', '--hide', '--no-cd', '--command=post-install.bat' ],
+            {
                 log: true, logPrefix,
                 cwd: gitPkg.dir,
-                detached: true,
-            })
-        await successfulTermination(logPrefix, proc, opts)
+                //detached: true,
+                //shell: true,
+            }
+        )
+        await successfulTermination(logPrefix, proc, opts, [ 1 ])
     } finally {
         bar.stop()
     }
@@ -38,14 +41,18 @@ export async function update(pkg: PkgInfoGit, opts: Required<AbortOptions>){
             await git([ 'init' ], pkg, opts)
             await git([ 'remote', 'add', 'origin', pkg.gitOrigin ], pkg, opts)
             await git([ 'fetch', 'origin' ], pkg, opts)
-            await git([ 'checkout', pkg.gitBranch ], pkg, opts)
+            await git([ 'checkout', pkg.gitBranch, '--force' ], pkg, opts)
             updated = true
         } else {
-            const prevHash = getHeadCommitHash(pkg, opts)
+            const prevHash = await getHeadCommitHash(pkg, opts)
             await git([ 'pull' ], pkg, opts)
-            const currHash = getHeadCommitHash(pkg, opts)
+            const currHash = await getHeadCommitHash(pkg, opts)
             updated = prevHash != currHash
         }
+    } catch(err){
+        console_log('The update failed, see the log for details.')
+        if(err instanceof TerminationError){ /* Ignore */ }
+        else throw err
     } finally {
         bar?.stop()
     }
@@ -64,7 +71,6 @@ const gitExe = os.platform() === 'win32' ? gitPkg.exe : 'git'
 
 async function git(args: string[], pkg: PkgInfoGit, opts: Required<AbortOptions>){
     const { signal } = opts
-    logger.log('exec', gitExe, ...args)
     const proc = spawn(gitExe, args, {
         log: true, logPrefix,
         cwd: pkg.dir,

@@ -263,6 +263,8 @@ const activeProcesses = new Set<ChildProcess>()
 const detachedProcesses = new Set<ChildProcess>()
 type SpawnOptions = SpawnOptionsWithoutStdio & { log: boolean, logPrefix: string }
 export function spawn(cmd: string, args: readonly string[], opts: SpawnOptions){
+    logger.log('spawn', cmd, ...args)
+
     //opts = { cwd: downloads, ...opts }
     const proc = originalSpawn(cmd, args, opts)
     
