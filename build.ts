@@ -25,7 +25,10 @@ const platform =
 if(platform === undefined)
     throw new Error('Platform not specified or not supported')
     
-const target = `bun-${platform}-x64` as const
+const target: Bun.Build.Target =
+    (platform === 'linux') ? `bun-${platform}-x64` :
+    (platform === 'windows') ? `bun-${platform}-x64-baseline` :
+    undefined!
 
 async function build_embeds(){
 
@@ -73,11 +76,11 @@ if(process.argv.includes('libutp'))
 
 if(process.argv.includes('bun')){
 if(platform === 'windows'){
-    await $`mv node_modules node_modules_linux_npm`
-    await $`mv node_modules_win_npm node_modules`
+    //await $`mv node_modules node_modules_linux_npm`
+    //await $`mv node_modules_win_npm node_modules`
 }
 try {
-    //await $`bun build --compile --sourcemap --target="${TARGET}" --outfile="${OUTDIR_FILE}" 'index.ts'`
+    //await $`bun build --compile --sourcemap --target="${TARGET}" --outfile="${OUTDIR_FILE_CLI}" --define process.env.IS_COMPILED='true' 'index.ts'`
     await Bun.build({
         entrypoints: [ './index.ts' ],
         sourcemap: true,
@@ -99,13 +102,12 @@ try {
             'process.env.IS_COMPILED': 'true',
         }
     })
-
     //await $`bun build --sourcemap --target="bun" --outdir="${OUTDIR}" 'index-failsafe.ts'`
     //await $`bun build --compile --sourcemap --target="${TARGET}" --outfile="${OUTDIR_FILE}" './dist/index-failsafe.js' './dist/index.js'`
 
     //console.log(`bun build --compile --target="${TARGET}" --outfile="${OUTDIR_FILE}" --windows-icon="${ICON}" --windows-title="${TITLE}" --windows-publisher="${PUBLISHER}" --windows-version="${VERSION}" --windows-description="${DESCRIPTION}" --windows-copyright="${COPYRIGHT}" 'index.ts'`)
     //await $`flatpak run --command='bottles-cli' com.usebottles.bottles run -b 'Default Gaming' -e ${path.join(__dirname, 'bun.exe')} "build --compile --target='${TARGET}' --outfile='${path.join(__dirname, OUTDIR, OUTFILE_CLI)}' --windows-icon='${ICON}' --windows-title='${TITLE}' --windows-publisher='${PUBLISHER}' --windows-version='${VERSION}' --windows-description='${DESCRIPTION}' --windows-copyright='${COPYRIGHT}' --root='${__dirname}' '${path.join(__dirname, 'index.ts')}'"`
-    if(platform === 'windows' && release === 'release'){
+    if(platform === 'windows' && process.argv.includes('rcedit')){
         const wine = `flatpak run --command='bottles-cli' com.usebottles.bottles run -b 'Default Gaming' -e`
         const args = [
             OUTDIR_FILE_CLI,
@@ -151,8 +153,8 @@ try {
 
     } finally {
         if(platform === 'windows'){
-            await $`mv node_modules node_modules_win_npm`
-            await $`mv node_modules_linux_npm node_modules`
+            //await $`mv node_modules node_modules_win_npm`
+            //await $`mv node_modules_linux_npm node_modules`
         }
     }
 }

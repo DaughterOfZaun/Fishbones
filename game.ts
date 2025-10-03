@@ -393,7 +393,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             player.lock.value = +true
             
             const players = this.getPlayers()
-            if(players.every(p => !!p.lock.value)){
+            if(players.every(p => !!p.lock.value || p.isBot)){
                 for(const player of players)
                     player.fillUnset()
                 this.launch()

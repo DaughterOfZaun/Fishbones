@@ -92,17 +92,24 @@ export class PickableValue extends ValueDesc<number, number> {
 
 // short, name, enabled by default
 export const maps: [number, string, boolean][] = [
+    [0, `Test`, false],
     [1, `Old Summoner's Rift`, true],
-    //[2, `Old Summoner's Rift`, true],
+    [2, `Old Summoner's Rift`, true],
     [3, `Proving Grounds`, true],
     [4, `Twisted Treeline`, true],
+    //[5, `Unknown`, false],
+    [6, `Summoner's Rift Winter (2011)`, false],
+    [7, `Summoner's Rift Winter (2009)`, false],
     [8, `Crystal Scar`, true],
-    [10, `Twisted Treeline`, false],
-    [11, `Summoner's Rift`, false],
+    [9, `Dominion Test`, true],
+    [10, `New Twisted Treeline`, false],
+    [11, `New Summoner's Rift`, false],
     [12, `Howling Abyss`, false],
     [13, `Magma Chamber`, false],
     [14, `Butcher's Bridge`, false],
+    //[15, `Unknown`, false],
     [16, `Cosmic Ruins`, false],
+    //[17, `Unknown`, false],
     [18, `Valoran City Park`, false],
     [19, `Substructure 43`, false],
     [20, `Crash Site`, false],
@@ -120,6 +127,7 @@ export class GameMap extends PickableValue {
 export const modes: [string, string, boolean][] = [
     ['CLASSIC', 'Classic', true],
     ['ARAM', 'ARAM', true],
+    ['ODIN', 'ODIN', true],
 ] //as const
 export class GameMode extends PickableValue {
     public static readonly name = 'Game Mode'

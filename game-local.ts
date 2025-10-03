@@ -41,7 +41,6 @@ export class LocalGame extends Game {
         
         bot.name.value = 'Bot'
         this.assignTeamTo(bot)
-        bot.lock.value = +true
 
         this.broadcast(
             {
@@ -52,7 +51,6 @@ export class LocalGame extends Game {
                     },
                     pickRequest: {
                         team: bot.team.encode(),
-                        lock: bot.lock.encode(),
                     }
                 }]
             },

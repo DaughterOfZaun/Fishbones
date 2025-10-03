@@ -13,6 +13,7 @@ import path from 'node:path'
 import embedded from './embedded'
 import os from 'os'
 import { runPostInstall, update } from "./data-update"
+import { args } from "./args"
 
 const DOTNET_INSTALL_CORRUPT_EXIT_CODES = [ 130, 131, 142, ]
 
@@ -35,7 +36,7 @@ export async function repair(opts: Required<AbortOptions>){
             repairArchived(sdkPkg, opts),
             repairArchived(gsPkg, opts),
             (async () => {
-                if(os.platform() === 'win32')
+                if(os.platform() === 'win32' && args.update.enabled)
                     return repairArchived(gitPkg, opts).then(async () => {
                         if(await fs_exists(gitPkg.postInstall, opts, false))
                             await runPostInstall(opts)
