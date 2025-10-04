@@ -151,6 +151,57 @@ export const console_log: typeof localLog = (...args) => {
     logger.log(...args)
 }
 
+type View = {
+    msg: string,
+    id?: ListenerId,
+    handler: Record<string, (...args: JSONValue[]) => void>
+    onexit?: ViewListener
+    exit: () => void
+}
+type ViewListener = (view: View, ...args: JSONValue[]) => void
+type ViewConfig = {
+    path: string
+    config: JSONValue
+    subviews: View[]
+    listeners: Record<string, ViewListener>
+}
+export function view(config: ViewConfig): View {
+    let view: View = undefined!
+    const obj = {
+        path: config.path,
+        config: config.config,
+        subviews: config.subviews.map(view => view.msg),
+    }
+    const msg = JSON.stringify(obj)
+    const handler = new Proxy({}, {
+        get(target, p){
+            if(typeof p === 'string'){
+                return (args: JSONValue[]) => {
+                    sendFollowupNotification(p, view.id!, ...args)
+                }
+            }
+        }
+    })
+    const exitListener = config.listeners['exit']
+    const exit = () => {
+        handlers.delete(view.id!)
+        exitListener?.(view)
+        view.onexit?.(view)
+    }
+    view = { msg, id: undefined, handler, exit }
+    return view
+}
+
+export async function render(view: View, opts: Required<AbortOptions>){
+    const deferred = new Deferred()
+    deferred.addEventListener(opts.signal, 'abort', () => {
+        sendFollowupNotification('abort', view.id!)
+        deferred.reject(opts.signal?.reason as Error)
+    })
+    //TODO:
+    return deferred.promise
+}
+
 const godotExe = path.join(downloads, 'Godot_v4.5-stable_win64.exe')
 const godotPck = path.join(downloads, 'Godot_v4.5-stable_win64.pck')
 export async function repairUIRenderer(opts: Required<AbortOptions>){
@@ -169,7 +220,9 @@ export async function repairUIRenderer(opts: Required<AbortOptions>){
     ])
 }
 
-const listeners = new Map<number, (err?: { code?: number, message?: string }, result?: JSONValue) => void>()
+type ListenerId = number
+const listeners = new Map<ListenerId, (err?: { code?: number, message?: string }, result?: JSONValue) => void>()
+const handlers = new Map<ListenerId, Record<string, (...args: JSONValue[]) => void>>()
 
 export async function repairAndStart(opts: Required<AbortOptions>): Promise<boolean> {
     if(!jsonRpcDisabled){
@@ -213,11 +266,11 @@ export function stop(){
     process.stdin.removeListener('data', onData)
 }
 
-type JRPCResponse =
-    { id: number, error: { code: number, message: string }, result: undefined } |
-    { id: number, error: undefined, result: JSONValue }
-//type JRPCRequest = { id?: number, method: string, params: JSONValue[] }
-//type JSONRPCMessage = JRPCResponse | JRPCRequest
+type JRPCMessage = JRPCResult | JRPCError | JRPCCall | JRPCNotification
+type JRPCResult = { id: number, error: undefined, result: JSONValue }
+type JRPCError = { id: number, error: { code: number, message: string }, result: undefined }
+type JRPCNotification = { method: string, params?: JSONValue[] }
+type JRPCCall = { id: number } & JRPCNotification
 
 function onData(data: Buffer){
     const lines = data.toString('utf8').split('\n')
@@ -225,8 +278,16 @@ function onData(data: Buffer){
         line = line.trim()
         if(line.startsWith('{') && line.endsWith('}')){
             //logger.log(line)
-            const obj = JSON.parse(line) as JRPCResponse
-            if(typeof obj.id === 'number'){
+            const obj = JSON.parse(line) as JRPCMessage
+
+            if('method' in obj){
+                if('id' in obj){
+                    const handler = handlers.get(obj.id)
+                    handler?.[obj.method]?.(...(obj.params ?? []))
+                } else {
+                    //TODO:
+                }
+            } else {
                 const listener = listeners.get(obj.id)
                 listener?.(obj.error, obj.result)
             }

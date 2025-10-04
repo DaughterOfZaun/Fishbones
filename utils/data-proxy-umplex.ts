@@ -15,14 +15,23 @@ type HostPortStr = string
 //type HostPortObj = { host: string, port: number }
 //type HostPort = string & HostPortObj
 interface PeerData {
-    id: PeerId,
-    host: string, port: number,
-    hostports: HostPortStr[],
-    external: BunSocket|u,
-    internal: BunSocket,
+    peerId: PeerId,
+    remoteHostLastUsed: string,
+    remotePortLastUsed: number,
+    socketToRemote: u|AnySocket,
+    socketToProgram: BunSocket,
 }
 
-const openSockets = new Set<BunSocket>()
+type AnySocket = {
+    hostname: string // Bound external host. Only used for logging.
+    port: number // Bound external port. Only used for logging.
+    send(data: Buffer, remotePort: number, remoteHost: string): boolean
+    closed: boolean
+    close(): void
+}
+
+type Closable = { close(): void }
+const openSockets = new Set<Closable>()
 registerShutdownHandler(() => {
     for(const socket of openSockets)
         socket.close()
@@ -32,10 +41,10 @@ registerShutdownHandler(() => {
 class Proxy {
     
     protected readonly peersByPeerId = new Map<PeerIdStr, PeerData>()
-    protected readonly peersByHostport = new Map<HostPortStr, PeerData>()
-    public host: u|string
-    public port: u|number
-    protected external: u|BunSocket
+    protected readonly peersByRemoteHostPort = new Map<HostPortStr, PeerData>()
+    public programHost: u|string
+    public programPort: u|number
+    protected defaultSocketToRemote: u|AnySocket
 
     protected readonly node: Libp2p
     public constructor(node: Libp2p){
@@ -47,56 +56,56 @@ class Proxy {
     }
 
     public getPort(id: PeerId){
-        return this.getPeer(id)?.internal.port
+        return this.getPeer(id)?.socketToProgram.port
     }
     
-    protected getHostPorts(id: PeerId): HostPortStr[] {
+    protected getRemoteHostPorts(id: PeerId): HostPortStr[] {
 
-        let hostports = this.node.getConnections(id)
+        let remoteHostPorts = this.node.getConnections(id)
             .filter(connection => UTPMatcher.exactMatch(connection.remoteAddr))
             .map(connection => {
                 const { host, port } = connection.remoteAddr.toOptions()
                 return `${host}:${port}`
             })
-        hostports = new Set(hostports).values().toArray()
-        hostports = hostports.sort()
+        remoteHostPorts = new Set(remoteHostPorts).values().toArray()
+        remoteHostPorts = remoteHostPorts.sort()
 
-        log('hostports for peer %p are', id, hostports)
+        log('hostports for peer %p are', id, remoteHostPorts)
         
-        return hostports
+        return remoteHostPorts
     }
 
-    protected async createMainSocket(opts: Required<AbortOptions>){
+    protected async createDefaultSocketToRemote(opts: Required<AbortOptions>){
 
         log('creating external socket')
 
-        this.external = await uMplex.udpSocket({
+        this.defaultSocketToRemote = await uMplex.udpSocket({
             binaryType: 'buffer',
             socket: {
                 filter: isENet,
-                data: (_, data, port, address) => {
-                    const hostport = `${address}:${port}`
-                    const peer = this.peersByHostport.get(hostport)
+                data: (_, data, remotePort, remoteHost) => {
+                    const remoteHostPort = `${remoteHost}:${remotePort}`
+                    const peer = this.peersByRemoteHostPort.get(remoteHostPort)
                     if(!peer){
-                        log.error('external socket: ignoring pkt from unknown addr %s:%d', address, port)
+                        log.error('external socket: ignoring pkt from unknown addr %s:%d', remoteHost, remotePort)
                     } else {
-                        if(!this.host || !this.port){
-                            log.error('external socket: dropping pkt from %s:%d because internal addr is unknown', address, port)
-                        } else if(peer.internal.closed){
-                            log.error('external socket: dropping pkt from %s:%d because internal socket is closed', address, port)
+                        if(!this.programHost || !this.programPort){
+                            log.error('external socket: dropping pkt from %s:%d because internal addr is unknown', remoteHost, remotePort)
+                        } else if(peer.socketToProgram.closed){
+                            log.error('external socket: dropping pkt from %s:%d because internal socket is closed', remoteHost, remotePort)
                         } else {
-                            log.trace('external socket: redirecting pkt from %s:%d through %s:%d to %s:%d', address, port, peer.internal.hostname, peer.internal.port, this.host, this.port)
-                            peer.internal.send(data, this.port, this.host)
+                            log.trace('external socket: redirecting pkt from %s:%d through %s:%d to %s:%d', remoteHost, remotePort, peer.socketToProgram.hostname, peer.socketToProgram.port, this.programHost, this.programPort)
+                            peer.socketToProgram.send(data, this.programPort, this.programHost)
                         }
-                        peer.host = address
-                        peer.port = port
+                        peer.remoteHostLastUsed = remoteHost
+                        peer.remotePortLastUsed = remotePort
                     }
                 },
             }
         })
-        openSockets.add(this.external)
+        openSockets.add(this.defaultSocketToRemote)
 
-        log('created external socket at %s:%d', this.external.hostname, this.external.port)
+        log('created external socket at %s:%d', this.defaultSocketToRemote.hostname, this.defaultSocketToRemote.port)
 
         opts.signal.throwIfAborted()
     }
@@ -105,57 +114,57 @@ class Proxy {
         
         log('creating internal socket for peer %p', id)
 
-        let host = '', port = 0,
-            hostports: HostPortStr[] = []
+        let remoteHost = '', remotePort = 0,
+            remoteHostPorts: HostPortStr[] = []
         if(!this.node.peerId.equals(id)){
-            hostports = this.getHostPorts(id)
-            if(!hostports.length){
+            remoteHostPorts = this.getRemoteHostPorts(id)
+            if(!remoteHostPorts.length){
                 log('peer %p is not connected.', id)
             } else {
-                //host = hostports[0]!.host
-                //port = hostports[0]!.port
-                const hostport = hostports[0]!
-                const index = hostport.lastIndexOf(':')
-                port = parseInt(hostport.slice(index + 1))
-                host = hostport.slice(0, index)
+                //remoteHost = remoteHostPorts[0]!.host
+                //remotePort = remoteHostPorts[0]!.port
+                const remoteHostPort = remoteHostPorts[0]!
+                const index = remoteHostPort.lastIndexOf(':')
+                remotePort = parseInt(remoteHostPort.slice(index + 1))
+                remoteHost = remoteHostPort.slice(0, index)
             }
         }
         
         const peer: PeerData = {
-            id,
-            host, port,
-            hostports,
-            external: this.external,
-            internal: await Bun.udpSocket({
+            peerId: id,
+            remoteHostLastUsed: remoteHost,
+            remotePortLastUsed: remotePort,
+            socketToRemote: this.defaultSocketToRemote,
+            socketToProgram: await Bun.udpSocket({
                 hostname: LOCALHOST,
                 socket: {
-                    data: (_, data, port, address) => {
-                        peer.external ??= this.external!
+                    data: (_, data, programPort, programHost) => {
+                        peer.socketToRemote ??= this.defaultSocketToRemote!
 
-                        if(!this.host || !this.port){
-                            log('internal socket: setting internal addr to %s:%d', address, port)
-                        } else if(this.host !== address || this.port !== port){
-                            log.error('internal socket: got pkt from unexpected addr %s:%d', address, port)
+                        if(!this.programHost || !this.programPort){
+                            log('internal socket: setting internal addr to %s:%d', programHost, programPort)
+                        } else if(this.programHost !== programHost || this.programPort !== programPort){
+                            log.error('internal socket: got pkt from unexpected addr %s:%d', programHost, programPort)
                         }
-                        if(peer.external.closed){
-                            log.error('internal socket: dropping pkt from %s:%d because external socket is closed', address, port)
+                        if(peer.socketToRemote.closed){
+                            log.error('internal socket: dropping pkt from %s:%d because external socket is closed', programHost, programPort)
                         } else /*if(peer.port && peer.host)*/ {
-                            log.trace('internal socket: redirecting pkt from %s:%d through %s:%d to %s:%d', address, port, peer.external.hostname, peer.external.port, peer.host, peer.port)
-                            peer.external.send(data, peer.port, peer.host)
+                            log.trace('internal socket: redirecting pkt from %s:%d through %s:%d to %s:%d', programHost, programPort, peer.socketToRemote.hostname, peer.socketToRemote.port, peer.remoteHostLastUsed, peer.remotePortLastUsed)
+                            peer.socketToRemote.send(data, peer.remotePortLastUsed, peer.remoteHostLastUsed)
                         }
-                        this.host = address
-                        this.port = port
+                        this.programHost = programHost
+                        this.programPort = programPort
                     },
                 }
             })
         }
-        openSockets.add(peer.internal)
+        openSockets.add(peer.socketToProgram)
 
-        log('created internal socket for peer %p at %s:%d', peer.id, peer.internal.hostname, peer.internal.port)
+        log('created internal socket for peer %p at %s:%d', peer.peerId, peer.socketToProgram.hostname, peer.socketToProgram.port)
 
-        this.peersByPeerId.set(peer.id.toString(), peer)
-        for(const hostport of peer.hostports)
-            this.peersByHostport.set(hostport, peer)
+        for(const remoteHostPort of remoteHostPorts)
+            this.peersByRemoteHostPort.set(remoteHostPort, peer)
+        this.peersByPeerId.set(peer.peerId.toString(), peer)
 
         opts.signal.throwIfAborted()
         
@@ -164,33 +173,34 @@ class Proxy {
 
     protected closeSockets(){
         for(const peer of this.peersByPeerId.values()){
-            log('closing socket for peer %p at %s:%d', peer.id, peer.internal.hostname, peer.internal.port)
-            openSockets.delete(peer.internal)
-            peer.internal.close()
+            log('closing socket for peer %p at %s:%d', peer.peerId, peer.socketToProgram.hostname, peer.socketToProgram.port)
+            openSockets.delete(peer.socketToProgram)
+            peer.socketToProgram.close()
         }
-        if(this.external){
-            log('closing socket at %s:%d', this.external.hostname, this.external.port)
-            openSockets.delete(this.external)
-            this.external.close()
+        if(this.defaultSocketToRemote){
+            log('closing socket at %s:%d', this.defaultSocketToRemote.hostname, this.defaultSocketToRemote.port)
+            openSockets.delete(this.defaultSocketToRemote)
+            this.defaultSocketToRemote.close()
         }
         this.peersByPeerId.clear()
-        this.peersByHostport.clear()
-        this.external = undefined
-        this.host = undefined
-        this.port = undefined
+        this.peersByRemoteHostPort.clear()
+        this.defaultSocketToRemote = undefined
+        this.programHost = undefined
+        this.programPort = undefined
     }
 }
 
 export class ProxyServer extends Proxy {
 
-    public async start(port: number, peerIds: PeerId[], opts: Required<AbortOptions>) {
-        this.host = LOCALHOST
-        this.port = port
+    public async start(programPort: number, peerIds: PeerId[], opts: Required<AbortOptions>) {
+        this.programHost = LOCALHOST
+        this.programPort = programPort
         
-        log('starting proxy server at %s:%d', this.host, this.port)
+        log('starting proxy server at %s:%d', this.programHost, this.programPort)
 
         await Promise.all([
-            this.createMainSocket(opts),
+            this.createDefaultSocketToRemote(opts),
+            // eslint-disable-next-line @typescript-eslint/await-thenable
             peerIds.map(async (id) => this.createPeer(id, opts)),
         ])
     }
@@ -213,22 +223,22 @@ export class ProxyClient extends Proxy {
             const proxyClient = this as ProxyClient
             const serverSidePeer = proxyServer.getPeer(id)!
             const clientSidePeer = await proxyClient.createPeer(id, opts)
-            clientSidePeer.external = serverSidePeer.internal
-            serverSidePeer.external = clientSidePeer.internal
+            clientSidePeer.socketToRemote = serverSidePeer.socketToProgram
+            serverSidePeer.socketToRemote = clientSidePeer.socketToProgram
             Object.defineProperties(serverSidePeer, {
-                host: { get: () => proxyClient.host },
-                port: { get: () => proxyClient.port },
+                remoteHostLastUsed: { get: () => proxyClient.programHost },
+                remotePortLastUsed: { get: () => proxyClient.programPort },
             })
             Object.defineProperties(clientSidePeer, {
-                host: { get: () => proxyServer.host },
-                port: { get: () => proxyServer.port },
+                remoteHostLastUsed: { get: () => proxyServer.programHost },
+                remotePortLastUsed: { get: () => proxyServer.programPort },
             })
         } else {
 
             log('connecting to remote server peer %p', id)
 
             await Promise.all([
-                this.createMainSocket(opts),
+                this.createDefaultSocketToRemote(opts),
                 this.createPeer(id, opts),
             ])
         }
