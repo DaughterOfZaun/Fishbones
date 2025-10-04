@@ -1,6 +1,7 @@
 export class Args {
     megaDownload = new Option('mega-download', true, 'Download files via mega.nz')
     torrentDownload = new Option('torrent-download', true, 'Download files via BitTorrent')
+    directConnect = new Option('direct-connect', false, 'Connect to other players using a key')
     globalDiscovery = new Option('global-discovery', false, '(Experimental) Search for servers on the global Internet')
     torrentDiscovery = new Option('torrent-discovery', false, '(Experimental) Search for servers on the global Internet via BitTorrent')
     update = new Option('update', false, 'Download updates from Skelsoft\'s git')
@@ -19,6 +20,7 @@ export class Args {
     customizable = [
         this.megaDownload,
         this.torrentDownload,
+        this.directConnect,
         //this.globalDiscovery,
         //this.torrentDiscovery,
         this.update,

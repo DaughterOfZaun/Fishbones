@@ -34,7 +34,6 @@ gdscript/warnings/return_value_discarded=1
 
 [editor]
 
-run/main_run_args="-- ../dist/Fishbones.exe"
 export/convert_text_resources_to_binary=false
 
 [rendering]

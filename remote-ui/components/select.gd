@@ -14,11 +14,14 @@ func init(config: Dictionary, cb: Callable) -> void:
 func update(var_choices: Variant) -> void:
     var choices: Array = var_choices
     
-    for i in range(max(0, container.get_child_count() - len(choices))):
+    #for i in range(max(0, container.get_child_count() - len(choices))):
+    for i in range(container.get_child_count() - 1, -1, -1):
         var instance: SelectButton = container.get_child(i)
+        container.remove_child(instance)
         instance.queue_free()
 
-    for i in range(max(0, len(choices) - container.get_child_count())):
+    #for i in range(max(0, len(choices) - container.get_child_count())):
+    for i in range(len(choices)):
         var instance: SelectButton = button.instantiate()
         var obp := on_button_pressed.bind(instance)
         instance.button.pressed.connect(obp)

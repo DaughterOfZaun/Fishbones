@@ -100,7 +100,8 @@ try {
         },
         define: {
             'process.env.IS_COMPILED': 'true',
-        }
+        },
+        env: 'disable',
     })
     //await $`bun build --sourcemap --target="bun" --outdir="${OUTDIR}" 'index-failsafe.ts'`
     //await $`bun build --compile --sourcemap --target="${TARGET}" --outfile="${OUTDIR_FILE}" './dist/index-failsafe.js' './dist/index.js'`

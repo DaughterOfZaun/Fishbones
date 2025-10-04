@@ -56,8 +56,22 @@ export class LocalGame extends Game {
             },
             this.players.values()
         )
-        for(const key of ['champion', 'ai'] as const)
-            await this.pick(key, opts, bot)
+        for(const key of ['champion', 'ai'] as const){
+            //await this.pick(key, opts, bot)
+            //HACK: Bot owners should be allowed to choose champions during gathering.
+            await bot[key].uinput(opts)
+            this.broadcast(
+                {
+                    peersRequests: [{
+                        playerId,
+                        pickRequest: {
+                            champion: bot.champion.encode(),
+                        }
+                    }]
+                },
+                this.players.values()
+            )
+        }
     }
 
     private handleIncomingStream: StreamHandler = async ({ stream, connection }) => {

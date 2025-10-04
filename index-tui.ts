@@ -1,13 +1,14 @@
-import { spinner, select, type Choice, AbortPromptError, color } from './ui/remote'
+import { spinner, select, type Choice, AbortPromptError, color, render as renderView, createView } from './ui/remote'
 import { type Game } from './game'
 import { RemoteGame } from './game-remote'
 import { LocalGame } from './game-local'
 import type { GamePlayer, PPP } from './game-player'
 import { LocalServer, RemoteServer } from './server'
 import type { Peer as PBPeer } from './message/peer'
-import type { LibP2PNode } from './index-node'
+import { connectByPeerInfoString, getPeerInfoString, type LibP2PNode } from './index-node'
 import { TITLE } from './utils/constants-build'
 import type { AbortOptions } from '@libp2p/interface'
+import { args } from './utils/args'
 
 export async function main(node: LibP2PNode, opts: Required<AbortOptions>){
     
@@ -18,7 +19,7 @@ export async function main(node: LibP2PNode, opts: Required<AbortOptions>){
     //const name = node.peerId.toString().slice(-8)
     const name = 'Player'
 
-    type Action = ['join', RemoteGame] | ['host'] | ['exit'] | ['noop']
+    type Action = ['join', RemoteGame] | ['host'] | ['connect'] | ['exit'] | ['noop']
     
     const getChoices = () => {
         let ret: Choice<Action>[] = pspd.getPeersWithData()
@@ -86,6 +87,9 @@ export async function main(node: LibP2PNode, opts: Required<AbortOptions>){
         { value: ['host'] as Action, name: 'Create a custom game lobby' },
         { value: ['exit'] as Action, name: 'Quit' },
     ]
+    if(args.directConnect.enabled){
+        defaultItems.unshift({ value: ['connect'] as Action, name: 'Connect to another player using a key' })
+    }
     loop: while(true){
         const [action, ...args] = await select<Action>({
             message: 'Select a custom game lobby',
@@ -100,6 +104,24 @@ export async function main(node: LibP2PNode, opts: Required<AbortOptions>){
             clearPromptOnDone: true,
             signal: opts.signal,
         })
+        if(action == 'connect'){
+            const view = createView({
+                path: 'res://views/direct_connect.tscn',
+                config: { default: getPeerInfoString(node) }
+            })
+            node.addEventListener('self:peer:update', onPeerUpdate)
+            function onPeerUpdate(){
+                view.handler.update!(getPeerInfoString(node))
+            }
+            try {
+                const str = await renderView(view, opts)
+                if(typeof str === 'string'){
+                    await connectByPeerInfoString(node, str, opts)
+                }
+            } finally {
+                node.removeEventListener('self:peer:update', onPeerUpdate)
+            }
+        }
         if(action == 'host' && pubsub.isStarted() == false){
             const server = await LocalServer.create(node, opts)
             const game = await LocalGame.create(node, server, opts)

@@ -1,3 +1,4 @@
+/* eslint-disable prefer-const */
 import { GossipSub, gossipsub, type GossipSubComponents } from '@chainsafe/libp2p-gossipsub'
 import { yamux } from '@chainsafe/libp2p-yamux'
 import { tcp } from '@libp2p/tcp'
@@ -8,6 +9,7 @@ import { pubsubPeerDiscovery as pubsubPeerWithDataDiscovery } from './network/pu
 //import { pubsubPeerDiscovery } from '@libp2p/pubsub-peer-discovery'
 import { hash } from 'uint8-util'
 import { identify, identifyPush } from '@libp2p/identify'
+import { peerIdFromString } from '@libp2p/peer-id'
 import { ping } from '@libp2p/ping'
 import { defaultLogger } from '@libp2p/logger'
 import { noise } from '@chainsafe/libp2p-noise'
@@ -28,26 +30,28 @@ import { sha256 } from 'multiformats/hashes/sha2'
 import { autodial } from './network/autodial'
 //import { webSockets } from '@libp2p/websockets'
 //import { webTransport } from '@libp2p/webtransport'
+//import { quic } from '@chainsafe/libp2p-quic'
 //import * as Data from './data'
-import { utp, UTPMatcher } from './network/tcp'
+//import { utp, UTPMatcher } from './network/tcp'
 import { isIPv4, isIPv6 } from '@chainsafe/is-ip'
 import { multiaddr, type Multiaddr } from '@multiformats/multiaddr'
 import type { ConnectionManager, OpenConnectionOptions, TransportManager } from '@libp2p/interface-internal'
 import { anySignal } from 'any-signal'
 import { setMaxListeners } from 'main-event'
-import { TimeoutError, type AbortOptions, type Address, type PeerId, type PeerInfo } from '@libp2p/interface'
+import { TimeoutError, type AbortOptions, type Address, type Libp2p, type PeerId, type PeerInfo } from '@libp2p/interface'
 
 import { certifiedAddressesFirst, circuitRelayAddressesLast, loopbackAddressLast, publicAddressesFirst, reliableTransportsFirst } from './node_modules/libp2p/src/connection-manager/address-sorter.ts'
 
 import { args } from './utils/args.ts'
-
+/*
 const utpTransportFirst = (a: Address, b: Address) => {
     return +UTPMatcher.exactMatch(b.multiaddr)
         -  +UTPMatcher.exactMatch(a.multiaddr) as (-1 | 0 | 1)
 }
+*/
 // defaultAddressSorter reversed
 const addressSorters = [
-    utpTransportFirst, // new
+    //utpTransportFirst, // added
     loopbackAddressLast,
     publicAddressesFirst,
     circuitRelayAddressesLast,
@@ -87,38 +91,44 @@ const MAX_PEER_ADDRS_TO_DIAL = 25
 const PER_ADDR_DIAL_TIMEOUT = 10_000
 const DIAL_TIMEOUT = PER_ADDR_DIAL_TIMEOUT * MAX_PEER_ADDRS_TO_DIAL + 1000
 
-let DISABLE_UTP = true
-let DISABLE_MDNS = true
-let DISABLE_AUTODIAL = true
-
 let DISABLE_TCP = true
+//let DISABLE_UTP = true
+//let DISABLE_QUIC = true
+
+let DISABLE_MDNS = true
 let DISABLE_DHT = true
 let DISABLE_BOOTSTRAP = true
-let DISABLE_NAT_MIGITATION = true
 let DISABLE_CONTENT_DISCOVERY = true
+let DISABLE_TORRENT_DISCOVERY = true
 
-let DISABLE_TORRENT = true
+let DISABLE_AUTODIAL = true
 
-DISABLE_UTP = false
-DISABLE_MDNS = false
-DISABLE_AUTODIAL = false
-if(args.globalDiscovery.enabled){
-    DISABLE_TCP = false
-    DISABLE_DHT = false
-    DISABLE_BOOTSTRAP = false
-    DISABLE_NAT_MIGITATION = false
-    DISABLE_CONTENT_DISCOVERY = false
-    if(args.torrentDiscovery.enabled){
-        DISABLE_TORRENT = false
-    }
-}
+let DISABLE_NAT_MIGITATION = true
 
 export type LibP2PNode = Awaited<ReturnType<typeof createNode>>
 export async function createNode(port: number, opts: Required<AbortOptions>){
+    
+    DISABLE_TCP = false
+    //DISABLE_QUIC = false
+    //DISABLE_MDNS = false
+    DISABLE_AUTODIAL = false
+    if(args.directConnect.enabled){
+        DISABLE_DHT = false
+        DISABLE_BOOTSTRAP = false
+        DISABLE_NAT_MIGITATION = false
+        if(args.globalDiscovery.enabled){
+            DISABLE_CONTENT_DISCOVERY = false
+            if(args.torrentDiscovery.enabled){
+                DISABLE_TORRENT_DISCOVERY = false
+            }
+        }
+    }
+
     const node = await createLibp2p({
         addresses: {
             listen: [
-                ...(DISABLE_UTP ? [] : [`/ip4/0.0.0.0/udp/${port}/utp`]),
+                //...(DISABLE_QUIC ? [] : [`/ip4/0.0.0.0/udp/${port}/quic-v1`]),
+                //...(DISABLE_UTP ? [] : [`/ip4/0.0.0.0/udp/${port}/utp`]),
                 ...(DISABLE_TCP ? [] : [`/ip4/0.0.0.0/tcp/${port}`]),
                 ...(DISABLE_NAT_MIGITATION ? [] : Array<string>(10).fill(`/p2p-circuit`))
                 //`/ip4/0.0.0.0/udp/${0}/webrtc-direct`,
@@ -127,6 +137,8 @@ export async function createNode(port: number, opts: Required<AbortOptions>){
             ]
         },
         transports: [
+            //...(DISABLE_QUIC ? [] : [ quic() ]),
+            /*
             ...(DISABLE_UTP ? [] : [
                 utp({
                     outboundSocketInactivityTimeout: Infinity,
@@ -135,6 +147,7 @@ export async function createNode(port: number, opts: Required<AbortOptions>){
                     //closeServerOnMaxConnections: null,
                 }),
             ]),
+            */
             ...(DISABLE_TCP ? [] : [ tcp() ]),
             ...(DISABLE_NAT_MIGITATION ? [] : [
                 circuitRelayTransport(), // Default relay-tag.value = 1
@@ -214,7 +227,7 @@ export async function createNode(port: number, opts: Required<AbortOptions>){
                 enableBroadcast: false,
                 topics: [ `${appName.join('.')}._peer-discovery._p2p._pubsub` ]
             }),
-            ...(DISABLE_TORRENT ? {} : {
+            ...(DISABLE_TORRENT_DISCOVERY ? {} : {
                 torrentPeerDiscovery: torrentPeerDiscovery({
                     infoHash: (await hash(`${appName.join('/')}/${0}`, 'hex', 'sha-1')) as string,
                     //announce: await Data.getAnnounceAddrs(),
@@ -268,14 +281,14 @@ export async function createNode(port: number, opts: Required<AbortOptions>){
         }
     ).components
     
-    if(!DISABLE_AUTODIAL && (!DISABLE_MDNS || !DISABLE_TORRENT)){
+    if(!DISABLE_AUTODIAL && (!DISABLE_MDNS || !DISABLE_TORRENT_DISCOVERY)){
         const peersToDial = new Set<string>()
         if(!DISABLE_MDNS){
             nc.mdns.addEventListener('peer', ({ detail: info }: CustomEvent<PeerInfo>) => {
                 peersToDial.add(info.id.toString())
             })
         }
-        if(!DISABLE_TORRENT){
+        if(!DISABLE_TORRENT_DISCOVERY){
             nc.torrentPeerDiscovery.addEventListener('record', ({ detail: info_id }: CustomEvent<PeerId>) => {
                 peersToDial.add(info_id.toString())
             })
@@ -317,4 +330,35 @@ export async function createNode(port: number, opts: Required<AbortOptions>){
     }
 
     return node
+}
+
+type PeerInfoStringified = {
+    id: string
+    multiaddrs: string[]
+}
+
+export function getPeerInfoString(node: Libp2p){
+    const info = removePrivateAddressesMapper({ id: node.peerId, multiaddrs: node.getMultiaddrs() })
+    return JSON.stringify({
+        id: info.id.toString(),
+        multiaddrs: info.multiaddrs.map(ma => ma.toString()),
+    }, null, 4)
+}
+
+export async function connectByPeerInfoString(node: Libp2p, str: string, opts: Required<AbortOptions>){
+    const obj = JSON.parse(str) as unknown
+    if(isStringifiedPeerInfo(obj)){
+        const peerId = peerIdFromString(obj.id)
+        const multiaddrs = obj.multiaddrs.map(str => multiaddr(str))
+        await node.peerStore.patch(peerId, { multiaddrs }, opts)
+        const connection = await node.dial(peerId, opts)
+        console.log('CONNECTED TO', connection.remoteAddr)
+    }
+}
+
+function isStringifiedPeerInfo(obj: unknown): obj is PeerInfoStringified {
+    return typeof obj === 'object' && obj !== null
+        && 'id' in obj && typeof obj['id'] === 'string'
+        && 'multiaddrs' in obj && Array.isArray(obj['multiaddrs']) &&
+        obj['multiaddrs'].every(v => typeof v === 'string')
 }

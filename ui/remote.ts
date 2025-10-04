@@ -57,14 +57,28 @@ export async function checkbox<Value>(config: CheckboxConfig<Value>, context?: C
     return is.map(i => values[i]!)
 }
 
-type SelectConfig<Value> = Omit<Parameters<typeof localSelect<Value>>[0], 'choices'> & { choices: SelectChoice<Value>[] }
+type SelectConfig<Value> = Omit<Parameters<typeof localSelect<Value>>[0], 'choices' | 'cb'> & {
+    choices: SelectChoice<Value>[], cb?: (setItems: (choices: SelectChoice<Value>[]) => void) => () => void
+}
 export async function select<Value>(config: SelectConfig<Value>, context?: Context): Promise<Value> {
     if(jsonRpcDisabled) return localSelect<Value>(config, context)
     
-    const values = config.choices.map(choice => choice.value)
-    const choices = config.choices.map((choice, i) => ({ ...choice, value: i }))
-    const i: number = await remoteInput('select', { ...config, choices }, context)
+    let values: Value[] = []
+    let choices: SelectChoice<number>[] = []
+    update(config.choices)
+    function update(config_choices: SelectChoice<Value>[]){
+        values = config_choices.map(choice => choice.value)
+        choices = config_choices.map((choice, i) => ({ ...choice, value: i }))
+        return choices
+    }
     
+    const idRef = { id: 0 } //HACK:
+    const promise: Promise<number> = remoteInput('select', { ...config, choices }, context, idRef)
+    const cleanup = config.cb?.(updatedChoices => {
+        sendFollowupNotification('select.update', idRef.id, update(updatedChoices))
+    })
+    const i: number = await promise
+    cleanup?.()
     return values[i]!
 }
 
@@ -81,7 +95,7 @@ const extractFile: typeof fs_copyFile = async (from, to, opts) => {
 
 type CancellablePromise<Value> = Promise<Value> //& { cancel: () => void }
 type RemoteInputFuncName = 'spinner' | 'select' | 'checkbox' | 'input' | 'copy'
-async function remoteInput<Value extends JSONValue, Config>(name: RemoteInputFuncName, config: Config, context?: Context): CancellablePromise<Value> {
+async function remoteInput<Value extends JSONValue, Config>(name: RemoteInputFuncName, config: Config, context?: Context, ref?: { id: number }): CancellablePromise<Value> {
     
     if(context?.signal?.aborted)
         return Promise.reject(new AbortPromptError({ cause: context.signal.reason }))
@@ -89,6 +103,7 @@ async function remoteInput<Value extends JSONValue, Config>(name: RemoteInputFun
     const deferred = new Deferred<Value>()
     
     const id = sendCall(name, config as JSONValue) //TODO: Fix types.
+    if(ref) ref.id = id
 
     listeners.set(id, (err, result) => {
         //if(context?.signal?.aborted)
@@ -151,54 +166,87 @@ export const console_log: typeof localLog = (...args) => {
     logger.log(...args)
 }
 
+type JListener = (...args: JSONValue[]) => void
+//type ViewListener = (view: View, ...args: JSONValue[]) => void
 type View = {
-    msg: string,
-    id?: ListenerId,
-    handler: Record<string, (...args: JSONValue[]) => void>
-    onexit?: ViewListener
-    exit: () => void
+    id?: ListenerId
+    subviews: Record<string | number, View>
+    listeners: Record<string, JListener>
+    handler: Record<string, JListener>
+    obj: JSONValue
 }
-type ViewListener = (view: View, ...args: JSONValue[]) => void
 type ViewConfig = {
     path: string
-    config: JSONValue
-    subviews: View[]
-    listeners: Record<string, ViewListener>
+    config?: JSONValue
+    subviews?: Record<string | number, View>
+    listeners?: Record<string, JListener>
 }
-export function view(config: ViewConfig): View {
+
+export function createView(config: ViewConfig): View {
     let view: View = undefined!
-    const obj = {
-        path: config.path,
-        config: config.config,
-        subviews: config.subviews.map(view => view.msg),
-    }
-    const msg = JSON.stringify(obj)
     const handler = new Proxy({}, {
         get(target, p){
             if(typeof p === 'string'){
-                return (args: JSONValue[]) => {
+                return (...args: JSONValue[]) => {
                     sendFollowupNotification(p, view.id!, ...args)
                 }
             }
         }
     })
-    const exitListener = config.listeners['exit']
-    const exit = () => {
-        handlers.delete(view.id!)
-        exitListener?.(view)
-        view.onexit?.(view)
+    view = {
+        id: undefined,
+        subviews: config.subviews ?? {},
+        listeners: config.listeners ?? {},
+        handler,
+        obj: {
+            path: config.path,
+            config: config.config ?? {},
+            subviews: config.subviews ?
+                Object.fromEntries(
+                    Object.entries(config.subviews)
+                        ?.map(([slot, view]) => [slot, view.obj])
+                ) : {},
+        },
     }
-    view = { msg, id: undefined, handler, exit }
     return view
 }
 
-export async function render(view: View, opts: Required<AbortOptions>){
-    const deferred = new Deferred()
+function recursive(view: View, cb: (view: View) => void){
+    cb(view)
+    for(const subview of Object.values(view.subviews)){
+        recursive(subview, cb)
+    }
+}
+export async function render(view: View, opts: Required<AbortOptions>): Promise<JSONValue> {
+    //const view = createView(config)
+    const deferred = new Deferred<JSONValue>()
+    const firstId = sendCall('view', view.obj)
     deferred.addEventListener(opts.signal, 'abort', () => {
         sendFollowupNotification('abort', view.id!)
         deferred.reject(opts.signal?.reason as Error)
     })
-    //TODO:
+    let id = firstId
+    recursive(view, view => {
+        handlers.set(id, view.listeners)
+        view.id = id++
+    })
+    deferred.addCleanupCallback(() => {
+        recursive(view, view => {
+            handlers.delete(view.id!)
+        })
+    })
+    view.listeners['resolve'] = (arg) => deferred.resolve(arg)
+    view.listeners['reject'] = (arg) => {
+        let msg = 'No error message provided'
+        let cause: number | undefined
+        if(typeof arg === 'object' && arg !== null){
+            if('message' in arg && typeof arg['message'] === 'string')
+                msg = arg['message']
+            if('code' in arg && typeof arg['code'] === 'number')
+                cause = arg['code']
+        }
+        deferred.reject(new Error(msg, { cause }))
+    }
     return deferred.promise
 }
 
@@ -280,16 +328,24 @@ function onData(data: Buffer){
             //logger.log(line)
             const obj = JSON.parse(line) as JRPCMessage
 
-            if('method' in obj){
-                if('id' in obj){
-                    const handler = handlers.get(obj.id)
-                    handler?.[obj.method]?.(...(obj.params ?? []))
+            if('id' in obj){
+                const handler = handlers.get(obj.id)
+                if(handler){
+                    if('method' in obj){
+                        handler[obj.method]?.(...(obj.params ?? []))
+                    } else if(obj.error){
+                        handler['reject']?.(obj.error)
+                    } else {
+                        handler['resolve']?.(obj.result)
+                    }
+                } else if('method' in obj){
+                    //TODO: Global methods
                 } else {
-                    //TODO:
+                    const listener = listeners.get(obj.id)
+                    listener?.(obj.error, obj.result)
                 }
             } else {
-                const listener = listeners.get(obj.id)
-                listener?.(obj.error, obj.result)
+                //TODO: Notifications
             }
         }
     }

@@ -210,13 +210,39 @@ func _init() -> void:
         #print('abort', ' ', last_call_id)
         abort_handler(last_call_id)
 
+    methods["view"] = func(config: Dictionary) -> void:
+        var instance := create_view(config)
+        container.add_child(instance)
+
     methods["exit"] = func() -> void:
         #print('exit')
         get_tree().quit()
 
+func create_view(config: Dictionary) -> InputHandler:
+    
+    var path: String = config['path']
+    var scene: PackedScene = load(path)
+    var instance: InputHandler = scene.instantiate()
+    var config_config: Dictionary = config['config']
+    var cb := bind(callback, last_call_id)
+    handlers[last_call_id] = instance
+
+    last_call_id += 1
+
+    var new_subviews: Dictionary[String, InputHandler] = {}
+    var config_subviews: Dictionary = config.get('subviews', {})
+    for slot: String in config_subviews:
+        new_subviews[slot] = create_view(config_subviews[slot])
+
+    config_config['subviews'] = new_subviews
+    instance.init(config_config, cb)
+
+    return instance
+
 func bind(cb: Callable, arg0: Variant) -> Callable:
-    return func(arg1: Variant) -> Variant:
-        return cb.call(arg0, arg1) 
+    return func(...args: Array) -> Variant:
+        args.push_front(arg0)
+        return cb.callv(args)
 
 func create_element(_el_name: String, scene: PackedScene, config: Dictionary, container: Control = self.container) -> void:
     #print(el_name, ' ', last_call_id, ' ', config)
@@ -240,13 +266,17 @@ func _process(_delta: float) -> void:
 
     #TODO:
     while stderr:
-       var line := stderr.get_as_text()
+       var line := stderr.get_line()
        if !line: break
        print('ERROR: ', line)
+       console.append_text(
+            '[color=light_coral]ERROR: {line}[/color]\n'
+            .format({ 'line': line })
+        )
 
     if !OS.is_process_running(pid):
         console.append_text(
-            '[color=light_coral]Process exited with code {code}[/color]'
+            '[color=light_coral]Process exited with code {code}[/color]\n'
             .format({ 'code': OS.get_process_exit_code(pid) })
         )
         show_console_toggle.button_pressed = true
@@ -290,7 +320,13 @@ func _process_action(action: Variant) -> Variant:
 
     var id: Variant = dict.get("id", null)
 
-    var var_callable: Variant = methods.get(method) as Callable
+    var var_callable: Variant = null
+    if id != null:
+        var handler: InputHandler = handlers.get(id, null_InputHandler)
+        if handler != null_InputHandler:
+            var_callable = handler.get(method)
+    if var_callable == null:
+        var_callable = methods.get(method)
     if var_callable == null:
         return jrpc.make_response_error(JSONRPC.METHOD_NOT_FOUND, "Method not found: " + method, id)
     var callable: Callable = var_callable
@@ -318,6 +354,14 @@ func reject(id: Variant, code: int, message: String) -> void:
     print('reject', ' ', response_string)
     stdio.store_string(response_string + '\n')
     abort_handler(id)
+    stdio.flush()
+
+func callback(id: Variant, method: String, ...params: Array[Variant]) -> void:
+    var response_string := JSON.stringify(jrpc.make_request(method, params, id))
+    print('callback', ' ', response_string)
+    stdio.store_string(response_string + '\n')
+    if method == 'resolve' || method == 'reject':
+        abort_handler(id)
     stdio.flush()
 
 var null_InputHandler := InputHandler.new() #HACK:
