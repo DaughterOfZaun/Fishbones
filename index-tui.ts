@@ -1,4 +1,4 @@
-import { spinner, select, type Choice, AbortPromptError, color, render as renderView, createView, createSpinner } from './ui/remote'
+import { spinner, select, type Choice, AbortPromptError, color, render as renderView, createView, createSpinner, input } from './ui/remote'
 import { type Game } from './game'
 import { RemoteGame } from './game-remote'
 import { LocalGame } from './game-local'
@@ -9,6 +9,7 @@ import { connectByPeerInfoString, getPeerInfoString, type LibP2PNode } from './i
 import { TITLE } from './utils/constants-build'
 import type { AbortOptions } from '@libp2p/interface'
 import { args } from './utils/args'
+import { getLastLaunchCmd } from './utils/data-client'
 
 export async function main(node: LibP2PNode, opts: Required<AbortOptions>){
     
@@ -423,21 +424,29 @@ async function lobby_wait_for_end(ctx: Context){
 async function lobby_crash_report(ctx: Context){
     const { game } = ctx
 
-    type Action = ['relaunch'] | ['exit']
+    type Action = ['show_cmd'] | ['relaunch'] | ['exit']
     
-    const [action] = await select({
-        message: 'The client exited unexpectedly',
-        choices: [
-            { value: ['relaunch'] as Action, name: 'Restart the client' },
-            { value: ['exit'] as Action, name: 'Leave' },
-        ],
-        pageSize: 20,
-    }, ctx)
-    if(action === 'relaunch'){
-        game.relaunch()
-        //return await lobby_wait_for_end(ctx)
-        throw new AbortPromptError({ cause: lobby_wait_for_end })   
-    } else if(action == 'exit'){
-        throw new AbortPromptError({ cause: null })
+    while(true){
+        const [action] = await select({
+            message: 'The client exited unexpectedly',
+            choices: [
+                { value: ['show_cmd'] as Action, name: 'Show command to run manually' },
+                { value: ['relaunch'] as Action, name: 'Restart the client' },
+                { value: ['exit'] as Action, name: 'Leave' },
+            ],
+            pageSize: 20,
+        }, ctx)
+        if(action === 'relaunch'){
+            game.relaunch()
+            //return await lobby_wait_for_end(ctx)
+            throw new AbortPromptError({ cause: lobby_wait_for_end })   
+        } else if(action === 'exit'){
+            throw new AbortPromptError({ cause: null })
+        } else if(action === 'show_cmd'){
+            await input({
+                message: 'Run the command in the terminal or paste it into a bat file',
+                default: getLastLaunchCmd(),
+            })
+        }
     }
 }

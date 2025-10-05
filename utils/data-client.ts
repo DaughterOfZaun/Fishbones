@@ -8,6 +8,9 @@ const LOG_PREFIX = 'CLIENT'
 let clientSubprocess: ChildProcess | undefined
 
 let launchArgs: [ ip: string, port: number, key: string, clientId: number ] | undefined
+export function getLastLaunchCmd(){
+    return 'start ' + ['', 'League of Legends.exe', '', '', '', launchArgs!.map(arg => arg.toString()).join(' ')].map(arg => `"${arg}"`).join(' ')
+}
 export async function launchClient(ip: string, port: number, key: string, clientId: number, opts: Required<AbortOptions>){
     launchArgs = [ip, port, key, clientId]
     return await relaunchClient(opts)
