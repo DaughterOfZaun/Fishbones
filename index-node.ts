@@ -112,7 +112,7 @@ export async function createNode(port: number, opts: Required<AbortOptions>){
     //DISABLE_QUIC = false
     //DISABLE_MDNS = false
     DISABLE_AUTODIAL = false
-    if(args.directConnect.enabled){
+    if(args.allowInternet.enabled){
         DISABLE_DHT = false
         DISABLE_BOOTSTRAP = false
         DISABLE_NAT_MIGITATION = false

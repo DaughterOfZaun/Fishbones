@@ -2,7 +2,7 @@ type SupportedPlatforms = 'windows' | 'linux'
 export const config = {
 
     ariaExe: {
-        windows: './thirdparty/Motrix/extra/win32/x64/engine/aria2c.exe',
+        windows: './thirdparty/aria2/aria2c-1.37.0-win-64bit-build1.exe',
         linux: './thirdparty/Motrix/extra/linux/x64/engine/aria2c',
     } as Partial<Record<SupportedPlatforms, string>>,
     ariaConf: {

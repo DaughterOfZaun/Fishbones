@@ -76,8 +76,8 @@ if(process.argv.includes('libutp'))
 
 if(process.argv.includes('bun')){
 if(platform === 'windows'){
-    //await $`mv node_modules node_modules_linux_npm`
-    //await $`mv node_modules_win_npm node_modules`
+    await $`mv node_modules node_modules_linux_npm`
+    await $`mv node_modules_win_npm node_modules`
 }
 try {
     //await $`bun build --compile --sourcemap --target="${TARGET}" --outfile="${OUTDIR_FILE_CLI}" --define process.env.IS_COMPILED='true' 'index.ts'`
@@ -154,8 +154,8 @@ try {
 
     } finally {
         if(platform === 'windows'){
-            //await $`mv node_modules node_modules_win_npm`
-            //await $`mv node_modules_linux_npm node_modules`
+            await $`mv node_modules node_modules_win_npm`
+            await $`mv node_modules_linux_npm node_modules`
         }
     }
 }
@@ -219,10 +219,14 @@ import cjsModule from 'node:module';
 const __filename = cjsUrl.fileURLToPath(import.meta.url);
 const __dirname = cjsPath.dirname(__filename);
 const require = cjsModule.createRequire(import.meta.url);
+    `.trim(), '')
+    /*
+    js = js.replace(`
 const nodeDataChannel = require("../../../build/Release/node_datachannel.node");
     `.trim(), `
 import nodeDataChannel from "../../../build/Release/node_datachannel.node";
     `.trim())
+    */
     await fs.writeFile(file, js, 'utf8')
 }
 
@@ -233,11 +237,13 @@ async function patch_node_datachannel(){
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
     `.trim(), '')
+    /*
     js = js.replace(`
 const nodeDataChannel = require('../build/Release/node_datachannel.node');
-`.trim(), `
+    `.trim(), `
 import nodeDataChannel from "../build/Release/node_datachannel.node";
-`.trim())
+    `.trim())
+    */
     await fs.writeFile(file, js, 'utf8')
 }
 

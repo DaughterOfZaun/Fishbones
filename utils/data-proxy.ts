@@ -97,6 +97,10 @@ class Proxy {
             get targetHostPort(){ return `${programHostLastUsed}:${programPortLastUsed}` },
             get connected(){ return !!(programHostLastUsed && programPortLastUsed) },
             send(data: Buffer): boolean {
+                if(socket.closed){
+                    log.error('attempting to send data through a closed socket')
+                    return false
+                }
                 return socket.send(data, programPortLastUsed, programHostLastUsed)
             },
         }

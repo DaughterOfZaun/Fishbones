@@ -1,11 +1,11 @@
-import { createNode } from './index-node'
+import { createNode } from './index-node-simple'
 import { main } from './index-tui'
 import { TITLE } from './utils/constants-build'
 import { logger } from './utils/data-shared'
 import { checkbox, console_log, ExitPromptError, input } from './ui/remote'
 import { registerShutdownHandler, setInsideUI, shutdown, shutdownOptions, unwrapAbortError } from './utils/data-process'
 import { repair } from './utils/data-repair'
-import * as umplex from './network/umplex'
+//import * as umplex from './network/umplex'
 import * as RemoteUI from './ui/remote'
 import type { AbortOptions } from '@libp2p/interface'
 import { args } from './utils/args'
@@ -49,7 +49,7 @@ async function index(opts: Required<AbortOptions>){
         //await node.services.torrentPeerDiscovery?.stop()
         //await node_services_upnpNAT?.stop()
         await node.stop()
-        umplex.shutdown()
+        //umplex.shutdown()
     })
 
     await main(node, opts)

@@ -77,8 +77,12 @@ export async function select<Value>(config: SelectConfig<Value>, context?: Conte
     const cleanup = config.cb?.(updatedChoices => {
         sendFollowupNotification('select.update', idRef.id, update(updatedChoices))
     })
-    const i: number = await promise
-    cleanup?.()
+    let i
+    try {
+        i = await promise
+    } finally {
+        cleanup?.()
+    }
     return values[i]!
 }
 
@@ -86,6 +90,15 @@ type SpinnerConfig = Parameters<typeof localSpinner>[0]
 export async function spinner(config: SpinnerConfig, context?: Context): Promise<unknown> {
     if(jsonRpcDisabled) return localSpinner(config, context)
     return remoteInput('spinner', config, context)
+}
+
+export function createSpinner(message: string) {
+    const ac = new AbortController()
+    spinner({ message }, { signal: ac.signal })
+        .catch(() => { /* Ignore */ })
+    return {
+        stop(){ ac.abort() }
+    }
 }
 
 export { extractFile as fs_copyFile }
