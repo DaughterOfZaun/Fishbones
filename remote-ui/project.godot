@@ -32,6 +32,10 @@ gdscript/warnings/unsafe_method_access=1
 gdscript/warnings/unsafe_call_argument=1
 gdscript/warnings/return_value_discarded=1
 
+[display]
+
+window/stretch/aspect="expand"
+
 [editor]
 
 export/convert_text_resources_to_binary=false

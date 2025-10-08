@@ -2,6 +2,8 @@ import { gcPkg } from "./data-packages"
 import { sanitize_bfkey } from "./constants"
 import { killSubprocess, spawn, startProcess, type ChildProcess } from "./data-process"
 import type { AbortOptions } from "@libp2p/interface"
+import fs from 'node:fs/promises'
+import path from 'node:path'
 
 const LOG_PREFIX = 'CLIENT'
 
@@ -9,7 +11,7 @@ let clientSubprocess: ChildProcess | undefined
 
 let launchArgs: [ ip: string, port: number, key: string, clientId: number ] | undefined
 export function getLastLaunchCmd(){
-    return 'start ' + ['', 'League of Legends.exe', '', '', '', launchArgs!.map(arg => arg.toString()).join(' ')].map(arg => `"${arg}"`).join(' ')
+    return 'start ' + ['', gcPkg.exeName, '', '', '', launchArgs!.map(arg => arg.toString()).join(' ')].map(arg => `"${arg}"`).join(' ')
 }
 export async function launchClient(ip: string, port: number, key: string, clientId: number, opts: Required<AbortOptions>){
     launchArgs = [ip, port, key, clientId]
@@ -25,19 +27,23 @@ export async function relaunchClient(opts: Required<AbortOptions>){
 
     await stopClient(opts)
 
+    // eslint-disable-next-line prefer-const
+    let exe = gcPkg.exe
     const spawnOpts = {
         logPrefix: LOG_PREFIX,
         //signal: opts.signal,
         cwd: gcPkg.exeDir,
+        //cwd: deployDir,
         log: true,
     }
     if(process.platform == 'win32'){
-        clientSubprocess = spawn(gcPkg.exe, gcArgs, spawnOpts)
+        //exe = path.join(deployDir, gcPkg.exeName)
+        clientSubprocess = spawn(exe, gcArgs, spawnOpts)
     } else if(process.platform == 'linux'){
         //console.log('flatpak', 'run', '--command=bottles-cli', 'com.usebottles.bottles', 'run', '-b', 'DeusEx', '-e', gcPkg.exe, gcArgsStr)
         clientSubprocess = spawn(
             'flatpak', [ 'run', '--command=bottles-cli', 'com.usebottles.bottles',
-                'run', '-b', 'DeusEx', '-e', gcPkg.exe, gcArgsStr ], spawnOpts) //TODO: cwd
+                'run', '-b', 'DeusEx', '-e', exe, gcArgsStr ], spawnOpts) //TODO: cwd
         //clientSubprocess = spawn('bottles-cli', ['run', '-b', 'DeusEx', '-p', 'League of Legends', '--args-replace', gcArgs], spawnOpts)
     } else throw new Error(`Unsupported platform: ${process.platform}`)
 
@@ -55,4 +61,27 @@ export async function stopClient(opts: Required<AbortOptions>){
     clientSubprocess = undefined
 
     await killSubprocess(LOG_PREFIX, prevSubprocess, opts)
+}
+
+const releaseDir = path.join(
+    //'C:', 'Riot Games', 'League of Legends', 'RADS', 'solutions', 'lol_game_client_sln', 'releases', gcPkg.release,
+    'C:', 'RADS', 'solutions', 'lol_game_client_sln', 'releases', gcPkg.release,
+)
+const deployDir = path.join(releaseDir, 'deploy')
+export async function ensureSymlink(){
+    try {
+        await fs.mkdir(releaseDir, { recursive: true })
+    } catch(unk_err){
+        const err = unk_err as Error & { code: string }
+        if(err.code !== 'EEXIST')
+            throw err
+    }
+    try {
+        await fs.symlink(gcPkg.exeDir, deployDir, 'junction')
+    } catch(unk_err){
+        const err = unk_err as Error & { code: string }
+        if(err.code !== 'EEXIST')
+            throw err
+    }
+    //exec(String.raw`powershell.exe Start-Process -verb runAs cmd.exe '/k "mklink /d \"${deployDir}\" \"${gcPkg.exeDir}\""'`)
 }

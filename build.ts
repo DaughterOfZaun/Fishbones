@@ -26,8 +26,8 @@ if(platform === undefined)
     throw new Error('Platform not specified or not supported')
     
 const target: Bun.Build.Target =
-    (platform === 'linux') ? `bun-${platform}-x64` :
-    (platform === 'windows') ? `bun-${platform}-x64-baseline` :
+    (platform === 'linux') ? `bun-linux-x64-baseline` as Bun.Build.Target :
+    (platform === 'windows') ? `bun-windows-x64-baseline` :
     undefined!
 
 async function build_embeds(){

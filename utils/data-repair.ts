@@ -13,6 +13,7 @@ import path from 'node:path'
 import embedded from './embedded'
 import os from 'os'
 import { runPostInstall, update } from "./data-update"
+//import { ensureSymlink } from "./data-client"
 import { args } from "./args"
 
 const DOTNET_INSTALL_CORRUPT_EXIT_CODES = [ 130, 131, 142, ]
@@ -66,9 +67,12 @@ export async function repair(opts: Required<AbortOptions>){
         }),
         repairArchived(gcPkg, opts).then(async () => {
             //await fs_ensureDir(gcPkg.exeDir, opts)
+            
             const d3dx9_39_dll = path.join(gcPkg.exeDir, 'd3dx9_39.dll')
             if(!await fs_exists(d3dx9_39_dll, opts, true))
                 await fs_copyFile(embedded.d3dx9_39_dll, d3dx9_39_dll, opts)
+
+            //await ensureSymlink()
         })
     ] as Promise<unknown>[])
 

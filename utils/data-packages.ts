@@ -111,7 +111,10 @@ export const gcPkg = new class extends PkgInfoExe {
     zipMega = 'https://mega.nz/file/uqRmkCKC#nJFZ2hAYqTq5q-T1PExXPpu0aX4ALjjZj2SZ4q9yCpk'
 
     exeDir = this.dir
-    exe = path.join(this.exeDir, 'League of Legends.exe')
+    exeName = 'League of Legends.exe'
+    exe = path.join(this.exeDir, this.exeName)
+
+    release = '0.0.0.51' // Are you sure about that?
 
     topLevelEntries = [
         'LEVELS',
