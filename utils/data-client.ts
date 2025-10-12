@@ -33,10 +33,10 @@ export async function relaunchClient(opts: Required<AbortOptions>){
         logPrefix: LOG_PREFIX,
         //signal: opts.signal,
         cwd: gcPkg.exeDir,
-        //cwd: deployDir,
         log: true,
     }
     if(process.platform == 'win32'){
+        //spawnOpts.cwd = deployDir
         //exe = path.join(deployDir, gcPkg.exeName)
         clientSubprocess = spawn(exe, gcArgs, spawnOpts)
     } else if(process.platform == 'linux'){

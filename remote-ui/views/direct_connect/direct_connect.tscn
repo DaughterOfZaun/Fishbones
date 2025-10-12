@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://dumnw2ecvm6el"]
 
-[ext_resource type="Script" uid="uid://bbppvra604lb0" path="res://views/direct_connect.gd" id="1_uui74"]
+[ext_resource type="Script" uid="uid://bbppvra604lb0" path="res://views/direct_connect/direct_connect.gd" id="1_uui74"]
 
 [node name="DirectConnect" type="Control" node_paths=PackedStringArray("exported_text", "imported_text", "copy_button", "paste_button", "connect_button", "cancel_button")]
 layout_mode = 3

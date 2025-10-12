@@ -1,12 +1,16 @@
 [gd_scene load_steps=2 format=3 uid="uid://d272wt2h2fnv2"]
 
-[ext_resource type="Script" uid="uid://bfvvtycwsklnw" path="res://components/bar.gd" id="1_a5le7"]
+[ext_resource type="Script" uid="uid://bfvvtycwsklnw" path="res://components/spawnable/bar/bar.gd" id="1_a5le7"]
 
 [node name="MarginContainer" type="MarginContainer" node_paths=PackedStringArray("bar", "label")]
 anchors_preset = 10
 anchor_right = 1.0
 offset_bottom = 31.0
 grow_horizontal = 2
+theme_override_constants/margin_left = 0
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 0
 script = ExtResource("1_a5le7")
 bar = NodePath("ProgressBar")
 label = NodePath("MarginContainer/HBoxContainer/Label1")

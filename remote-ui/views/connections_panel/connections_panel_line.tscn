@@ -1,0 +1,40 @@
+[gd_scene load_steps=2 format=3 uid="uid://5b588ntlydsm"]
+
+[ext_resource type="Script" uid="uid://bpq4gwjfe1hck" path="res://views/connections_panel/connections_panel_line.gd" id="1_atk1s"]
+
+[node name="HBoxContainer" type="HBoxContainer" node_paths=PackedStringArray("icon_button", "name_label", "status_label")]
+offset_right = 209.0
+offset_bottom = 50.0
+script = ExtResource("1_atk1s")
+icon_button = NodePath("Icon")
+name_label = NodePath("MarginContainer/VBoxContainer/Name")
+status_label = NodePath("MarginContainer/VBoxContainer/Status")
+
+[node name="Icon" type="Button" parent="."]
+custom_minimum_size = Vector2(58, 0)
+layout_mode = 2
+mouse_filter = 2
+disabled = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Name" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 1
+text = "Sumonner's Name"
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="Status" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Offline"
+clip_text = true
+text_overrun_behavior = 3

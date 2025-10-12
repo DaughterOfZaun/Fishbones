@@ -19,7 +19,7 @@ config/custom_user_dir_name="Fishbones_Data"
 config/features=PackedStringArray("4.5", "GL Compatibility")
 run/low_processor_mode=true
 config/icon="uid://otwgmcv7cmt7"
-config/windows_native_icon="res://icon.ico"
+config/windows_native_icon="res://icons/icon.ico"
 
 [debug]
 

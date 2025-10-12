@@ -42,9 +42,9 @@ interface Emitter {
     removeListener: (event: string, callback: EventCallback) => void
 }
 
-interface EventEmitter {
-    addEventListener: (event: string, callback: EventCallback) => void
-    removeEventListener: (event: string, callback: EventCallback) => void
+interface EventEmitter<T extends string> {
+    addEventListener: (event: T, callback: EventCallback) => void
+    removeEventListener: (event: T, callback: EventCallback) => void
 }
 
 export class Deferred<T> {
@@ -62,22 +62,23 @@ export class Deferred<T> {
             })
         }
     }
-    listeners: [ Emitter, string, EventCallback ][] = []
-    public addListener(obj: Emitter, event: string, callback: EventCallback){
+    private listeners: [ Emitter, string, EventCallback ][] = []
+    public addListener<T extends string>(obj: Emitter, event: T, callback: EventCallback){
         this.listeners.push([ obj, event, callback ])
         obj.addListener(event, callback)
     }
-    eventListeners: [ EventEmitter, string, EventCallback ][] = []
-    public addEventListener(obj: EventEmitter, event: string, callback: EventCallback){
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    private eventListeners: [ EventEmitter<any>, string, EventCallback ][] = []
+    public addEventListener<T extends string>(obj: EventEmitter<T>, event: T, callback: EventCallback){
         this.eventListeners.push([ obj, event, callback ])
         obj.addEventListener(event, callback)
     }
-    timeouts: ReturnType<typeof setTimeout>[] = []
+    private timeouts: ReturnType<typeof setTimeout>[] = []
     public setTimeout(callback: () => void, ms: number){
         const timeout = setTimeout(callback, ms)
         this.timeouts.push(timeout)
     }
-    callbacks: (() => void)[] = []
+    private callbacks: (() => void)[] = []
     public addCleanupCallback(callback: () => void){
         this.callbacks.push(callback)
     }

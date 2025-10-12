@@ -18,7 +18,7 @@ export abstract class Server {
     public readonly champions = new ChampionsEnabled()
     public readonly spells = new SummonerSpellsEnabled()
 
-    protected constructor(node: Libp2p, id: PeerId){
+    public constructor(node: Libp2p, id: PeerId){
         this.node = node
         this.id = id
     }

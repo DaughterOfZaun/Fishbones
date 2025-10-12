@@ -10,6 +10,8 @@ var json := JSON.new()
 var jrpc := JSONRPC.new()
 var methods: Dictionary[String, Callable] = {}
 
+@export var showable_views: Dictionary[String, ShowableView]
+
 @export_group("Spawnable Components")
 @export var bar: PackedScene
 @export var spinner: PackedScene
@@ -213,6 +215,11 @@ func _init() -> void:
     methods["view"] = func(config: Dictionary) -> void:
         var instance := create_view(config)
         container.add_child(instance)
+
+    methods["show"] = func(name: String, config: Dictionary) -> void:
+        var instance := showable_views[name]
+        instance.init(config, bind(callback, last_call_id))
+        handlers[last_call_id] = instance
 
     methods["exit"] = func() -> void:
         #print('exit')

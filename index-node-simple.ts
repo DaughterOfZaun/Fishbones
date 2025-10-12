@@ -22,9 +22,10 @@ import { defaultLogger } from '@libp2p/logger'
 import { pubsubPeerDiscovery as pubsubPeerWithDataDiscovery } from './network/pubsub-discovery'
 import { GossipSub, gossipsub, type GossipSubComponents } from '@chainsafe/libp2p-gossipsub'
 import { PeerRecord, RecordEnvelope } from '@libp2p/peer-record'
-import type { TransportManager } from '@libp2p/interface-internal'
+import type { ConnectionManager, TransportManager } from '@libp2p/interface-internal'
 import { mdns } from '@libp2p/mdns'
 import { args } from './utils/args'
+import { NAME, VERSION } from './utils/constants-build'
 
 const appName = ['com', 'github', 'DaughterOfZaun', 'Fishbones']
 const TOPIC = '_peer-discovery._p2p._pubsub'
@@ -34,6 +35,7 @@ type ComponentsContainer = {
     components: {
         privateKey: PrivateKey
         transportManager: TransportManager
+        connectionManager: ConnectionManager
     }
 }
 export async function createNode(...args: Parameters<typeof createNodeInternal>){
@@ -44,6 +46,11 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
     opts?.signal?.throwIfAborted()
 
     const node = await createLibp2p({
+        nodeInfo: {
+            name: NAME,
+            version: VERSION,
+            userAgent: `${NAME}/${VERSION}`
+        },
         addresses: {
             listen: [
                 `/ip4/0.0.0.0/udp/0/webrtc-direct`,
@@ -162,13 +169,43 @@ export async function getPeerInfoString(node: LibP2PNode, opts: Required<AbortOp
     return marshaled.toBase64()
 }
 
-export async function connectByPeerInfoString(node: LibP2PNode, str: string, opts: Required<AbortOptions>){
+
+function parsePeerInfoString(str: string){
     const buffer = Uint8Array.fromBase64(str)
-    if(await node.peerStore.consumePeerRecord(buffer, opts)){
-        const envelope = RecordEnvelope.createFromProtobuf(buffer)
-        const peerId = peerIdFromCID(envelope.publicKey.toCID())
-        await node.dial(peerId, opts)
+    const envelope = RecordEnvelope.createFromProtobuf(buffer)
+    const peerId = peerIdFromCID(envelope.publicKey.toCID())
+    return { buffer, envelope, peerId }
+}
+
+export async function validatePeerInfoString(node: LibP2PNode, str: string, opts: Required<AbortOptions>){
+    try {
+        const { peerId, envelope } = parsePeerInfoString(str)
+        const valid = await envelope.validate(PeerRecord.DOMAIN, opts)
+        if(!valid)
+            return 'Envelope signature is not valid'
+        if(peerId.toString() === node.peerId.toString())
+            return 'Can not dial self'
+        if(node.getConnections(peerId).length)
+            return 'Already connected'
+        if(node.components.connectionManager.getDialQueue().some(job => job.peerId === peerId))
+            return 'Already in dial queue'
+    } catch(unk_err) {
+        const err = unk_err as Error
+        return err.message
     }
+}
+
+export async function consumePeerInfoString(node: LibP2PNode, str: string, opts: Required<AbortOptions>){
+    const { peerId, buffer } = parsePeerInfoString(str)
+    if(peerId.toString() !== node.peerId.toString())
+    if(await node.peerStore.consumePeerRecord(buffer, opts)){
+        return peerId
+    }
+}
+
+export async function connectByPeerInfoString(node: LibP2PNode, str: string, opts: Required<AbortOptions>){
+    const peerId = await consumePeerInfoString(node, str, opts)
+    if(peerId) await node.dial(peerId, opts)
 }
 
 type PeerInfoStringified = {

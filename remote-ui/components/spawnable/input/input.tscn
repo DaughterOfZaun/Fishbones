@@ -1,8 +1,8 @@
 [gd_scene load_steps=4 format=3 uid="uid://dvt48ppax2q6h"]
 
-[ext_resource type="Script" uid="uid://dwwcdcy34fqo" path="res://components/input.gd" id="1_ir820"]
-[ext_resource type="Script" uid="uid://g0xm6t4lg6i8" path="res://components/select.gd" id="2_2uv3n"]
-[ext_resource type="PackedScene" uid="uid://dqhddudj7oakb" path="res://components/select_button.tscn" id="3_8588a"]
+[ext_resource type="Script" uid="uid://dwwcdcy34fqo" path="res://components/spawnable/input/input.gd" id="1_ir820"]
+[ext_resource type="Script" uid="uid://g0xm6t4lg6i8" path="res://components/spawnable/select/select.gd" id="2_2uv3n"]
+[ext_resource type="PackedScene" uid="uid://dqhddudj7oakb" path="res://components/spawnable/select/select_button.tscn" id="3_8588a"]
 
 [node name="CenterContainer" type="CenterContainer" node_paths=PackedStringArray("label", "field", "button")]
 anchors_preset = 15

@@ -18,7 +18,8 @@ import type { AbortOptions } from '@libp2p/interface'
 export { type SelectChoice as Choice, AbortPromptError, ExitPromptError }
 
 type JSONPrimitive = string | number | boolean | null | undefined
-type JSONValue = JSONPrimitive | JSONValue[] | { [key: string]: JSONValue }
+type JSONValue = JSONPrimitive | JSONValue[] | JSONDict
+type JSONDict = { [key: string]: JSONValue }
 
 export const guiDisabled = !args.gui.enabled
 export const jsonRpcDisabled = !args.jRPCUI.enabled
@@ -179,7 +180,10 @@ export const console_log: typeof localLog = (...args) => {
     logger.log(...args)
 }
 
-type JListener = (...args: JSONValue[]) => void
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type JListener = (...args: any[]/*JSONValue[]*/) => void
+//// eslint-disable-next-line @typescript-eslint/no-explicit-any
+//type AsyncJListener = (...args: any[]/*JSONValue[]*/) => void | Promise<void>
 //type ViewListener = (view: View, ...args: JSONValue[]) => void
 type View = {
     id?: ListenerId
@@ -248,8 +252,10 @@ export async function render(view: View, opts: Required<AbortOptions>): Promise<
             handlers.delete(view.id!)
         })
     })
-    view.listeners['resolve'] = (arg) => deferred.resolve(arg)
-    view.listeners['reject'] = (arg) => {
+    view.listeners['resolve'] = (arg: JSONValue) => {
+        deferred.resolve(arg)
+    }
+    view.listeners['reject'] = (arg: JSONValue) => {
         let msg = 'No error message provided'
         let cause: number | undefined
         if(typeof arg === 'object' && arg !== null){
@@ -261,6 +267,67 @@ export async function render(view: View, opts: Required<AbortOptions>): Promise<
         deferred.reject(new Error(msg, { cause }))
     }
     return deferred.promise
+}
+
+export class DeferredView<T> extends Deferred<T> {
+    private id: number
+    constructor(id: number){
+        super()
+        this.id = id
+    }
+    public call(name: string, ...args: JSONValue[]){
+        sendFollowupNotification(name, this.id, ...args)
+    }
+}
+
+export function show<T>(name: string, config: JSONDict, listeners: Record<string, JListener>, opts: Required<AbortOptions>){
+    
+    const id = sendCall('show', name, config)
+
+    const deferred = new DeferredView<T>(id)
+
+    /*
+    const listeners = Object.fromEntries(Object.entries(asyncListeners).map(([key, value]) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return [key, (...args: any[]) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+            Promise.resolve(value(...args)).catch(reason => {
+                deferred.reject(reason as Error)
+            })
+        }]
+    }))
+    */
+
+    let shouldSendAbortNotification = true
+    deferred.addEventListener(opts.signal, 'abort', () => {
+        deferred.reject(opts.signal?.reason as Error)
+    })
+
+    handlers.set(id, listeners)
+    deferred.addCleanupCallback(() => {
+        if(shouldSendAbortNotification)
+            sendFollowupNotification('abort', id)
+        handlers.delete(id)
+    })
+
+    listeners['resolve'] = (arg: T) => {
+        shouldSendAbortNotification = false
+        deferred.resolve(arg)
+    }
+    listeners['reject'] = (arg: JSONValue) => {
+        let msg = 'No error message provided'
+        let cause: number | undefined
+        if(typeof arg === 'object' && arg !== null){
+            if('message' in arg && typeof arg['message'] === 'string')
+                msg = arg['message']
+            if('code' in arg && typeof arg['code'] === 'number')
+                cause = arg['code']
+        }
+        shouldSendAbortNotification = false
+        deferred.reject(new Error(msg, { cause }))
+    }
+
+    return deferred
 }
 
 const godotExe = path.join(downloads, 'Godot_v4.5-stable_win64.exe')

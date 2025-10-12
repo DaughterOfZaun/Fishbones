@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://dqhddudj7oakb"]
 
-[ext_resource type="Script" uid="uid://dvvd2du1idyqr" path="res://components/select_button.gd" id="1_rqpuy"]
+[ext_resource type="Script" uid="uid://dvvd2du1idyqr" path="res://components/spawnable/select/select_button.gd" id="1_rqpuy"]
 
 [node name="MarginContainer" type="MarginContainer" node_paths=PackedStringArray("label", "button")]
 script = ExtResource("1_rqpuy")
