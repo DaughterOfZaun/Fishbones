@@ -12,6 +12,23 @@ var methods: Dictionary[String, Callable] = {}
 
 @export var showable_views: Dictionary[String, ShowableView]
 
+var visible_views_stack: Array[ShowableView] = []
+func show_view(view: Control) -> void:
+    visible_views_stack.erase(view)
+    visible_views_stack.append(view)
+    just_show_view(view)
+    
+func hide_view(view: Control) -> void:
+    visible_views_stack.erase(view)
+    just_show_view(visible_views_stack[-1])
+    view.visible = false
+    
+func just_show_view(view: Control) -> void:
+    var current_node: Control = view
+    while current_node != null && current_node != container:
+        current_node.visible = true
+        current_node = current_node.get_parent() as Control
+
 @export_group("Spawnable Components")
 @export var bar: PackedScene
 @export var spinner: PackedScene
@@ -126,6 +143,10 @@ func _ready() -> void:
             console_container.visible = toggled_on
             show_console_toggle.text = 'x' if toggled_on else '!'
     )
+
+    for view_name in showable_views:
+        var view := showable_views[view_name]
+        view.visible = false
 
 #     get_tree().set_auto_accept_quit(false)
 

@@ -9,11 +9,12 @@ import { getLastLaunchCmd } from './utils/data-client'
 
 import { browser } from './index-tui-browser'
 import { connections, profilePanel } from './index-tui-connections'
+import { setup } from './index-tui-setup'
 
 export async function main(node: LibP2PNode, opts: Required<AbortOptions>){
     process.title = TITLE
     await Promise.race([
-        browser(node, lobby, opts),
+        browser(node, lobby, setup, opts),
         profilePanel(node, opts),
         connections(node, opts),
     ])

@@ -81,7 +81,7 @@ export class PickableValue extends ValueDesc<number, number> {
     public toString(): string {
         return (this.value != undefined) ? this.values[this.value]! : 'undefined'
     }
-    public static normalize(values: Record<number, string>): Choice<number>[] {
+    public static normalize(values: Record<number, string>)/*: Choice<number>[]*/{
         return Object.entries(values).map(([k, v]) => ({ value: Number(k), name: v }))
     }
     public setRandom(){
@@ -133,6 +133,14 @@ export class GameMode extends PickableValue {
     public static readonly name = 'Game Mode'
     public static readonly values = modes.map(([short,,]) => short)
     public static readonly choices = modes.map(([short, name,], i) => ({ value: i, short, name }))
+}
+
+export class GameType extends PickableValue {
+    public static readonly choices = [
+        { value: 0, name: 'Blind Pick' },
+        //{ value: 1, name: 'Draft Pick' },
+        //{ value: 2, name: 'All Random' },
+    ]
 }
 
 // short, name, enabled by default
@@ -478,6 +486,16 @@ export class Enabled extends ValueDesc<number[], number[]>{
     }
     toString(): string {
         return `${this.value.length} of ${this.choices.length} checked`
+    }
+    public set(num: number, enabled: boolean){
+        const i = this.value.indexOf(num)
+        if(enabled && i === -1)
+            this.value.push(num)
+        if(!enabled && i !== -1)
+            this.value.splice(i, 1)
+    }
+    public get(num: number){
+        return this.value.includes(num)
     }
 }
 

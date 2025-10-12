@@ -1,4 +1,4 @@
-import { blowfishKey, FeaturesEnabled, GameMap as GameMap, GameMode as GameMode, LOCALHOST, Name, Password, PlayerCount, runes, talents, Team, type u } from './utils/constants'
+import { blowfishKey, FeaturesEnabled, GameMap as GameMap, GameMode as GameMode, GameType, LOCALHOST, Name, Password, PlayerCount, runes, talents, Team, type u } from './utils/constants'
 import { TypedEventEmitter, type AbortOptions, type Libp2p, type PeerId, type Stream } from '@libp2p/interface'
 import { GamePlayer, type PlayerId, type PPP } from './game-player'
 import type { Peer as PBPeer } from './message/peer'
@@ -41,6 +41,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     public readonly name = new Name(`Game`)
     public readonly map = new GameMap(1, () => this.server.maps)
     public readonly mode = new GameMode(0, () => this.server.modes)
+    public readonly type = new GameType(0)
     public readonly playersMax = new PlayerCount(5)
     public readonly password = new Password()
     public readonly features = new FeaturesEnabled()

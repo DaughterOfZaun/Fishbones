@@ -39,7 +39,8 @@ const objs = new Map<number, RemoteGame>()
 let objId = 0
 
 type Lobby = (game: Game, opts: Required<AbortOptions>) => Promise<void>
-export async function browser(node: LibP2PNode, lobby: Lobby, opts: Required<AbortOptions>){
+type Setup = (game: LocalGame, server: LocalServer, opts: Required<AbortOptions>) => Promise<void>
+export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts: Required<AbortOptions>){
 
     const ps = node.services.pubsub
     const name = node.peerId.toString().slice(-8)
@@ -65,10 +66,10 @@ export async function browser(node: LibP2PNode, lobby: Lobby, opts: Required<Abo
 
         const { 0: action, 1: param } = await view.promise
         if(action == 'host' && ps.isStarted() == false){
-            await hostLocal(node, name, lobby, opts)
+            await hostLocal(node, name, lobby, setup, opts)
         }
         if(action == 'host' && ps.isStarted() == true){
-            await hostRemote(node, name, lobby, opts)
+            await hostRemote(node, name, lobby, setup, opts)
         }
         if(action == 'join'){
             await join(param, name, lobby, opts)
@@ -79,9 +80,10 @@ export async function browser(node: LibP2PNode, lobby: Lobby, opts: Required<Abo
     }
 }
 
-async function hostLocal(node: LibP2PNode, name: string, lobby: Lobby, opts: Required<AbortOptions>){
-    const server = await LocalServer.create(node, opts)
-    const game = await LocalGame.create(node, server, opts)
+async function hostLocal(node: LibP2PNode, name: string, lobby: Lobby, setup: Setup, opts: Required<AbortOptions>){
+    const server = new LocalServer(node)
+    const game = new LocalGame(node, server)
+    await setup(game, server, opts)
     try {
         await game.startListening(opts)
         game.join(name, undefined)
@@ -91,11 +93,12 @@ async function hostLocal(node: LibP2PNode, name: string, lobby: Lobby, opts: Req
     }
 }
 
-async function hostRemote(node: LibP2PNode, name: string, lobby: Lobby, opts: Required<AbortOptions>){
+async function hostRemote(node: LibP2PNode, name: string, lobby: Lobby, setup: Setup, opts: Required<AbortOptions>){
     const pspd = node.services.pubsubPeerWithDataDiscovery
 
-    const server = await LocalServer.create(node, opts)
-    const game = await LocalGame.create(node, server, opts)
+    const server = new LocalServer(node)
+    const game = new LocalGame(node, server)
+    await setup(game, server, opts)
     
     let data: Peer.AdditionalData
     let prevPlayerCount = 0

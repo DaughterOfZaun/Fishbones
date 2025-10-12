@@ -62,23 +62,31 @@ export class RemoteServer extends Server {
 
 export class LocalServer extends Server {
     private log = logger('launcher:server-local')
+    public constructor(node: Libp2p){
+        super(node, node.peerId)
+    }
     public static async create(node: Libp2p, opts: Required<AbortOptions>){
-        const server = new LocalServer(node, node.peerId)
+        const server = new LocalServer(node)
 
+        await server.loadSettings(opts)
+        await ufill(server, opts)
+        await server.saveSettings(opts)
+        
+        return server
+    }
+    public async loadSettings(opts: Required<AbortOptions>){
         //server.maps.value = Object.keys(GameMap.values).map(key => Number(key))
         //server.modes.value = Object.keys(GameMode.values).map(key => Number(key))
         //server.champions.value = Object.keys(Champion.values).map(key => Number(key))
         //server.spells.value = Object.keys(SummonerSpell.values).map(key => Number(key))
         
         const ss = await getServerSettings(opts)
-        server.maps.value = ss.maps
-        server.modes.value = ss.modes
-        server.champions.value = ss.champions
-        server.spells.value = ss.spells
-
-        await ufill(server, opts)
+        this.maps.value = ss.maps
+        this.modes.value = ss.modes
+        this.champions.value = ss.champions
+        this.spells.value = ss.spells
+    }
+    public async saveSettings(opts: Required<AbortOptions>){
         await saveServerSettings(opts)
-        
-        return server
     }
 }

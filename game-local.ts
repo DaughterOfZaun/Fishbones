@@ -21,7 +21,7 @@ export class LocalGame extends Game {
     
     private readonly peerId: PeerId
     private readonly playerId: PlayerId
-    protected constructor(node: Libp2p, server: Server){
+    public constructor(node: Libp2p, server: Server){
         super(node, node.peerId, server)
         this.playerId = this.peerIdToPlayerId(node.peerId)
         this.peerId = node.peerId
