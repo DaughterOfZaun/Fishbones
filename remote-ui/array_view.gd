@@ -1,13 +1,16 @@
-class_name ArrayView extends ShowableView
+class_name ArrayView extends BaseView
 
-@export var placeholder_container: Container
+@export var default_key: String
+@export var placeholder_container: Control
 @export var placeholder_label: Label
 @export var container: Control
 @export var line: PackedScene
 
-var instances: Dictionary[Variant, ShowableView] = {}
+var instances: Dictionary[Variant, Control] = {}
 
 func _ready() -> void:
+    if !placeholder_container:
+        placeholder_container = placeholder_label
     if !container:
         container = self
     if !line:
@@ -28,6 +31,8 @@ func update(config: Dictionary) -> void:
         var id: Variant = config.get('id', i)
         allowed_ids.append(id)
         add_by_id(id, choice)
+        #config.set('id', id)
+        #add(choice)
     
     for id in instances:
         if !allowed_ids.has(id):
@@ -49,18 +54,19 @@ func add_by_id(id: Variant, config: Dictionary) -> void:
     if instances.has(id):
         return update_single_by_id(id, config)
         
-    var instance: ShowableView = line.instantiate()
+    var instance: Control = line.instantiate()
     instances.set(id, instance)
     container.add_child(instance)
-    instance.init(config, callback)
+    bind_child(instance, default_key)
+    init_child(id, instance, callback)
 
 func update_single(config: Dictionary) -> void:
     var id: Variant = config['id']
     update_single_by_id(id, config)
 
 func update_single_by_id(id: Variant, config: Dictionary) -> void:
-    var instance: ShowableView = instances.get(id)
-    instance.update(config)
+    var instance: Control = instances.get(id)
+    update_child(instance, config)
     
 func remove(config: Dictionary) -> void:
     var id: Variant = config['id']
@@ -68,7 +74,7 @@ func remove(config: Dictionary) -> void:
     update_placeholder()
     
 func remove_by_id(id: Variant) -> void:
-    var instance: ShowableView = instances.get(id)
+    var instance: Control = instances.get(id)
     container.remove_child(instance)
     instance.queue_free()
     instances.erase(id)

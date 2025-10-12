@@ -14,10 +14,11 @@ interface CacheEntry {
     server: RemoteServer
     games: Map<number, {
         game: RemoteGame
-        gameDesc: Partial<GameDesc>
+        choice: Record<string, number | Record<string, string | number | boolean>>
+        //choice: Partial<GameDesc>
     }>
 }
-
+/*
 interface GameDesc {
     name: string
     owner: string
@@ -33,7 +34,7 @@ interface GameDesc {
 
     value: number
 }
-
+*/
 const cache = new PeerMap<CacheEntry>()
 const objs = new Map<number, RemoteGame>()
 let objId = 0
@@ -49,19 +50,25 @@ export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts
     type Action = ['join', RemoteGame] | ['host'] | ['quit']
 
     loop: while(true){
-        const view = show<Action>('customs_browser', {
-            choices: getChoices(node),
-            default: args.allowInternet.enabled ?
-                'Waiting for the servers to appear...' :
-                'Waiting for the servers to appear on the local network...',
+        const view = show<Action>('CustomsBrowser', {
+            Rooms: {
+                choices: getChoices(node),
+                default: args.allowInternet.enabled ?
+                    'Waiting for the servers to appear...' :
+                    'Waiting for the servers to appear on the local network...',
+            }
         }, {
-            'join': (objId: number) => view.resolve(['join', objs.get(objId)!]),
-            'host': () => view.resolve(['host']),
-            'quit': () => view.resolve(['quit']),
+            'Join.pressed': (objId: number) => view.resolve(['join', objs.get(objId)!]),
+            'Host.pressed': () => view.resolve(['host']),
+            'Quit.pressed': () => view.resolve(['quit']),
         }, opts)
 
         view.addEventListener(pspd, 'update', () => {
-            view.call('update', getChoices(node))
+            view.call('update', {
+                Rooms: {
+                    choices: getChoices(node),
+                }
+            })
         })
 
         const { 0: action, 1: param } = await view.promise
@@ -204,37 +211,38 @@ function gameInfoToChoices(
 
     let cacheEntry = games.get(gameInfo.id)
     let game = cacheEntry?.game
-    let gameDesc = cacheEntry?.gameDesc
-    if(!cacheEntry || !game || !gameDesc){
+    let choice = cacheEntry?.choice
+    if(!cacheEntry || !game || !choice){
         game = RemoteGame.create(node, server, gameInfo)
-        gameDesc = {}
-        cacheEntry = { game, gameDesc }
+        choice = {}
+        cacheEntry = { game, choice }
         games.set(gameInfo.id, cacheEntry)
     } else {
         game.decodeInplace(gameInfo)
     }
 
-    gameDesc.owner = pwd.id.toString().slice(-8)
-    //gameDesc.server = server.name.toString()
-    gameDesc.name = game.name.toString()
     const players = game.getPlayersCount()
     const playersMax = 2 * (game.playersMax.value ?? 0)
-    gameDesc.slots = `${players}/${playersMax}`
-    gameDesc.mode = game.mode.toString()
-    gameDesc.map = game.map.toString()
+
+    choice.Owner = { text: pwd.id.toString().slice(-8) }
+    //gameDesc.server = server.name.toString()
+    choice.Name = { text: game.name.toString() }
+    choice.Slots = { text: `${players}/${playersMax}` }
+    choice.Mode = { text: game.mode.toString() }
+    choice.Map = { text: game.map.toString() }
     
-    gameDesc.password = game.password.isSet
-    gameDesc.manacosts = game.features.isManacostsEnabled
-    gameDesc.cooldowns = game.features.isCooldownsEnabled
-    gameDesc.minions = game.features.isMinionsEnabled
-    gameDesc.cheats = game.features.isCheatsEnabled
+    choice.Password = { button_pressed: game.password.isSet }
+    choice.Manacosts = { button_pressed: game.features.isManacostsEnabled }
+    choice.Cooldowns = { button_pressed: game.features.isCooldownsEnabled }
+    choice.Minions = { button_pressed: game.features.isMinionsEnabled }
+    choice.Cheats = { button_pressed: game.features.isCheatsEnabled }
     
     //gameDesc.ping = Math.min(100, 999)
 
-    if(!gameDesc.value){
+    if(!choice.id){
         objs.set(objId, game)
-        gameDesc.value = objId
+        choice.id = objId
         objId++
     }
-    return gameDesc as Record<string, string | number>
+    return choice as Record<string, string | number>
 }

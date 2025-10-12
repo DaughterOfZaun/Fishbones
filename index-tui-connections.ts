@@ -15,11 +15,10 @@ interface PlayerInfo {
 
 export async function profilePanel(node: LibP2PNode, opts: Required<AbortOptions>){
     
-    const view = show('profile_panel', {
-        id: node.peerId.toString(),
-        icon: '',
-        name: node.peerId.toString().slice(-8),
-        status: '',
+    const view = show('ProfilePanel', {
+        //Icon: { path: '' },
+        Name: { text: node.peerId.toString().slice(-8) },
+        Status: { text: '' },
     }, {}, opts)
 
     return view.promise
@@ -27,10 +26,12 @@ export async function profilePanel(node: LibP2PNode, opts: Required<AbortOptions
 
 export async function connections(node: LibP2PNode, opts: Required<AbortOptions>){
     
-    const view = show('connections_panel', {
-        default: 'No connections',
+    const view = show('ConnectionsPanel', {
+        Connections: {
+            default: 'No connections',
+        }
     }, {
-        'direct_connect': () => {
+        'DirectConnect.pressed': () => {
             void directConnect(node, opts)
             .then(async str => {
                 if(typeof str === 'string')
@@ -47,9 +48,9 @@ export async function connections(node: LibP2PNode, opts: Required<AbortOptions>
             fbPeers.add(peerId)
             view.call('add', {
                 id: peerId.toString(),
-                icon: '',
-                name: peerId.toString().slice(-8),
-                status: 'Connected',
+                //Icon: { path: '' },
+                Name: { text: peerId.toString().slice(-8) },
+                Status: { text: 'Connected' },
             })
         }
     })
@@ -67,25 +68,38 @@ export async function connections(node: LibP2PNode, opts: Required<AbortOptions>
     return view.promise
 }
 
-//let lastPeerInfoString = ''
+let lastPeerInfoString = ''
 async function directConnect(node: LibP2PNode, opts: Required<AbortOptions>){
     
-    const view = show<string | undefined>('direct_connect', {
-        default: ''
+    const view = show<string | void>('DirectConnect', {
+        //PastedText: { text: lastPeerInfoString },
     }, {
-        'validate': (str: string) => {
+        'PastedText.changed': (str: string) => {
+            lastPeerInfoString = str
             void validatePeerInfoString(node, str, opts)
-                .then((err) => view.call('validate', err))
+            .then((err) => {
+                view.call('update', {
+                    Error: { text: err ?? '', visible: !!err },
+                    Connect: { disabled: !!err },
+                })
+            })
         },
-        'connect': (str?: string) => {
-            return view.resolve(str?.trim())
+        'Connect.pressed': () => {
+            return view.resolve(lastPeerInfoString)
+        },
+        'Cancel.pressed': () => {
+            return view.resolve()
         }
     }, opts)
 
     view.addEventListener(node, 'self:peer:update', onPeerUpdate)
     function onPeerUpdate(){
         getPeerInfoString(node, opts)
-            .then(str => view.call('update', str))
+            .then((str) => {
+                view.call('update', {
+                    TextToCopy: { text: str },
+                })
+            })
             .catch((/*err*/) => { /* Ignore */ })
     }
     onPeerUpdate()
