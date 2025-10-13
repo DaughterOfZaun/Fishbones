@@ -36,6 +36,11 @@ func on_text_changed(key: String, child: TextEdit) -> void:
     if id != null: callback.call(key, id, new_text)
     else: callback.call(key, new_text)
 
+func strip_name_hashtag(child: Control) -> String:
+    var key := child.name.substr(1)
+    #key = key.substr(0, 1).to_lower() + child.name.substr(1)
+    return key
+
 func init_child(id: Variant, child: Control, cb: Callable) -> void:
     if child is ShowableView:
         (child as ShowableView).id = id
@@ -51,4 +56,5 @@ func update_child(child: Control, config: Dictionary) -> void:
         pass #TODO:
     else:
         for key: String in config:
+            if key == 'id': continue
             child[key] = config[key]        

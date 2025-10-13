@@ -8,36 +8,25 @@ import { default as localSelect, type Choice as SelectChoice } from './dynamic-s
 import { default as localSpinner } from './spinner'
 import { logger } from '../utils/data-shared'
 import { args } from '../utils/args'
-import embedded from '../utils/embedded'
 
-import path from 'node:path'
-import { downloads, fs_chmod, fs_copyFile, fs_exists, rwx_rx_rx } from '../utils/data-fs'
-import { Deferred, originalSpawn, registerShutdownHandler } from '../utils/data-process'
+import { fs_copyFile } from '../utils/data-fs'
+import { Deferred, registerShutdownHandler } from '../utils/data-process'
 import type { AbortOptions } from '@libp2p/interface'
+import { listeners, sendCall, sendFollowupNotification, sendNotification, type JSONValue } from './remote-jrpc'
+import * as jrpc from './remote-jrpc'
+import type { Control, View } from './remote-types'
 
 export { type SelectChoice as Choice, AbortPromptError, ExitPromptError }
-
-type JSONPrimitive = string | number | boolean | null | undefined
-type JSONValue = JSONPrimitive | JSONValue[] | JSONDict
-type JSONDict = { [key: string]: JSONValue }
 
 export const guiDisabled = !args.gui.enabled
 export const jsonRpcDisabled = !args.jRPCUI.enabled
 
-let gid = 0
-function sendCall(method: string, ...params: JSONValue[]){
-    const id = gid++
-    process.stdout.write(JSON.stringify({ id, method, params }) + '\n', 'utf8')
-    //console.log(JSON.stringify({ id, method, params }))
-    return id
-}
-function sendNotification(method: string, ...params: JSONValue[]){
-    process.stdout.write(JSON.stringify({ method, params }) + '\n', 'utf8')
-    //console.log(JSON.stringify({ method, params }))
-}
-function sendFollowupNotification(method: string, id: number, ...params: JSONValue[]){
-    process.stdout.write(JSON.stringify({ id, method, params }) + '\n', 'utf8')
-    //console.log(JSON.stringify({ id, method, params }))
+if(!jsonRpcDisabled){
+    jrpc.start()
+    registerShutdownHandler((force, source) => {
+        if(source === 'call')
+            jrpc.stop()
+    })
 }
 
 type InputConfig = Parameters<typeof localInput>[0]
@@ -178,255 +167,4 @@ export const console_log: typeof localLog = (...args) => {
     if(jsonRpcDisabled) return localLog(...args)
     sendNotification('console.log', ...args)
     logger.log(...args)
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type JListener = (...args: any[]/*JSONValue[]*/) => void
-//// eslint-disable-next-line @typescript-eslint/no-explicit-any
-//type AsyncJListener = (...args: any[]/*JSONValue[]*/) => void | Promise<void>
-//type ViewListener = (view: View, ...args: JSONValue[]) => void
-type View = {
-    id?: ListenerId
-    subviews: Record<string | number, View>
-    listeners: Record<string, JListener>
-    handler: Record<string, JListener>
-    obj: JSONValue
-}
-type ViewConfig = {
-    path: string
-    config?: JSONValue
-    subviews?: Record<string | number, View>
-    listeners?: Record<string, JListener>
-}
-
-export function createView(config: ViewConfig): View {
-    let view: View = undefined!
-    const handler = new Proxy({}, {
-        get(target, p){
-            if(typeof p === 'string'){
-                return (...args: JSONValue[]) => {
-                    sendFollowupNotification(p, view.id!, ...args)
-                }
-            }
-        }
-    })
-    view = {
-        id: undefined,
-        subviews: config.subviews ?? {},
-        listeners: config.listeners ?? {},
-        handler,
-        obj: {
-            path: config.path,
-            config: config.config ?? {},
-            subviews: config.subviews ?
-                Object.fromEntries(
-                    Object.entries(config.subviews)
-                        ?.map(([slot, view]) => [slot, view.obj])
-                ) : {},
-        },
-    }
-    return view
-}
-
-function recursive(view: View, cb: (view: View) => void){
-    cb(view)
-    for(const subview of Object.values(view.subviews)){
-        recursive(subview, cb)
-    }
-}
-export async function render(view: View, opts: Required<AbortOptions>): Promise<JSONValue> {
-    //const view = createView(config)
-    const deferred = new Deferred<JSONValue>()
-    const firstId = sendCall('view', view.obj)
-    deferred.addEventListener(opts.signal, 'abort', () => {
-        sendFollowupNotification('abort', view.id!)
-        deferred.reject(opts.signal?.reason as Error)
-    })
-    let id = firstId
-    recursive(view, view => {
-        handlers.set(id, view.listeners)
-        view.id = id++
-    })
-    deferred.addCleanupCallback(() => {
-        recursive(view, view => {
-            handlers.delete(view.id!)
-        })
-    })
-    view.listeners['resolve'] = (arg: JSONValue) => {
-        deferred.resolve(arg)
-    }
-    view.listeners['reject'] = (arg: JSONValue) => {
-        let msg = 'No error message provided'
-        let cause: number | undefined
-        if(typeof arg === 'object' && arg !== null){
-            if('message' in arg && typeof arg['message'] === 'string')
-                msg = arg['message']
-            if('code' in arg && typeof arg['code'] === 'number')
-                cause = arg['code']
-        }
-        deferred.reject(new Error(msg, { cause }))
-    }
-    return deferred.promise
-}
-
-export class DeferredView<T> extends Deferred<T> {
-    private id: number
-    constructor(id: number){
-        super()
-        this.id = id
-    }
-    public call(name: string, ...args: JSONValue[]){
-        sendFollowupNotification(name, this.id, ...args)
-    }
-}
-
-export function show<T>(name: string, config: JSONDict, listeners: Record<string, JListener>, opts: Required<AbortOptions>){
-    
-    const id = sendCall('show', name, config)
-
-    const deferred = new DeferredView<T>(id)
-
-    /*
-    const listeners = Object.fromEntries(Object.entries(asyncListeners).map(([key, value]) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return [key, (...args: any[]) => {
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-            Promise.resolve(value(...args)).catch(reason => {
-                deferred.reject(reason as Error)
-            })
-        }]
-    }))
-    */
-
-    let shouldSendAbortNotification = true
-    deferred.addEventListener(opts.signal, 'abort', () => {
-        deferred.reject(opts.signal?.reason as Error)
-    })
-
-    handlers.set(id, listeners)
-    deferred.addCleanupCallback(() => {
-        if(shouldSendAbortNotification)
-            sendFollowupNotification('abort', id)
-        handlers.delete(id)
-    })
-
-    listeners['resolve'] = (arg: T) => {
-        shouldSendAbortNotification = false
-        deferred.resolve(arg)
-    }
-    listeners['reject'] = (arg: JSONValue) => {
-        let msg = 'No error message provided'
-        let cause: number | undefined
-        if(typeof arg === 'object' && arg !== null){
-            if('message' in arg && typeof arg['message'] === 'string')
-                msg = arg['message']
-            if('code' in arg && typeof arg['code'] === 'number')
-                cause = arg['code']
-        }
-        shouldSendAbortNotification = false
-        deferred.reject(new Error(msg, { cause }))
-    }
-
-    return deferred
-}
-
-const godotExe = path.join(downloads, 'Godot_v4.5-stable_win64.exe')
-const godotPck = path.join(downloads, 'Godot_v4.5-stable_win64.pck')
-export async function repairUIRenderer(opts: Required<AbortOptions>){
-    return Promise.all([
-        (async () => {
-            if(!await fs_exists(godotExe, opts)){
-                await fs_copyFile(embedded.godotExe, godotExe, opts)
-                await fs_chmod(godotExe, rwx_rx_rx, opts)
-            }
-        })(),
-        (async () => {
-            if(!await fs_exists(godotPck, opts)){
-                await fs_copyFile(embedded.godotPck, godotPck, opts)
-            }
-        })(),
-    ])
-}
-
-type ListenerId = number
-const listeners = new Map<ListenerId, (err?: { code?: number, message?: string }, result?: JSONValue) => void>()
-const handlers = new Map<ListenerId, Record<string, (...args: JSONValue[]) => void>>()
-
-export async function repairAndStart(opts: Required<AbortOptions>): Promise<boolean> {
-    if(!jsonRpcDisabled){
-        process.stdin.addListener('data', onData)
-    } else if(!guiDisabled){
-        if(args.repair.enabled){
-            await repairUIRenderer(opts)
-        }
-        const exeArgs = [
-            '--main-pack', godotPck,
-            //'--exe', process.execPath,
-            //'--exe-args', JSON.stringify(args.toArray()),
-            '--log-file', 'godot.log.txt',
-            '--', process.execPath, ...args.toArray(),
-        ]
-        const exeOpts = {
-            //log: true, logPrefix: 'GODOT',
-            detached: true,
-            cwd: downloads,
-            //shell: true,
-        }
-        console.log('Spawning detached process', 0)
-        const proc = originalSpawn(godotExe, exeArgs, {
-        //const proc = Bun.spawnSync([godotExe, ...exeArgs], {
-            ...exeOpts, stdio: ['ignore', 'ignore', 'ignore'],
-        })
-        proc.unref()
-        //await startProcess('GODOT', proc, 'stderr', (chunk) => chunk.includes('Godot Engine started'), opts)
-        return true
-    }
-    return false
-}
-
-if(!jsonRpcDisabled)
-registerShutdownHandler((force, source) => {
-    if(source === 'call')
-        sendNotification('exit')
-})
-
-export function stop(){
-    process.stdin.removeListener('data', onData)
-}
-
-type JRPCMessage = JRPCResult | JRPCError | JRPCCall | JRPCNotification
-type JRPCResult = { id: number, error: undefined, result: JSONValue }
-type JRPCError = { id: number, error: { code: number, message: string }, result: undefined }
-type JRPCNotification = { method: string, params?: JSONValue[] }
-type JRPCCall = { id: number } & JRPCNotification
-
-function onData(data: Buffer){
-    const lines = data.toString('utf8').split('\n')
-    for(let line of lines){
-        line = line.trim()
-        if(line.startsWith('{') && line.endsWith('}')){
-            //logger.log(line)
-            const obj = JSON.parse(line) as JRPCMessage
-
-            if('id' in obj){
-                const handler = handlers.get(obj.id)
-                if(handler){
-                    if('method' in obj){
-                        handler[obj.method]?.(...(obj.params ?? []))
-                    } else if(obj.error){
-                        handler['reject']?.(obj.error)
-                    } else {
-                        handler['resolve']?.(obj.result)
-                    }
-                } else if('method' in obj){
-                    //TODO: Global methods
-                } else {
-                    const listener = listeners.get(obj.id)
-                    listener?.(obj.error, obj.result)
-                }
-            } else {
-                //TODO: Notifications
-            }
-        }
-    }
 }

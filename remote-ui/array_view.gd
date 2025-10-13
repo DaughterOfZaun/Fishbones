@@ -7,18 +7,24 @@ class_name ArrayView extends BaseView
 @export var line: PackedScene
 
 var instances: Dictionary[Variant, Control] = {}
+var first_line: Control
 
 func _ready() -> void:
+    if !default_key:
+        default_key = strip_name_hashtag(self)
     if !placeholder_container:
         placeholder_container = placeholder_label
     if !container:
         container = self
-    if !line:
-        line = PackedScene.new()
-        line.pack(container.get_child(0))
-    for i in range(container.get_child_count() -1, 0, -1):
+    #if !line:
+    #    line = PackedScene.new()
+    #    line.pack(container.get_child(0))
+    first_line = container.get_child(0)
+    container.remove_child(first_line)
+    for i in range(container.get_child_count() -1, -1, -1):
         var child := container.get_child(i)
         container.remove_child(child)
+        child.queue_free()
 
 func update(config: Dictionary) -> void:
     
@@ -33,6 +39,8 @@ func update(config: Dictionary) -> void:
         add_by_id(id, choice)
         #config.set('id', id)
         #add(choice)
+    
+    #TODO: update_child(instance)
     
     for id in instances:
         if !allowed_ids.has(id):
@@ -54,7 +62,8 @@ func add_by_id(id: Variant, config: Dictionary) -> void:
     if instances.has(id):
         return update_single_by_id(id, config)
         
-    var instance: Control = line.instantiate()
+    #var instance: Control = line.instantiate()
+    var instance: Control = first_line.duplicate()
     instances.set(id, instance)
     container.add_child(instance)
     bind_child(instance, default_key)

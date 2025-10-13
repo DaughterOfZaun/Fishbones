@@ -12,8 +12,8 @@ export async function setup(game: Game, server: LocalServer, opts: Required<Abor
     await server.loadSettings(opts)
     
     const view = show<void>('CustomGameSetup', {
-        GameName: { text: game.name.toString() },
-        Password: { text: game.password.toString() },
+        GameName: { text: game.name.value },
+        Password: { text: game.password.value },
         
         TickRate: { choices: inq2gd(TickRate.choices), selected: server.tickRate.value },
         TeamSize: { choices: inq2gd(PlayerCount.choices), selected: game.playersMax.value },
