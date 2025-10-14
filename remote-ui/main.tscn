@@ -392,7 +392,6 @@ layout_mode = 2
 layout_mode = 2
 size_flags_vertical = 3
 script = ExtResource("14_yaehf")
-default_key = "Join"
 placeholder_label = NodePath("Placeholder")
 container = NodePath("ScrollContainer/VBoxContainer")
 
@@ -1157,12 +1156,9 @@ vertical_scroll_mode = 3
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/VBoxContainer2/MarginContainer/VBoxContainer/#ConnectionsPanel/VBoxContainer/#Connections/ScrollContainer/VBoxContainer"]
-visible = false
-layout_mode = 2
-
 [node name="MarginContainer" type="HBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/VBoxContainer2/MarginContainer/VBoxContainer/#ConnectionsPanel/VBoxContainer/#Connections/ScrollContainer/VBoxContainer"]
 layout_mode = 2
+script = ExtResource("13_2cqfq")
 
 [node name="#Icon" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/VBoxContainer2/MarginContainer/VBoxContainer/#ConnectionsPanel/VBoxContainer/#Connections/ScrollContainer/VBoxContainer/MarginContainer"]
 custom_minimum_size = Vector2(58, 0)

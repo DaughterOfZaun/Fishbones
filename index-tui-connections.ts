@@ -1,44 +1,73 @@
 import type { AbortOptions, IdentifyResult, PeerId } from "@libp2p/interface";
 import { consumePeerInfoString, getPeerInfoString, validatePeerInfoString, type LibP2PNode } from "./index-node-simple";
-import { console_log, DeferredView, show } from "./ui/remote";
-import type { OpenConnectionOptions } from "@libp2p/interface-internal";
+import { console_log } from "./ui/remote";
 import { logger } from "./utils/data-shared";
 import { NAME, VERSION } from "./utils/constants-build";
 import { PeerSet } from "@libp2p/peer-collections";
-/*
-interface PlayerInfo {
-    name: string
-    icon: string
-    status: string
-}
-*/
+import { render, DeferredView } from "./ui/remote-view";
 
 export async function profilePanel(node: LibP2PNode, opts: Required<AbortOptions>){
     
-    const view = show('ProfilePanel', {
-        //Icon: { path: '' },
-        Name: { text: node.peerId.toString().slice(-8) },
-        Status: { text: '' },
-    }, {}, opts)
+    const view = render('ProfilePanel', {
+        $type: 'form',
+        fields: {
+            Name: {
+                $type: 'label',
+                text: node.peerId.toString().slice(-8),
+            },
+            Status: {
+                $type: 'label',
+                text: ''
+            },
+        }
+    }, opts)
 
     return view.promise
 }
 
 export async function connections(node: LibP2PNode, opts: Required<AbortOptions>){
     
-    const view = show('ConnectionsPanel', {
-        Connections: {
-            default: 'No connections',
+    const view = render('ConnectionsPanel', {
+        $type: 'form',
+        fields: {
+            Connections: {
+                $type: 'list',
+                placeholderText: 'No connections',
+            },
+            DirectConnect: {
+                $type: 'button',
+                $listeners: {
+                    pressed: () => {
+                        void directConnect(node, opts)
+                        .then(async str => {
+                            if(typeof str === 'string')
+                                return connectByPeerInfoString(node, view, str, opts)
+                        })
+                    },
+                }
+            }
         }
-    }, {
-        'DirectConnect.pressed': () => {
-            void directConnect(node, opts)
-            .then(async str => {
-                if(typeof str === 'string')
-                    return connectByPeerInfoString(node, view, str, opts)
-            })
-        },
     }, opts)
+
+    // setTimeout(() => {
+    //     view.get('Connections').add('PEER_ID', {
+    //         $type: 'form',
+    //         fields: {
+    //             Name: {
+    //                 $type: 'label',
+    //                 text: 'PEER_ID',
+    //             },
+    //             Status: {
+    //                 $type: 'label',
+    //                 text: 'Connected',
+    //             },
+    //         }
+    //     })
+    // }, 500)
+
+    // setTimeout(() => {
+    //     view.get('Connections').remove('PEER_ID')
+    // }, 1000)
 
     const fbPeers = new PeerSet()
     view.addEventListener(node, 'peer:identify', (evt: CustomEvent<IdentifyResult>) => {
@@ -46,11 +75,18 @@ export async function connections(node: LibP2PNode, opts: Required<AbortOptions>
         const userAgent = `${NAME}/${VERSION}`
         if(agentVersion === userAgent){
             fbPeers.add(peerId)
-            view.call('add', {
-                id: peerId.toString(),
-                //Icon: { path: '' },
-                Name: { text: peerId.toString().slice(-8) },
-                Status: { text: 'Connected' },
+            view.get('Connections').add(peerId.toString(), {
+                $type: 'form',
+                fields: {
+                    Name: {
+                        $type: 'label',
+                        text: peerId.toString().slice(-8)
+                    },
+                    Status: {
+                        $type: 'label',
+                        text: 'Connected'
+                    },
+                }
             })
         }
     })
@@ -59,9 +95,7 @@ export async function connections(node: LibP2PNode, opts: Required<AbortOptions>
         const peerId = evt.detail
         if(fbPeers.has(peerId)){
             fbPeers.delete(peerId)
-            view.call('remove', {
-                id: peerId.toString(),
-            })
+            view.get('Connections').remove(peerId.toString())
         }
     })
 
@@ -71,24 +105,42 @@ export async function connections(node: LibP2PNode, opts: Required<AbortOptions>
 let lastPeerInfoString = ''
 async function directConnect(node: LibP2PNode, opts: Required<AbortOptions>){
     
-    const view = show<string | void>('DirectConnect', {
-        //PastedText: { text: lastPeerInfoString },
-    }, {
-        'PastedText.changed': (str: string) => {
-            lastPeerInfoString = str
-            void validatePeerInfoString(node, str, opts)
-            .then((err) => {
-                view.call('update', {
-                    Error: { text: err ?? '', visible: !!err },
-                    Connect: { disabled: !!err },
-                })
-            })
-        },
-        'Connect.pressed': () => {
-            return view.resolve(lastPeerInfoString)
-        },
-        'Cancel.pressed': () => {
-            return view.resolve()
+    const view = render<string | void>('DirectConnect', {
+        $type: 'form',
+        fields: {
+            PastedText: {
+                $type: 'text',
+                //text: lastPeerInfoString,
+                $listeners: {
+                    changed: (str: string) => {
+                        lastPeerInfoString = str
+                        void validatePeerInfoString(node, str, opts)
+                        .then((err) => {
+                            view.get('Error').update({ $type: 'label', text: err ?? '', visible: !!err })
+                            view.get('Connect').update({ $type: 'button', disabled: !!err })
+                        })
+                    },
+                },
+            },
+            Error: {
+                $type: 'label',
+            },
+            Connect: {
+                $type: 'button',
+                $listeners: {
+                    pressed: () => {
+                        view.resolve(lastPeerInfoString)
+                    },
+                },
+            },
+            Cancel: {
+                $type: 'button',
+                $listeners: {
+                    pressed: () => {
+                        view.resolve()
+                    }
+                }
+            }
         }
     }, opts)
 
@@ -96,9 +148,7 @@ async function directConnect(node: LibP2PNode, opts: Required<AbortOptions>){
     function onPeerUpdate(){
         getPeerInfoString(node, opts)
             .then((str) => {
-                view.call('update', {
-                    TextToCopy: { text: str },
-                })
+                view.get('TextToCopy').update({ $type: 'text', text: str })
             })
             .catch((/*err*/) => { /* Ignore */ })
     }
@@ -123,30 +173,9 @@ async function connectByPeerInfoString(node: LibP2PNode, view: DeferredView<unkn
         name: peerId.toString().slice(-8),
         status: 'Connecting...',
     })
-    const options: OpenConnectionOptions = {
-        signal: opts.signal,
-        /*
-        onProgress(evt){
-            const { type, detail } = evt
-            view.call('update', {
-                id: peerId.toString(),
-                status: type
-            })
-            let detailString = ''
-            if(typeof detail === 'string') detailString = detail
-            else if(Array.isArray(detail)){
-                detailString = JSON.stringify(detail.map((addr: Address) => ({
-                    multiaddr: addr.multiaddr.toString(),
-                    isCertified: addr.isCertified,
-                })), null, 4)
-            }
-            logger.log('Connecting to', peerId.toString(), type, detailString)
-        },
-        */
-    }
     try {
         logger.log('Connecting to', peerId.toString())
-        await node.dial(peerId, options)
+        await node.dial(peerId, opts)
         view.call('update', {
             id: peerId.toString(),
             status: 'Connected',

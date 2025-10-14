@@ -1,4 +1,3 @@
-import { show } from './ui/remote'
 import { RemoteGame } from './game-remote'
 import { LocalServer, RemoteServer } from './server'
 import { type LibP2PNode } from './index-node-simple'
@@ -9,32 +8,17 @@ import type { PeerIdWithData } from './network/pubsub-discovery'
 import type { Peer } from './message/peer'
 import { LocalGame } from './game-local'
 import type { Game } from './game'
+import { render } from './ui/remote-view'
+import type { Form } from './ui/remote-types'
 
 interface CacheEntry {
     server: RemoteServer
     games: Map<number, {
         game: RemoteGame
-        choice: Record<string, number | Record<string, string | number | boolean>>
-        //choice: Partial<GameDesc>
+        choice: Form
     }>
 }
-/*
-interface GameDesc {
-    name: string
-    owner: string
-    slots: string
-    map: string
-    mode: string
-    
-    password: boolean
-    manacosts: boolean
-    minions: boolean
-    cooldowns: boolean
-    cheats: boolean
 
-    value: number
-}
-*/
 const cache = new PeerMap<CacheEntry>()
 const objs = new Map<number, RemoteGame>()
 let objId = 0
@@ -50,24 +34,44 @@ export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts
     type Action = ['join', RemoteGame] | ['host'] | ['quit']
 
     loop: while(true){
-        const view = show<Action>('CustomsBrowser', {
-            Rooms: {
-                choices: getChoices(node),
-                default: args.allowInternet.enabled ?
-                    'Waiting for the servers to appear...' :
-                    'Waiting for the servers to appear on the local network...',
-            }
-        }, {
-            'Join.pressed': (objId: number) => view.resolve(['join', objs.get(objId)!]),
-            'Host.pressed': () => view.resolve(['host']),
-            'Quit.pressed': () => view.resolve(['quit']),
+        const view = render<Action>('CustomsBrowser', {
+            $type: 'form',
+            fields: {
+                Rooms: {
+                    $type: 'list',
+                    items: getChoices(node),
+                    placeholderText: args.allowInternet.enabled ?
+                        'Waiting for the servers to appear...' :
+                        'Waiting for the servers to appear on the local network...',
+                },
+                /*
+                //TODO: Wildcard listener.
+                Join: {
+                    $type: 'button',
+                    $listeners: {
+                        pressed: () => view.resolve(['join', objs.get(objId)!]),
+                    }
+                },
+                */
+                Host: {
+                    $type: 'button',
+                    $listeners: {
+                        pressed: () => view.resolve(['host']),
+                    }
+                },
+                Quit: {
+                    $type: 'button',
+                    $listeners: {
+                        pressed: () => view.resolve(['quit']),
+                    }
+                },
+            },
         }, opts)
 
         view.addEventListener(pspd, 'update', () => {
-            view.call('update', {
-                Rooms: {
-                    choices: getChoices(node),
-                }
+            view.get('Rooms').update({
+                $type: 'list',
+                items: getChoices(node),
             })
         })
 
@@ -172,11 +176,14 @@ async function join(game: RemoteGame, name: string, lobby: Lobby, opts: Required
 function getChoices(node: LibP2PNode){
     const pspd = node.services.pubsubPeerWithDataDiscovery
 
-    return pspd.getPeersWithData()
-        .filter(pwd => !!pwd.data?.serverSettings)
-        .flatMap(pwd => {
-            return peerInfoToChoices(node, pwd)
-        })
+    return Object.fromEntries(
+        pspd.getPeersWithData()
+            .filter(pwd => !!pwd.data?.serverSettings)
+            .flatMap(pwd => {
+                return peerInfoToChoices(node, pwd)
+            })
+            .map(choice => [ choice.$id!, choice ])
+    )
 }
 
 function peerInfoToChoices(node: LibP2PNode, pwd: PeerIdWithData){
@@ -197,11 +204,11 @@ function peerInfoToChoices(node: LibP2PNode, pwd: PeerIdWithData){
     if(!server.validate()) return []
 
     return pwd.data!.gameInfos.map((gameInfo) => {
-        return gameInfoToChoices(node, pwd, server, games, gameInfo)
+        return gameInfoToChoice(node, pwd, server, games, gameInfo)
     })
 }
 
-function gameInfoToChoices(
+function gameInfoToChoice(
     node: LibP2PNode,
     pwd: PeerIdWithData,
     server: RemoteServer,
@@ -214,7 +221,7 @@ function gameInfoToChoices(
     let choice = cacheEntry?.choice
     if(!cacheEntry || !game || !choice){
         game = RemoteGame.create(node, server, gameInfo)
-        choice = {}
+        choice = { $type: 'form', fields: {} }
         cacheEntry = { game, choice }
         games.set(gameInfo.id, cacheEntry)
     } else {
@@ -224,25 +231,26 @@ function gameInfoToChoices(
     const players = game.getPlayersCount()
     const playersMax = 2 * (game.playersMax.value ?? 0)
 
-    choice.Owner = { text: pwd.id.toString().slice(-8) }
+    choice.fields!.Owner = { $type: 'label', text: pwd.id.toString().slice(-8) }
     //gameDesc.server = server.name.toString()
-    choice.Name = { text: game.name.toString() }
-    choice.Slots = { text: `${players}/${playersMax}` }
-    choice.Mode = { text: game.mode.toString() }
-    choice.Map = { text: game.map.toString() }
+    choice.fields!.Name = { $type: 'label', text: game.name.toString() }
+    choice.fields!.Slots = { $type: 'label', text: `${players}/${playersMax}` }
+    choice.fields!.Mode = { $type: 'label', text: game.mode.toString() }
+    choice.fields!.Map = { $type: 'label', text: game.map.toString() }
     
-    choice.Password = { button_pressed: game.password.isSet }
-    choice.Manacosts = { button_pressed: game.features.isManacostsEnabled }
-    choice.Cooldowns = { button_pressed: game.features.isCooldownsEnabled }
-    choice.Minions = { button_pressed: game.features.isMinionsEnabled }
-    choice.Cheats = { button_pressed: game.features.isCheatsEnabled }
+    choice.fields!.Password = { $type: 'checkbox', button_pressed: game.password.isSet }
+    choice.fields!.Manacosts = { $type: 'checkbox', button_pressed: game.features.isManacostsEnabled }
+    choice.fields!.Cooldowns = { $type: 'checkbox', button_pressed: game.features.isCooldownsEnabled }
+    choice.fields!.Minions = { $type: 'checkbox', button_pressed: game.features.isMinionsEnabled }
+    choice.fields!.Cheats = { $type: 'checkbox', button_pressed: game.features.isCheatsEnabled }
     
     //gameDesc.ping = Math.min(100, 999)
 
-    if(!choice.id){
+    if(!choice.$id){
         objs.set(objId, game)
-        choice.id = objId
+        choice.$id = objId.toString()
         objId++
     }
-    return choice as Record<string, string | number>
+
+    return choice
 }

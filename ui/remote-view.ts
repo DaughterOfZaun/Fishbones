@@ -2,7 +2,7 @@ import type { AbortOptions } from "@libp2p/interface"
 import { Deferred } from "../utils/data-process"
 import { handlers, sendCall, sendFollowupNotification, type JSONDict, type JSONValue } from "./remote-jrpc"
 //import * as jrpc from "./remote-jrpc"
-import type { Control, View as IView } from "./remote-types"
+import type { Config, View as IView } from "./remote-types"
 
 const SLASH = '/'
 const COLON = ':'
@@ -22,8 +22,20 @@ export class View implements IView {
     public get(path: string){
         return new View(this.id, this.path + SLASH + path)
     }
-    public call(name: string, ...args: JSONValue[]){
-        sendFollowupNotification('call', this.id, ...[this.path, name, ...args])
+    private call(name: string, ...args: JSONValue[]){
+        sendFollowupNotification('external_call', this.id, ...[this.path, name, ...args])
+    }
+    public update(config: Config){
+        this.call('update', config as unknown as JSONValue)
+    }
+    public add(name: string, config: Config){
+        this.call('add_item', name, config as unknown as JSONValue)
+    }
+    //public update_item(name: string, config: Config){
+    //    this.call('update_item', name, config as unknown as JSONValue)
+    //}
+    public remove(name: string){
+        this.call('remove_item', name)
     }
 }
 
@@ -38,12 +50,24 @@ export class DeferredView<T> extends Deferred<T> implements IView {
     public get(path: string){
         return new View(this.id, this.path + SLASH + path)
     }
-    public call(name: string, ...args: JSONValue[]){
-        sendFollowupNotification('call', this.id, ...[this.path, name, ...args])
+    private call(name: string, ...args: JSONValue[]){
+        sendFollowupNotification('external_call', this.id, ...[this.path, name, ...args])
+    }
+    public update(config: Partial<Config>){
+        this.call('update', config as unknown as JSONValue)
+    }
+    public add(name: string, config: Config){
+        this.call('add_item', name, config as unknown as JSONValue)
+    }
+    //public update_item(name: string, config: Config){
+    //    this.call('update_item', name, config as unknown as JSONValue)
+    //}
+    public remove(name: string){
+        this.call('remove_item', name)
     }
 }
 
-function recursive(path: string, config: Control, cb: (path: string, control: Control) => void){
+function recursive(path: string, config: Config, cb: (path: string, control: Config) => void){
     cb(path, config)
 
     const children =
@@ -57,7 +81,7 @@ function recursive(path: string, config: Control, cb: (path: string, control: Co
         }
 }
 
-export function render<T>(name: string, config: Control, opts: Required<AbortOptions>){
+export function render<T>(name: string, config: Config, opts: Required<AbortOptions>){
 
     const id = sendCall('render', name, config as unknown as JSONDict)
 
@@ -72,7 +96,7 @@ export function render<T>(name: string, config: Control, opts: Required<AbortOpt
     recursive('.', config, (path, config) => {
         if('$listeners' in config && config.$listeners)
         for(const [event, listener] of Object.entries(config.$listeners)){
-            listeners.set(path + COLON + event, listener)
+            listeners.set(path + COLON + event, listener as JListener)
         }
     })
 

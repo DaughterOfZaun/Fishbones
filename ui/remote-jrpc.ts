@@ -14,22 +14,25 @@ export function postIncGID(){
     return gid++
 }
 
+function stripDollarPrefixed(key: string, value: unknown){
+    if(key.startsWith('$')) return undefined
+    return value
+}
+
 export function sendCall(method: string, ...params: JSONValue[]){
     const id = gid++
-    const json = JSON.stringify({ id, method, params }, (key, /*value*/) => {
-        if(key.startsWith('$')) return undefined
-    })
+    const json = JSON.stringify({ id, method, params }, stripDollarPrefixed)
     process.stdout.write(json + '\n', 'utf8')
     //console.log(json)
     return id
 }
 export function sendNotification(method: string, ...params: JSONValue[]){
-    const json = JSON.stringify({ method, params })
+    const json = JSON.stringify({ method, params }, stripDollarPrefixed)
     process.stdout.write(json + '\n', 'utf8')
     //console.log(json)
 }
 export function sendFollowupNotification(method: string, id: number, ...params: JSONValue[]){
-    const json = JSON.stringify({ id, method, params })
+    const json = JSON.stringify({ id, method, params }, stripDollarPrefixed)
     process.stdout.write(json + '\n', 'utf8')
     //console.log(json)
 }

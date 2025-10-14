@@ -11,10 +11,8 @@ import { args } from '../utils/args'
 
 import { fs_copyFile } from '../utils/data-fs'
 import { Deferred, registerShutdownHandler } from '../utils/data-process'
-import type { AbortOptions } from '@libp2p/interface'
 import { listeners, sendCall, sendFollowupNotification, sendNotification, type JSONValue } from './remote-jrpc'
 import * as jrpc from './remote-jrpc'
-import type { Control, View } from './remote-types'
 
 export { type SelectChoice as Choice, AbortPromptError, ExitPromptError }
 

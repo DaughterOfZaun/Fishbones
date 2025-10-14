@@ -1,17 +1,18 @@
 import type { AbortOptions } from "@libp2p/interface";
 import type { Game } from "./game";
 import type { LocalServer } from "./server";
-import { show } from "./ui/remote";
-import { Features, GameMap, GameMode, GameType, PlayerCount, TickRate } from "./utils/constants";
+//import { render } from "./ui/remote";
+//import { Features, GameMap, GameMode, GameType, PlayerCount, TickRate } from "./utils/constants";
 
-type Choice = { value: number, name: string }
-const inq2gd = (choices: Choice[]) => choices.map(({ value: id, name: text }) => ({ id, text }))
+//type Choice = { value: number, name: string }
+//const inq2gd = (choices: Choice[]) => choices.map(({ value: id, name: text }) => ({ id, text }))
 
 export async function setup(game: Game, server: LocalServer, opts: Required<AbortOptions>){
     
     await server.loadSettings(opts)
     
-    const view = show<void>('CustomGameSetup', {
+    /*
+    const view = render<void>('CustomGameSetup', {
         GameName: { text: game.name.value },
         Password: { text: game.password.value },
         
@@ -46,6 +47,7 @@ export async function setup(game: Game, server: LocalServer, opts: Required<Abor
     }, opts)
 
     await view.promise
+    */
 
     await server.saveSettings(opts)
 }

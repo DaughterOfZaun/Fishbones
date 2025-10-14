@@ -6,16 +6,12 @@ import { checkbox, console_log, ExitPromptError, input } from './ui/remote'
 import { registerShutdownHandler, setInsideUI, shutdown, shutdownOptions, unwrapAbortError } from './utils/data-process'
 import { repair } from './utils/data-repair'
 //import * as umplex from './network/umplex'
-import * as RemoteUI from './ui/remote'
 import type { AbortOptions } from '@libp2p/interface'
 import { args } from './utils/args'
 
 logger.log(`${'-'.repeat(35)} ${TITLE} started ${'-'.repeat(35)}`)
 
 async function index(opts: Required<AbortOptions>){
-
-    if(await RemoteUI.repairAndStart(opts))
-        return //process.exit(0)
     
     if(args.setup.enabled){
         const optionsEnabled = await checkbox({

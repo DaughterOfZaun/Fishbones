@@ -1,27 +1,27 @@
 class_name DictionaryView extends BaseView
 
-@export var elements: Dictionary[String, Control]
+var fields: Dictionary[String, Control]
 
 func _ready() -> void:
-    var children := find_children("#*")
+    var children := find_children("#*", "", true, false)
     for child: Control in children:
         if child.get_meta('registered', false): continue
         child.set_meta('registered', true)
         
-        var key := strip_name_hashtag(child)
-        elements[key] = child
+        var field_name := strip_name_hashtag(child)
+        fields[field_name] = child
         
-        bind_child(child, key)
+        bind_child(child)
 
 func init(config: Dictionary, cb: Callable) -> void:
     super.init(config, cb)
-    for key: String in elements:
-        var value := elements[key]
-        init_child(id, value, cb)
+    for field_name: String in fields:
+        var field := fields[field_name]
+        init_child(field_name, field, cb)
 
 func update(config: Dictionary) -> void:
-    for key: String in config:
-        if key == 'id': continue
-        var value: Variant = config[key]
-        var control: Control = self.elements[key]
-        update_child(control, value)        
+    var field_configs: Dictionary = config.get('fields', {})
+    for field_name: String in field_configs:
+        var field_config: Dictionary = field_configs[field_name]
+        var field: Control = self.fields[field_name]
+        update_child(field, field_config)
