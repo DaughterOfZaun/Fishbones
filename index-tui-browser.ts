@@ -9,7 +9,7 @@ import type { Peer } from './message/peer'
 import { LocalGame } from './game-local'
 import type { Game } from './game'
 import { render } from './ui/remote-view'
-import type { Checkbox, Form, Label } from './ui/remote-types'
+import { button, checkbox, form, label, list, type Checkbox, type Form, type Label } from './ui/remote-types'
 
 interface CacheEntry {
     server: RemoteServer
@@ -34,30 +34,16 @@ export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts
     type Action = ['join', RemoteGame] | ['host'] | ['quit']
 
     loop: while(true){
-        const view = render<Action>('CustomsBrowser', {
-            $type: 'form',
-            fields: {
-                Rooms: {
-                    $type: 'list',
-                    items: getChoices(node),
-                    placeholderText: args.allowInternet.enabled ?
-                        'Waiting for the servers to appear...' :
-                        'Waiting for the servers to appear on the local network...',
-                },
-                Host: {
-                    $type: 'button',
-                    $listeners: {
-                        pressed: () => view.resolve(['host']),
-                    }
-                },
-                Quit: {
-                    $type: 'button',
-                    $listeners: {
-                        pressed: () => view.resolve(['quit']),
-                    }
-                },
-            },
-        }, opts, [
+        const view = render<Action>('CustomsBrowser', form({
+            Rooms: list(
+                getChoices(node),
+                args.allowInternet.enabled ?
+                    'Waiting for the servers to appear...' :
+                    'Waiting for the servers to appear on the local network...',
+            ),
+            Host: button(() => view.resolve(['host'])),
+            Quit: button(() => view.resolve(['quit'])),
+        }), opts, [
             {
                 regex: /^\.\/Rooms\/(?<objId>\d+)\/Join:pressed$/,
                 listener: (m) => {
@@ -217,24 +203,21 @@ function gameInfoToChoice(
     let choice = cacheEntry?.choice
     if(!cacheEntry || !game || !choice){
         game = RemoteGame.create(node, server, gameInfo)
-        choice = {
-            $type: 'form',
-            fields: {
-                Owner: { $type: 'label' },
-                Name: { $type: 'label' },
-                Slots: { $type: 'label' },
-                Mode: { $type: 'label' },
-                Map: { $type: 'label' },
+        choice = form({
+            Owner: label(),
+            Name: label(),
+            Slots: label(),
+            Mode: label(),
+            Map: label(),
 
-                Password: { $type: 'checkbox' },
-                Manacosts: { $type: 'checkbox' },
-                Cooldowns: { $type: 'checkbox' },
-                Minions: { $type: 'checkbox' },
-                Cheats: { $type: 'checkbox' },
+            Password: checkbox(),
+            Manacosts: checkbox(),
+            Cooldowns: checkbox(),
+            Minions: checkbox(),
+            Cheats: checkbox(),
 
-                Join: { $type: 'button' },
-            }
-        }
+            Join: button(),
+        })
         cacheEntry = { game, choice }
         games.set(gameInfo.id, cacheEntry)
     } else {

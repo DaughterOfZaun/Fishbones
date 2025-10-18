@@ -79,9 +79,10 @@ function render(name: string, config: Config){ return undefined! as View }
 export const inq2gd = (choices: { value: number, name: string }[]) => choices.map(({ value: id, name: text }) => ({ id, text }))
 
 export const form = (fields?: Record<string, Config>) => ({ $type: 'form' as const, fields })
-export const list = (items?: Record<string, Config>) => ({ $type: 'list' as const, items })
+export const list = (items?: Record<string, Config>, placeholderText?: string) => ({ $type: 'list' as const, items, placeholderText })
 export const label = (text?: string) => ({ $type: 'label' as const, text })
 export const line = (text?: string, changed?: (text: string) => void) => ({ $type: 'line' as const, text, $listeners: { changed } })
+export const text = (text?: string, changed?: (text: string) => void) => ({ $type: 'text' as const, text, $listeners: { changed } })
 export const checkbox = (button_pressed?: boolean, toggled?: (on: boolean) => void) => ({ $type: 'checkbox' as const, button_pressed, $listeners: { toggled } })
 export const button = (pressed?: () => void, disabled = false) => ({ $type: 'button' as const, disabled, $listeners: { pressed } })
 export const option = (options?: { id?: number, text?: string }[], selected?: number, item_selected?: (index: number) => void) => ({ $type: 'option' as const, selected, options, $listeners: { selected: item_selected } })

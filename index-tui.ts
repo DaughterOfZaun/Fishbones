@@ -1,4 +1,4 @@
-import { spinner, select, type Choice, AbortPromptError, color, input } from './ui/remote'
+import { spinner, select, type Choice, color, input } from './ui/remote'
 import { type Game } from './game'
 import type { GamePlayer, PPP } from './game-player'
 import { type LibP2PNode } from './index-node-simple'
@@ -9,7 +9,8 @@ import { getLastLaunchCmd } from './utils/data-client'
 import { browser } from './index-tui-browser'
 import { connections, profilePanel } from './index-tui-connections'
 import { setup } from './index-tui-setup'
-import { lobby_gather } from './index-tui-lobby'
+import { lobby_gather } from './index-tui-lobby-gather'
+import { lobby_pick } from './index-tui-lobby-pick'
 
 export async function main(node: LibP2PNode, opts: Required<AbortOptions>){
     process.title = TITLE
@@ -46,6 +47,12 @@ interface Context {
     game: Game,
 }
 
+export class SwitchViewError extends Error {
+    constructor(options: { cause: unknown }){
+        super('', options)
+    }
+}
+
 async function lobby(game: Game, opts: Required<AbortOptions>){
     type View = null | ((opts: Context) => Promise<unknown>)
 
@@ -57,16 +64,19 @@ async function lobby(game: Game, opts: Required<AbortOptions>){
         controller,
         game,
     }
-    const handlers = {
-        kick: () => controller.abort(null),
-        start: () => controller.abort(lobby_pick),
-        wait: () => controller.abort(lobby_wait_for_start),
-        crash: () => controller.abort(lobby_crash_report),
-        launch: () => controller.abort(lobby_wait_for_end),
-        stop: () => controller.abort(lobby_gather),
+
+    const switchView = (to: View) => {
+        controller.abort(new SwitchViewError({ cause: to }))
     }
-    //TODO: Rework the logic for switching views.
-    const views: View[] = [ null, lobby_pick, lobby_wait_for_start, lobby_crash_report, lobby_wait_for_end, lobby_gather ]
+    const handlers = {
+        kick: () => switchView(null),
+        start: () => switchView(lobby_pick),
+        wait: () => switchView(lobby_wait_for_start),
+        crash: () => switchView(lobby_crash_report),
+        launch: () => switchView(lobby_wait_for_end),
+        stop: () => switchView(lobby_gather),
+    }
+    
     const handlers_keys = Object.keys(handlers) as (keyof typeof handlers)[]
     for(const name of handlers_keys)
         game.addEventListener(name, handlers[name])
@@ -78,7 +88,7 @@ async function lobby(game: Game, opts: Required<AbortOptions>){
                 await view(ctx)
                 //break
             } catch(error) {
-                if (error instanceof AbortPromptError && views.includes(error.cause as View)){
+                if (error instanceof SwitchViewError){
                     controller = new AbortController()
                     ctx.signal = createSignal()
                     view = error.cause as View
@@ -91,7 +101,8 @@ async function lobby(game: Game, opts: Required<AbortOptions>){
     }
 }
 
-async function lobby_pick(ctx: Context){
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function lobby_pick_old(ctx: Context){
     const { game } = ctx
 
     type Action = ['lock'] | ['pick', PPP] | ['noop'] | ['exit']
@@ -133,7 +144,7 @@ async function lobby_pick(ctx: Context){
         } else if(action == 'noop'){
             continue
         } else if(action == 'exit'){
-            throw new AbortPromptError({ cause: null })
+            throw new SwitchViewError({ cause: null })
         }
     }
 }
@@ -166,9 +177,9 @@ async function lobby_crash_report(ctx: Context){
         if(action === 'relaunch'){
             game.relaunch()
             //return await lobby_wait_for_end(ctx)
-            throw new AbortPromptError({ cause: lobby_wait_for_end })   
+            throw new SwitchViewError({ cause: lobby_wait_for_end })   
         } else if(action === 'exit'){
-            throw new AbortPromptError({ cause: null })
+            throw new SwitchViewError({ cause: null })
         } else if(action === 'show_cmd'){
             await input({
                 message: 'Run the command in the terminal or paste it into a bat file',

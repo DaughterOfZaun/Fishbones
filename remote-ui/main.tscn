@@ -39,6 +39,7 @@ theme = ExtResource("1_efxa6")
 color = Color(0, 0, 0, 1)
 script = ExtResource("1_ig7tw")
 views = {
+"ChampionSelect": NodePath("Container/TabContainer/#ChampionSelect"),
 "ConnectionsPanel": NodePath("Container/TabContainer/MarginContainer1/HBoxContainer1/VBoxContainer2/MarginContainer/VBoxContainer/#ConnectionsPanel"),
 "CustomGameSetup": NodePath("Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup"),
 "CustomsBrowser": NodePath("Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser"),
@@ -119,7 +120,7 @@ theme_override_constants/margin_bottom = 0
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_efxa6")
 tab_alignment = 1
-current_tab = 1
+current_tab = 2
 tabs_visible = false
 deselect_enabled = true
 
@@ -267,6 +268,7 @@ disabled = true
 text = "Connect"
 
 [node name="MarginContainer1" type="MarginContainer" parent="Container/TabContainer"]
+visible = false
 layout_mode = 2
 metadata/_tab_index = 1
 
@@ -288,7 +290,6 @@ theme_override_constants/margin_bottom = 0
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_efxa6")
 tab_alignment = 1
-current_tab = 2
 tabs_visible = false
 deselect_enabled = true
 
@@ -799,7 +800,6 @@ text = "Password (Optional)"
 layout_mode = 2
 size_flags_horizontal = 3
 text = "password"
-secret = true
 
 [node name="VBoxContainer2" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer1"]
 layout_mode = 2
@@ -906,6 +906,7 @@ size_flags_stretch_ratio = 0.25
 text = "Host Game"
 
 [node name="#GatheringLobby" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer"]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 8.0
@@ -1410,666 +1411,669 @@ layout_mode = 2
 size_flags_horizontal = 3
 disabled = true
 
-[node name="MarginContainer2" type="MarginContainer" parent="Container/TabContainer"]
-visible = false
+[node name="#ChampionSelect" type="MarginContainer" parent="Container/TabContainer"]
 layout_mode = 2
 theme_override_constants/margin_left = 0
 theme_override_constants/margin_right = 0
+script = ExtResource("13_2cqfq")
 metadata/_tab_index = 2
 
-[node name="HBoxContainer2" type="HBoxContainer" parent="Container/TabContainer/MarginContainer2"]
+[node name="HBoxContainer2" type="HBoxContainer" parent="Container/TabContainer/#ChampionSelect"]
 layout_mode = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="Container/TabContainer/MarginContainer2/HBoxContainer2"]
+[node name="VBoxContainer" type="VBoxContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="LineEdit" type="Control" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer"]
+[node name="LineEdit" type="Control" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer"]
 custom_minimum_size = Vector2(0, 31)
 layout_mode = 2
 
-[node name="ScrollContainer" type="ScrollContainer" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer"]
+[node name="ScrollContainer" type="ScrollContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 vertical_scroll_mode = 3
 
-[node name="VBoxContainer1" type="VBoxContainer" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer/ScrollContainer"]
+[node name="#Team1" type="VBoxContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer/ScrollContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
+script = ExtResource("14_yaehf")
 
-[node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer/ScrollContainer/VBoxContainer1"]
+[node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer/ScrollContainer/#Team1"]
 layout_mode = 2
 size_flags_vertical = 3
+script = ExtResource("13_2cqfq")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer/ScrollContainer/VBoxContainer1/PanelContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer/ScrollContainer/#Team1/PanelContainer"]
 layout_mode = 2
 
-[node name="Control" type="Control" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer/ScrollContainer/VBoxContainer1/PanelContainer/HBoxContainer"]
+[node name="Control" type="Control" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer/ScrollContainer/#Team1/PanelContainer/HBoxContainer"]
 layout_mode = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer/ScrollContainer/VBoxContainer1/PanelContainer/HBoxContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer/ScrollContainer/#Team1/PanelContainer/HBoxContainer"]
 layout_mode = 2
 
-[node name="Button" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer/ScrollContainer/VBoxContainer1/PanelContainer/HBoxContainer/VBoxContainer"]
+[node name="#SummonerSpell1" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer/ScrollContainer/#Team1/PanelContainer/HBoxContainer/VBoxContainer"]
 custom_minimum_size = Vector2(27, 27)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="Button2" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer/ScrollContainer/VBoxContainer1/PanelContainer/HBoxContainer/VBoxContainer"]
+[node name="#SummonerSpell2" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer/ScrollContainer/#Team1/PanelContainer/HBoxContainer/VBoxContainer"]
 custom_minimum_size = Vector2(27, 27)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="TextureRect" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer/ScrollContainer/VBoxContainer1/PanelContainer/HBoxContainer"]
+[node name="#Icon" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer/ScrollContainer/#Team1/PanelContainer/HBoxContainer"]
 custom_minimum_size = Vector2(58, 0)
 layout_mode = 2
 mouse_filter = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer/ScrollContainer/VBoxContainer1/PanelContainer/HBoxContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer/ScrollContainer/#Team1/PanelContainer/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="VBoxContainer" type="VBoxContainer" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer/ScrollContainer/VBoxContainer1/PanelContainer/HBoxContainer/MarginContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer/ScrollContainer/#Team1/PanelContainer/HBoxContainer/MarginContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label1" type="Label" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer/ScrollContainer/VBoxContainer1/PanelContainer/HBoxContainer/MarginContainer/VBoxContainer"]
+[node name="#Name" type="Label" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer/ScrollContainer/#Team1/PanelContainer/HBoxContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 1
 text = "Summoner's Name"
 clip_text = true
 text_overrun_behavior = 3
 
-[node name="Label2" type="Label" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer/ScrollContainer/VBoxContainer1/PanelContainer/HBoxContainer/MarginContainer/VBoxContainer"]
+[node name="#Status" type="Label" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer/ScrollContainer/#Team1/PanelContainer/HBoxContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
 text = "Offline"
 clip_text = true
 text_overrun_behavior = 3
 
-[node name="VBoxContainer2" type="VBoxContainer" parent="Container/TabContainer/MarginContainer2/HBoxContainer2"]
+[node name="VBoxContainer2" type="VBoxContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.5
 
-[node name="VBoxContainer2" type="VBoxContainer" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2"]
+[node name="VBoxContainer2" type="VBoxContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2"]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="LineEdit" type="LineEdit" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2"]
+[node name="LineEdit" type="LineEdit" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2"]
 layout_mode = 2
 
-[node name="ScrollContainer" type="ScrollContainer" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2"]
+[node name="ScrollContainer" type="ScrollContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2"]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 vertical_scroll_mode = 4
 
-[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="HFlowContainer" type="HFlowContainer" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer"]
+[node name="#Champions" type="HFlowContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 alignment = 1
 last_wrap_alignment = 1
+script = ExtResource("14_yaehf")
 
-[node name="Button" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button2" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button2" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button3" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button3" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button4" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button4" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button5" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button5" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button6" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button6" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button7" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button7" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button8" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button8" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button9" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button9" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button10" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button10" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button11" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button11" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button12" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button12" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button13" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button13" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button14" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button14" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button15" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button15" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button16" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button16" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button17" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button17" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button18" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button18" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button19" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button19" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button20" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button20" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button21" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button21" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button22" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button22" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button23" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button23" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button24" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button24" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button25" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button25" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button26" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button26" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button27" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button27" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button28" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button28" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button29" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button29" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button30" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button30" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button31" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button31" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button32" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button32" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button33" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button33" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button34" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button34" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button35" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button35" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button36" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button36" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button37" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button37" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button38" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button38" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button39" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button39" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button40" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button40" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button41" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button41" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button42" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button42" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button43" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button43" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button44" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button44" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button45" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button45" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button46" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button46" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button47" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button47" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button48" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button48" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button49" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button49" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button50" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button50" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button51" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button51" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button52" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button52" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button53" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button53" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button54" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button54" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button55" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button55" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button56" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button56" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button57" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button57" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button58" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button58" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button59" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button59" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button60" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button60" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button61" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button61" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button62" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button62" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button63" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button63" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button64" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button64" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button65" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button65" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button66" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button66" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button67" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button67" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button68" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button68" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button69" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button69" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button70" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button70" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button71" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button71" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button72" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button72" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button73" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button73" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button74" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button74" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button75" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button75" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button76" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button76" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button77" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button77" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button78" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button78" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button79" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button79" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button80" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button80" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button81" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button81" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button82" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button82" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button83" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button83" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button84" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button84" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button85" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button85" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button86" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button86" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button87" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button87" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button88" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button88" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button89" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HFlowContainer"]
+[node name="Button89" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="HSeparator1" type="HSeparator" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2"]
+[node name="HSeparator1" type="HSeparator" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2"]
 layout_mode = 2
 
-[node name="VBoxContainer" type="HBoxContainer" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2"]
+[node name="VBoxContainer" type="HBoxContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2"]
 layout_mode = 2
 
-[node name="Control1" type="Control" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer"]
+[node name="Control1" type="Control" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Button" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer"]
+[node name="#LockIn" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Lock In"
 
-[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer/Button"]
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer/#LockIn"]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -2080,12 +2084,12 @@ grow_vertical = 2
 theme_override_constants/margin_left = 18
 theme_override_constants/margin_right = 18
 
-[node name="Label" type="Label" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer/Button/MarginContainer"]
+[node name="Label" type="Label" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer/#LockIn/MarginContainer"]
 layout_mode = 2
 text = "30s"
 horizontal_alignment = 2
 
-[node name="ProgressBar" type="ProgressBar" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer/Button"]
+[node name="#Progress" type="ProgressBar" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer/#LockIn"]
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
@@ -2097,278 +2101,282 @@ grow_vertical = 0
 value = 66.27
 show_percentage = false
 
-[node name="Control2" type="Control" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/VBoxContainer"]
+[node name="Control2" type="Control" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HSeparator2" type="HSeparator" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2"]
+[node name="HSeparator2" type="HSeparator" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2"]
 layout_mode = 2
 
-[node name="ScrollContainer" type="ScrollContainer" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2"]
+[node name="ScrollContainer" type="ScrollContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2"]
 custom_minimum_size = Vector2(0, 98)
 layout_mode = 2
 size_flags_horizontal = 3
 horizontal_scroll_mode = 0
 vertical_scroll_mode = 4
 
-[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer"]
 layout_mode = 2
 
-[node name="HFlowContainer1" type="HFlowContainer" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer"]
+[node name="#SummonerSpell1" type="HFlowContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 alignment = 2
+script = ExtResource("14_yaehf")
 
-[node name="TextureButton1" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/HFlowContainer1"]
+[node name="TextureButton1" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell1"]
 custom_minimum_size = Vector2(43, 43)
 layout_mode = 2
 toggle_mode = true
 icon_alignment = 1
 expand_icon = true
 
-[node name="TextureButton2" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/HFlowContainer1"]
+[node name="TextureButton2" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell1"]
 custom_minimum_size = Vector2(43, 43)
 layout_mode = 2
 toggle_mode = true
 icon_alignment = 1
 expand_icon = true
 
-[node name="TextureButton3" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/HFlowContainer1"]
+[node name="TextureButton3" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell1"]
 custom_minimum_size = Vector2(43, 43)
 layout_mode = 2
 toggle_mode = true
 icon_alignment = 1
 expand_icon = true
 
-[node name="TextureButton4" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/HFlowContainer1"]
+[node name="TextureButton4" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell1"]
 custom_minimum_size = Vector2(43, 43)
 layout_mode = 2
 toggle_mode = true
 icon_alignment = 1
 expand_icon = true
 
-[node name="TextureButton5" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/HFlowContainer1"]
+[node name="TextureButton5" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell1"]
 custom_minimum_size = Vector2(43, 43)
 layout_mode = 2
 toggle_mode = true
 icon_alignment = 1
 expand_icon = true
 
-[node name="TextureButton6" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/HFlowContainer1"]
+[node name="TextureButton6" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell1"]
 custom_minimum_size = Vector2(43, 43)
 layout_mode = 2
 toggle_mode = true
 icon_alignment = 1
 expand_icon = true
 
-[node name="TextureButton7" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/HFlowContainer1"]
+[node name="TextureButton7" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell1"]
 custom_minimum_size = Vector2(43, 43)
 layout_mode = 2
 toggle_mode = true
 icon_alignment = 1
 expand_icon = true
 
-[node name="TextureButton8" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/HFlowContainer1"]
+[node name="TextureButton8" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell1"]
 custom_minimum_size = Vector2(43, 43)
 layout_mode = 2
 toggle_mode = true
 icon_alignment = 1
 expand_icon = true
 
-[node name="TextureButton9" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/HFlowContainer1"]
+[node name="TextureButton9" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell1"]
 custom_minimum_size = Vector2(43, 43)
 layout_mode = 2
 toggle_mode = true
 icon_alignment = 1
 expand_icon = true
 
-[node name="TextureButton10" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/HFlowContainer1"]
+[node name="TextureButton10" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell1"]
 custom_minimum_size = Vector2(43, 43)
 layout_mode = 2
 toggle_mode = true
 icon_alignment = 1
 expand_icon = true
 
-[node name="TextureButton11" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/HFlowContainer1"]
+[node name="TextureButton11" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell1"]
 custom_minimum_size = Vector2(43, 43)
 layout_mode = 2
 toggle_mode = true
 icon_alignment = 1
 expand_icon = true
 
-[node name="TextureButton12" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/HFlowContainer1"]
+[node name="TextureButton12" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell1"]
 custom_minimum_size = Vector2(43, 43)
 layout_mode = 2
 toggle_mode = true
 icon_alignment = 1
 expand_icon = true
 
-[node name="TextureButton13" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/HFlowContainer1"]
+[node name="TextureButton13" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell1"]
 custom_minimum_size = Vector2(43, 43)
 layout_mode = 2
 toggle_mode = true
 icon_alignment = 1
 expand_icon = true
 
-[node name="TextureButton14" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/HFlowContainer1"]
+[node name="TextureButton14" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell1"]
 custom_minimum_size = Vector2(43, 43)
 layout_mode = 2
 toggle_mode = true
 icon_alignment = 1
 expand_icon = true
 
-[node name="VSeparator" type="VSeparator" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer"]
+[node name="VSeparator" type="VSeparator" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer"]
 layout_mode = 2
 
-[node name="HFlowContainer2" type="HFlowContainer" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer"]
+[node name="#SummonerSpell2" type="HFlowContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+script = ExtResource("14_yaehf")
+
+[node name="TextureButton" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell2"]
+custom_minimum_size = Vector2(43, 43)
+layout_mode = 2
+toggle_mode = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="TextureButton2" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell2"]
+custom_minimum_size = Vector2(43, 43)
+layout_mode = 2
+toggle_mode = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="TextureButton3" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell2"]
+custom_minimum_size = Vector2(43, 43)
+layout_mode = 2
+toggle_mode = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="TextureButton4" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell2"]
+custom_minimum_size = Vector2(43, 43)
+layout_mode = 2
+toggle_mode = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="TextureButton5" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell2"]
+custom_minimum_size = Vector2(43, 43)
+layout_mode = 2
+toggle_mode = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="TextureButton6" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell2"]
+custom_minimum_size = Vector2(43, 43)
+layout_mode = 2
+toggle_mode = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="TextureButton7" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell2"]
+custom_minimum_size = Vector2(43, 43)
+layout_mode = 2
+toggle_mode = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="TextureButton8" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell2"]
+custom_minimum_size = Vector2(43, 43)
+layout_mode = 2
+toggle_mode = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="TextureButton9" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell2"]
+custom_minimum_size = Vector2(43, 43)
+layout_mode = 2
+toggle_mode = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="TextureButton10" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell2"]
+custom_minimum_size = Vector2(43, 43)
+layout_mode = 2
+toggle_mode = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="TextureButton11" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell2"]
+custom_minimum_size = Vector2(43, 43)
+layout_mode = 2
+toggle_mode = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="TextureButton12" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell2"]
+custom_minimum_size = Vector2(43, 43)
+layout_mode = 2
+toggle_mode = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="TextureButton13" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell2"]
+custom_minimum_size = Vector2(43, 43)
+layout_mode = 2
+toggle_mode = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="TextureButton14" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell2"]
+custom_minimum_size = Vector2(43, 43)
+layout_mode = 2
+toggle_mode = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="TextureButton15" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell2"]
+custom_minimum_size = Vector2(43, 43)
+layout_mode = 2
+toggle_mode = true
+icon_alignment = 1
+expand_icon = true
+
+[node name="VBoxContainer3" type="VBoxContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="TextureButton" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/HFlowContainer2"]
-custom_minimum_size = Vector2(43, 43)
-layout_mode = 2
-toggle_mode = true
-icon_alignment = 1
-expand_icon = true
-
-[node name="TextureButton2" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/HFlowContainer2"]
-custom_minimum_size = Vector2(43, 43)
-layout_mode = 2
-toggle_mode = true
-icon_alignment = 1
-expand_icon = true
-
-[node name="TextureButton3" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/HFlowContainer2"]
-custom_minimum_size = Vector2(43, 43)
-layout_mode = 2
-toggle_mode = true
-icon_alignment = 1
-expand_icon = true
-
-[node name="TextureButton4" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/HFlowContainer2"]
-custom_minimum_size = Vector2(43, 43)
-layout_mode = 2
-toggle_mode = true
-icon_alignment = 1
-expand_icon = true
-
-[node name="TextureButton5" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/HFlowContainer2"]
-custom_minimum_size = Vector2(43, 43)
-layout_mode = 2
-toggle_mode = true
-icon_alignment = 1
-expand_icon = true
-
-[node name="TextureButton6" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/HFlowContainer2"]
-custom_minimum_size = Vector2(43, 43)
-layout_mode = 2
-toggle_mode = true
-icon_alignment = 1
-expand_icon = true
-
-[node name="TextureButton7" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/HFlowContainer2"]
-custom_minimum_size = Vector2(43, 43)
-layout_mode = 2
-toggle_mode = true
-icon_alignment = 1
-expand_icon = true
-
-[node name="TextureButton8" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/HFlowContainer2"]
-custom_minimum_size = Vector2(43, 43)
-layout_mode = 2
-toggle_mode = true
-icon_alignment = 1
-expand_icon = true
-
-[node name="TextureButton9" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/HFlowContainer2"]
-custom_minimum_size = Vector2(43, 43)
-layout_mode = 2
-toggle_mode = true
-icon_alignment = 1
-expand_icon = true
-
-[node name="TextureButton10" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/HFlowContainer2"]
-custom_minimum_size = Vector2(43, 43)
-layout_mode = 2
-toggle_mode = true
-icon_alignment = 1
-expand_icon = true
-
-[node name="TextureButton11" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/HFlowContainer2"]
-custom_minimum_size = Vector2(43, 43)
-layout_mode = 2
-toggle_mode = true
-icon_alignment = 1
-expand_icon = true
-
-[node name="TextureButton12" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/HFlowContainer2"]
-custom_minimum_size = Vector2(43, 43)
-layout_mode = 2
-toggle_mode = true
-icon_alignment = 1
-expand_icon = true
-
-[node name="TextureButton13" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/HFlowContainer2"]
-custom_minimum_size = Vector2(43, 43)
-layout_mode = 2
-toggle_mode = true
-icon_alignment = 1
-expand_icon = true
-
-[node name="TextureButton14" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/HFlowContainer2"]
-custom_minimum_size = Vector2(43, 43)
-layout_mode = 2
-toggle_mode = true
-icon_alignment = 1
-expand_icon = true
-
-[node name="TextureButton15" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer2/ScrollContainer/MarginContainer/HBoxContainer/HFlowContainer2"]
-custom_minimum_size = Vector2(43, 43)
-layout_mode = 2
-toggle_mode = true
-icon_alignment = 1
-expand_icon = true
-
-[node name="VBoxContainer3" type="VBoxContainer" parent="Container/TabContainer/MarginContainer2/HBoxContainer2"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="LineEdit" type="Control" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer3"]
+[node name="LineEdit" type="Control" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer3"]
 custom_minimum_size = Vector2(0, 31)
 layout_mode = 2
 
-[node name="ScrollContainer" type="ScrollContainer" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer3"]
+[node name="ScrollContainer" type="ScrollContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer3"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 vertical_scroll_mode = 3
 
-[node name="VBoxContainer1" type="VBoxContainer" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer3/ScrollContainer"]
+[node name="#Team2" type="VBoxContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer3/ScrollContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
+script = ExtResource("14_yaehf")
 
-[node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer3/ScrollContainer/VBoxContainer1"]
+[node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer3/ScrollContainer/#Team2"]
 layout_mode = 2
 size_flags_vertical = 3
+script = ExtResource("13_2cqfq")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer3/ScrollContainer/VBoxContainer1/PanelContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer3/ScrollContainer/#Team2/PanelContainer"]
 layout_mode = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer3/ScrollContainer/VBoxContainer1/PanelContainer/HBoxContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="VBoxContainer" type="VBoxContainer" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer3/ScrollContainer/VBoxContainer1/PanelContainer/HBoxContainer/MarginContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer3/ScrollContainer/#Team2/PanelContainer/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label1" type="Label" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer3/ScrollContainer/VBoxContainer1/PanelContainer/HBoxContainer/MarginContainer/VBoxContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer3/ScrollContainer/#Team2/PanelContainer/HBoxContainer/MarginContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="#Name" type="Label" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer3/ScrollContainer/#Team2/PanelContainer/HBoxContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 1
 text = "Summoner's Name"
@@ -2376,34 +2384,34 @@ horizontal_alignment = 2
 clip_text = true
 text_overrun_behavior = 3
 
-[node name="Label2" type="Label" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer3/ScrollContainer/VBoxContainer1/PanelContainer/HBoxContainer/MarginContainer/VBoxContainer"]
+[node name="#Status" type="Label" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer3/ScrollContainer/#Team2/PanelContainer/HBoxContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
 text = "Offline"
 horizontal_alignment = 2
 clip_text = true
 text_overrun_behavior = 3
 
-[node name="TextureRect" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer3/ScrollContainer/VBoxContainer1/PanelContainer/HBoxContainer"]
+[node name="#Icon" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer3/ScrollContainer/#Team2/PanelContainer/HBoxContainer"]
 custom_minimum_size = Vector2(58, 0)
 layout_mode = 2
 mouse_filter = 2
 icon_alignment = 1
 expand_icon = true
 
-[node name="VBoxContainer" type="VBoxContainer" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer3/ScrollContainer/VBoxContainer1/PanelContainer/HBoxContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer3/ScrollContainer/#Team2/PanelContainer/HBoxContainer"]
 layout_mode = 2
 
-[node name="Button" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer3/ScrollContainer/VBoxContainer1/PanelContainer/HBoxContainer/VBoxContainer"]
+[node name="#SummonerSpell1" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer3/ScrollContainer/#Team2/PanelContainer/HBoxContainer/VBoxContainer"]
 custom_minimum_size = Vector2(27, 27)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="Button2" type="Button" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer3/ScrollContainer/VBoxContainer1/PanelContainer/HBoxContainer/VBoxContainer"]
+[node name="#SummonerSpell2" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer3/ScrollContainer/#Team2/PanelContainer/HBoxContainer/VBoxContainer"]
 custom_minimum_size = Vector2(27, 27)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="Control" type="Control" parent="Container/TabContainer/MarginContainer2/HBoxContainer2/VBoxContainer3/ScrollContainer/VBoxContainer1/PanelContainer/HBoxContainer"]
+[node name="Control" type="Control" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer3/ScrollContainer/#Team2/PanelContainer/HBoxContainer"]
 layout_mode = 2
 
 [node name="ConsoleContainer" type="MarginContainer" parent="."]

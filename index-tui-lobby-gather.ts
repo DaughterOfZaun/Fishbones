@@ -1,7 +1,7 @@
 import type { Game } from "./game";
 import { LocalGame } from "./game-local";
 import type { PlayerId, PPP } from "./game-player";
-import { AbortPromptError } from "./ui/remote";
+import { SwitchViewError } from "./index-tui";
 import { button, form, inq2gd, label, list, option } from "./ui/remote-types";
 import { render } from "./ui/remote-view";
 import { AIChampion, AIDifficulty } from "./utils/constants";
@@ -53,7 +53,7 @@ export async function lobby_gather(ctx: Context){
     })
 
     const view = render('GatheringLobby', form({
-        Quit: button(() => view.reject(new AbortPromptError({ cause: null }))),
+        Quit: button(() => view.reject(new SwitchViewError({ cause: null }))),
         Start: button(() => localGame.start(), !localGame),
         Autofill: button(() => {}, !localGame),
         Team1: team(0),
