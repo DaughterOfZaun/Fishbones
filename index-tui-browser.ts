@@ -9,7 +9,7 @@ import type { Peer } from './message/peer'
 import { LocalGame } from './game-local'
 import type { Game } from './game'
 import { render } from './ui/remote-view'
-import type { Form } from './ui/remote-types'
+import type { Checkbox, Form, Label } from './ui/remote-types'
 
 interface CacheEntry {
     server: RemoteServer
@@ -20,8 +20,8 @@ interface CacheEntry {
 }
 
 const cache = new PeerMap<CacheEntry>()
-const objs = new Map<number, RemoteGame>()
-let objId = 0
+const objs = new Map<string, RemoteGame>()
+let nextObjId = 0
 
 type Lobby = (game: Game, opts: Required<AbortOptions>) => Promise<void>
 type Setup = (game: LocalGame, server: LocalServer, opts: Required<AbortOptions>) => Promise<void>
@@ -44,15 +44,6 @@ export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts
                         'Waiting for the servers to appear...' :
                         'Waiting for the servers to appear on the local network...',
                 },
-                /*
-                //TODO: Wildcard listener.
-                Join: {
-                    $type: 'button',
-                    $listeners: {
-                        pressed: () => view.resolve(['join', objs.get(objId)!]),
-                    }
-                },
-                */
                 Host: {
                     $type: 'button',
                     $listeners: {
@@ -66,13 +57,18 @@ export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts
                     }
                 },
             },
-        }, opts)
+        }, opts, [
+            {
+                regex: /^\.\/Rooms\/(?<objId>\d+)\/Join:pressed$/,
+                listener: (m) => {
+                    const objId = m.groups!.objId!
+                    view.resolve(['join', objs.get(objId)!])
+                }
+            }
+        ])
 
         view.addEventListener(pspd, 'update', () => {
-            view.get('Rooms').update({
-                $type: 'list',
-                items: getChoices(node),
-            })
+            view.get('Rooms').setItems(getChoices(node))
         })
 
         const { 0: action, 1: param } = await view.promise
@@ -83,7 +79,7 @@ export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts
             await hostRemote(node, name, lobby, setup, opts)
         }
         if(action == 'join'){
-            await join(param, name, lobby, opts)
+            await joinRemote(param, name, lobby, opts)
         }
         if(action == 'quit'){
             break loop
@@ -161,7 +157,7 @@ async function hostRemote(node: LibP2PNode, name: string, lobby: Lobby, setup: S
     function stop(){ pspd_broadcast(game.isJoinable()) }
 }
 
-async function join(game: RemoteGame, name: string, lobby: Lobby, opts: Required<AbortOptions>){
+async function joinRemote(game: RemoteGame, name: string, lobby: Lobby, opts: Required<AbortOptions>){
     try {
         await game.connect(opts)
         if(game.password.isSet)
@@ -221,7 +217,24 @@ function gameInfoToChoice(
     let choice = cacheEntry?.choice
     if(!cacheEntry || !game || !choice){
         game = RemoteGame.create(node, server, gameInfo)
-        choice = { $type: 'form', fields: {} }
+        choice = {
+            $type: 'form',
+            fields: {
+                Owner: { $type: 'label' },
+                Name: { $type: 'label' },
+                Slots: { $type: 'label' },
+                Mode: { $type: 'label' },
+                Map: { $type: 'label' },
+
+                Password: { $type: 'checkbox' },
+                Manacosts: { $type: 'checkbox' },
+                Cooldowns: { $type: 'checkbox' },
+                Minions: { $type: 'checkbox' },
+                Cheats: { $type: 'checkbox' },
+
+                Join: { $type: 'button' },
+            }
+        }
         cacheEntry = { game, choice }
         games.set(gameInfo.id, cacheEntry)
     } else {
@@ -231,26 +244,24 @@ function gameInfoToChoice(
     const players = game.getPlayersCount()
     const playersMax = 2 * (game.playersMax.value ?? 0)
 
-    choice.fields!.Owner = { $type: 'label', text: pwd.id.toString().slice(-8) }
-    //gameDesc.server = server.name.toString()
-    choice.fields!.Name = { $type: 'label', text: game.name.toString() }
-    choice.fields!.Slots = { $type: 'label', text: `${players}/${playersMax}` }
-    choice.fields!.Mode = { $type: 'label', text: game.mode.toString() }
-    choice.fields!.Map = { $type: 'label', text: game.map.toString() }
-    
-    choice.fields!.Password = { $type: 'checkbox', button_pressed: game.password.isSet }
-    choice.fields!.Manacosts = { $type: 'checkbox', button_pressed: game.features.isManacostsEnabled }
-    choice.fields!.Cooldowns = { $type: 'checkbox', button_pressed: game.features.isCooldownsEnabled }
-    choice.fields!.Minions = { $type: 'checkbox', button_pressed: game.features.isMinionsEnabled }
-    choice.fields!.Cheats = { $type: 'checkbox', button_pressed: game.features.isCheatsEnabled }
-    
-    //gameDesc.ping = Math.min(100, 999)
-
     if(!choice.$id){
+        //TODO: game.ownerId + game.index
+        const objId = (nextObjId++).toString()
         objs.set(objId, game)
-        choice.$id = objId.toString()
-        objId++
+        choice.$id = objId
     }
+
+    (choice.fields!.Owner as Label).text = pwd.id.toString().slice(-8);
+    (choice.fields!.Name as Label).text = game.name.toString();
+    (choice.fields!.Slots as Label).text = `${players}/${playersMax}`;
+    (choice.fields!.Mode as Label).text = game.mode.toString();
+    (choice.fields!.Map as Label).text = game.map.toString();
+    
+    (choice.fields!.Password as Checkbox).button_pressed = game.password.isSet;
+    (choice.fields!.Manacosts as Checkbox).button_pressed = game.features.isManacostsEnabled;
+    (choice.fields!.Cooldowns as Checkbox).button_pressed = game.features.isCooldownsEnabled;
+    (choice.fields!.Minions as Checkbox).button_pressed = game.features.isMinionsEnabled;
+    (choice.fields!.Cheats as Checkbox).button_pressed = game.features.isCheatsEnabled;
 
     return choice
 }

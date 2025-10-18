@@ -1,6 +1,5 @@
 import { spinner, select, type Choice, AbortPromptError, color, input } from './ui/remote'
 import { type Game } from './game'
-import { LocalGame } from './game-local'
 import type { GamePlayer, PPP } from './game-player'
 import { type LibP2PNode } from './index-node-simple'
 import { TITLE } from './utils/constants-build'
@@ -10,6 +9,7 @@ import { getLastLaunchCmd } from './utils/data-client'
 import { browser } from './index-tui-browser'
 import { connections, profilePanel } from './index-tui-connections'
 import { setup } from './index-tui-setup'
+import { lobby_gather } from './index-tui-lobby'
 
 export async function main(node: LibP2PNode, opts: Required<AbortOptions>){
     process.title = TITLE
@@ -23,7 +23,7 @@ export async function main(node: LibP2PNode, opts: Required<AbortOptions>){
 function playerChoices<T>(game: Game, cb: (player: GamePlayer) => { value: T, disabled?: boolean }){
     return game.getPlayers().map(player => {
         const teamColor = player.team.color()
-        const playerId = player.id.toString(16).padStart(8, '0')
+        const playerId = player.id.toString(16).padStart(8, '0').slice(-8)
         const champion = player.champion.toString()
         const spell1 = player.spell1.toString()
         const spell2 = player.spell2.toString()
@@ -88,83 +88,6 @@ async function lobby(game: Game, opts: Required<AbortOptions>){
     } finally {
         for(const name of handlers_keys)
             game.removeEventListener(name, handlers[name])
-    }
-}
-
-async function lobby_gather(ctx: Context){
-
-    const { game } = ctx
-    const localGame = game instanceof LocalGame ? game : undefined
-
-    type Action = ['start'] | ['moderate', GamePlayer] | ['add_bot'] | ['exit']
-    
-    const getChoices = () => ([
-        { value: ['start'] as Action, name: 'Start Game', disabled: !localGame },
-        ...playerChoices<Action>(game, (player) => ({
-            value: ['moderate', player] as Action,
-            disabled: !localGame || localGame.getPlayer() == player,
-        })),
-        { value: ['add_bot'] as Action, name: 'Add Bot', disabled: !localGame },
-        { value: ['exit'] as Action, name: 'Quit' },
-    ])
-    loop: while(true){
-        const action_param = await select<Action>({
-            message: 'Waiting for players...',
-            choices: getChoices(),
-            cb: (setItem) => {
-                const listener = () => setItem(getChoices())
-                game.addEventListener('update', listener)
-                return () => game.removeEventListener('update', listener)
-            },
-            pageSize: 20,
-        }, ctx)
-        
-        const action = action_param[0]
-        const player = action_param[1]!
-
-        if(localGame && action == 'start'){
-            localGame.start()
-            break loop
-        } else if(localGame && action == 'moderate'){
-            await lobby_gather_moderate(localGame, player, ctx)
-        } else if(localGame && action == 'add_bot'){
-            await localGame.addBot(ctx)
-        } else if(action == 'exit'){
-            throw new AbortPromptError({ cause: null })
-        }
-    }
-}
-
-async function lobby_gather_moderate(localGame: LocalGame, player: GamePlayer, ctx: Context) {
-
-    type Action = ['pick', PPP] | ['kick'] | ['exit']
-
-    loop: while(true){
-        const action_param = await select<Action>({
-            message: `Select an action for ${player.name.toString()}`,
-            choices: [
-                ...(['champion', 'ai'] as PPP[]).map(prop => ({
-                    value: ['pick', prop] as Action,
-                    name: `${player[prop].name}: ${player[prop].toString()}`,
-                    disabled: !player.isBot
-                })),
-                { value: ['kick'] as Action, name: `Kick` },
-                { value: ['exit'] as Action, name: 'Done' },
-            ],
-            pageSize: 20,
-        }, ctx)
-
-        const action = action_param[0]
-        const prop = action_param[1]!
-        
-        if(action == 'pick'){
-            await localGame.pick(prop, ctx, player)
-        } else if(action === 'kick'){
-            await localGame.kick(player)
-            break loop
-        } else if(action === 'exit'){
-            break loop
-        }
     }
 }
 

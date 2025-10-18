@@ -47,8 +47,8 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     public readonly features = new FeaturesEnabled()
 
     protected player?: GamePlayer
-    public getPlayer(){
-        return this.player
+    public getPlayer(id?: PlayerId){
+        return (id === undefined) ? this.player : this.players.get(id)
     }
     
     protected readonly players = new Map<PlayerId, GamePlayer>()
@@ -353,8 +353,8 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             this.safeDispatchEvent('crash')
     }
 
-    public async pick(prop: PPP, opts: Required<AbortOptions>, player?: GamePlayer) {
-        player ??= this.getPlayer()
+    public async pick(prop: PPP, opts: Required<AbortOptions>) {
+        const player = this.getPlayer()
         if(!player) return false
         const pdesc = player[prop]
         await pdesc.uinput(opts)
@@ -588,7 +588,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             },
             players: this.getPlayers().map((player, i) => ({
                 playerId: player.isBot ? -1 : (i + 1),
-                AIDifficulty: player.isBot ? (player.ai.value ?? 0) : undefined,
+                AIDifficulty: player.isBot ? (player.difficulty.value ?? 0) : undefined,
                 blowfishKey, //TODO: Unhardcode. Security
                 rank: /*Rank.random() ??*/ "DIAMOND",
                 name: player.isBot ? `${player.champion.toString()} Bot` : (player.name.value ?? `Player ${i + 1}`),

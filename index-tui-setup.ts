@@ -1,53 +1,37 @@
 import type { AbortOptions } from "@libp2p/interface";
 import type { Game } from "./game";
 import type { LocalServer } from "./server";
-//import { render } from "./ui/remote";
-//import { Features, GameMap, GameMode, GameType, PlayerCount, TickRate } from "./utils/constants";
-
-//type Choice = { value: number, name: string }
-//const inq2gd = (choices: Choice[]) => choices.map(({ value: id, name: text }) => ({ id, text }))
+import { render } from "./ui/remote-view";
+import { Features, GameMap, GameMode, GameType, PlayerCount, TickRate } from "./utils/constants";
+import { button, checkbox, form, inq2gd, line, option } from "./ui/remote-types";
 
 export async function setup(game: Game, server: LocalServer, opts: Required<AbortOptions>){
     
     await server.loadSettings(opts)
     
-    /*
-    const view = render<void>('CustomGameSetup', {
-        GameName: { text: game.name.value },
-        Password: { text: game.password.value },
+    const view = render('CustomGameSetup', form({
+        GameName: line(game.name.value, value => game.name.value = value),
+        Password: line(game.password.value, value => game.password.value = value),
         
-        TickRate: { choices: inq2gd(TickRate.choices), selected: server.tickRate.value },
-        TeamSize: { choices: inq2gd(PlayerCount.choices), selected: game.playersMax.value },
+        TickRate: option(inq2gd(TickRate.choices), server.tickRate.value, value => server.tickRate.value = value),
+        TeamSize: option(inq2gd(PlayerCount.choices), game.playersMax.value, value => game.playersMax.value = value),
         
-        GameMode: { choices: inq2gd(GameMode.choices), selected: game.mode.value },
-        GameMap: { choices: inq2gd(GameMap.choices), selected: game.map.value },
-        GameType: { choices: inq2gd(GameType.choices), selected: game.type.value },
+        GameMode: option(inq2gd(GameMode.choices), game.mode.value, value => game.mode.value = value),
+        GameMap: option(inq2gd(GameMap.choices), game.map.value, value => game.map.value = value),
+        GameType: option(inq2gd(GameType.choices), game.type.value, value => game.type.value = value),
 
-        Manacosts: { button_pressed: game.features.isManacostsEnabled },
-        Cooldowns: { button_pressed: game.features.isCooldownsEnabled },
-        Minions: { button_pressed: game.features.isMinionsEnabled },
-        Cheats: { button_pressed: game.features.isCheatsEnabled },
-    }, {
-        'GameName.changed': (value: string) => game.name.value = value,
-        'Password.changed': (value: string) => game.password.value = value,
-        
-        'TickRate.item_selected': (value: number) => server.tickRate.value = value,
-        'TeamSize.item_selected': (value: number) => game.playersMax.value = value,
-        
-        'GameMode.pressed': (value: number) => game.mode.value = value,
-        'GameMap.pressed': (value: number) => game.map.value = value,
-        'GameType.pressed': (value: number) => game.type.value = value,
+        Manacosts: checkbox(game.features.isManacostsEnabled, value => game.features.set(Features.MANACOSTS_DISABLED, !value)),
+        Cooldowns: checkbox(game.features.isCooldownsEnabled, value => game.features.set(Features.COOLDOWNS_DISABLED, !value)),
+        Minions: checkbox(game.features.isMinionsEnabled, value => game.features.set(Features.MINIONS_DISABLED, !value)),
+        Cheats: checkbox(game.features.isCheatsEnabled, value => game.features.set(Features.CHEATS_ENABLED, value)),
+    
+        Champions: button(() => { server.champions.uinput(opts).catch(() => { /* Ignore */ }) }),
+        SummonerSpells: button(() => { server.spells.uinput(opts).catch(() => { /* Ignore */ }) }),
 
-        'Manacosts.toggled': (value: boolean) => game.features.set(Features.MANACOSTS_DISABLED, !value),
-        'Cooldowns.toggled': (value: boolean) => game.features.set(Features.COOLDOWNS_DISABLED, !value),
-        'Minions.toggled': (value: boolean) => game.features.set(Features.MINIONS_DISABLED, !value),
-        'Cheats.toggled': (value: boolean) => game.features.set(Features.CHEATS_ENABLED, value),
-        
-        'Host.pressed': () => view.resolve(),
-    }, opts)
+        Host: button(() => view.resolve()),
+    }), opts)
 
     await view.promise
-    */
 
     await server.saveSettings(opts)
 }

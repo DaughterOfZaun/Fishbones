@@ -15,7 +15,7 @@ type JListener = (...args: any[]/*JSONValue[]*/) => void
 export class View implements IView {
     private id: number
     private path: string
-    constructor(id: number, path = '.'){
+    constructor(id: number, path: string){
         this.id = id
         this.path = path
     }
@@ -31,11 +31,11 @@ export class View implements IView {
     public add(name: string, config: Config){
         this.call('add_item', name, config as unknown as JSONValue)
     }
-    //public update_item(name: string, config: Config){
-    //    this.call('update_item', name, config as unknown as JSONValue)
-    //}
     public remove(name: string){
         this.call('remove_item', name)
+    }
+    public setItems(configs: Record<string, Config>){
+        this.call('set_items', configs as unknown as JSONValue)
     }
 }
 
@@ -81,7 +81,12 @@ function recursive(path: string, config: Config, cb: (path: string, control: Con
         }
 }
 
-export function render<T>(name: string, config: Config, opts: Required<AbortOptions>){
+type GListener = {
+    regex: RegExp
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    listener: (m: RegExpMatchArray, ...args: any[]) => void
+}
+export function render<T = void>(name: string, config: Config, opts: Required<AbortOptions>, gListeners: GListener[] = []){
 
     const id = sendCall('render', name, config as unknown as JSONDict)
 
@@ -104,8 +109,18 @@ export function render<T>(name: string, config: Config, opts: Required<AbortOpti
         call: (...args: JSONValue[]) => {
             const path = args.shift() as string
             const event = args.shift() as string
-            const listener = listeners.get(path + COLON + event)
+            const pathAndEvent = path + COLON + event
+            const listener = listeners.get(pathAndEvent)
             listener?.(...args)
+            if(!listener){
+                for(const { regex, listener } of gListeners){
+                    const m = regex.exec(pathAndEvent)
+                    if(m){
+                        listener(m, ...args)
+                        return
+                    }
+                }
+            }
         },
         resolve: (arg: JSONValue) => {
             shouldSendAbortNotification = false

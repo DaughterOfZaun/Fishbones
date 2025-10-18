@@ -49,43 +49,17 @@ export async function connections(node: LibP2PNode, opts: Required<AbortOptions>
         }
     }, opts)
 
-    // setTimeout(() => {
-    //     view.get('Connections').add('PEER_ID', {
-    //         $type: 'form',
-    //         fields: {
-    //             Name: {
-    //                 $type: 'label',
-    //                 text: 'PEER_ID',
-    //             },
-    //             Status: {
-    //                 $type: 'label',
-    //                 text: 'Connected',
-    //             },
-    //         }
-    //     })
-    // }, 500)
-
-    // setTimeout(() => {
-    //     view.get('Connections').remove('PEER_ID')
-    // }, 1000)
-
     const fbPeers = new PeerSet()
     view.addEventListener(node, 'peer:identify', (evt: CustomEvent<IdentifyResult>) => {
         const { peerId, agentVersion } = evt.detail
         const userAgent = `${NAME}/${VERSION}`
-        if(agentVersion === userAgent){
+        if(agentVersion === userAgent && !fbPeers.has(peerId)){
             fbPeers.add(peerId)
             view.get('Connections').add(peerId.toString(), {
                 $type: 'form',
                 fields: {
-                    Name: {
-                        $type: 'label',
-                        text: peerId.toString().slice(-8)
-                    },
-                    Status: {
-                        $type: 'label',
-                        text: 'Connected'
-                    },
+                    Name: { $type: 'label', text: peerId.toString().slice(-8) },
+                    Status: { $type: 'label', text: 'Connected' },
                 }
             })
         }
@@ -122,9 +96,7 @@ async function directConnect(node: LibP2PNode, opts: Required<AbortOptions>){
                     },
                 },
             },
-            Error: {
-                $type: 'label',
-            },
+            Error: { $type: 'label', },
             Connect: {
                 $type: 'button',
                 $listeners: {
@@ -167,24 +139,21 @@ async function connectByPeerInfoString(node: LibP2PNode, view: DeferredView<unkn
     }
     if(!peerId) return
     
-    view.call('add', {
-        id: peerId.toString(),
-        icon: '',
-        name: peerId.toString().slice(-8),
-        status: 'Connecting...',
+    view.get('Connections').add(peerId.toString(), {
+        $type: 'form',
+        fields: {
+            Name: { $type: 'label', text: peerId.toString().slice(-8) },
+            Status: { $type: 'label', text: 'Connecting...' },
+        }
     })
+    let statusText
     try {
         logger.log('Connecting to', peerId.toString())
         await node.dial(peerId, opts)
-        view.call('update', {
-            id: peerId.toString(),
-            status: 'Connected',
-        })
+        statusText = 'Connected'
     } catch(err) {
         console_log('Connecting via key failed:', Bun.inspect(err))
-        view.call('update', {
-            id: peerId.toString(),
-            status: 'Connection failed',
-        })
+        statusText = 'Connection failed'
     }
+    view.get(`Connections/${peerId.toString()}/Status`).update({ $type: 'label', text: statusText })
 }

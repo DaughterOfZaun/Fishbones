@@ -31,7 +31,7 @@ export class GamePlayer {
     public readonly spell1 = new SummonerSpell(undefined, () => this.game.server.spells)
     public readonly spell2 = new SummonerSpell(undefined, () => this.game.server.spells)
     public readonly lock = new Lock() //TODO: Hide in test
-    public readonly ai = new AIDifficulty()
+    public readonly difficulty = new AIDifficulty()
 
     public encode(ppp?: PPP): PickRequest {
         return ppp ? ({ [ppp]: this[ppp].encode() }) :

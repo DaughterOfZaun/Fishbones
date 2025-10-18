@@ -6,7 +6,7 @@ import { LobbyRequestMessage, LobbyNotificationMessage, KickReason } from './mes
 import { Game } from './game'
 import { logger } from '@libp2p/logger'
 import type { Server } from './server'
-import type { GamePlayer, PlayerId } from './game-player'
+import type { GamePlayer, PlayerId, PPP } from './game-player'
 import { PeerMap } from '@libp2p/peer-collections'
 import { pbStream } from './utils/pb-stream'
 
@@ -34,13 +34,16 @@ export class LocalGame extends Game {
         return true
     }
 
-    public async addBot(opts: Required<AbortOptions>){
+    public /*async*/ addBot(team: number, /*opts: Required<AbortOptions>*/){
         
         const playerId = this.takePlayerId()
         const bot = this.players_add(playerId, undefined, true)
         
         bot.name.value = 'Bot'
-        this.assignTeamTo(bot)
+        bot.team.value = team
+        //this.assignTeamTo(bot)
+        bot.champion.value = 0 //TODO:
+        bot.difficulty.value = 0 //TODO:
 
         this.broadcast(
             {
@@ -56,7 +59,8 @@ export class LocalGame extends Game {
             },
             this.players.values()
         )
-        for(const key of ['champion', 'ai'] as const){
+        /*
+        for(const key of ['champion', 'difficulty'] as const){
             //await this.pick(key, opts, bot)
             //HACK: Bot owners should be allowed to choose champions during gathering.
             await bot[key].uinput(opts)
@@ -72,6 +76,24 @@ export class LocalGame extends Game {
                 this.players.values()
             )
         }
+        */
+    }
+
+    public setBot(prop: PPP, value: number, playerId: PlayerId){
+        const bot = this.getPlayer(playerId)
+        if(!bot) return false
+        
+        bot[prop].value = value
+        
+        this.broadcast(
+            {
+                peersRequests: [{
+                    playerId,
+                    pickRequest: bot.encode(prop),
+                }]
+            },
+            this.players.values()
+        )
     }
 
     private handleIncomingStream: StreamHandler = async ({ stream, connection }) => {
@@ -121,17 +143,18 @@ export class LocalGame extends Game {
         }
     }
 
-    public async kick(player: GamePlayer){
+    public kick(player: GamePlayer){
         
         const wrapped = player.stream
         const stream = player.stream?.unwrap().unwrap()
         const playerId = player.id
         const peerId = player.peerId
 
+        const promise = Promise.resolve()
         if(wrapped)
-            await wrapped.write({ kickRequest: KickReason.MAKER_DECISION, peersRequests: [] })
+            promise.then(async () => wrapped.write({ kickRequest: KickReason.MAKER_DECISION, peersRequests: [] }), err => this.log.error(err))
         if(stream)
-            stream.close().catch(err => this.log.error(err))
+            promise.then(async () => stream.close(), err => this.log.error(err))
         if(this.playerIds.has(playerId))
             this.freePlayerId(playerId, peerId)
         if(this.players.has(playerId))

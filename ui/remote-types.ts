@@ -48,13 +48,21 @@ export interface Button extends Id {
 export interface Checkbox extends Id {
     $type: 'checkbox'
     disabled?: boolean
-    button_pressed: boolean
+    button_pressed?: boolean
     $listeners?: {
         toggled?: (on: boolean) => void
     }
 }
 
-export type Config = Form | List | Label | LineEdit | TextEdit | Button | Checkbox
+export interface Option extends Id {
+    $type: 'option',
+    options?: { id?: number, text?: string }[]
+    $listeners?: {
+        selected?: (index: number) => void
+    }
+}
+
+export type Config = Form | List | Label | LineEdit | TextEdit | Button | Checkbox | Option
 
 export interface View {
     //path: string
@@ -67,6 +75,16 @@ export interface View {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function render(name: string, config: Config){ return undefined! as View }
+
+export const inq2gd = (choices: { value: number, name: string }[]) => choices.map(({ value: id, name: text }) => ({ id, text }))
+
+export const form = (fields?: Record<string, Config>) => ({ $type: 'form' as const, fields })
+export const list = (items?: Record<string, Config>) => ({ $type: 'list' as const, items })
+export const label = (text?: string) => ({ $type: 'label' as const, text })
+export const line = (text?: string, changed?: (text: string) => void) => ({ $type: 'line' as const, text, $listeners: { changed } })
+export const checkbox = (button_pressed?: boolean, toggled?: (on: boolean) => void) => ({ $type: 'checkbox' as const, button_pressed, $listeners: { toggled } })
+export const button = (pressed?: () => void, disabled = false) => ({ $type: 'button' as const, disabled, $listeners: { pressed } })
+export const option = (options?: { id?: number, text?: string }[], selected?: number, item_selected?: (index: number) => void) => ({ $type: 'option' as const, selected, options, $listeners: { selected: item_selected } })
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function typeTest(){

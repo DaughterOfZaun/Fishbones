@@ -10,15 +10,17 @@ var json := JSON.new()
 var jrpc := JSONRPC.new()
 var methods: Dictionary[String, Callable] = {}
 
-@export var showable_views: Dictionary[String, ShowableView]
+@export var views: Dictionary[String, ShowableView]
 
 var visible_views_stack: Array[ShowableView] = []
-func show_view(view: Control) -> void:
+func show_view(view: ShowableView) -> void:
+    if !view.is_top_level: return
     visible_views_stack.erase(view)
     visible_views_stack.append(view)
     just_show_view(view)
     
-func hide_view(view: Control) -> void:
+func hide_view(view: ShowableView) -> void:
+    if !view.is_top_level: return
     visible_views_stack.erase(view)
     just_show_view(visible_views_stack[-1])
     view.visible = false
@@ -119,7 +121,7 @@ func _ready() -> void:
     #if exe_args == null: exe_args = []
     #var exe := exe_args[0]; exe_args.remove_at(0); if !exe: exe = '../Fishbones.exe'
     
-    DirAccess.make_dir_absolute(downloads)
+    var err := DirAccess.make_dir_absolute(downloads); assert(err in [ OK, ERR_ALREADY_EXISTS ])
 
     for file in embedded_files:
         embedded_files_by_name[file.get_file()] = file
@@ -144,8 +146,8 @@ func _ready() -> void:
             show_console_toggle.text = 'x' if toggled_on else '!'
     )
 
-    for view_name in showable_views:
-        var view := showable_views[view_name]
+    for view_name in views:
+        var view := views[view_name]
         view.visible = false
 
 #     get_tree().set_auto_accept_quit(false)
@@ -238,7 +240,8 @@ func _init() -> void:
         container.add_child(instance)
 
     methods["render"] = func(name: String, config: Dictionary) -> void:
-        var instance := showable_views[name]
+        var instance := views[name]
+        instance.is_top_level = true
         instance.init(config, bind(callback, last_call_id))
         handlers[last_call_id] = instance
 

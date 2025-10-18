@@ -1,26 +1,36 @@
 class_name BaseView extends ShowableView
 
 func bind_child(child: Control) -> void:
-        
-    if child is Button \
-    && !(child is CheckBox) \
-    && !(child is CheckButton) \
+    
+    if (child is CheckBox || child is CheckButton):
+        var err := (child as Button).toggled.connect(on_button_toggled.bind(child)); assert(err == OK)
+    elif child is OptionButton:
+        var err := (child as OptionButton).item_selected.connect(on_item_selected.bind(child)); assert(err == OK)
+    elif child is Button \
     && !(child is ColorPickerButton) \
-    && !(child is MenuButton) \
-    && !(child is OptionButton):
-        assert((child as Button).pressed.connect(on_button_pressed.bind(child)) == OK)
-        
+    && !(child is MenuButton):
+        var err := (child as Button).pressed.connect(on_button_pressed.bind(child)); assert(err == OK)
+    
     if child is LineEdit:
-        assert((child as LineEdit).text_changed.connect(on_line_changed.bind(child)) == OK)
+        var err := (child as LineEdit).text_changed.connect(on_line_changed.bind(child)); assert(err == OK)
     
     if child is TextEdit:
-        assert((child as TextEdit).text_changed.connect(on_text_changed.bind(child)) == OK)
-        assert((child as TextEdit).text_set.connect(on_text_changed.bind(child)) == OK)
+        var err := (child as TextEdit).text_changed.connect(on_text_changed.bind(child)); assert(err == OK)
+        err = (child as TextEdit).text_set.connect(on_text_changed.bind(child)); assert(err == OK)
 
 func on_button_pressed(child: Control) -> void:
     var path: String = child.get_meta('path')
     callback.call('call', path, 'pressed')
     
+func on_button_toggled(on: bool, child: Control) -> void:
+    var path: String = child.get_meta('path')
+    callback.call('call', path, 'toggled', on)
+
+func on_item_selected(index: int, child: OptionButton) -> void:
+    var id := child.get_item_id(index)
+    var path: String = child.get_meta('path')
+    callback.call('call', path, 'selected', id)
+
 func on_line_changed(new_text: String, child: LineEdit) -> void:
     var path: String = child.get_meta('path')
     callback.call('call', path, 'changed', new_text)
@@ -47,7 +57,14 @@ func update_child(child: Control, config: Dictionary) -> void:
     if child is ShowableView:
         (child as ShowableView).update(config)
     elif child is OptionButton:
-        pass #TODO:
+        (child as OptionButton).clear()
+        for item: Dictionary in config['options']:
+            var text: String = item['text']
+            var id: int = item['id']
+            (child as OptionButton).add_item(text, id)
+        var id: int = config['selected']
+        var index: int = (child as OptionButton).get_item_index(id)
+        (child as OptionButton).select(index)
     else:
         for key: String in config:
             child[key] = config[key]
@@ -63,7 +80,7 @@ func external_call(child_path: String, method_name: String, ...method_args: Arra
         if 'items' in current: children = current['items']
         current = children[child_name]
     if current is ShowableView:
-        assert(method_name in ['update', 'add_item', 'remove_item', 'update_item'])
+        assert(method_name in ['update', 'add_item', 'remove_item', 'set_items'])
         current.callv(method_name, method_args)
     else:
         assert(method_name == 'update')

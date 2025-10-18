@@ -2,6 +2,7 @@ class_name ShowableView extends InputHandler
 
 var path: String = '.'
 var callback: Callable
+var is_top_level: bool
 
 func init(config: Dictionary, cb: Callable) -> void:
     (get_tree().current_scene as ServerNode).show_view(self)
