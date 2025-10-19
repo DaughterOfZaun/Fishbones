@@ -32,6 +32,7 @@ func _ready() -> void:
             child.queue_free()
 
 func update(config: Dictionary) -> void:
+    if len(config) == 0: return #HACK:
     
     var item_configs: Dictionary = config.get('items', {})
     

@@ -242,7 +242,8 @@ func _init() -> void:
     methods["render"] = func(name: String, config: Dictionary) -> void:
         var instance := views[name]
         instance.is_top_level = true
-        instance.init(config, bind(callback, last_call_id))
+        instance.init({}, bind(callback, last_call_id))
+        instance.update(config)
         handlers[last_call_id] = instance
 
     methods["exit"] = func() -> void:

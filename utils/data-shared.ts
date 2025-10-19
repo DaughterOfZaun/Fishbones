@@ -10,7 +10,8 @@ import {
 export const cwd = path.dirname(process.env.IS_COMPILED ? process.execPath : Bun.main)
 export const cwdWin = cwd.replaceAll('/', '\\') // For logger.
 export const cwdLin = cwd.replaceAll('\\', '/') // For logger.
-export const downloads = path.join(cwd, 'Fishbones_Data')
+export const downloadsDirName = 'Fishbones_Data'
+export const downloads = path.join(cwd, downloadsDirName)
 fs_ensureDirSync(downloads) //TODO: Fix. Just to be extra sure.
 
 export function fs_ensureDirSync(path: string){

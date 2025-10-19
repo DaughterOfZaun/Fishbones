@@ -1,6 +1,5 @@
-import { spinner, select, type Choice, color, input } from './ui/remote'
+import { spinner, select, input } from './ui/remote'
 import { type Game } from './game'
-import type { GamePlayer, PPP } from './game-player'
 import { type LibP2PNode } from './index-node-simple'
 import { TITLE } from './utils/constants-build'
 import type { AbortOptions } from '@libp2p/interface'
@@ -19,25 +18,6 @@ export async function main(node: LibP2PNode, opts: Required<AbortOptions>){
         profilePanel(node, opts),
         connections(node, opts),
     ])
-}
-
-function playerChoices<T>(game: Game, cb: (player: GamePlayer) => { value: T, disabled?: boolean }){
-    return game.getPlayers().map(player => {
-        const teamColor = player.team.color()
-        const playerId = player.id.toString(16).padStart(8, '0').slice(-8)
-        const champion = player.champion.toString()
-        const spell1 = player.spell1.toString()
-        const spell2 = player.spell2.toString()
-        const locked = player.lock.toString()
-        const { value, disabled } = cb(player)
-        return ({
-            disabled,
-            value,
-            name: color(
-                teamColor, [`[${playerId}] ${player.name.toString()}`, champion, spell1, spell2, locked].join(' - ')
-            ),
-        })
-    }) as Choice<T>[]
 }
 
 interface Context {
@@ -98,54 +78,6 @@ async function lobby(game: Game, opts: Required<AbortOptions>){
     } finally {
         for(const name of handlers_keys)
             game.removeEventListener(name, handlers[name])
-    }
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function lobby_pick_old(ctx: Context){
-    const { game } = ctx
-
-    type Action = ['lock'] | ['pick', PPP] | ['noop'] | ['exit']
-
-    const getChoices = () => {
-        const player = game.getPlayer()!
-        const disabled = !!player.lock.value
-        return [
-            { value: ['lock'] as Action, name: 'Lock In', disabled },
-            ...(['champion', 'spell1', 'spell2'] as PPP[]).map(ppp => (
-                { value: ['pick', ppp] as Action, name: `${player[ppp].name}: ${player[ppp].toString()}`, disabled }
-            )),
-            ...playerChoices<Action>(game, () => ({ value: ['noop'] as Action })),
-            { value: ['exit'] as Action, name: 'Quit' },
-        ]
-    }
-
-    for(const prop of ['champion', 'spell1', 'spell2'] as const){
-        await game.pick(prop, ctx)
-    }
-
-    /*loop:*/ while(true){
-        const [action, ...args] = await select<Action>({
-            message: 'Waiting for all players to lock their choice...',
-            choices: getChoices(),
-            cb: (setItem) => {
-                const listener = () => setItem(getChoices())
-                game.addEventListener('update', listener)
-                return () => game.removeEventListener('update', listener)
-            },
-            pageSize: 20,
-        }, ctx)
-        if(action == 'lock'){
-            game.set('lock', +true)
-            //break loop
-        } else if(action == 'pick'){
-            const prop = args[0]!
-            await game.pick(prop, ctx)
-        } else if(action == 'noop'){
-            continue
-        } else if(action == 'exit'){
-            throw new SwitchViewError({ cause: null })
-        }
     }
 }
 

@@ -135,6 +135,147 @@ export const gcPkg = new class extends PkgInfoExe {
     topLevelEntriesOptional = [
         'launch_client.bat',
     ]
+
+    //FIXME: This has gone too far
+    championsIcons = [
+        "Akali/Info/Akali_Square_0.dds",
+        "Alistar/Info/Minotaur_Square.dds",
+        "Amumu/Info/SadMummy_Square.dds",
+        "Anivia/Info/Cryophoenix_Square.dds",
+        "Annie/Info/Annie_Square.dds",
+        "Ashe/Info/Bowmaster_Square.dds",
+        "Blitzcrank/Info/Steamgolem_Square.dds",
+        "Brand/info/Brand_Square.dds",
+        "Caitlyn/Info/Caitlyn_Square_0.dds",
+        "Cassiopeia/Info/Cassiopeia_Square_0.dds",
+        "Chogath/Info/GreenTerror_Square.dds",
+        "Corki/Info/Corki_Square.dds",
+        "DrMundo/Info/DrMundo_Square.dds",
+        "Evelynn/Info/Evelynn_Square.dds",
+        "Ezreal/Info/Ezreal_Square.dds",
+        "FiddleSticks/info/Fiddlesticks_Square.dds",
+        "Galio/info/Galio_Square.dds",
+        "Gangplank/Info/Pirate_Square.dds",
+        "Garen/Info/Garen_Square.dds",
+        "Gragas/Info/Gragas_Square.dds",
+        "Heimerdinger/info/Heimerdinger_Square.dds",
+        "Irelia/Info/Irelia_Square_0.dds",
+        "Janna/info/Janna_Square.dds",
+        "JarvanIV/Info/JarvanIV_Square_0.dds",
+        "Jax/info/Armsmaster_Square.dds",
+        "Karma/Info/KarmaSquare.dds",
+        "Karthus/Info/Lich_Square.dds",
+        "Kassadin/Info/Kassadin_Square.dds",
+        "Katarina/Info/Katarina_Square.dds",
+        "Kayle/Info/Judicator_Square.dds",
+        "Kennen/Info/Kennen_Square.dds",
+        "KogMaw/Info/Kog'Maw_Square_0.dds",
+        "Leblanc/Info/Leblanc_Square.dds",
+        "LeeSin/info/LeeSin_Square.dds",
+        "Leona/Info/Leona_Square.dds",
+        "Lux/Info/Lux_Square.dds",
+        "Malphite/info/Malphite_Square.dds",
+        "Malzahar/info/Malzahar_Square.dds",
+        "Maokai/Info/Maokai_Square.dds",
+        "MasterYi/Info/MasterYi_Square.dds",
+        "MissFortune/Info/MissFortune_Square.dds",
+        "MonkeyKing/Info/MonkeyKing_Square.dds",
+        "Mordekaiser/Info/Mordekaiser_Square.dds",
+        "Morgana/Info/FallenAngel_Square.dds",
+        "Nasus/Info/Nasus_Square.dds",
+        "Nidalee/Info/Nidalee_Square.dds",
+        "Nocturne/Info/Nocturne_Square_0.dds",
+        "Nunu/Info/Yeti_Square.dds",
+        "Olaf/Info/Olaf_Square.dds",
+        "Orianna/Info/Oriana_Square.dds",
+        "Pantheon/Info/Pantheon_Square.dds",
+        "Poppy/info/Poppy_Square.dds",
+        "Rammus/Info/Armordillo_Square.dds",
+        "Renekton/Info/Renekton_Square_0.dds",
+        "Riven/Info/Riven_Square.dds",
+        "Rumble/Info/Rumble_Square.dds",
+        "Ryze/Info/Ryze_Square.dds",
+        "Shaco/Info/Jester_Square.dds",
+        "Shen/info/Shen_Square.dds",
+        "Singed/Info/ChemicalMan_Square.dds",
+        "Sion/Info/Sion_Square.dds",
+        "Sivir/Info/Sivir_Square.dds",
+        "Skarner/Info/Skarner_Square.dds",
+        "Sona/info/Sona_Square.dds",
+        "Soraka/info/Soraka_Square.dds",
+        "Swain/Info/Swain_Square_0.dds",
+        "Talon/Info/Talon_Square_0.dds",
+        "Taric/Info/GemKnight_Square.dds",
+        "Teemo/Info/Teemo_Square.dds",
+        "Tristana/Info/Tristana_Square.dds",
+        "Trundle/Info/Trundle_Square.dds",
+        "Tryndamere/Info/DarkChampion_Square.dds",
+        "TwistedFate/Info/Cardmaster_Square.dds",
+        "Twitch/Info/twitch_square.dds",
+        "Udyr/Info/Udyr_Square.dds",
+        "Urgot/Info/Urgot_Square_0.dds",
+        "Vayne/Info/Vayne_Square.dds",
+        "Veigar/Info/Veigar_Square.dds",
+        "Vladimir/Info/Vladimir_Square_0.dds",
+        "Warwick/Info/Warwick_Square.dds",
+        "Xerath/info/Xerath_Square_0.dds",
+        "XinZhao/Info/XenZhao_Square.dds",
+        "Yorick/Info/Yorick_Square.dds",
+        "Zilean/Info/Chronokeeper_Square.dds",
+    ]
+    
+    charactersDirRelative = path.join(this.dirName, 'DATA', 'Characters')
+
+    championsIconsCache = Object.fromEntries(
+        this.championsIcons
+        .map(shortUnixIconPath => {
+            const m = /^(?<champion>.*?)\/Info\/(?<file>.*?)$/i.exec(shortUnixIconPath)
+            const champion = m!.groups!.champion!.toLowerCase()
+            const iconPathRelative = path.join(this.charactersDirRelative, ...shortUnixIconPath.split('/'))
+            return [ champion, iconPathRelative ]
+        })
+    )
+
+    getRelativeChampionIconPath(championName: string){
+        return this.championsIconsCache[championName.toLowerCase()]
+    }
+
+    spellIcons = [
+        "SummonerObserver.dds",
+        "SummonerMana.dds",
+        "SummonerIgnite.dds",
+        "SummonerGarrison.dds",
+        "SummonerCleanse.dds",
+        "Summoner_teleport.dds",
+        "Summoner_suppression.dds",
+        "Summoner_smite.dds",
+        "Summoner_revive.dds",
+        "Summoner_rally.dds",
+        "Summoner_promote.dds",
+        "Summoner_heal.dds",
+        "Summoner_haste.dds",
+        "Summoner_fortify.dds",
+        "Summoner_flash.dds",
+        "Summoner_Exhaust.dds",
+        "Summoner_Clairvoyance.dds",
+        "Summoner_Boost.dds",
+    ]
+
+    spellsDirRelative = path.join(this.dirName, 'DATA', 'Spells', 'Icons2D')
+
+    spellsIconsCache = Object.fromEntries(
+        this.spellIcons
+        .map(fileName => {
+            const m = /^Summoner_?(?<spell>.*)\.dds$/i.exec(fileName)
+            const shortSpellName = m!.groups!.spell!.toLowerCase()
+            const relativeIconPath = path.join(this.spellsDirRelative, fileName)
+            return [ shortSpellName, relativeIconPath ]
+        })
+    )
+
+    getRelativeSummonerSpellIconPath(spellName: string){
+        return this.spellsIconsCache[spellName.toLowerCase()]
+    }
 }()
 
 const sdkVer = '9.0.300'

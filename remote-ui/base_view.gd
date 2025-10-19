@@ -60,14 +60,21 @@ func update_child(child: Control, config: Dictionary) -> void:
         (child as OptionButton).clear()
         for item: Dictionary in config['options']:
             var text: String = item['text']
-            var id: int = item['id']
-            (child as OptionButton).add_item(text, id)
-        var id: int = config['selected']
-        var index: int = (child as OptionButton).get_item_index(id)
+            var item_id: int = item['id']
+            (child as OptionButton).add_item(text, item_id)
+        var selected_id: int = config['selected']
+        var index: int = (child as OptionButton).get_item_index(selected_id)
         (child as OptionButton).select(index)
     else:
         for key: String in config:
-            child[key] = config[key]
+            if key == 'icon' && child is Button:
+                var path: String = config[key]
+                if !path.is_empty():
+                    (child as Button).icon = ImageLoader.get_texture(path)
+                else:
+                    (child as Button).set_button_icon(null)
+            else:
+                child[key] = config[key]
 
 func external_call(child_path: String, method_name: String, ...method_args: Array) -> void:
     var child_names := child_path.split('/')

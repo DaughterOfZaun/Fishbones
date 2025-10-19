@@ -20,6 +20,8 @@ func init(config: Dictionary, cb: Callable) -> void:
         init_child(field_name, field, cb)
 
 func update(config: Dictionary) -> void:
+    if len(config) == 0: return #HACK:
+    
     var field_configs: Dictionary = config.get('fields', {})
     for field_name: String in field_configs:
         var field_config: Dictionary = field_configs[field_name]

@@ -11,7 +11,7 @@ export async function setup(game: Game, server: LocalServer, opts: Required<Abor
     
     const view = render('CustomGameSetup', form({
         GameName: line(game.name.value, value => game.name.value = value),
-        Password: line(game.password.value, value => game.password.value = value),
+        Password: line(game.password.value ?? '', value => game.password.value = value),
         
         TickRate: option(inq2gd(TickRate.choices), server.tickRate.value, value => server.tickRate.value = value),
         TeamSize: option(inq2gd(PlayerCount.choices), game.playersMax.value, value => game.playersMax.value = value),

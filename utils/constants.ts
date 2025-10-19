@@ -239,6 +239,10 @@ export const championsTable: [InternalName, ExternalName, MainlineStatus, HasBeh
     ["Ahri", "Ahri", "Unimplemented", false],
     ["Viktor", "Viktor", "Unimplemented", false],
     ["Sejuani", "Sejuani", "Unimplemented", false],
+]
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const nextChampionsTable = [
     ["Ziggs", "Ziggs", "Non-existent", true],
     ["Nautilus", "Nautilus", "Non-existent", false],
     ["Fiora", "Fiora", "Non-existent", false],
@@ -321,17 +325,20 @@ export const championsTable: [InternalName, ExternalName, MainlineStatus, HasBeh
 ]
 
 type ChampionInfo = {
-    short: InternalName, name: ExternalName,
-    status: MainlineStatus, hasBT: HasBehaviourTree
+    short: InternalName,
+    name: ExternalName,
+    status: MainlineStatus,
+    hasBT: HasBehaviourTree,
 }
 export const champions: ChampionInfo[] = championsTable
-    .map(([short, name, status, hasBT]) =>
-        ({ short, name, status, hasBT }))
+    .map(([short, name, status, hasBT]) => {
+        return { short, name, status, hasBT }
+    })
 
 export class Champion extends PickableValue {
     public static readonly name = 'Champion'
     public static readonly values = champions.map(({ short }) => short)
-    public static readonly choices = champions.map(({ short, name, status }, i) => ({ value: i, short, name: `${name} (${status})` }))
+    public static readonly choices = champions.map(({ short, name }, i) => ({ value: i, short, name }))
 }
 
 // short, name, enabled by default

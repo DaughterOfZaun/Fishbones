@@ -40,6 +40,7 @@ export interface TextEdit extends Id {
 export interface Button extends Id {
     $type: 'button'
     disabled?: boolean
+    icon?: string
     $listeners?: {
         pressed?: () => void
     }

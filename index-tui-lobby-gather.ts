@@ -1,55 +1,35 @@
-import type { Game } from "./game";
 import { LocalGame } from "./game-local";
-import type { PlayerId, PPP } from "./game-player";
+import type { GamePlayer, PlayerId, PPP } from "./game-player";
 import { SwitchViewError } from "./index-tui";
-import { button, form, inq2gd, label, list, option } from "./ui/remote-types";
+import { BOTS, players, PLAYERS, Team, type Context } from "./index-tui-lobby";
+import { button, form, inq2gd, label, list, option, type Form } from "./ui/remote-types";
 import { render } from "./ui/remote-view";
 import { AIChampion, AIDifficulty } from "./utils/constants";
 
 //export async function lobby(game: Game, opts: Required<AbortOptions>){}
 
-interface Context {
-    signal: AbortSignal,
-    controller: AbortController,
-    game: Game,
-}
-
-enum Team { Blue, Purple }
-enum PlayerType { Player, Bot }
-const PLAYERS = PlayerType.Player
-const BOTS = PlayerType.Bot
-
 export async function lobby_gather(ctx: Context){
     const { game } = ctx
     const localGame = game instanceof LocalGame ? game : undefined!
 
-    const players = (team: Team, type: PlayerType) => {
-        return Object.fromEntries(
-            game.getPlayers()
-            .filter(player => {
-                return player.team.value == team
-                    && player.isBot == (type == BOTS)
-            })
-            .map(player => {
-                const playerId = player.id.toString(16).padStart(8, '0').slice(-8)
-                const playerForm = (!player.isBot) ? form({
-                    Name: label(playerId),
-                    Kick: button(undefined, !localGame || localGame.getPlayer() === player),
-                }) : form({
-                    Champion: option(inq2gd(AIChampion.choices), player.champion.value),
-                    Difficulty: option(inq2gd(AIDifficulty.choices), player.difficulty.value),
-                    Kick: button(undefined, !localGame),
-                })
-                return [ player.id, playerForm ]
-            })
-        )
+    const makePlayerForm = (player: GamePlayer): Form => {
+        const playerId = player.id.toString(16).padStart(8, '0').slice(-8)
+        const playerForm = (!player.isBot) ? form({
+            Name: label(playerId),
+            Kick: button(undefined, !localGame || localGame.getPlayer() === player),
+        }) : form({
+            Champion: option(inq2gd(AIChampion.choices), player.champion.value),
+            Difficulty: option(inq2gd(AIDifficulty.choices), player.difficulty.value),
+            Kick: button(undefined, !localGame),
+        })
+        return playerForm
     }
     
     const team = (team: Team) => form({
         Join: button(() => game.set('team', team), game.getPlayer()?.team.value == team),
         AddBot: button(() => localGame.addBot(team), !localGame),
-        Players: list(players(team, PLAYERS)),
-        Bots: list(players(team, BOTS)),
+        Players: list(players(game, team, PLAYERS, makePlayerForm)),
+        Bots: list(players(game, team, BOTS, makePlayerForm)),
     })
 
     const view = render('GatheringLobby', form({
@@ -82,10 +62,10 @@ export async function lobby_gather(ctx: Context){
     ])
 
     view.addEventListener(game, 'update', () => {
-        view.get('Team1/Players').setItems(players(Team.Blue, PLAYERS))
-        view.get('Team2/Players').setItems(players(Team.Purple, PLAYERS))
-        view.get('Team1/Bots').setItems(players(Team.Blue, BOTS))
-        view.get('Team2/Bots').setItems(players(Team.Purple, BOTS))
+        view.get('Team1/Players').setItems(players(game, Team.Blue, PLAYERS, makePlayerForm))
+        view.get('Team2/Players').setItems(players(game, Team.Purple, PLAYERS, makePlayerForm))
+        view.get('Team1/Bots').setItems(players(game, Team.Blue, BOTS, makePlayerForm))
+        view.get('Team2/Bots').setItems(players(game, Team.Purple, BOTS, makePlayerForm))
         view.get('Team1/Join').update(button(undefined, game.getPlayer()!.team.value == Team.Blue))
         view.get('Team2/Join').update(button(undefined, game.getPlayer()!.team.value == Team.Purple))
     })
