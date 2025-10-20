@@ -31,29 +31,37 @@ func _ready() -> void:
             container.remove_child(child)
             child.queue_free()
 
-func update(config: Dictionary) -> void:
+func update(config: Dictionary, strict: bool = false) -> void:
     if len(config) == 0: return #HACK:
     
     var item_configs: Dictionary = config.get('items', {})
     
+    if strict:
+        set_items(item_configs)
+    else:\
     for item_name: String in item_configs:
         var item_config: Dictionary = item_configs[item_name]
-        if items.has(item_name): update_item(item_name, item_config)
-        else: add_item(item_name, item_config)
+        if items.has(item_name):
+            update_item(item_name, item_config, strict)
+        else:
+            add_item(item_name, item_config, strict)
     
     if placeholder_label && 'placeholderText' in config:
         placeholder_label.text = config['placeholderText']
     update_placeholder()
 
 func set_items(item_configs: Dictionary) -> void:
+    var strict := true
 
     var allowed_names: Array[String] = []
     var disallowed_names: Array[String] = []
 
     for item_name: String in item_configs:
         var item_config: Dictionary = item_configs[item_name]
-        if items.has(item_name): update_item(item_name, item_config)
-        else: add_item(item_name, item_config)
+        if items.has(item_name):
+            update_item(item_name, item_config, strict)
+        else:
+            add_item(item_name, item_config, strict)
         allowed_names.append(item_name)
     
     for item_name in items:
@@ -63,7 +71,7 @@ func set_items(item_configs: Dictionary) -> void:
     for item_name in disallowed_names:
         remove_item(item_name)
 
-func add_item(item_name: String, item_config: Dictionary) -> void:
+func add_item(item_name: String, item_config: Dictionary, strict: bool = false) -> void:
     var item: Control
     if item_prefab: item = item_prefab.instantiate()
     else: item = first_item.duplicate()
@@ -76,12 +84,12 @@ func add_item(item_name: String, item_config: Dictionary) -> void:
     container.add_child(item)
     bind_child(item)
     init_child(item_name, item, callback)
-    update_child(item, item_config)
+    update_child(item, item_config, strict)
     update_placeholder()
 
-func update_item(item_name: String, item_config: Dictionary) -> void:
+func update_item(item_name: String, item_config: Dictionary, strict: bool = false) -> void:
     var item: Control = items.get(item_name)
-    update_child(item, item_config)
+    update_child(item, item_config, strict)
 
 func remove_item(item_name: String) -> void:
     var item: Control = items.get(item_name)

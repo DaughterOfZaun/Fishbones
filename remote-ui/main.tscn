@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=3 uid="uid://c88cdpgvxg8v2"]
+[gd_scene load_steps=29 format=3 uid="uid://c88cdpgvxg8v2"]
 
 [ext_resource type="Theme" uid="uid://heyv1rjynqwi" path="res://main_theme.tres" id="1_efxa6"]
 [ext_resource type="Script" uid="uid://dys8mpxtgwbfe" path="res://server_node.gd" id="1_ig7tw"]
@@ -10,6 +10,7 @@
 [ext_resource type="Texture2D" uid="uid://0et06t4e4fkf" path="res://components/background/sr_platform.jpg" id="7_5vw27"]
 [ext_resource type="PackedScene" uid="uid://cmq3d2g3odndm" path="res://components/console.tscn" id="7_272bh"]
 [ext_resource type="Shader" uid="uid://c4ougvurpqa1d" path="res://components/background/simple_blur.gdshader" id="7_kek77"]
+[ext_resource type="Script" uid="uid://daigcqlxjwp5f" path="res://copy_paste_button.gd" id="11_ycdy4"]
 [ext_resource type="Script" uid="uid://c1341hmee22s6" path="res://dictionary_view.gd" id="13_2cqfq"]
 [ext_resource type="Script" uid="uid://co8q1vt1vwjgu" path="res://array_view.gd" id="14_yaehf"]
 
@@ -27,40 +28,61 @@ shader_parameter/tint_color = Color(0, 0, 0, 0)
 
 [sub_resource type="ButtonGroup" id="ButtonGroup_ycdy4"]
 
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_w48qg"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_vivmo"]
-
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ycdy4"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vivmo"]
 content_margin_left = 0.0
 content_margin_top = 0.0
 content_margin_right = 0.0
 content_margin_bottom = 0.0
+bg_color = Color(0.3491902, 0.3491902, 0.3491902, 0.3)
 
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_dg77c"]
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_vivmo"]
 content_margin_left = 4.0
 content_margin_top = 4.0
 content_margin_right = 4.0
 content_margin_bottom = 4.0
 
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ycdy4"]
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_w48qg"]
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+bg_color = Color(0.09985284, 0.09985284, 0.09985284, 0.6)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ycdy4"]
-draw_center = false
+content_margin_left = 4.0
+content_margin_top = 4.0
+content_margin_right = 4.0
+content_margin_bottom = 4.0
+bg_color = Color(0.09985284, 0.09985284, 0.09985284, 0.6)
 border_width_left = 4
 border_width_top = 4
 border_width_right = 4
 border_width_bottom = 4
 border_color = Color(1, 1, 1, 1)
-corner_radius_top_left = 1
-corner_radius_top_right = 1
-corner_radius_bottom_right = 1
-corner_radius_bottom_left = 1
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
 
 [sub_resource type="Theme" id="Theme_dg77c"]
 Button/font_sizes/font_size = 10
+Button/styles/disabled = SubResource("StyleBoxFlat_vivmo")
 Button/styles/focus = SubResource("StyleBoxEmpty_vivmo")
 Button/styles/hover = SubResource("StyleBoxEmpty_ycdy4")
-Button/styles/normal = SubResource("StyleBoxEmpty_dg77c")
+Button/styles/normal = SubResource("StyleBoxFlat_w48qg")
 Button/styles/pressed = SubResource("StyleBoxFlat_ycdy4")
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_w48qg"]
 
 [sub_resource type="ButtonGroup" id="ButtonGroup_w48qg"]
 
@@ -92,17 +114,17 @@ select = ExtResource("5_w48qg")
 checkbox = ExtResource("6_vivmo")
 input = ExtResource("7_2cqfq")
 embedded_exe = "res://embedded/Fishbones-CLI.exe"
-embedded_file_0 = "res://embedded/7zzs.exe"
-embedded_file_1 = "res://embedded/ChildrenOfTheGrave-Gameserver.7z"
+embedded_file_0 = "res://embedded/7z.dll"
+embedded_file_1 = "res://embedded/7z.exe"
 embedded_file_2 = "res://embedded/ChildrenOfTheGrave-Gameserver.7z.torrent"
 embedded_file_3 = "res://embedded/PortableGit-2.51.0.2-64-bit.7z.exe.torrent"
 embedded_file_4 = "res://embedded/aria2.conf"
-embedded_file_5 = "res://embedded/aria2c.exe"
+embedded_file_5 = "res://embedded/aria2c-1.37.0-win-64bit-build1.exe"
 embedded_file_6 = "res://embedded/d3dx9_39.dll"
 embedded_file_7 = "res://embedded/dotnet-sdk-9.0.300-linux-x64.tar.gz.torrent"
 embedded_file_8 = "res://embedded/dotnet-sdk-9.0.300-win-x64.zip.torrent"
 embedded_file_9 = "res://embedded/playable_client_126.7z.torrent"
-container = NodePath("Container")
+container = NodePath("MariginContainer")
 bars_container = NodePath("ConsoleContainer/VBoxContainer/BarsContainer")
 show_console_toggle = NodePath("ShowConsoleToggle")
 console_container = NodePath("ConsoleContainer")
@@ -159,7 +181,6 @@ theme_override_constants/margin_bottom = 0
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_efxa6")
 tab_alignment = 1
-current_tab = 2
 tabs_visible = false
 deselect_enabled = true
 
@@ -239,11 +260,13 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Cancel"
 
-[node name="#Copy" type="Button" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/HBoxContainer/VBoxContainer1/HBoxContainer"]
+[node name="#Copy" type="Button" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/HBoxContainer/VBoxContainer1/HBoxContainer" node_paths=PackedStringArray("textarea")]
 layout_mode = 2
 size_flags_horizontal = 3
-disabled = true
 text = "Copy"
+script = ExtResource("11_ycdy4")
+action = 1
+textarea = NodePath("../../#TextToCopy")
 
 [node name="VSeparator" type="VSeparator" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/HBoxContainer"]
 layout_mode = 2
@@ -293,11 +316,13 @@ grow_vertical = 2
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="#Paste" type="Button" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/HBoxContainer/VBoxContainer2/HBoxContainer"]
+[node name="#Paste" type="Button" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/HBoxContainer/VBoxContainer2/HBoxContainer" node_paths=PackedStringArray("textarea")]
 layout_mode = 2
 size_flags_horizontal = 3
-disabled = true
 text = "Paste"
+script = ExtResource("11_ycdy4")
+action = 2
+textarea = NodePath("../../#PastedText")
 
 [node name="#Connect" type="Button" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/HBoxContainer/VBoxContainer2/HBoxContainer"]
 modulate = Color(0, 1, 0, 1)
@@ -329,6 +354,7 @@ theme_override_constants/margin_bottom = 0
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_efxa6")
 tab_alignment = 1
+current_tab = 2
 tabs_visible = false
 deselect_enabled = true
 
@@ -930,7 +956,6 @@ size_flags_vertical = 8
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 0.25
-disabled = true
 text = "Quit"
 
 [node name="Control" type="Control" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer2"]
@@ -945,7 +970,6 @@ size_flags_stretch_ratio = 0.25
 text = "Host Game"
 
 [node name="#GatheringLobby" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer"]
-visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 8.0
@@ -987,11 +1011,11 @@ script = ExtResource("14_yaehf")
 layout_mode = 2
 script = ExtResource("13_2cqfq")
 
-[node name="TextureRect" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team1/ScrollContainer/VBoxContainer1/#Players/HBoxContainer"]
+[node name="#Icon" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team1/ScrollContainer/VBoxContainer1/#Players/HBoxContainer"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 mouse_filter = 2
-disabled = true
+theme = SubResource("Theme_dg77c")
 icon_alignment = 1
 expand_icon = true
 
@@ -1025,11 +1049,11 @@ script = ExtResource("14_yaehf")
 layout_mode = 2
 script = ExtResource("13_2cqfq")
 
-[node name="TextureRect" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team1/ScrollContainer/VBoxContainer1/#Bots/HBoxContainer"]
+[node name="#Icon" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team1/ScrollContainer/VBoxContainer1/#Bots/HBoxContainer"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 mouse_filter = 2
-disabled = true
+theme = SubResource("Theme_dg77c")
 icon_alignment = 1
 expand_icon = true
 
@@ -1128,11 +1152,11 @@ script = ExtResource("14_yaehf")
 layout_mode = 2
 script = ExtResource("13_2cqfq")
 
-[node name="TextureRect" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team2/ScrollContainer/VBoxContainer1/#Players/HBoxContainer"]
+[node name="#Icon" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team2/ScrollContainer/VBoxContainer1/#Players/HBoxContainer"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 mouse_filter = 2
-disabled = true
+theme = SubResource("Theme_dg77c")
 icon_alignment = 1
 expand_icon = true
 
@@ -1166,11 +1190,11 @@ script = ExtResource("14_yaehf")
 layout_mode = 2
 script = ExtResource("13_2cqfq")
 
-[node name="TextureRect" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team2/ScrollContainer/VBoxContainer1/#Bots/HBoxContainer"]
+[node name="#Icon" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team2/ScrollContainer/VBoxContainer1/#Bots/HBoxContainer"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 mouse_filter = 2
-disabled = true
+theme = SubResource("Theme_dg77c")
 icon_alignment = 1
 expand_icon = true
 
@@ -1266,6 +1290,7 @@ size_flags_stretch_ratio = 0.13
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 0.25
+disabled = true
 text = "Autofill"
 
 [node name="Control2" type="Control" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/HBoxContainer"]
@@ -1304,10 +1329,10 @@ script = ExtResource("13_2cqfq")
 layout_mode = 2
 
 [node name="#Icon" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/VBoxContainer2/MarginContainer/VBoxContainer/#ProfilePanel/VBoxContainer"]
-custom_minimum_size = Vector2(58, 0)
+custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 mouse_filter = 2
-disabled = true
+theme = SubResource("Theme_dg77c")
 icon_alignment = 1
 expand_icon = true
 
@@ -1387,10 +1412,10 @@ layout_mode = 2
 script = ExtResource("13_2cqfq")
 
 [node name="#Icon" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/VBoxContainer2/MarginContainer/VBoxContainer/#ConnectionsPanel/VBoxContainer/#Connections/ScrollContainer/VBoxContainer/MarginContainer"]
-custom_minimum_size = Vector2(58, 0)
+custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 mouse_filter = 2
-disabled = true
+theme = SubResource("Theme_dg77c")
 icon_alignment = 1
 expand_icon = true
 
@@ -1451,6 +1476,7 @@ size_flags_horizontal = 3
 disabled = true
 
 [node name="#ChampionSelect" type="MarginContainer" parent="Container/TabContainer"]
+visible = false
 layout_mode = 2
 theme_override_constants/margin_left = 0
 theme_override_constants/margin_right = 0
@@ -1511,7 +1537,7 @@ icon_alignment = 1
 expand_icon = true
 
 [node name="#Icon" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer/ScrollContainer/#Team1/PanelContainer/HBoxContainer"]
-custom_minimum_size = Vector2(58, 0)
+custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 mouse_filter = 2
 theme = SubResource("Theme_dg77c")
@@ -1606,6 +1632,64 @@ expand_icon = true
 visible = false
 layout_mode = 2
 
+[node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2"]
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/PanelContainer"]
+custom_minimum_size = Vector2(0, 98)
+layout_mode = 2
+size_flags_horizontal = 3
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 4
+
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/PanelContainer/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/PanelContainer/ScrollContainer/MarginContainer"]
+layout_mode = 2
+
+[node name="#SummonerSpell1" type="HFlowContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/PanelContainer/ScrollContainer/MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 0
+theme_override_constants/v_separation = 0
+alignment = 2
+script = ExtResource("14_yaehf")
+
+[node name="TextureButton1" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/PanelContainer/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell1"]
+custom_minimum_size = Vector2(43, 43)
+layout_mode = 2
+theme = SubResource("Theme_dg77c")
+toggle_mode = true
+button_group = SubResource("ButtonGroup_vivmo")
+icon_alignment = 1
+expand_icon = true
+
+[node name="VSeparator" type="VSeparator" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/PanelContainer/ScrollContainer/MarginContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="#SummonerSpell2" type="HFlowContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/PanelContainer/ScrollContainer/MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 0
+theme_override_constants/v_separation = 0
+script = ExtResource("14_yaehf")
+
+[node name="TextureButton" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/PanelContainer/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell2"]
+custom_minimum_size = Vector2(43, 43)
+layout_mode = 2
+theme = SubResource("Theme_dg77c")
+toggle_mode = true
+button_group = SubResource("ButtonGroup_2cqfq")
+icon_alignment = 1
+expand_icon = true
+
+[node name="HSeparator2" type="HSeparator" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2"]
+visible = false
+layout_mode = 2
+
 [node name="VBoxContainer" type="HBoxContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2"]
 layout_mode = 2
 
@@ -1650,60 +1734,6 @@ show_percentage = false
 [node name="Control2" type="Control" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
-
-[node name="HSeparator2" type="HSeparator" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2"]
-visible = false
-layout_mode = 2
-
-[node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2"]
-layout_mode = 2
-
-[node name="ScrollContainer" type="ScrollContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/PanelContainer"]
-custom_minimum_size = Vector2(0, 98)
-layout_mode = 2
-size_flags_horizontal = 3
-horizontal_scroll_mode = 0
-vertical_scroll_mode = 4
-
-[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/PanelContainer/ScrollContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-
-[node name="HBoxContainer" type="HBoxContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/PanelContainer/ScrollContainer/MarginContainer"]
-layout_mode = 2
-
-[node name="#SummonerSpell1" type="HFlowContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/PanelContainer/ScrollContainer/MarginContainer/HBoxContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-alignment = 2
-script = ExtResource("14_yaehf")
-
-[node name="TextureButton1" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/PanelContainer/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell1"]
-custom_minimum_size = Vector2(43, 43)
-layout_mode = 2
-theme = SubResource("Theme_dg77c")
-toggle_mode = true
-button_group = SubResource("ButtonGroup_vivmo")
-icon_alignment = 1
-expand_icon = true
-
-[node name="VSeparator" type="VSeparator" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/PanelContainer/ScrollContainer/MarginContainer/HBoxContainer"]
-layout_mode = 2
-
-[node name="#SummonerSpell2" type="HFlowContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/PanelContainer/ScrollContainer/MarginContainer/HBoxContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-script = ExtResource("14_yaehf")
-
-[node name="TextureButton" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/PanelContainer/ScrollContainer/MarginContainer/HBoxContainer/#SummonerSpell2"]
-custom_minimum_size = Vector2(43, 43)
-layout_mode = 2
-theme = SubResource("Theme_dg77c")
-toggle_mode = true
-button_group = SubResource("ButtonGroup_2cqfq")
-icon_alignment = 1
-expand_icon = true
 
 [node name="VBoxContainer3" type="VBoxContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2"]
 layout_mode = 2
@@ -1757,9 +1787,10 @@ clip_text = true
 text_overrun_behavior = 3
 
 [node name="#Icon" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer3/ScrollContainer/#Team2/PanelContainer/HBoxContainer"]
-custom_minimum_size = Vector2(58, 0)
+custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 mouse_filter = 2
+theme = SubResource("Theme_dg77c")
 icon_alignment = 1
 expand_icon = true
 
@@ -1770,14 +1801,29 @@ layout_mode = 2
 custom_minimum_size = Vector2(27, 27)
 layout_mode = 2
 mouse_filter = 2
+theme = SubResource("Theme_dg77c")
+icon_alignment = 1
+expand_icon = true
 
 [node name="#SummonerSpell2" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer3/ScrollContainer/#Team2/PanelContainer/HBoxContainer/VBoxContainer"]
 custom_minimum_size = Vector2(27, 27)
 layout_mode = 2
 mouse_filter = 2
+theme = SubResource("Theme_dg77c")
+icon_alignment = 1
+expand_icon = true
 
 [node name="Control" type="Control" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer3/ScrollContainer/#Team2/PanelContainer/HBoxContainer"]
 layout_mode = 2
+
+[node name="MariginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 0.797
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="ConsoleContainer" type="MarginContainer" parent="."]
 visible = false
@@ -1817,6 +1863,7 @@ layout_mode = 2
 theme_override_constants/separation = 24
 
 [node name="MarginContainer" parent="ConsoleContainer/VBoxContainer/BarsContainer" instance=ExtResource("3_h2yge")]
+visible = false
 layout_mode = 2
 
 [node name="ShowConsoleToggle" type="Button" parent="."]

@@ -53,9 +53,9 @@ func init_child(child_name: String, child: Control, cb: Callable) -> void:
     else:
         child.set_meta('path', child_path)
 
-func update_child(child: Control, config: Dictionary) -> void:
+func update_child(child: Control, config: Dictionary, strict: bool = false) -> void:
     if child is ShowableView:
-        (child as ShowableView).update(config)
+        (child as ShowableView).update(config, strict)
     elif child is OptionButton:
         (child as OptionButton).clear()
         for item: Dictionary in config['options']:
@@ -92,4 +92,4 @@ func external_call(child_path: String, method_name: String, ...method_args: Arra
     else:
         assert(method_name == 'update')
         var config: Dictionary = method_args[0]
-        update_child(current, config)
+        update_child(current, config, false)

@@ -1,4 +1,4 @@
-import { LOBBY_PROTOCOL, ufill, type u } from './utils/constants'
+import { AIChampion, LOBBY_PROTOCOL, ufill, type u } from './utils/constants'
 import { type AbortOptions, type Libp2p, type PeerId, type StreamHandler } from '@libp2p/interface'
 import * as lp from 'it-length-prefixed'
 import { pipe } from 'it-pipe'
@@ -34,49 +34,44 @@ export class LocalGame extends Game {
         return true
     }
 
-    public /*async*/ addBot(team: number, /*opts: Required<AbortOptions>*/){
-        
-        const playerId = this.takePlayerId()
-        const bot = this.players_add(playerId, undefined, true)
-        
-        bot.name.value = 'Bot'
-        bot.team.value = team
-        //this.assignTeamTo(bot)
-        bot.champion.value = 0 //TODO:
-        bot.difficulty.value = 0 //TODO:
+    public addBot(team: number){
+        const a = []; a[team] = 1
+        this.addBots(a)
+    }
 
-        this.broadcast(
-            {
-                peersRequests: [{
+    public addBots(counts: number[]){
+
+        const peersRequests: LobbyNotificationMessage.PeerRequests[] = []
+        
+        counts.forEach((count, team) => {
+            for(let i = 0; i < count; i++){
+                const playerId = this.takePlayerId()
+                const bot = this.players_add(playerId, undefined, true)
+                
+                //HACK:
+                const aiChampion = new AIChampion()
+                aiChampion.setRandom()
+
+                bot.name.value = 'Bot'
+                bot.team.value = team
+                //this.assignTeamTo(bot)
+                bot.champion.value = aiChampion.value
+                bot.difficulty.value = 2 //HACK: Advanced.
+
+                peersRequests.push({
                     playerId,
                     joinRequest: {
                         name: bot.name.encode(),
                     },
                     pickRequest: {
                         team: bot.team.encode(),
+                        champion: bot.champion.encode(),
+                        //difficulty: bot.difficulty.encode(),
                     }
-                }]
-            },
-            this.players.values()
-        )
-        /*
-        for(const key of ['champion', 'difficulty'] as const){
-            //await this.pick(key, opts, bot)
-            //HACK: Bot owners should be allowed to choose champions during gathering.
-            await bot[key].uinput(opts)
-            this.broadcast(
-                {
-                    peersRequests: [{
-                        playerId,
-                        pickRequest: {
-                            champion: bot.champion.encode(),
-                        }
-                    }]
-                },
-                this.players.values()
-            )
-        }
-        */
+                })
+            }
+        })
+        this.broadcast({ peersRequests }, this.players.values())
     }
 
     public setBot(prop: PPP, value: number, playerId: PlayerId){

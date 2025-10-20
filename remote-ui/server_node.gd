@@ -243,7 +243,7 @@ func _init() -> void:
         var instance := views[name]
         instance.is_top_level = true
         instance.init({}, bind(callback, last_call_id))
-        instance.update(config)
+        instance.update(config, true)
         handlers[last_call_id] = instance
 
     methods["exit"] = func() -> void:

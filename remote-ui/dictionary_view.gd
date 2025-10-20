@@ -19,11 +19,11 @@ func init(config: Dictionary, cb: Callable) -> void:
         var field := fields[field_name]
         init_child(field_name, field, cb)
 
-func update(config: Dictionary) -> void:
+func update(config: Dictionary, strict: bool = false) -> void:
     if len(config) == 0: return #HACK:
     
     var field_configs: Dictionary = config.get('fields', {})
     for field_name: String in field_configs:
         var field_config: Dictionary = field_configs[field_name]
         var field: Control = self.fields[field_name]
-        update_child(field, field_config)
+        update_child(field, field_config, strict)

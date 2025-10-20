@@ -4,6 +4,7 @@ import type { LocalServer } from "./server";
 import { render } from "./ui/remote-view";
 import { Features, GameMap, GameMode, GameType, PlayerCount, TickRate } from "./utils/constants";
 import { button, checkbox, form, inq2gd, line, option } from "./ui/remote-types";
+import { AbortPromptError } from "@inquirer/core";
 
 export async function setup(game: Game, server: LocalServer, opts: Required<AbortOptions>){
     
@@ -29,6 +30,7 @@ export async function setup(game: Game, server: LocalServer, opts: Required<Abor
         SummonerSpells: button(() => { server.spells.uinput(opts).catch(() => { /* Ignore */ }) }),
 
         Host: button(() => view.resolve()),
+        Quit: button(() => view.reject(new AbortPromptError()))
     }), opts)
 
     await view.promise

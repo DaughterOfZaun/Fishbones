@@ -10,6 +10,7 @@ import { LocalGame } from './game-local'
 import type { Game } from './game'
 import { render } from './ui/remote-view'
 import { button, checkbox, form, label, list, type Checkbox, type Form, type Label } from './ui/remote-types'
+import { AbortPromptError } from '@inquirer/core'
 
 interface CacheEntry {
     server: RemoteServer
@@ -36,7 +37,7 @@ export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts
     loop: while(true){
         const view = render<Action>('CustomsBrowser', form({
             Rooms: list(
-                getChoices(node),
+                {}, //getChoices(node),
                 args.allowInternet.enabled ?
                     'Waiting for the servers to appear...' :
                     'Waiting for the servers to appear on the local network...',
@@ -53,9 +54,11 @@ export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts
             }
         ])
 
-        view.addEventListener(pspd, 'update', () => {
+        updateDynamicElements()
+        view.addEventListener(pspd, 'update', updateDynamicElements)
+        function updateDynamicElements(){
             view.get('Rooms').setItems(getChoices(node))
-        })
+        }
 
         const { 0: action, 1: param } = await view.promise
         if(action == 'host' && ps.isStarted() == false){
@@ -74,9 +77,17 @@ export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts
 }
 
 async function hostLocal(node: LibP2PNode, name: string, lobby: Lobby, setup: Setup, opts: Required<AbortOptions>){
+    
     const server = new LocalServer(node)
     const game = new LocalGame(node, server)
-    await setup(game, server, opts)
+
+    try {
+        await setup(game, server, opts)
+    } catch(error) {
+        if(error instanceof AbortPromptError) return
+        throw error
+    }
+    
     try {
         await game.startListening(opts)
         game.join(name, undefined)
@@ -91,7 +102,13 @@ async function hostRemote(node: LibP2PNode, name: string, lobby: Lobby, setup: S
 
     const server = new LocalServer(node)
     const game = new LocalGame(node, server)
-    await setup(game, server, opts)
+
+    try {
+        await setup(game, server, opts)
+    } catch(error) {
+        if(error instanceof AbortPromptError) return
+        throw error
+    }
     
     let data: Peer.AdditionalData
     let prevPlayerCount = 0

@@ -7,6 +7,8 @@ import { PeerSet } from "@libp2p/peer-collections";
 import { render, DeferredView } from "./ui/remote-view";
 import { button, form, label, list, text } from "./ui/remote-types";
 
+const fbPeers = new PeerSet()
+
 export async function profilePanel(node: LibP2PNode, opts: Required<AbortOptions>){
     
     const view = render('ProfilePanel', form({
@@ -30,11 +32,10 @@ export async function connections(node: LibP2PNode, opts: Required<AbortOptions>
         }),
     }), opts)
 
-    const fbPeers = new PeerSet()
     view.addEventListener(node, 'peer:identify', (evt: CustomEvent<IdentifyResult>) => {
         const { peerId, agentVersion } = evt.detail
         const userAgent = `${NAME}/${VERSION}`
-        if(agentVersion === userAgent && !fbPeers.has(peerId)){
+        if(!fbPeers.has(peerId) && agentVersion === userAgent){
             fbPeers.add(peerId)
             view.get('Connections').add(peerId.toString(), form({
                 Name: label(peerId.toString().slice(-8)),
@@ -94,10 +95,13 @@ async function connectByPeerInfoString(node: LibP2PNode, view: DeferredView<void
     }
     if(!peerId) return
     
-    view.get('Connections').add(peerId.toString(), form({
-        Name: label(peerId.toString().slice(-8)),
-        Status: label('Connecting...'),
-    }))
+    if(!fbPeers.has(peerId)){
+        fbPeers.add(peerId)
+        view.get('Connections').add(peerId.toString(), form({
+            Name: label(peerId.toString().slice(-8)),
+            Status: label('Connecting...'),
+        }))
+    }
     let statusText
     try {
         logger.log('Connecting to', peerId.toString())

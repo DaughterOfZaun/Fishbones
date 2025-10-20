@@ -1,8 +1,8 @@
-import { spinner, select, input } from './ui/remote'
+import { spinner, select, input, AbortPromptError } from './ui/remote'
 import { type Game } from './game'
 import { type LibP2PNode } from './index-node-simple'
 import { TITLE } from './utils/constants-build'
-import type { AbortOptions } from '@libp2p/interface'
+import { type AbortOptions } from '@libp2p/interface'
 import { getLastLaunchCmd } from './utils/data-client'
 
 import { browser } from './index-tui-browser'
@@ -68,10 +68,14 @@ async function lobby(game: Game, opts: Required<AbortOptions>){
                 await view(ctx)
                 //break
             } catch(error) {
-                if (error instanceof SwitchViewError){
+                const switchViewError =
+                    (error instanceof SwitchViewError) ? error :
+                    (error instanceof AbortPromptError && error.cause instanceof SwitchViewError) ? error.cause :
+                    undefined
+                if (switchViewError !== undefined){
                     controller = new AbortController()
                     ctx.signal = createSignal()
-                    view = error.cause as View
+                    view = switchViewError.cause as View
                 } else throw error
             }
         }

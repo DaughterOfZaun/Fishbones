@@ -1,18 +1,12 @@
 import type { GamePlayer } from "./game-player";
 import { PLAYERS, BOTS, Team, type Context, players } from "./index-tui-lobby";
-import { button, form, label, list, type Form } from "./ui/remote-types";
+import { button, form, icon, label, list, type Form } from "./ui/remote-types";
 import { render } from "./ui/remote-view";
 import { Champion, champions, spells, SummonerSpell } from "./utils/constants";
 import { gcPkg } from "./utils/data-packages";
 
 export async function lobby_pick(ctx: Context){
     const { game } = ctx
-
-    const icon = (icon: string, placeholderText: string) => ({
-        $type: 'button' as const,
-        text: (!icon) ? placeholderText : undefined,
-        icon,
-    })
 
     const makePlayerForm = (player: GamePlayer): Form => {
         
@@ -42,7 +36,12 @@ export async function lobby_pick(ctx: Context){
         Champion.choices
         .map(({ name, short }, i) => {
             const relativeIconPath = gcPkg.getRelativeChampionIconPath(short) ?? ''
-            return [ i, icon(relativeIconPath, name) ]
+            const disabled = (!game.server.champions.value.includes(i)) ? true : undefined
+            return { i, name, relativeIconPath, disabled }
+        })
+        .filter(info => info.relativeIconPath)
+        .map(({ i, name, relativeIconPath, disabled }) => {
+            return [ i, icon(relativeIconPath, name, disabled) ]
         })
     )
 
@@ -50,7 +49,12 @@ export async function lobby_pick(ctx: Context){
         SummonerSpell.choices
         .map(({ name }, i) => {
             const relativeIconPath = gcPkg.getRelativeSummonerSpellIconPath(name) ?? ''
-            return [i, icon(relativeIconPath, name)]
+            const disabled = (!game.server.spells.value.includes(i)) ? true : undefined
+            return { i, name, relativeIconPath, disabled }
+        })
+        .filter((info) => info.relativeIconPath)
+        .map(({ i, name, relativeIconPath, disabled }) => {
+            return [i, icon(relativeIconPath, name, disabled)]
         })
     )
 
