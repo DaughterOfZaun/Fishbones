@@ -8,7 +8,7 @@ import { AbortPromptError } from "@inquirer/core";
 
 export async function setup(game: Game, server: LocalServer, opts: Required<AbortOptions>){
     
-    await server.loadSettings(opts)
+    server.loadSettings()
     
     const view = render('CustomGameSetup', form({
         GameName: line(game.name.value, value => game.name.value = value),
@@ -35,5 +35,5 @@ export async function setup(game: Game, server: LocalServer, opts: Required<Abor
 
     await view.promise
 
-    await server.saveSettings(opts)
+    server.saveSettings()
 }

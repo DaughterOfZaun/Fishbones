@@ -38,6 +38,6 @@ export const config = {
     gitZipTorrent: './Fishbones_Data/PortableGit-2.51.0.2-64-bit.7z.exe.torrent',
     gitZip: {
         //windows: './thirdparty/git/PortableGit-2.51.0.2-64-bit.7z.exe'
-    }
+    } as Partial<Record<SupportedPlatforms, string>>
 
 } as const

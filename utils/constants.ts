@@ -8,7 +8,6 @@ export const LOBBY_PROTOCOL = `/lobby/${0}`
 export const PROXY_PROTOCOL = `/proxy/${0}`
 export const LOCALHOST = '127.0.0.1'
 
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters
 export abstract class ValueDesc<I, E> {
     public name!: string
     public desc?: string
@@ -91,7 +90,7 @@ export class PickableValue extends ValueDesc<number, number> {
 }
 
 // short, name, enabled by default
-export const maps: [number, string, boolean][] = [
+const mapsTable: [number, string, boolean][] = [
     [0, `Test`, false],
     [1, `Old Summoner's Rift`, true],
     [2, `Old Summoner's Rift`, true],
@@ -116,23 +115,27 @@ export const maps: [number, string, boolean][] = [
     [21, `Temple of Lily and Lotus`, false],
     [30, `Arena: Rings of Wrath`, false],
     [35, `The Bandlewood`, false],
-] //as const
+]
+export const maps = mapsTable.map(([i, name, enabled]) => {
+    return { i, name, enabled }
+})
 export class GameMap extends PickableValue {
     public static readonly name = 'Game Map'
-    public static readonly values = Object.fromEntries(maps.map(([i, name,]) => ([i, name])))
+    public static readonly values = Object.fromEntries(maps.map(({ i, name }) => ([i, name])))
     public static readonly choices = PickableValue.normalize(GameMap.values)
 }
 
 // short, name, enabled by default
-export const modes: [string, string, boolean][] = [
+const modesTable: [string, string, boolean][] = [
     ['CLASSIC', 'Classic', true],
     ['ARAM', 'ARAM', true],
     ['ODIN', 'ODIN', true],
-] //as const
+]
+export const modes = modesTable.map(([ short, name, enabled ], i) => ({ i, short, name, enabled }))
 export class GameMode extends PickableValue {
     public static readonly name = 'Game Mode'
-    public static readonly values = modes.map(([short,,]) => short)
-    public static readonly choices = modes.map(([short, name,], i) => ({ value: i, short, name }))
+    public static readonly values = modes.map(({ short }) => short)
+    public static readonly choices = modes.map(({ i, short, name }) => ({ value: i, short, name }))
 }
 
 export class GameType extends PickableValue {
@@ -324,15 +327,9 @@ const nextChampionsTable = [
     ["Mel", "Mel", "Non-existent", false],
 ]
 
-type ChampionInfo = {
-    short: InternalName,
-    name: ExternalName,
-    status: MainlineStatus,
-    hasBT: HasBehaviourTree,
-}
-export const champions: ChampionInfo[] = championsTable
-    .map(([short, name, status, hasBT]) => {
-        return { short, name, status, hasBT }
+export const champions = championsTable
+    .map(([short, name, status, hasBT], i) => {
+        return { i, short, name, status, hasBT, enabled: status === 'Working' }
     })
 
 export class Champion extends PickableValue {
@@ -342,7 +339,7 @@ export class Champion extends PickableValue {
 }
 
 // short, name, enabled by default
-export const spells: [string, string, boolean][] = [
+const spellsTable: [string, string, boolean][] = [
     ["", "Heal", true],
     ["", "Ghost", false],
     ["", "Barrier", false],
@@ -369,10 +366,11 @@ export const spells: [string, string, boolean][] = [
     //["", "OdinSabotage", false],
     //["", "OdinGarrison", true],
     //["", "PromoteSR", true],
-] //as const
+]
+export const spells = spellsTable.map(([ , name, enabled ], i) => ({ i, name, enabled }))
 export class SummonerSpell extends PickableValue {
     public static readonly name = 'Summoner Spell'
-    public static readonly values = spells.map(([, name,]) => name)
+    public static readonly values = spells.map(({ name }) => name)
     public static readonly choices = PickableValue.normalize(SummonerSpell.values)
 }
 
@@ -535,48 +533,6 @@ export function enabled(wrapped: PickableValueStatics){
 
 export type KeysByValue<T, V> = Exclude<{ [K in keyof T]: T[K] extends V ? K : u }[keyof T], u>
 
-export type DescKeys<T> = KeysByValue<T, ValueDesc<unknown, unknown>>
-export async function ufill<T extends object>(obj: T, { signal }: Required<AbortOptions>, /*fields?: DescKeys<T>[]*/): Promise<T> {
-    const fields = (Object.keys(obj) as (keyof T)[])
-        .filter(key => obj[key] instanceof ValueDesc) as unknown as DescKeys<T>[]
-    const opts = {
-        clearPromptOnDone: true,
-        signal,
-    }
-    type ActionEdit = ['edit', DescKeys<T>]
-    type Action = ActionEdit | ['enter']
-    let selected: u|Action = undefined
-    const fieldChoices = fields.map(key => {
-        const obj_key = obj[key] as ValueDesc<unknown, unknown>
-        return { value: ['edit', key] as ActionEdit, short: obj_key.name, name: '', description: obj_key.desc }
-    })
-    const choices = [
-        ...fieldChoices,
-        { value: ['enter'] as Action, short: 'Enter', name: 'Enter' },
-    ]
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    loop: while(true){
-        for(const fieldChoice of fieldChoices){
-            const key = fieldChoice.value[1]
-            const obj_key = obj[key] as ValueDesc<unknown, unknown>
-            fieldChoice.name = `${obj_key.name}: ${obj_key.toString()}`
-        }
-        selected = await select<Action>({
-            message: 'Select property to edit',
-            default: selected,
-            choices,
-            pageSize: 20,
-        }, opts)
-        const [action, key] = selected
-        if(action == 'edit'){
-            const obj_key = obj[key] as ValueDesc<unknown, unknown>
-            await obj_key.uinput(opts)
-        }
-        if(action == 'enter') break loop;
-    }
-    return obj
-}
-
 export const runes = {
     "1": 5245,
     "2": 5245,
@@ -730,9 +686,8 @@ export class AIChampion extends PickableValue {
     public static readonly name = 'AI Champions'
     public static readonly values = Object.fromEntries(
         champions
-            .map((info, i) => [info, i] as [ChampionInfo, number])
-            .filter(([{ hasBT }]) => hasBT === true)
-            .map(([{ name }, i]) => [i, name])
+            .filter(({ hasBT }) => hasBT)
+            .map(({i, name}) => [ i, name ])
     )
     public static readonly choices = PickableValue.normalize(AIChampion.values)
 }

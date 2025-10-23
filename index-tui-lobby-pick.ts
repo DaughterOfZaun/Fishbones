@@ -17,10 +17,10 @@ export async function lobby_pick(ctx: Context){
         const relativeChampionIconPath = championInfo?.short ? gcPkg.getRelativeChampionIconPath(championInfo.short) ?? '' : ''
         const championName = championInfo?.name ?? ''
 
-        const spellName1 = (player.spell1.value !== undefined) ? spells[player.spell1.value]![1] : ''
+        const spellName1 = (player.spell1.value !== undefined) ? spells[player.spell1.value]!.name : ''
         const relativeSpellIconPath1 = spellName1 ? gcPkg.getRelativeSummonerSpellIconPath(spellName1) ?? '' : ''
         
-        const spellName2 = (player.spell2.value !== undefined) ? spells[player.spell2.value]![1] : ''
+        const spellName2 = (player.spell2.value !== undefined) ? spells[player.spell2.value]!.name : ''
         const relativeSpellIconPath2 = spellName2 ? gcPkg.getRelativeSummonerSpellIconPath(spellName2) ?? '' : ''
         
         return form({

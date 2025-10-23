@@ -1,4 +1,4 @@
-import { AIChampion, LOBBY_PROTOCOL, ufill, type u } from './utils/constants'
+import { AIChampion, LOBBY_PROTOCOL, type u } from './utils/constants'
 import { type AbortOptions, type Libp2p, type PeerId, type StreamHandler } from '@libp2p/interface'
 import * as lp from 'it-length-prefixed'
 import { pipe } from 'it-pipe'
@@ -14,10 +14,6 @@ export class LocalGame extends Game {
     protected log = logger('launcher:game-local')
 
     public readonly canStart = true
-
-    public static async create(node: Libp2p, server: Server, opts: Required<AbortOptions>){
-        return ufill(new LocalGame(node, server), opts)
-    }
     
     private readonly peerId: PeerId
     private readonly playerId: PlayerId

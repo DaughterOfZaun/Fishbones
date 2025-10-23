@@ -1,7 +1,6 @@
 import { build } from "./data-build"
 import { download, appendPartialDownloadFileExt, repairAria2 } from "./data-download"
 import { gcPkg, gitPkg, gsPkg, PkgInfo, repairTorrents, sdkPkg } from "./data-packages"
-import { repairServerSettingsJsonc } from "./data-server"
 import { console_log, fs_copyFile } from "../ui/remote"
 import { console_log_fs_err, cwd, downloads, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_rmdir } from './data-fs'
 import { readTrackersTxt } from "./data-trackers"
@@ -24,7 +23,6 @@ export async function repair(opts: Required<AbortOptions>){
     await fs_ensureDir(downloads, opts)
     
     await Promise.all([
-        repairServerSettingsJsonc(opts),
         readTrackersTxt(opts),
         repairTorrents(opts),
         repair7z(opts),

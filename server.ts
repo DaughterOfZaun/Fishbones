@@ -1,9 +1,17 @@
-import type { AbortOptions, PeerId } from "@libp2p/interface"
+import type { PeerId } from "@libp2p/interface"
 import { logger } from "@libp2p/logger"
 import type { Libp2p } from "libp2p"
-import { ChampionsEnabled, GameMapsEnabled, GameModesEnabled, Name, SummonerSpellsEnabled, TickRate, ufill } from "./utils/constants"
-//import { Champion, GameMap, GameMode, SummonerSpell } from "./utils/constants"
-import { getServerSettings, saveServerSettings } from "./utils/data-server"
+import {
+    ChampionsEnabled,
+    GameMapsEnabled,
+    GameModesEnabled,
+    Name, TickRate,
+    SummonerSpellsEnabled,
+    maps,
+    modes,
+    champions,
+    spells,
+} from "./utils/constants"
 import type { Peer } from "./message/peer"
 
 export abstract class Server {
@@ -65,28 +73,11 @@ export class LocalServer extends Server {
     public constructor(node: Libp2p){
         super(node, node.peerId)
     }
-    public static async create(node: Libp2p, opts: Required<AbortOptions>){
-        const server = new LocalServer(node)
-
-        await server.loadSettings(opts)
-        await ufill(server, opts)
-        await server.saveSettings(opts)
-        
-        return server
+    public loadSettings(){
+        this.maps.value = maps.filter(info => info.enabled).map(info => info.i)
+        this.modes.value = modes.filter(info => info.enabled).map(info => info.i)
+        this.champions.value = champions.filter(info => info.enabled).map(info => info.i)
+        this.spells.value = spells.filter(info => info.enabled).map(info => info.i)
     }
-    public async loadSettings(opts: Required<AbortOptions>){
-        //server.maps.value = Object.keys(GameMap.values).map(key => Number(key))
-        //server.modes.value = Object.keys(GameMode.values).map(key => Number(key))
-        //server.champions.value = Object.keys(Champion.values).map(key => Number(key))
-        //server.spells.value = Object.keys(SummonerSpell.values).map(key => Number(key))
-        
-        const ss = await getServerSettings(opts)
-        this.maps.value = ss.maps
-        this.modes.value = ss.modes
-        this.champions.value = ss.champions
-        this.spells.value = ss.spells
-    }
-    public async saveSettings(opts: Required<AbortOptions>){
-        await saveServerSettings(opts)
-    }
+    public saveSettings(){}
 }

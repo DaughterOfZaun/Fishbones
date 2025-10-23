@@ -1,8 +1,7 @@
 import path from 'node:path'
-import { champions, maps, modes, spells } from './constants'
 import { gsPkg, sdkPkg } from './data-packages'
 import { killSubprocess, spawn, startProcess, type ChildProcess } from './data-process'
-import { downloads, fs_exists, fs_readFile, fs_writeFile } from './data-fs'
+import { fs_writeFile } from './data-fs'
 import type { GameInfo } from './game-info'
 import type { AbortOptions } from '@libp2p/interface'
 
@@ -66,50 +65,4 @@ export async function stopServer(opts: Required<AbortOptions>){
     serverSubprocess = undefined
 
     await killSubprocess(LOG_PREFIX, prevSubprocess, opts)
-}
-
-const serverSettingsJson = path.join(downloads, 'server-settings.jsonc')
-type ServerSettings = Record<'maps' | 'modes' | 'champions' | 'spells', number[]>
-let serverSettings: ServerSettings | undefined
-
-export async function repairServerSettingsJsonc(opts: Required<AbortOptions>){
-    if(await fs_exists(serverSettingsJson, opts)) return
-    const txt = getServerSettingsJsonc()
-    await fs_writeFile(serverSettingsJson, txt, { ...opts, encoding: 'utf8' })
-    return parseServerSettings(txt)
-}
-
-function getServerSettingsJsonc(){
-    const line = (i: number, name: string, enabled: boolean) => '        ' + (enabled ? '' : '//') + `${i}, // ${name}`
-    return `{
-    "maps": [
-${ maps.map(([i, name, enabled]) => line(i, name, enabled)).join('\n') }
-    ],
-    "modes": [
-${ modes.map(([, name, enabled], i) => line(i, name, enabled)).join('\n') }
-    ],
-    "champions": [
-${ champions.map(([, name, status], i) => line(i, name, status === 'Working')).join('\n') }
-    ],
-    "spells": [
-${ spells.map(([, name, enabled], i) => line(i, name, enabled)).join('\n') }
-    ],
-}`.trim()
-}
-
-function parseServerSettings(txt: string){
-    txt = txt.replace(/\n? *\/\/.*/g, '').replace(/,(?=[\s\n]*[\]}])/g, '')
-    return serverSettings = JSON.parse(txt) as ServerSettings
-}
-
-export async function getServerSettings(opts: Required<AbortOptions>){
-    if(serverSettings) return serverSettings
-    let txt = await fs_readFile(serverSettingsJson, { encoding : 'utf8', ...opts })
-    txt ||= getServerSettingsJsonc()
-    return parseServerSettings(txt)
-}
-
-export async function saveServerSettings(opts: Required<AbortOptions>){
-    const txt = JSON.stringify(serverSettings, null, 4)
-    await fs_writeFile(serverSettingsJson, txt, { ...opts, encoding: 'utf8' })
 }
