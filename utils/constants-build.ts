@@ -10,3 +10,18 @@ export const TITLE = `${NAME} v0.03`
 export const PUBLISHER = "Jinx"
 export const DESCRIPTION = "Yet another LeagueSandbox launcher with a twist"
 export const COPYRIGHT = "AGPLv3"
+
+const discoveryTopic = '_peer-discovery._p2p._pubsub'
+const appName = ['com', 'github', 'DaughterOfZaun', 'Fishbones']
+export const appDiscoveryTopic = `${appName.join('.')}.${discoveryTopic}`
+
+export const rtcConfiguration = {
+    iceServers: [
+        {
+            urls: [
+                'stun:stun.l.google.com:19302',
+                'stun:global.stun.twilio.com:3478'
+            ],
+        },
+    ],
+}

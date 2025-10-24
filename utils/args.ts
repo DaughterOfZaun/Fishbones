@@ -1,10 +1,10 @@
 export class Args {
     megaDownload = new Option('mega-download', true, 'Download files via mega.nz')
     torrentDownload = new Option('torrent-download', true, 'Download files via BitTorrent')
-    allowInternet = new Option('allow-internet', false, 'Сonnect to other players via Internet')
+    allowInternet = new Option('allow-internet', true, 'Сonnect to other players via Internet')
     globalDiscovery = new Option('global-discovery', false, '(Experimental) Search for servers on the global Internet')
     torrentDiscovery = new Option('torrent-discovery', false, '(Experimental) Search for servers on the global Internet via BitTorrent')
-    update = new Option('update', false, 'Download updates from Skelsoft\'s git')
+    update = new Option('update', true, 'Download updates from Skelsoft\'s git')
     port = new Parameter('port', 5119, 'Set custom UDP port number to use')
 
     repair = new Option('repair', true, '(Debug) Download+Unpack+Build missing files')

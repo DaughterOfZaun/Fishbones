@@ -11,7 +11,7 @@ import { CODE_P2P_CIRCUIT, multiaddr, type Multiaddr } from '@multiformats/multi
 
 import { createLibp2p } from 'libp2p'
 //import { fromString, toString } from 'uint8arrays'
-import type { AbortOptions, Connection, PrivateKey } from '@libp2p/interface'
+import type { AbortOptions, Connection, PeerInfo, PrivateKey } from '@libp2p/interface'
 import { tcp } from '@libp2p/tcp'
 import { patchedCrypto } from './utils/crypto'
 
@@ -25,10 +25,8 @@ import { PeerRecord, RecordEnvelope } from '@libp2p/peer-record'
 import type { ConnectionManager, TransportManager } from '@libp2p/interface-internal'
 import { mdns } from '@libp2p/mdns'
 import { args } from './utils/args'
-import { NAME, VERSION } from './utils/constants-build'
-
-const appName = ['com', 'github', 'DaughterOfZaun', 'Fishbones']
-const TOPIC = '_peer-discovery._p2p._pubsub'
+import { appDiscoveryTopic, NAME, rtcConfiguration, VERSION } from './utils/constants-build'
+import { rendezvousClient } from "@canvas-js/libp2p-rendezvous/client"
 
 export type LibP2PNode = Awaited<ReturnType<typeof createNodeInternal>> & ComponentsContainer
 type ComponentsContainer = {
@@ -59,22 +57,11 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
             ]
         },
         transports: [
-            webRTCDirect(),
+            webRTCDirect({ rtcConfiguration }),
             ...(args.allowInternet.enabled ? [
+                webRTC({ rtcConfiguration }),
                 circuitRelayTransport(),
                 tcp(),
-                webRTC({
-                    rtcConfiguration: {
-                        iceServers: [
-                            {
-                                urls: [
-                                    'stun:stun.l.google.com:19302',
-                                    'stun:global.stun.twilio.com:3478'
-                                ],
-                            },
-                        ],
-                    }
-                }),
             ] : []),
         ],
         connectionEncrypters: [
@@ -107,13 +94,22 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
                         '/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ'
                     ]
                 }),
+                rendezvous: rendezvousClient({
+                    autoDiscover: true,
+                    autoRegister: {
+                        namespaces: [ appDiscoveryTopic ],
+                        multiaddrs: [ 
+                            
+                        ],
+                    },
+                }),
             } : {}),
 
             logger: defaultLogger,
 
             pubsub: gossipsub() as (components: GossipSubComponents) => GossipSub,
             pubsubPeerWithDataDiscovery: pubsubPeerWithDataDiscovery({
-                topics: [ `${appName.join('.')}.${TOPIC}` ]
+                topics: [ appDiscoveryTopic ]
             }),
 
             mdns: mdns(),
@@ -122,17 +118,33 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
 
     opts?.signal?.throwIfAborted()
 
-    const peersToDial = new Set<string>()
-    node.services.mdns?.addEventListener('peer', (event) => {
-        const info = event.detail
-        peersToDial.add(info.id.toString())
-    })
-    node.addEventListener('peer:discovery', (event) => {
+    //TODO: Reintroduce Autodial.
+    const dialedPeers = new Set<string>()
+    const peersDiscoveredFirstByNode = new Set<string>()
+    const peersDiscoveredFirstByMechanism = new Set<string>()
+    node.services.mdns?.addEventListener('peer', onPeerDiscoveredByMechanism)
+    node.services.rendezvous?.addEventListener('peer', onPeerDiscoveredByMechanism)
+    function onPeerDiscoveredByMechanism(event: CustomEvent<PeerInfo>){
         const peer = event.detail
-        if(peersToDial.has(peer.id.toString())){
+        //console_log('*:peer', peer.id.toString())
+        if(!dialedPeers.has(peer.id.toString()))
+        if(peersDiscoveredFirstByNode.has(peer.id.toString())){
             node.dial(peer.id).catch((/*err*/) => { /* Ignore */ })
+        } else {
+            peersDiscoveredFirstByMechanism.add(peer.id.toString())
         }
-    })
+    }
+    node.addEventListener('peer:discovery', onPeerDiscoveredByNode)
+    function onPeerDiscoveredByNode(event: CustomEvent<PeerInfo>){
+        const peer = event.detail
+        //console_log('discovery:peer', peer.id.toString())
+        if(!dialedPeers.has(peer.id.toString()))
+        if(peersDiscoveredFirstByMechanism.has(peer.id.toString())){
+            node.dial(peer.id).catch((/*err*/) => { /* Ignore */ })
+        } else {
+            peersDiscoveredFirstByNode.add(peer.id.toString())
+        }
+    }
 
     return node
 }

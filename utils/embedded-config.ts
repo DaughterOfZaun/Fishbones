@@ -24,7 +24,7 @@ export const config = {
     gcZipTorrent: './Fishbones_Data/playable_client_126.7z.torrent',
     gsPkgZipTorrent: './Fishbones_Data/ChildrenOfTheGrave-Gameserver.7z.torrent',
     gsPkgZip: {
-        linux: './Fishbones_Data/ChildrenOfTheGrave-Gameserver.7z'
+        //linux: './Fishbones_Data/ChildrenOfTheGrave-Gameserver.7z'
     } as Partial<Record<SupportedPlatforms, string>>,
 
     sdkForWinZipTorrent: './Fishbones_Data/dotnet-sdk-9.0.300-win-x64.zip.torrent',
