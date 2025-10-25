@@ -3,20 +3,66 @@ import { consumePeerInfoString, getPeerInfoString, validatePeerInfoString, type 
 import { console_log } from "./ui/remote";
 import { logger } from "./utils/data-shared";
 import { NAME, VERSION } from "./utils/constants-build";
-import { PeerSet } from "@libp2p/peer-collections";
 import { render, DeferredView } from "./ui/remote-view";
 import { button, form, label, list, text } from "./ui/remote-types";
+import { getUsername } from "./utils/namegen";
+import { PeerMap } from "@libp2p/peer-collections";
+import { peerIdFromString } from "@libp2p/peer-id";
 
-const fbPeers = new PeerSet()
+enum PeerType { Undetermined, Player, Server }
+enum PeerStatus { Disconnected, Connecting, Connected, ConnectionFailed }
+const fbPeers = new PeerMap<PeerInfo>()
+class PeerInfo {
+    constructor(
+        public type = PeerType.Undetermined,
+        public status = PeerStatus.Disconnected,
+        public shownInUI = false,
+    ){}
+}
 
 export async function profilePanel(node: LibP2PNode, opts: Required<AbortOptions>){
     
     const view = render('ProfilePanel', form({
-        Name: label(node.peerId.toString().slice(-8)),
+        Name: label(getUsername(node.peerId)),
         Status: label(''),
     }), opts)
 
     return view.promise
+}
+
+const peerStatusToString = {
+    [PeerStatus.Disconnected]: 'Disconnected',
+    [PeerStatus.Connecting]: 'Connecting...',
+    [PeerStatus.Connected]: 'Connected',
+    [PeerStatus.ConnectionFailed]: 'Connection failed',
+}
+
+function updatePeerStatus(view: DeferredView<void>, peerId: PeerId, status: PeerStatus){
+    let info = fbPeers.get(peerId)
+    if(!info){
+        info = new PeerInfo()
+        fbPeers.set(peerId, info)
+    }
+
+    const prevStatus = info.status
+    info.status = status
+
+    if(info.status == PeerStatus.Disconnected){
+        if(info.shownInUI){
+            info.shownInUI = false
+            view.get('Connections').remove(peerId.toString())
+        }
+    } else if(!info.shownInUI){
+        info.shownInUI = true
+        view.get('Connections').add(peerId.toString(), form({
+            Name: label(getUsername(peerId)),
+            Status: label(peerStatusToString[info.status]),
+        }))
+    } else if(info.status != prevStatus){
+        view.get(`Connections/${peerId.toString()}`).update(form({
+            Status: label(peerStatusToString[info.status])
+        }))
+    }
 }
 
 export async function connections(node: LibP2PNode, opts: Required<AbortOptions>){
@@ -32,25 +78,35 @@ export async function connections(node: LibP2PNode, opts: Required<AbortOptions>
         }),
     }), opts)
 
+    view.addEventListener(node, 'peer:connect', (evt: CustomEvent<PeerId>) => {
+        const peerId = evt.detail
+        if(fbPeers.has(peerId)){
+            updatePeerStatus(view, peerId, PeerStatus.Connected)
+        }
+    })
+
     view.addEventListener(node, 'peer:identify', (evt: CustomEvent<IdentifyResult>) => {
         const { peerId, agentVersion } = evt.detail
         const userAgent = `${NAME}/${VERSION}`
-        if(!fbPeers.has(peerId) && agentVersion === userAgent){
-            fbPeers.add(peerId)
-            view.get('Connections').add(peerId.toString(), form({
-                Name: label(peerId.toString().slice(-8)),
-                Status: label('Connected'),
-            }))
+        if(agentVersion === userAgent){
+            updatePeerStatus(view, peerId, PeerStatus.Connected)
         }
     })
 
     view.addEventListener(node, 'peer:disconnect', (evt: CustomEvent<PeerId>) => {
         const peerId = evt.detail
-        if(fbPeers.has(peerId)){
-            fbPeers.delete(peerId)
-            view.get('Connections').remove(peerId.toString())
-        }
+        updatePeerStatus(view, peerId, PeerStatus.Disconnected)
     })
+
+    const rendezvousService = node.services.rendezvous
+    if(rendezvousService){
+        const autoRegisterPeers = rendezvousService['autoRegisterPeers'] as Map<string, string[]>
+        for(const peerIdString of autoRegisterPeers.keys()){
+            const peerId = peerIdFromString(peerIdString)
+            //fbPeers.set(peerId, new PeerInfo(PeerType.Server))
+            updatePeerStatus(view, peerId, PeerStatus.Connecting)
+        }
+    }
 
     return view.promise
 }
@@ -95,21 +151,13 @@ async function connectByPeerInfoString(node: LibP2PNode, view: DeferredView<void
     }
     if(!peerId) return
     
-    if(!fbPeers.has(peerId)){
-        fbPeers.add(peerId)
-        view.get('Connections').add(peerId.toString(), form({
-            Name: label(peerId.toString().slice(-8)),
-            Status: label('Connecting...'),
-        }))
-    }
-    let statusText
+    updatePeerStatus(view, peerId, PeerStatus.Connecting)
     try {
         logger.log('Connecting to', peerId.toString())
         await node.dial(peerId, opts)
-        statusText = 'Connected'
+        updatePeerStatus(view, peerId, PeerStatus.Connected)
     } catch(err) {
         console_log('Connecting via key failed:', Bun.inspect(err))
-        statusText = 'Connection failed'
+        updatePeerStatus(view, peerId, PeerStatus.ConnectionFailed)
     }
-    view.get(`Connections/${peerId.toString()}/Status`).update(label(statusText))
 }

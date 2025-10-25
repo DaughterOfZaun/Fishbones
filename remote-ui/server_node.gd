@@ -22,7 +22,8 @@ func show_view(view: ShowableView) -> void:
 func hide_view(view: ShowableView) -> void:
     if !view.is_top_level: return
     visible_views_stack.erase(view)
-    just_show_view(visible_views_stack[-1])
+    if visible_views_stack.size() > 0:
+        just_show_view(visible_views_stack[-1])
     view.visible = false
     
 func just_show_view(view: Control) -> void:

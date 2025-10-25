@@ -11,6 +11,7 @@ import type { Game } from './game'
 import { render } from './ui/remote-view'
 import { button, checkbox, form, label, list, type Checkbox, type Form, type Label } from './ui/remote-types'
 import { AbortPromptError } from '@inquirer/core'
+import { getUsername } from './utils/namegen'
 
 interface CacheEntry {
     server: RemoteServer
@@ -29,7 +30,7 @@ type Setup = (game: LocalGame, server: LocalServer, opts: Required<AbortOptions>
 export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts: Required<AbortOptions>){
 
     const ps = node.services.pubsub
-    const name = node.peerId.toString().slice(-8)
+    const name = '' //getUsername(node.peerId.toString())
     const pspd = node.services.pubsubPeerWithDataDiscovery
 
     type Action = ['join', RemoteGame] | ['host'] | ['quit']
@@ -39,8 +40,8 @@ export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts
             Rooms: list(
                 {}, //getChoices(node),
                 args.allowInternet.enabled ?
-                    'Waiting for the servers to appear...' :
-                    'Waiting for the servers to appear on the local network...',
+                    'No games\nWait longer or host your own' :
+                    'No games on local network\nWait longer or host your own',
             ),
             Host: button(() => view.resolve(['host'])),
             Quit: button(() => view.resolve(['quit'])),
@@ -251,7 +252,7 @@ function gameInfoToChoice(
         choice.$id = objId
     }
 
-    (choice.fields!.Owner as Label).text = pwd.id.toString().slice(-8);
+    (choice.fields!.Owner as Label).text = getUsername(pwd.id);
     (choice.fields!.Name as Label).text = game.name.toString();
     (choice.fields!.Slots as Label).text = `${players}/${playersMax}`;
     (choice.fields!.Mode as Label).text = game.mode.toString();

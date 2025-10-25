@@ -604,6 +604,7 @@ disabled = true
 layout_mode = 2
 size_flags_horizontal = 4
 text = "Waiting for the servers to appear on the local network..."
+horizontal_alignment = 1
 
 [node name="HSeparator2" type="HSeparator" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser"]
 visible = false

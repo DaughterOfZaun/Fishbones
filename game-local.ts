@@ -45,7 +45,7 @@ export class LocalGame extends Game {
                 const bot = this.players_add(playerId, undefined, true)
                 
                 //HACK:
-                const aiChampion = new AIChampion()
+                const aiChampion = new AIChampion(undefined, () => this.server.champions)
                 aiChampion.setRandom()
 
                 bot.name.value = 'Bot'

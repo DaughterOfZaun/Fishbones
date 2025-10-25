@@ -84,8 +84,12 @@ export class PickableValue extends ValueDesc<number, number> {
         return Object.entries(values).map(([k, v]) => ({ value: Number(k), name: v }))
     }
     public setRandom(){
-        const enabled = this.enabledGetter?.call(null).value ?? Object.keys(this.values)
-        this.value = Number(enabled[Math.floor(Math.random() * enabled.length)])
+        let enabled = this.enabledGetter?.call(null).value.filter(v => v in this.values)
+            enabled ??= Object.keys(this.values).map(k => parseInt(k))
+        if(enabled.length > 0)
+            this.value = enabled[Math.floor(Math.random() * enabled.length)]
+        else
+            this.value = undefined
     }
 }
 

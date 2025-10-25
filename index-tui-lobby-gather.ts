@@ -6,6 +6,7 @@ import { button, form, icon, inq2gd, label, option, type Form } from "./ui/remot
 import { render } from "./ui/remote-view";
 import { AIChampion, AIDifficulty, champions } from "./utils/constants";
 import { gcPkg } from "./utils/data-packages";
+import { getPseudonym } from "./utils/namegen";
 
 //export async function lobby(game: Game, opts: Required<AbortOptions>){}
 
@@ -14,16 +15,19 @@ export async function lobby_gather(ctx: Context){
     const localGame = game instanceof LocalGame ? game : undefined!
 
     const makePlayerForm = (player: GamePlayer): Form => {
-        const playerId = player.id.toString(16).padStart(8, '0').slice(-8)
+        
         const { short, name: championName } =
             (player.champion.value !== undefined) ?
                 champions[player.champion.value]! : {}
         const iconPath = short && gcPkg.getRelativeChampionIconPath(short)
+
         if(!player.isBot){
+            const isMe = game.getPlayer() === player
+            const playerId = getPseudonym(player.id, isMe)
             return form({
                 Name: label(playerId),
                 Icon: icon(iconPath, championName),
-                Kick: button(undefined, !localGame || localGame.getPlayer() === player),
+                Kick: button(undefined, !localGame || isMe),
             })
         } else {
             return form({

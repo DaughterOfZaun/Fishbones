@@ -27,6 +27,11 @@ import { mdns } from '@libp2p/mdns'
 import { args } from './utils/args'
 import { appDiscoveryTopic, NAME, rtcConfiguration, VERSION } from './utils/constants-build'
 import { rendezvousClient } from "@canvas-js/libp2p-rendezvous/client"
+import { loadOrCreateSelfKey } from '@libp2p/config'
+import { LevelDatastore } from 'datastore-level'
+import { keychain } from '@libp2p/keychain'
+import { downloads } from './utils/data-shared'
+import path from 'node:path'
 
 export type LibP2PNode = Awaited<ReturnType<typeof createNodeInternal>> & ComponentsContainer
 type ComponentsContainer = {
@@ -41,6 +46,18 @@ export async function createNode(...args: Parameters<typeof createNodeInternal>)
 }
 async function createNodeInternal(port?: number, opts?: AbortOptions){
     
+    opts?.signal?.throwIfAborted()
+
+    const datastore = new LevelDatastore(path.join(downloads, 'datastore'))
+    await datastore.open()
+
+    opts?.signal?.throwIfAborted()
+
+    const keychainInit = {
+        //pass: 'yes-yes-very-secure'
+    }
+    const privateKey = await loadOrCreateSelfKey(datastore, keychainInit)
+
     opts?.signal?.throwIfAborted()
 
     const node = await createLibp2p({
@@ -84,6 +101,16 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
                     protocol: '/ipfs/kad/1.0.0',
                     peerInfoMapper: removePrivateAddressesMapper
                 }),
+                rendezvous: rendezvousClient({
+                    autoDiscover: true,
+                    autoRegister: {
+                        namespaces: [ appDiscoveryTopic ],
+                        multiaddrs: [
+                            '/ip4/195.133.146.185/udp/42451/webrtc-direct/certhash/uEiBYh4UvCuTLl07oUNUl_1CNkWJAver2h7jLVdZmE0anig/p2p/12D3KooWHHyaqcTuPvphwifkP2su2Qis2wWKLZhaobc9cB5qXQak',
+                            '/ip4/195.133.146.185/tcp/41463/p2p/12D3KooWHHyaqcTuPvphwifkP2su2Qis2wWKLZhaobc9cB5qXQak',
+                        ],
+                    },
+                }),
                 bootstrap: bootstrap({
                     list: [
                         //src: https://github.com/ipfs/helia/blob/main/packages/helia/src/utils/bootstrappers.ts
@@ -93,15 +120,6 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
                         '/dnsaddr/va1.bootstrap.libp2p.io/p2p/12D3KooWKnDdG3iXw9eTFijk3EWSunZcFi54Zka4wmtqtt6rPxc8',
                         '/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ'
                     ]
-                }),
-                rendezvous: rendezvousClient({
-                    autoDiscover: true,
-                    autoRegister: {
-                        namespaces: [ appDiscoveryTopic ],
-                        multiaddrs: [ 
-                            
-                        ],
-                    },
                 }),
             } : {}),
 
@@ -113,7 +131,11 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
             }),
 
             mdns: mdns(),
-        }
+        },
+        //@ts-expect-error: Types of parameters 'key' and 'key' are incompatible.
+        datastore,
+        privateKey,
+        keychain: keychain(keychainInit),
     })
 
     opts?.signal?.throwIfAborted()
