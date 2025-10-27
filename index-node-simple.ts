@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+
 import { noise } from '@chainsafe/libp2p-noise'
 import { yamux } from '@chainsafe/libp2p-yamux'
 import { bootstrap } from '@libp2p/bootstrap'
@@ -11,7 +13,7 @@ import { CODE_P2P_CIRCUIT, multiaddr, type Multiaddr } from '@multiformats/multi
 
 import { createLibp2p } from 'libp2p'
 //import { fromString, toString } from 'uint8arrays'
-import type { AbortOptions, Connection, PeerInfo, PrivateKey } from '@libp2p/interface'
+import type { AbortOptions, Connection, PeerInfo, PrivateKey, PubSubRPC } from '@libp2p/interface'
 import { tcp } from '@libp2p/tcp'
 import { patchedCrypto } from './utils/crypto'
 
@@ -20,18 +22,20 @@ import type { RTCDataChannel, RTCPeerConnection } from '@ipshipyard/node-datacha
 import { defaultLogger } from '@libp2p/logger'
 
 import { pubsubPeerDiscovery as pubsubPeerWithDataDiscovery } from './network/pubsub-discovery'
-import { GossipSub, gossipsub, type GossipSubComponents } from '@chainsafe/libp2p-gossipsub'
+import { GossipSub, gossipsub, type GossipSubComponents, type GossipsubOpts } from '@chainsafe/libp2p-gossipsub'
 import { PeerRecord, RecordEnvelope } from '@libp2p/peer-record'
 import type { ConnectionManager, TransportManager } from '@libp2p/interface-internal'
 import { mdns } from '@libp2p/mdns'
 import { args } from './utils/args'
 import { appDiscoveryTopic, NAME, rtcConfiguration, VERSION } from './utils/constants-build'
 import { rendezvousClient } from "@canvas-js/libp2p-rendezvous/client"
-import { loadOrCreateSelfKey } from '@libp2p/config'
+//import { loadOrCreateSelfKey } from '@libp2p/config'
 import { LevelDatastore } from 'datastore-level'
-import { keychain } from '@libp2p/keychain'
+//import { keychain } from '@libp2p/keychain'
 import { downloads } from './utils/data-shared'
 import path from 'node:path'
+import { console_log } from './ui/remote'
+import { toString as uint8ArrayToString } from 'uint8arrays'
 
 export type LibP2PNode = Awaited<ReturnType<typeof createNodeInternal>> & ComponentsContainer
 type ComponentsContainer = {
@@ -48,15 +52,13 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
     
     opts?.signal?.throwIfAborted()
 
-    const datastore = new LevelDatastore(path.join(downloads, 'datastore'))
-    await datastore.open()
+    //const datastore = new LevelDatastore(path.join(downloads, 'datastore'))
+    //await datastore.open()
 
     opts?.signal?.throwIfAborted()
 
-    const keychainInit = {
-        //pass: 'yes-yes-very-secure'
-    }
-    const privateKey = await loadOrCreateSelfKey(datastore, keychainInit)
+    //const keychainInit = { /*pass: 'yes-yes-very-secure'*/ }
+    //const privateKey = await loadOrCreateSelfKey(datastore, keychainInit)
 
     opts?.signal?.throwIfAborted()
 
@@ -125,17 +127,22 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
 
             logger: defaultLogger,
 
-            pubsub: gossipsub() as (components: GossipSubComponents) => GossipSub,
+            pubsub: gossipsub({
+                mcacheGossip: 60,
+                mcacheLength: 100,
+                allowPublishToZeroTopicPeers: true,
+                emitSelf: false,
+            }) as (components: GossipSubComponents) => GossipSub,
             pubsubPeerWithDataDiscovery: pubsubPeerWithDataDiscovery({
                 topics: [ appDiscoveryTopic ]
             }),
 
             mdns: mdns(),
         },
-        //@ts-expect-error: Types of parameters 'key' and 'key' are incompatible.
-        datastore,
-        privateKey,
-        keychain: keychain(keychainInit),
+        ////@ts-expect-error: Types of parameters 'key' and 'key' are incompatible.
+        //datastore,
+        //privateKey,
+        //keychain: keychain(keychainInit),
     })
 
     opts?.signal?.throwIfAborted()
@@ -168,8 +175,98 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
         }
     }
 
+    const pubsub = node.services.pubsub
+    //const pubsub_createOutboundStream = (pubsub['createOutboundStream'] as PubSubCreateOutboundStream).bind(pubsub)
+    //const pubsub_sendSubscriptions = (pubsub['sendSubscriptions'] as PubSubSendSubscriptions).bind(pubsub)
+    const pubsub_emitGossip = (pubsub['emitGossip'] as PubSubEmitGossip).bind(pubsub)
+    //const pubsub_topics = pubsub['topics'] as PubSubTopics
+    //pubsub['createOutboundStream'] = async (peerId: PeerId, connection: Connection) => {
+    //    await pubsub_createOutboundStream(peerId, connection)
+    //    await pubsub_emitGossip(new Map([ peerId,  ]))
+    //}
+    //const pubsub_handleReceivedRpc = pubsub.handleReceivedRpc.bind(pubsub)
+    //pubsub.handleReceivedRpc = async (from, rpc) => {
+    //    const peerIdStr = from.toString()
+    //    const peersToGossipByTopic = new Map<string, Set<string>>()
+    //    if(rpc.subscriptions && rpc.subscriptions.length){
+    //        for(const subscription of rpc.subscriptions){
+    //            if(subscription.topic && subscription.subscribe === true){
+    //                const topic = subscription.topic
+    //                if(pubsub_topics.get(topic)?.has(peerIdStr) !== true){
+    //                    peersToGossipByTopic.set(topic, new Set([ peerIdStr ]))
+    //                }
+    //            }
+    //        }
+    //    }
+    //    await pubsub_handleReceivedRpc(from, rpc)
+    //    pubsub_emitGossip(peersToGossipByTopic)
+    //}
+    const pubsub_mcache = pubsub['mcache'] as MessageCache
+    const pubsub_sendRpc = (pubsub['sendRpc'] as PubSubSendRPC).bind(pubsub)
+    const pubsub_pushGossip = (pubsub['pushGossip'] as PubSubPushGossip).bind(pubsub)
+    pubsub.addEventListener('subscription-change', (event) => {
+        const { peerId, subscriptions } = event.detail
+        const peerIdStr = peerId.toString()
+        const peersToGossipByTopic = new Map<string, Set<string>>(
+            subscriptions
+                .filter(sub => sub.subscribe === true)
+                .map(sub => [ sub.topic, new Set([ peerIdStr ]) ])
+        )
+        console_log('sending gossips about', [...peersToGossipByTopic.keys()].join(' and '), 'to', peerIdStr)
+        //pubsub_emitGossip(peersToGossipByTopic)
+        const gossipIDsByTopic = pubsub_mcache.getGossipIDs(new Set(peersToGossipByTopic.keys()))
+        for(const [ topicID, messageIDs ] of gossipIDsByTopic.entries()){
+            pubsub_pushGossip(peerIdStr, { topicID, messageIDs })
+        }
+        pubsub_flush(peerIdStr)
+    })
+    function pubsub_flush(peerIdStr: string){
+        const ihave = pubsub.gossip.get(peerIdStr)
+        if(ihave) ihave.forEach(ih => console_log('i have', ih.topicID!, '[', ih.messageIDs.map(msgId => uint8ArrayToString(msgId, 'base64')).join(', '), ']'))
+        else console_log('i have nothing')
+        pubsub.gossip.delete(peerIdStr)
+        const ok = pubsub_sendRpc(peerIdStr, createGossipRpc([], { ihave }))
+        console_log('pubsub_sendRpc', ok ? 'true' : 'false')
+    }
+    function createGossipRpc(messages: RPCMessage[] = [], control?: Partial<RPCControlMessage>): RPC {
+        return {
+            subscriptions: [],
+            messages,
+            control: control !== undefined ? {
+                graft: control.graft ?? [],
+                prune: control.prune ?? [],
+                ihave: control.ihave ?? [],
+                iwant: control.iwant ?? [],
+                idontwant: control.idontwant ?? []
+            } : undefined
+        }
+    }
+
     return node
 }
+
+//type TopicStr = string
+type PeerIdStr = string
+type RPC = object
+type RPCMessage = never
+type RPCControlMessage = {
+    graft: never[],
+    prune: never[],
+    ihave: RPCControlIHave[],
+    iwant: never[],
+    idontwant: never[]
+}
+type RPCControlIHave = {
+    topicID?: string | undefined;
+    messageIDs: Uint8Array<ArrayBufferLike>[];
+}
+//type PubSubCreateOutboundStream = (peerId: PeerId, connection: Connection) => Promise<void>
+//type PubSubSendSubscriptions = (toPeer: PeerIdStr, topics: string[], subscribe: boolean) => void
+type PubSubEmitGossip = (peersToGossipByTopic: Map<string, Set<PeerIdStr>>) => void
+type PubSubPushGossip = (id: PeerIdStr, controlIHaveMsgs: RPCControlIHave) => void
+type PubSubSendRPC = (id: PeerIdStr, rpc: RPC) => boolean
+//type PubSubTopics = Map<TopicStr, Set<PeerIdStr>>
+type MessageCache = GossipsubOpts['messageCache']
 
 const CIRCUIT_RELAY_TRANSPORT = 'CircuitRelayTransport'
 function filterDiableMultiaddrs(node: LibP2PNode, multiaddrs: Multiaddr[]){

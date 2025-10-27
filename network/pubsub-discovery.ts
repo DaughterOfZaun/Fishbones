@@ -139,10 +139,10 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
         })
         
         for (const topic of this.topics) {
-            if (pubsub.getSubscribers(topic).length === 0) {
-                this.log('skipping broadcasting our peer data on topic %s because there are no peers present', topic)
-                continue
-            }
+            //if (pubsub.getSubscribers(topic).length === 0) {
+            //    this.log('skipping broadcasting our peer data on topic %s because there are no peers present', topic)
+            //    continue
+            //}
 
             this.log('broadcasting our peer data on topic %s', topic)
             void pubsub.publish(topic, encodedPeer)
