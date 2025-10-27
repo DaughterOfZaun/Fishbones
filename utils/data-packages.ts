@@ -462,6 +462,15 @@ export const gsPkg = new class extends PkgInfoCSProj {
         'doc',
         'ChildrenOfTheGraveServer.sln.DotSettings',
         'ChildrenOfTheGraveServer.sln',
+        
+        '.git',
+        'cotg_docs',
+        '.vscode',
+        '.gitlab',
+        '.gitignore',
+        'README.md',
+        'LICENSE',
+        'FAQ.md',
     ]
 }()
 

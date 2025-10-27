@@ -144,7 +144,8 @@ export async function download(pkg: PkgInfo, opts: Required<AbortOptions>){
     }
 
     //console.log(`Downloading ${pkg.zipName}...`)
-    const bar = createBar('Downloading', pkg.zipName, pkg.zipSize)
+    //const bar = createBar('Downloading', pkg.zipName, pkg.zipSize)
+    const bar = createBar('Downloading', pkg.zipName, 100)
     try {
     
         const webSeeds = []
@@ -198,20 +199,20 @@ export async function download(pkg: PkgInfo, opts: Required<AbortOptions>){
         throw new Error(`Unable to download "${pkg.zipName}"`)
 }
 
+const percentRegex = /\((\d+)%\)/
 async function forCompletion(gid: string, isMetadata: boolean, cb: (progress: number) => void, fileName: string){
     
     const deferred = defer()
 
-    const delay = 100 //TODO: Unhardcode. delay = 1000 / bar.fps
-    const interval = setInterval(() => { update().catch(() => {}) }, delay)
-    async function update(){
-        try {
-            const status = await aria2.tellStatus(aria2conn, gid, ['status', 'completedLength'])
-            //if(status.status === 'complete') onComplete({ gid, status: status.status })
-            //if(status.status === 'error') onError({ gid, status: status.status })
-            cb(Number(status.completedLength))
-        } catch(err) {
-            deferred.reject(new Error(`Downloading of "${fileName}" failed.`, { cause: err }))
+    const readoutBeginning = '[#' + gid.slice(0, 6).toLowerCase()
+    aria2proc!.stdout.setEncoding('utf8').on('data', onData)
+    function onData(chunk: string){
+        const lines = chunk.split('\n'); lines.reverse()
+        for(const line of lines){
+            if(line.startsWith(readoutBeginning)){
+                const m = percentRegex.exec(line)
+                if(m && m[1]) cb(parseInt(m[1]))
+            }
         }
     }
 
@@ -250,8 +251,8 @@ async function forCompletion(gid: string, isMetadata: boolean, cb: (progress: nu
     }
 
     return deferred.promise.finally(() => {
+        aria2proc!.stdout.off('data', onData)
         cbs.forEach(cb => cb.dispose())
-        clearInterval(interval)
         return true
     })
 }
