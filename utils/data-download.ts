@@ -171,11 +171,11 @@ export async function download(pkg: PkgInfo, opts: Required<AbortOptions>){
             let gid
             try {
                 let b64
-                if(args.torrentDownload && pkg.zipTorrent && (
+                if(args.torrentDownload.enabled && pkg.zipTorrent && (
                     b64 = await fs_readFile(pkg.zipTorrent, { ...opts, encoding: 'base64' })
                 )){
                     gid = await aria2.addTorrent(aria2conn, b64, webSeeds, aria2args)
-                } else if(args.torrentDownload && pkg.zipMagnet){
+                } else if(args.torrentDownload.enabled && pkg.zipMagnet){
                     gid = await aria2.addUri(aria2conn, [ pkg.zipMagnet, ...webSeeds], aria2args)
                 } else {
                     gid = await aria2.addUri(aria2conn, webSeeds, aria2args)

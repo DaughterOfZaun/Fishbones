@@ -7,7 +7,7 @@ import { createLibp2p } from 'libp2p'
 import { tcp } from '@libp2p/tcp'
 import { patchedCrypto } from './utils/crypto'
 import { defaultLogger } from '@libp2p/logger'
-import { gossipsub } from '@chainsafe/libp2p-gossipsub'
+import { GossipSub, gossipsub, type GossipSubComponents } from '@chainsafe/libp2p-gossipsub'
 import { appDiscoveryTopic, rtcConfiguration } from './utils/constants-build'
 import { rendezvousServer } from "@canvas-js/libp2p-rendezvous/server"
 import { circuitRelayServer } from '@libp2p/circuit-relay-v2'
@@ -15,6 +15,8 @@ import fs from 'node:fs/promises'
 import { generateKeyPair, privateKeyFromRaw } from '@libp2p/crypto/keys'
 import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string'
 import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
+import { pubsubPeerDiscovery } from './network/pubsub-discovery'
+import { tiePubSubWithPeerDiscovery } from './index-node-simple-hacks'
 //import { peerIdFromPrivateKey } from '@libp2p/peer-id'
 
 const UDP_PORT = 42451
@@ -74,8 +76,13 @@ const node = await createLibp2p({
         pubsub: gossipsub({
             allowedTopics: [ appDiscoveryTopic ],
             doPX: true,
+        }) as (components: GossipSubComponents) => GossipSub,
+        pubsubPeerDiscovery: pubsubPeerDiscovery({
+            topic: appDiscoveryTopic,
         }),
     }
 })
+
+tiePubSubWithPeerDiscovery(node)
 
 console.log(node.getMultiaddrs().map(ma => ma.toString()))

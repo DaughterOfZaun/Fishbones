@@ -1402,7 +1402,6 @@ container = NodePath("ScrollContainer/VBoxContainer")
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
-vertical_scroll_mode = 3
 
 [node name="VBoxContainer" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/VBoxContainer2/MarginContainer/VBoxContainer/#ConnectionsPanel/VBoxContainer/#Connections/ScrollContainer"]
 layout_mode = 2

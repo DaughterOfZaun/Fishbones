@@ -33,13 +33,19 @@ export async function repair(opts: Required<AbortOptions>){
     await Promise.all([
         Promise.all([
             repairArchived(sdkPkg, opts),
-            repairArchived(gsPkg, opts),
             (async () => {
-                if(os.platform() === 'win32' && args.update.enabled)
-                    return repairArchived(gitPkg, opts).then(async () => {
-                        if(await fs_exists(gitPkg.postInstall, opts, false))
-                            await runPostInstall(opts)
-                    })
+                if(args.update.enabled){
+                    // The update procedure will install files from Git later.
+                } else {
+                    await repairArchived(gsPkg, opts)
+                }
+            })(),
+            (async () => {
+                if(os.platform() === 'win32' && args.update.enabled){
+                    await repairArchived(gitPkg, opts)
+                    if(await fs_exists(gitPkg.postInstall, opts, false))
+                        await runPostInstall(opts)
+                }
             })(),
         ]).then(async () => {
 

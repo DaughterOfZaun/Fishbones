@@ -2,7 +2,7 @@ import type { AbortOptions } from "@libp2p/interface"
 import { spawn, successfulTermination, TerminationError } from "./data-process"
 import { gitPkg, type PkgInfoGit } from "./data-packages"
 import { console_log, createBar } from "../ui/remote"
-import { fs_exists } from "./data-fs"
+import { fs_ensureDir, fs_exists } from "./data-fs"
 import { args } from "./args"
 import path from "node:path"
 import os from "node:os"
@@ -37,6 +37,7 @@ export async function update(pkg: PkgInfoGit, opts: Required<AbortOptions>){
     const bar = createBar('Updating', pkg.dirName)
     let updated = false
     try {
+        await fs_ensureDir(pkg.dir, opts)
         if(!await fs_exists(path.join(pkg.dir, '.git'), opts)){
             await git([ 'init' ], pkg, opts)
             await git([ 'remote', 'add', 'origin', pkg.gitOrigin ], pkg, opts)

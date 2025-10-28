@@ -64,7 +64,7 @@ export function appendPartialUnpackFileExt(path: string){
 export class DataError extends Error {}
 export async function unpack(pkg: PkgInfo, opts: Required<AbortOptions>){
     
-    if(!args.unpack){
+    if(!args.unpack.enabled){
         console.log(`Pretending to unpack ${pkg.zipName}...`)
         return
     }
