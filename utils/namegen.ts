@@ -32,9 +32,9 @@ export function getUsername(peerId: PeerId){
         if(bytes){
             const bytes_at = (i: number) => bytes[bytes.length - 1 - i]!
             name = chain.generate({
-                maxLength: 16,
+                //maxLength: 16,
+                //allowDuplicates: false,
                 random: () => bytes_at(j++ % bytes.length) / 255,
-                allowDuplicates: false,
             }) as string + ' #' + formatUInt32(
                 bytes_at(0) << 8 * 0 |
                 bytes_at(1) << 8 * 1 |
@@ -59,4 +59,8 @@ export function getPseudonym(playerId: number, isMe: boolean){
 
 function formatUInt32(i: number){
     return (i >>> 0).toString(36).toUpperCase()//.padStart(7, '0')
+}
+
+export function getBotName(championName: string){
+    return `${championName} (Bot)`
 }

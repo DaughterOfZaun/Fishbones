@@ -85,9 +85,12 @@ async function startAria2(opts: Required<AbortOptions>){
             `--check-integrity=${true}`,
             `--check-certificate=${false}`,
             `--bt-hash-check-seed=${true}`,
-            `--file-allocation=${'falloc'}`,
+            //`--file-allocation=${'prealloc'}`,
 
-            `--summary-interval=${0}`,
+            `--summary-interval=${1}`,
+            `--show-console-readout=${false}`,
+            `--truncate-console-readout=${false}`,
+            `--human-readable=${false}`,
 
             // Stability tweaks
             `--allow-piece-length-change=${true}`,
@@ -144,8 +147,7 @@ export async function download(pkg: PkgInfo, opts: Required<AbortOptions>){
     }
 
     //console.log(`Downloading ${pkg.zipName}...`)
-    //const bar = createBar('Downloading', pkg.zipName, pkg.zipSize)
-    const bar = createBar('Downloading', pkg.zipName, 100)
+    const bar = createBar('Downloading', pkg.zipName, pkg.zipSize)
     try {
     
         const webSeeds = []
@@ -199,19 +201,20 @@ export async function download(pkg: PkgInfo, opts: Required<AbortOptions>){
         throw new Error(`Unable to download "${pkg.zipName}"`)
 }
 
-const percentRegex = /\((\d+)%\)/
+const bytesRegex = /(\d+)B\/(\d+)B/
+const progressRegex = /\[#(\w{6}) (.*?)\]/g
 async function forCompletion(gid: string, isMetadata: boolean, cb: (progress: number) => void, fileName: string){
     
     const deferred = defer()
 
-    const readoutBeginning = '[#' + gid.slice(0, 6).toLowerCase()
+    const gid6lc = gid.slice(0, 6).toLowerCase()
     aria2proc!.stdout.setEncoding('utf8').on('data', onData)
     function onData(chunk: string){
-        const lines = chunk.split('\n'); lines.reverse()
-        for(const line of lines){
-            if(line.startsWith(readoutBeginning)){
-                const m = percentRegex.exec(line)
+        for(const [, gid, body] of [...chunk.matchAll(progressRegex)].toReversed()){
+            if(gid === gid6lc){
+                const m = bytesRegex.exec(body!)
                 if(m && m[1]) cb(parseInt(m[1]))
+                break
             }
         }
     }

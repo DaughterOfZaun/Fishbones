@@ -15,6 +15,7 @@ import fs from 'node:fs/promises'
 import { generateKeyPair, privateKeyFromRaw } from '@libp2p/crypto/keys'
 import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string'
 import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
+//import { peerIdFromPrivateKey } from '@libp2p/peer-id'
 
 const UDP_PORT = 42451
 const TCP_PORT = 41463
@@ -32,6 +33,9 @@ try {
     keyString = uint8ArrayToString(privateKey.raw, KEY_ENCODING)
     await fs.writeFile(KEY_FILE, keyString, 'utf8')
 }
+
+//console.log(peerIdFromPrivateKey(privateKey).toString())
+//process.exit()
 
 const node = await createLibp2p({
     privateKey,

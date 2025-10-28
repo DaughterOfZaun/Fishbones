@@ -9,6 +9,7 @@ import { logger } from './data-shared'
 
 const LOG_PREFIX = 'MEGA'
 
+/*
 type Fetch = (url: string | URL | Request, opts: BunFetchRequestInit | RequestInit | undefined) => Promise<Response>
 ;(Mega.API as { fetchModule?: Fetch })['fetchModule'] = async (url, opts) => {
     if(Math.random() >= 0){
@@ -18,6 +19,7 @@ type Fetch = (url: string | URL | Request, opts: BunFetchRequestInit | RequestIn
     //return undefined! as Response
     return await fetch(url, opts)
 }
+*/
 
 Mega.File.defaultHandleRetries = handleRetries
 type MegaError = Mega.err & { timeLimit?: number }
@@ -140,7 +142,7 @@ function requestListener(req: IncomingMessage, res: ServerResponse){
 
     const stream = file.download({
         start, end,
-        forceHttps: true,
+        //forceHttps: true,
         maxConnections: 1,
         returnCiphertext: false,
         handleRetries,

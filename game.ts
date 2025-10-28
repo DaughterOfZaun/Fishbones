@@ -12,6 +12,7 @@ import { launchClient, relaunchClient, stopClient } from './utils/data-client'
 import { launchServer, stopServer } from './utils/data-server'
 import { safeOptions, shutdownOptions } from './utils/data-process'
 import { logger } from './utils/data-shared'
+import { getBotName } from './utils/namegen'
 
 interface GameEvents {
     update: CustomEvent,
@@ -591,7 +592,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 AIDifficulty: player.isBot ? (player.difficulty.value ?? 0) : undefined,
                 blowfishKey, //TODO: Unhardcode. Security
                 rank: /*Rank.random() ??*/ "DIAMOND",
-                name: player.isBot ? `${player.champion.toString()} Bot` : (player.name.value ?? `Player ${i + 1}`),
+                name: player.isBot ? getBotName(player.champion.toString()) : (player.name.value ?? `Player ${i + 1}`),
                 champion: player.champion.toString(), //TODO: Fix
                 team: player.team.toString().toUpperCase(),
                 skin: 0,

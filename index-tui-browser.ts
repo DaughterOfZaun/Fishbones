@@ -31,7 +31,7 @@ export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts
 
     const ps = node.services.pubsub
     const name = '' //getUsername(node.peerId.toString())
-    const pspd = node.services.pubsubPeerWithDataDiscovery
+    const pspd = node.services.pubsubPeerDiscovery
 
     type Action = ['join', RemoteGame] | ['host'] | ['quit']
 
@@ -99,7 +99,7 @@ async function hostLocal(node: LibP2PNode, name: string, lobby: Lobby, setup: Se
 }
 
 async function hostRemote(node: LibP2PNode, name: string, lobby: Lobby, setup: Setup, opts: Required<AbortOptions>){
-    const pspd = node.services.pubsubPeerWithDataDiscovery
+    const pspd = node.services.pubsubPeerDiscovery
 
     const server = new LocalServer(node)
     const game = new LocalGame(node, server)
@@ -121,8 +121,7 @@ async function hostRemote(node: LibP2PNode, name: string, lobby: Lobby, setup: S
             serverSettings: server.encode(),
             gameInfos: [ game.encode() ],
         }
-        pspd.setData(data)
-        pspd_broadcast(true)
+        pspd.broadcast(data)
 
         game.addEventListener('update', update)
         game.addEventListener('start', start)
@@ -137,15 +136,7 @@ async function hostRemote(node: LibP2PNode, name: string, lobby: Lobby, setup: S
         game.removeEventListener('start', start)
         game.removeEventListener('stop', stop)
         
-        pspd.setData(null)
-        pspd_broadcast(false)
-    }
-
-    function pspd_broadcast(announce: boolean){
-        if(announce || pspd.getBroadcastEnabled()){
-            pspd.setBroadcastEnabled(announce)
-            pspd.broadcast(announce)
-        }
+        pspd.broadcast(null)
     }
 
     function update(){
@@ -153,12 +144,11 @@ async function hostRemote(node: LibP2PNode, name: string, lobby: Lobby, setup: S
         gi.players = game.getPlayersCount()
         if(gi.players != prevPlayerCount){
             prevPlayerCount = gi.players
-            pspd_broadcast(game.isJoinable())
+            pspd.broadcast(game.isJoinable() ? data : null)
         }
     }
-
-    function start(){ pspd_broadcast(game.isJoinable()) }
-    function stop(){ pspd_broadcast(game.isJoinable()) }
+    function start(){ pspd.broadcast(game.isJoinable() ? data: null) }
+    function stop(){ pspd.broadcast(game.isJoinable() ? data : null) }
 }
 
 async function joinRemote(game: RemoteGame, name: string, lobby: Lobby, opts: Required<AbortOptions>){
@@ -174,7 +164,7 @@ async function joinRemote(game: RemoteGame, name: string, lobby: Lobby, opts: Re
 }
 
 function getChoices(node: LibP2PNode){
-    const pspd = node.services.pubsubPeerWithDataDiscovery
+    const pspd = node.services.pubsubPeerDiscovery
 
     return Object.fromEntries(
         pspd.getPeersWithData()
@@ -187,7 +177,7 @@ function getChoices(node: LibP2PNode){
 }
 
 function peerInfoToChoices(node: LibP2PNode, pwd: PeerIdWithData){
-    const settings = pwd.data!.serverSettings!
+    const settings = pwd.data.serverSettings!
 
     let cacheEntry = cache.get(pwd.id)
     let server = cacheEntry?.server
@@ -203,7 +193,7 @@ function peerInfoToChoices(node: LibP2PNode, pwd: PeerIdWithData){
 
     if(!server.validate()) return []
 
-    return pwd.data!.gameInfos.map((gameInfo) => {
+    return pwd.data.gameInfos.map((gameInfo) => {
         return gameInfoToChoice(node, pwd, server, games, gameInfo)
     })
 }

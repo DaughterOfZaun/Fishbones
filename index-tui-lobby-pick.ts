@@ -4,7 +4,7 @@ import { button, form, icon, label, list, type Form } from "./ui/remote-types";
 import { render } from "./ui/remote-view";
 import { Champion, champions, spells, SummonerSpell } from "./utils/constants";
 import { gcPkg } from "./utils/data-packages";
-import { getPseudonym } from "./utils/namegen";
+import { getBotName, getPseudonym } from "./utils/namegen";
 
 export async function lobby_pick(ctx: Context){
     const { game } = ctx
@@ -22,7 +22,7 @@ export async function lobby_pick(ctx: Context){
         const relativeSpellIconPath2 = spellName2 ? gcPkg.getRelativeSummonerSpellIconPath(spellName2) ?? '' : ''
         
         const isMe = game.getPlayer() === player
-        const playerId = player.isBot ? `${championName} (Bot)` : getPseudonym(player.id, isMe)
+        const playerId = player.isBot ? getBotName(championName) : getPseudonym(player.id, isMe)
         //const statusText = (player.lock.value || player.isBot) ? 'Locked' : 'Chooses...'
 
         return form({

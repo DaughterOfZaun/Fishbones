@@ -33,7 +33,7 @@ export const logger = new class Logger {
             this.stream = fs_createWriteStream(logTxt, { flags: 'a', autoClose: true })
         }
         this.stream.write(`${Date.now()} ${
-            args.join(' ').replace(cwdWin, '.').replaceAll(cwdLin, '.')
+            args.join(' ').replaceAll(cwdWin, '.').replaceAll(cwdLin, '.')
         }\n`)
     }
 }()

@@ -21,7 +21,7 @@ import { patchedCrypto } from './utils/crypto'
 import type { RTCDataChannel, RTCPeerConnection } from '@ipshipyard/node-datachannel/polyfill'
 import { defaultLogger } from '@libp2p/logger'
 
-import { pubsubPeerDiscovery as pubsubPeerWithDataDiscovery } from './network/pubsub-discovery'
+import { pubsubPeerDiscovery } from './network/pubsub-discovery'
 import { GossipSub, gossipsub, type GossipSubComponents, type GossipsubOpts } from '@chainsafe/libp2p-gossipsub'
 import { PeerRecord, RecordEnvelope } from '@libp2p/peer-record'
 import type { ConnectionManager, TransportManager } from '@libp2p/interface-internal'
@@ -128,13 +128,11 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
             logger: defaultLogger,
 
             pubsub: gossipsub({
-                mcacheGossip: 60,
-                mcacheLength: 100,
                 allowPublishToZeroTopicPeers: true,
-                emitSelf: false,
+                emitSelf: true,
             }) as (components: GossipSubComponents) => GossipSub,
-            pubsubPeerWithDataDiscovery: pubsubPeerWithDataDiscovery({
-                topics: [ appDiscoveryTopic ]
+            pubsubPeerDiscovery: pubsubPeerDiscovery({
+                topic: appDiscoveryTopic,
             }),
 
             mdns: mdns(),
@@ -176,96 +174,45 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
     }
 
     const pubsub = node.services.pubsub
-    //const pubsub_createOutboundStream = (pubsub['createOutboundStream'] as PubSubCreateOutboundStream).bind(pubsub)
-    //const pubsub_sendSubscriptions = (pubsub['sendSubscriptions'] as PubSubSendSubscriptions).bind(pubsub)
-    const pubsub_emitGossip = (pubsub['emitGossip'] as PubSubEmitGossip).bind(pubsub)
-    //const pubsub_topics = pubsub['topics'] as PubSubTopics
-    //pubsub['createOutboundStream'] = async (peerId: PeerId, connection: Connection) => {
-    //    await pubsub_createOutboundStream(peerId, connection)
-    //    await pubsub_emitGossip(new Map([ peerId,  ]))
-    //}
-    //const pubsub_handleReceivedRpc = pubsub.handleReceivedRpc.bind(pubsub)
-    //pubsub.handleReceivedRpc = async (from, rpc) => {
-    //    const peerIdStr = from.toString()
-    //    const peersToGossipByTopic = new Map<string, Set<string>>()
-    //    if(rpc.subscriptions && rpc.subscriptions.length){
-    //        for(const subscription of rpc.subscriptions){
-    //            if(subscription.topic && subscription.subscribe === true){
-    //                const topic = subscription.topic
-    //                if(pubsub_topics.get(topic)?.has(peerIdStr) !== true){
-    //                    peersToGossipByTopic.set(topic, new Set([ peerIdStr ]))
-    //                }
-    //            }
-    //        }
-    //    }
-    //    await pubsub_handleReceivedRpc(from, rpc)
-    //    pubsub_emitGossip(peersToGossipByTopic)
-    //}
-    const pubsub_mcache = pubsub['mcache'] as MessageCache
-    const pubsub_sendRpc = (pubsub['sendRpc'] as PubSubSendRPC).bind(pubsub)
+    const pspd = node.services.pubsubPeerDiscovery
+
+    //pubsub['log'] = (...args: unknown[]) => { console_log('PUBSUB', ...args.map(arg => (typeof arg === 'string' || typeof arg === 'number') ? arg : Bun.inspect(arg))) }
+    
+    const GossipsubMaxIHaveLength = 5000
+
     const pubsub_pushGossip = (pubsub['pushGossip'] as PubSubPushGossip).bind(pubsub)
-    pubsub.addEventListener('subscription-change', (event) => {
-        const { peerId, subscriptions } = event.detail
-        const peerIdStr = peerId.toString()
-        const peersToGossipByTopic = new Map<string, Set<string>>(
-            subscriptions
-                .filter(sub => sub.subscribe === true)
-                .map(sub => [ sub.topic, new Set([ peerIdStr ]) ])
-        )
-        console_log('sending gossips about', [...peersToGossipByTopic.keys()].join(' and '), 'to', peerIdStr)
-        //pubsub_emitGossip(peersToGossipByTopic)
-        const gossipIDsByTopic = pubsub_mcache.getGossipIDs(new Set(peersToGossipByTopic.keys()))
-        for(const [ topicID, messageIDs ] of gossipIDsByTopic.entries()){
-            pubsub_pushGossip(peerIdStr, { topicID, messageIDs })
+    const pubsub_sendSubscriptions = (pubsub['sendSubscriptions'] as PubSubSendSubscriptions).bind(pubsub)
+    pubsub['sendSubscriptions'] = (peerIdStr: PeerIdStr, topics: string[], subscribe: boolean) => {
+        if(subscribe){
+            //const gossipIDsByTopic = pubsub_mcache.getGossipIDs(new Set(topics))
+            const gossipIDsByTopic = pspd.getGossipIDs(new Set(topics))
+            //console_log('PUBSUB', 'gossipIDs', 'for', topics[0]!, '[', gossipIDsByTopic.get(topics[0]!)!.map(id => uint8ArrayToString(id, 'base64')).join(', '), ']')
+            // eslint-disable-next-line prefer-const
+            for(let [ topicID, messageIDs ] of gossipIDsByTopic.entries()){
+                messageIDs = messageIDs.slice(0, GossipsubMaxIHaveLength)
+                pubsub_pushGossip(peerIdStr, { topicID, messageIDs })
+            }
         }
-        pubsub_flush(peerIdStr)
-    })
-    function pubsub_flush(peerIdStr: string){
-        const ihave = pubsub.gossip.get(peerIdStr)
-        if(ihave) ihave.forEach(ih => console_log('i have', ih.topicID!, '[', ih.messageIDs.map(msgId => uint8ArrayToString(msgId, 'base64')).join(', '), ']'))
-        else console_log('i have nothing')
-        pubsub.gossip.delete(peerIdStr)
-        const ok = pubsub_sendRpc(peerIdStr, createGossipRpc([], { ihave }))
-        console_log('pubsub_sendRpc', ok ? 'true' : 'false')
+        pubsub_sendSubscriptions(peerIdStr, topics, subscribe)
     }
-    function createGossipRpc(messages: RPCMessage[] = [], control?: Partial<RPCControlMessage>): RPC {
-        return {
-            subscriptions: [],
-            messages,
-            control: control !== undefined ? {
-                graft: control.graft ?? [],
-                prune: control.prune ?? [],
-                ihave: control.ihave ?? [],
-                iwant: control.iwant ?? [],
-                idontwant: control.idontwant ?? []
-            } : undefined
-        }
+    
+    const pubsub_mcache = pubsub['mcache'] as MessageCache
+    const pubsub_mcache_getWithIWantCount = pubsub_mcache.getWithIWantCount.bind(pubsub_mcache)
+    pubsub_mcache.getWithIWantCount = (msgIdStr: string, p: string) => {
+        return pubsub_mcache_getWithIWantCount(msgIdStr, p) ??
+            pspd.getWithIWantCount(msgIdStr, p)
     }
 
     return node
 }
 
-//type TopicStr = string
 type PeerIdStr = string
-type RPC = object
-type RPCMessage = never
-type RPCControlMessage = {
-    graft: never[],
-    prune: never[],
-    ihave: RPCControlIHave[],
-    iwant: never[],
-    idontwant: never[]
-}
 type RPCControlIHave = {
     topicID?: string | undefined;
     messageIDs: Uint8Array<ArrayBufferLike>[];
 }
-//type PubSubCreateOutboundStream = (peerId: PeerId, connection: Connection) => Promise<void>
-//type PubSubSendSubscriptions = (toPeer: PeerIdStr, topics: string[], subscribe: boolean) => void
-type PubSubEmitGossip = (peersToGossipByTopic: Map<string, Set<PeerIdStr>>) => void
+type PubSubSendSubscriptions = (toPeer: PeerIdStr, topics: string[], subscribe: boolean) => void
 type PubSubPushGossip = (id: PeerIdStr, controlIHaveMsgs: RPCControlIHave) => void
-type PubSubSendRPC = (id: PeerIdStr, rpc: RPC) => boolean
-//type PubSubTopics = Map<TopicStr, Set<PeerIdStr>>
 type MessageCache = GossipsubOpts['messageCache']
 
 const CIRCUIT_RELAY_TRANSPORT = 'CircuitRelayTransport'
