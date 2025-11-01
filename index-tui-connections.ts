@@ -8,6 +8,7 @@ import { button, form, label, list, text } from "./ui/remote-types";
 import { getUsername } from "./utils/namegen";
 import { PeerMap } from "@libp2p/peer-collections";
 import { peerIdFromString } from "@libp2p/peer-id";
+import type { PingResult } from "./network/ping";
 
 enum PeerType { Undetermined, Player, Server }
 enum PeerStatus { Disconnected, Connecting, Connected, ConnectionFailed }
@@ -37,7 +38,7 @@ const peerStatusToString = {
     [PeerStatus.ConnectionFailed]: 'Connection failed',
 }
 
-function updatePeerStatus(view: DeferredView<void>, peerId: PeerId, status: PeerStatus){
+function updatePeerStatus(view: DeferredView<void>, peerId: PeerId, status: PeerStatus, getPing: (peerId: PeerId) => number | undefined){
     let info = fbPeers.get(peerId)
     if(!info){
         info = new PeerInfo()
@@ -56,6 +57,7 @@ function updatePeerStatus(view: DeferredView<void>, peerId: PeerId, status: Peer
         info.shownInUI = true
         view.get('Connections').add(peerId.toString(), form({
             Name: label(getUsername(peerId)),
+            Ping: label(getPing(peerId)?.toFixed()?.concat(' ms') ?? ''),
             Status: label(peerStatusToString[info.status]),
         }))
     } else if(info.status != prevStatus){
@@ -78,10 +80,17 @@ export async function connections(node: LibP2PNode, opts: Required<AbortOptions>
         }),
     }), opts)
 
+    const pingService = node.services.ping
+    const getPing = (peerId: PeerId) => {
+        const ms = pingService.getPing(peerId)
+        return ms
+    }
+
     view.addEventListener(node, 'peer:connect', (evt: CustomEvent<PeerId>) => {
         const peerId = evt.detail
         if(fbPeers.has(peerId)){
-            updatePeerStatus(view, peerId, PeerStatus.Connected)
+            updatePeerStatus(view, peerId, PeerStatus.Connected, getPing)
+            pingService.ping(peerId).catch(() => { /* Ignore */ })
         }
     })
 
@@ -89,13 +98,25 @@ export async function connections(node: LibP2PNode, opts: Required<AbortOptions>
         const { peerId, agentVersion } = evt.detail
         const userAgent = `${NAME}/${VERSION}`
         if(agentVersion === userAgent){
-            updatePeerStatus(view, peerId, PeerStatus.Connected)
+            updatePeerStatus(view, peerId, PeerStatus.Connected, getPing)
+            pingService.ping(peerId).catch(() => { /* Ignore */ })
         }
     })
 
     view.addEventListener(node, 'peer:disconnect', (evt: CustomEvent<PeerId>) => {
         const peerId = evt.detail
-        updatePeerStatus(view, peerId, PeerStatus.Disconnected)
+        if(fbPeers.has(peerId)){
+            updatePeerStatus(view, peerId, PeerStatus.Disconnected, getPing)
+        }
+    })
+
+    view.addEventListener(node.services.ping, 'ping', (event: CustomEvent<PingResult>) => {
+        const { peerId, ms } = event.detail
+        const info = fbPeers.get(peerId)
+        if(info && info.shownInUI){
+            view.get(`Connections/${peerId.toString()}/Ping`)
+                .update(label(ms?.toFixed()?.concat(' ms') ?? ''))
+        }
     })
 
     const rendezvousService = node.services.rendezvous
@@ -104,7 +125,7 @@ export async function connections(node: LibP2PNode, opts: Required<AbortOptions>
         for(const peerIdString of autoRegisterPeers.keys()){
             const peerId = peerIdFromString(peerIdString)
             //fbPeers.set(peerId, new PeerInfo(PeerType.Server))
-            updatePeerStatus(view, peerId, PeerStatus.Connecting)
+            updatePeerStatus(view, peerId, PeerStatus.Connecting, getPing)
         }
     }
 
@@ -151,13 +172,15 @@ async function connectByPeerInfoString(node: LibP2PNode, view: DeferredView<void
     }
     if(!peerId) return
     
-    updatePeerStatus(view, peerId, PeerStatus.Connecting)
+    const getPing = node.services.ping.getPing.bind(node.services.ping)
+
+    updatePeerStatus(view, peerId, PeerStatus.Connecting, getPing)
     try {
         logger.log('Connecting to', peerId.toString())
         await node.dial(peerId, opts)
-        updatePeerStatus(view, peerId, PeerStatus.Connected)
+        updatePeerStatus(view, peerId, PeerStatus.Connected, getPing)
     } catch(err) {
         console_log('Connecting via key failed:', Bun.inspect(err))
-        updatePeerStatus(view, peerId, PeerStatus.ConnectionFailed)
+        updatePeerStatus(view, peerId, PeerStatus.ConnectionFailed, getPing)
     }
 }

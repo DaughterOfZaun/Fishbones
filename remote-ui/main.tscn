@@ -354,7 +354,6 @@ theme_override_constants/margin_bottom = 0
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_efxa6")
 tab_alignment = 1
-current_tab = 2
 tabs_visible = false
 deselect_enabled = true
 
@@ -424,7 +423,18 @@ theme_override_constants/minimum_character_width = 0
 placeholder_text = "Owner"
 editable = false
 
+[node name="Ping" type="LineEdit" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/MarginContainer1/HBoxContainer2"]
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.33
+theme_override_constants/minimum_character_width = 0
+placeholder_text = "Ping"
+alignment = 1
+editable = false
+
 [node name="Slots" type="LineEdit" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/MarginContainer1/HBoxContainer2"]
+custom_minimum_size = Vector2(32, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 0.33
@@ -535,34 +545,47 @@ text = "Owner"
 text_overrun_behavior = 3
 
 [node name="MarginContainer3" type="MarginContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer"]
+custom_minimum_size = Vector2(72, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 0.33
 
-[node name="#Slots" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer/MarginContainer3"]
+[node name="#Ping" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer/MarginContainer3"]
+layout_mode = 2
+text = "1000 ms"
+horizontal_alignment = 1
+text_overrun_behavior = 3
+
+[node name="MarginContainer4" type="MarginContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer"]
+custom_minimum_size = Vector2(32, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.33
+
+[node name="#Slots" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer/MarginContainer4"]
 layout_mode = 2
 text = "5/5"
 horizontal_alignment = 1
 text_overrun_behavior = 3
 
-[node name="MarginContainer4" type="MarginContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer"]
+[node name="MarginContainer5" type="MarginContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer"]
 custom_minimum_size = Vector2(71, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 0.33
 
-[node name="#Mode" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer/MarginContainer4"]
+[node name="#Mode" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer/MarginContainer5"]
 layout_mode = 2
 text = "CLASSIC"
 horizontal_alignment = 1
 text_overrun_behavior = 3
 
-[node name="MarginContainer5" type="MarginContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer"]
+[node name="MarginContainer6" type="MarginContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 1.5
 
-[node name="#Map" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer/MarginContainer5"]
+[node name="#Map" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer/MarginContainer6"]
 layout_mode = 2
 text = "Map"
 text_overrun_behavior = 3
@@ -971,6 +994,7 @@ size_flags_stretch_ratio = 0.25
 text = "Host Game"
 
 [node name="#GatheringLobby" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer"]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 8.0
@@ -1434,11 +1458,20 @@ text = "Summoner's Name"
 clip_text = true
 text_overrun_behavior = 3
 
-[node name="#Status" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/VBoxContainer2/MarginContainer/VBoxContainer/#ConnectionsPanel/VBoxContainer/#Connections/ScrollContainer/VBoxContainer/MarginContainer/MarginContainer/VBoxContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/VBoxContainer2/MarginContainer/VBoxContainer/#ConnectionsPanel/VBoxContainer/#Connections/ScrollContainer/VBoxContainer/MarginContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
+
+[node name="#Status" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/VBoxContainer2/MarginContainer/VBoxContainer/#ConnectionsPanel/VBoxContainer/#Connections/ScrollContainer/VBoxContainer/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
 text = "Offline"
 clip_text = true
 text_overrun_behavior = 3
+
+[node name="#Ping" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/VBoxContainer2/MarginContainer/VBoxContainer/#ConnectionsPanel/VBoxContainer/#Connections/ScrollContainer/VBoxContainer/MarginContainer/MarginContainer/VBoxContainer/HBoxContainer"]
+self_modulate = Color(1, 1, 1, 0.5)
+layout_mode = 2
+text = "1000 ms"
 
 [node name="HSeparator2" type="HSeparator" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/VBoxContainer2/MarginContainer/VBoxContainer/#ConnectionsPanel/VBoxContainer"]
 visible = false

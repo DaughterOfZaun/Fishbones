@@ -7,19 +7,18 @@ import { circuitRelayTransport } from '@libp2p/circuit-relay-v2'
 import { identify, identifyPush } from '@libp2p/identify'
 import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
 import { peerIdFromCID, peerIdFromString } from '@libp2p/peer-id'
-import { ping } from '@libp2p/ping'
 import { webRTC, webRTCDirect } from '@libp2p/webrtc'
 import { CODE_P2P_CIRCUIT, multiaddr, type Multiaddr } from '@multiformats/multiaddr'
 
 import { createLibp2p } from 'libp2p'
 //import { fromString, toString } from 'uint8arrays'
-import type { AbortOptions, Connection, PeerInfo, PrivateKey, PubSubRPC } from '@libp2p/interface'
+import { KEEP_ALIVE, type AbortOptions, type ComponentLogger, type Connection, type Logger, type PeerInfo, type PrivateKey } from '@libp2p/interface'
 import { tcp } from '@libp2p/tcp'
 import { patchedCrypto } from './utils/crypto'
 
 //import { RTCPeerConnection } from 'node-datachannel/polyfill'
 import type { RTCDataChannel, RTCPeerConnection } from '@ipshipyard/node-datachannel/polyfill'
-import { defaultLogger } from '@libp2p/logger'
+//import { defaultLogger } from '@libp2p/logger'
 
 import { pubsubPeerDiscovery } from './network/pubsub-discovery'
 import { GossipSub, gossipsub, type GossipSubComponents, type GossipsubOpts } from '@chainsafe/libp2p-gossipsub'
@@ -37,6 +36,9 @@ import path from 'node:path'
 import { console_log } from './ui/remote'
 import { toString as uint8ArrayToString } from 'uint8arrays'
 import { tiePubSubWithPeerDiscovery } from './index-node-simple-hacks'
+import { logger as loggerClass } from './utils/data-shared'
+import { customPing } from './network/ping'
+import util from "node:util"
 
 export type LibP2PNode = Awaited<ReturnType<typeof createNodeInternal>> & ComponentsContainer
 type ComponentsContainer = {
@@ -62,6 +64,25 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
     //const privateKey = await loadOrCreateSelfKey(datastore, keychainInit)
 
     opts?.signal?.throwIfAborted()
+
+    const customLogger = (): ComponentLogger => ({ forComponent })
+    const forComponent = (name: string): Logger => Object.assign(
+        log.bind(null, 'INFO', name),
+        {
+            enabled: true,
+            //error: () => {},
+            //trace: () => {},
+            error: log.bind(null, 'ERROR', name),
+            trace: log.bind(null, 'TRACE', name),
+            newScope: (scope: string) => forComponent(name + ':' + scope)
+        }
+    )
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    function log(type: string, name: string, ...args: any[]): boolean {
+        //if(name !== 'libp2p:gossipsub') return true
+        //// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+        return loggerClass['stream']!.write('[LIBP2P][' + type + '][' + name + ']: ' + args.map(arg => Bun.inspect(arg)).join(' ') /*util.format(...args)*/ + '\n')
+    }
 
     const node = await createLibp2p({
         nodeInfo: {
@@ -93,13 +114,12 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
         connectionGater: {
             denyDialMultiaddr: () => false,
         },
-        //@ts-expect-error Type 'A' is not assignable to type 'B'.
         services: {
+            ping: customPing(),
             identify: identify(),
             identifyPush: identifyPush(),
 
             ...(args.allowInternet.enabled ? {
-                ping: ping(),
                 kadDHT: kadDHT({
                     protocol: '/ipfs/kad/1.0.0',
                     peerInfoMapper: removePrivateAddressesMapper
@@ -126,7 +146,7 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
                 }),
             } : {}),
 
-            logger: defaultLogger,
+            //logger: customLogger,
 
             pubsub: gossipsub({
                 allowPublishToZeroTopicPeers: true,
@@ -146,8 +166,12 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
 
     opts?.signal?.throwIfAborted()
 
+    await node.peerStore.patch(peerIdFromString(''), {
+        tags: { [`${KEEP_ALIVE}-rendezvous`]: { value: 1 } }
+    }, opts)
+
     //TODO: Reintroduce Autodial.
-    const dialedPeers = new Set<string>()
+    //const dialedPeers = new Set<string>()
     const peersDiscoveredFirstByNode = new Set<string>()
     const peersDiscoveredFirstByMechanism = new Set<string>()
     node.services.mdns?.addEventListener('peer', onPeerDiscoveredByMechanism)
@@ -155,9 +179,10 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
     function onPeerDiscoveredByMechanism(event: CustomEvent<PeerInfo>){
         const peer = event.detail
         //console_log('*:peer', peer.id.toString())
-        if(!dialedPeers.has(peer.id.toString()))
+        //if(!dialedPeers.has(peer.id.toString()))
         if(peersDiscoveredFirstByNode.has(peer.id.toString())){
             node.dial(peer.id).catch((/*err*/) => { /* Ignore */ })
+            //dialedPeers.add(peer.id.toString())
         } else {
             peersDiscoveredFirstByMechanism.add(peer.id.toString())
         }
@@ -166,9 +191,10 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
     function onPeerDiscoveredByNode(event: CustomEvent<PeerInfo>){
         const peer = event.detail
         //console_log('discovery:peer', peer.id.toString())
-        if(!dialedPeers.has(peer.id.toString()))
+        //if(!dialedPeers.has(peer.id.toString()))
         if(peersDiscoveredFirstByMechanism.has(peer.id.toString())){
             node.dial(peer.id).catch((/*err*/) => { /* Ignore */ })
+            //dialedPeers.add(peer.id.toString())
         } else {
             peersDiscoveredFirstByNode.add(peer.id.toString())
         }

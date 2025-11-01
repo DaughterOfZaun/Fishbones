@@ -1,6 +1,7 @@
 import { LOBBY_PROTOCOL } from './utils/constants'
 import { Peer as PBPeer } from './message/peer'
-import { type AbortOptions, type IncomingStreamData, type Libp2p, type Stream } from '@libp2p/interface'
+import { type AbortOptions, type IncomingStreamData, type Stream } from '@libp2p/interface'
+import type { LibP2PNode } from './index-node-simple'
 import * as lp from 'it-length-prefixed'
 import { pbStream, type MessageStream } from './utils/pb-stream'
 import { pipe } from 'it-pipe'
@@ -14,7 +15,7 @@ export class RemoteGame extends Game {
 
     public readonly canStart = false
 
-    public static create(node: Libp2p, server: Server, gameInfo: PBPeer.AdditionalData.GameInfo){
+    public static create(node: LibP2PNode, server: Server, gameInfo: PBPeer.AdditionalData.GameInfo){
         const game = new RemoteGame(node, server.id, server)
         game.decodeInplace(gameInfo)
         return game

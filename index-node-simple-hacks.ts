@@ -1,5 +1,6 @@
 import type { GossipSub, GossipsubOpts } from "@chainsafe/libp2p-gossipsub"
 import type { PubSubPeerDiscovery } from "./network/pubsub-discovery"
+//import { console_log } from "./ui/remote";
 
 type PeerIdStr = string
 type RPCControlIHave = {
@@ -20,7 +21,14 @@ export function tiePubSubWithPeerDiscovery(node: LibP2PNode){
     const pubsub = node.services.pubsub
     const pspd = node.services.pubsubPeerDiscovery
 
-    //pubsub['log'] = (...args: unknown[]) => { console_log('PUBSUB', ...args.map(arg => (typeof arg === 'string' || typeof arg === 'number') ? arg : Bun.inspect(arg))) }
+    /*
+    pubsub['log'] = Object.assign(log.bind(null, 'LOG'), { error: log.bind(null, 'ERR') })
+    function log(...args: unknown[]){
+        console_log('PUBSUB', ...args.map(arg => {
+            return (typeof arg === 'string' || typeof arg === 'number') ? arg : Bun.inspect(arg)
+        }))
+    }
+    */
     
     const GossipsubMaxIHaveLength = 5000
 

@@ -1,5 +1,6 @@
 import { AIChampion, LOBBY_PROTOCOL, type u } from './utils/constants'
-import { type AbortOptions, type Libp2p, type PeerId, type StreamHandler } from '@libp2p/interface'
+import { type AbortOptions, type PeerId, type StreamHandler } from '@libp2p/interface'
+import type { LibP2PNode } from './index-node-simple'
 import * as lp from 'it-length-prefixed'
 import { pipe } from 'it-pipe'
 import { LobbyRequestMessage, LobbyNotificationMessage, KickReason } from './message/lobby'
@@ -17,7 +18,7 @@ export class LocalGame extends Game {
     
     private readonly peerId: PeerId
     private readonly playerId: PlayerId
-    public constructor(node: Libp2p, server: Server){
+    public constructor(node: LibP2PNode, server: Server){
         super(node, node.peerId, server)
         this.playerId = this.peerIdToPlayerId(node.peerId)
         this.peerId = node.peerId

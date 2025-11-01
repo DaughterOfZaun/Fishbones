@@ -12,6 +12,7 @@ import { render } from './ui/remote-view'
 import { button, checkbox, form, label, list, type Checkbox, type Form, type Label } from './ui/remote-types'
 import { AbortPromptError } from '@inquirer/core'
 import { getUsername } from './utils/namegen'
+import type { PingResult } from './network/ping'
 
 interface CacheEntry {
     server: RemoteServer
@@ -55,11 +56,23 @@ export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts
             }
         ])
 
+        let choices: ReturnType<typeof getChoices>
         updateDynamicElements()
         view.addEventListener(pspd, 'update', updateDynamicElements)
         function updateDynamicElements(){
-            view.get('Rooms').setItems(getChoices(node))
+            choices = getChoices(node)
+            view.get('Rooms').setItems(choices)
         }
+        view.addEventListener(node.services.ping, 'ping', (event: CustomEvent<PingResult>) => {
+            const { peerId, ms } = event.detail
+            const id = Object.keys(choices).find((id) => {
+                return objs.get(id)?.ownerId.toString() === peerId.toString()
+            })
+            if(id !== undefined){
+                view.get(`Rooms/${id}/Ping`)
+                    .update(label(ms?.toFixed()?.concat(' ms') ?? ''))
+            }
+        })
 
         const { 0: action, 1: param } = await view.promise
         if(action == 'host' && ps.isStarted() == false){
@@ -214,6 +227,7 @@ function gameInfoToChoice(
         choice = form({
             Owner: label(),
             Name: label(),
+            Ping: label(),
             Slots: label(),
             Mode: label(),
             Map: label(),
@@ -242,7 +256,10 @@ function gameInfoToChoice(
         choice.$id = objId
     }
 
+    const getPing = game.node.services.ping.getPing.bind(game.node.services.ping);
+
     (choice.fields!.Owner as Label).text = getUsername(pwd.id);
+    (choice.fields!.Ping as Label).text = (getPing(pwd.id)?.toFixed()?.concat(' ms') ?? '');
     (choice.fields!.Name as Label).text = game.name.toString();
     (choice.fields!.Slots as Label).text = `${players}/${playersMax}`;
     (choice.fields!.Mode as Label).text = game.mode.toString();

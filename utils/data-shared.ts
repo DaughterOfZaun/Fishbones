@@ -26,7 +26,7 @@ export function fs_ensureDirSync(path: string){
 
 export const logger = new class Logger {
     private stream?: WriteStream
-    log(...args: (string | number)[]){
+    log(...args: (string | number | boolean)[]){
         if(!this.stream){
             //fs_ensureDirSync(downloads)
             const logTxt = path.join(downloads, 'log.txt')

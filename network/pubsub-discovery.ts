@@ -93,8 +93,10 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
     stop (): void {}
 
     private announced = false
-    broadcast (data: null | undefined | PBPeer.AdditionalData): void {        
+    private data: PBPeer.AdditionalData | null | undefined = undefined
+    broadcast (data: PBPeer.AdditionalData | null | undefined): void {        
         this.announced = !!data
+        this.data = data
 
         const peerId = this.components.peerId
         const pubsub = this.components.pubsub

@@ -1,4 +1,4 @@
-syntax = "proto3"; 
+syntax = "proto3";
 
 enum State {
     UNDEFINED = 0;

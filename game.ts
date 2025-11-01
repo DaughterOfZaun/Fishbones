@@ -1,5 +1,6 @@
 import { blowfishKey, FeaturesEnabled, GameMap as GameMap, GameMode as GameMode, GameType, LOCALHOST, Name, Password, PlayerCount, runes, talents, Team, type u } from './utils/constants'
-import { TypedEventEmitter, type AbortOptions, type Libp2p, type PeerId, type Stream } from '@libp2p/interface'
+import { TypedEventEmitter, type AbortOptions, type PeerId, type Stream } from '@libp2p/interface'
+import type { LibP2PNode } from './index-node-simple'
 import { GamePlayer, type PlayerId, type PPP } from './game-player'
 import type { Peer as PBPeer } from './message/peer'
 import type { Server } from './server'
@@ -35,7 +36,7 @@ enum State {
 
 export abstract class Game extends TypedEventEmitter<GameEvents> {
     
-    protected readonly node: Libp2p
+    public readonly node: LibP2PNode
     public readonly server: Server
     public readonly ownerId: PeerId
     
@@ -62,14 +63,21 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         }
         return player
     }
-    public getPlayers(){
-        return [...this.players.values()]
+    public getPlayers(includeBots = true){
+        const players = [...this.players.values()]
+        if(includeBots) return players
+        else return players.filter(player => !player.isBot)
     }
-    public getPlayersCount(){
-        return this.joined ? this.players.size : this.players_count
+    public getPlayersCount(includeBots = false){
+        if(this.joined){
+            if(includeBots) return this.players.size
+            else return this.getPlayers(false).length
+        } else {
+            return this.players_count
+        }
     }
 
-    protected constructor(node: Libp2p, ownerId: PeerId, server: Server){
+    protected constructor(node: LibP2PNode, ownerId: PeerId, server: Server){
         super()
         this.node = node
         this.server = server
