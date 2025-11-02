@@ -9,6 +9,9 @@ import type { GossipSub, GossipsubMessage, GossipsubOpts } from '@chainsafe/libp
 
 export const TOPIC = '_peer-discovery._p2p._pubsub'
 
+const RECORD_LIFETIME = 60_000
+const REANNOUNCE_INTERVAL = 30_000
+
 export interface PubsubPeerDiscoveryInit {
     topic?: string
 }
@@ -34,6 +37,7 @@ export interface PeerIdWithData {
     data: PBPeer.AdditionalData
 }
 interface PeerIdWithDataAndMessage extends PeerIdWithData {
+    timeout?: ReturnType<typeof setTimeout>
     iwantCounts: Map<string, number>
     msgIdStr: string
     msgId: Uint8Array
@@ -96,8 +100,9 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
     stop (): void {}
 
     private announced = false
+    private broadcastInterval: ReturnType<typeof setInterval> | undefined
     private data: PBPeer.AdditionalData | null | undefined = undefined
-    broadcast (data: PBPeer.AdditionalData | null | undefined): void {        
+    broadcast (data: PBPeer.AdditionalData | null | undefined, once = false): void {        
         this.announced = !!data
         this.data = data
 
@@ -121,12 +126,17 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
 
         this.log('broadcasting our peer data on topic %s', this.topic)
         void pubsub.publish(this.topic, encodedPeer)
+
+        if(!data){
+            clearInterval(this.broadcastInterval)
+        } else if(!once){
+            clearInterval(this.broadcastInterval)
+            this.broadcastInterval = setInterval(() => {
+                this.broadcast(this.data, true)
+            }, REANNOUNCE_INTERVAL)
+        }
     }
 
-    private readonly pinnedMessages = new Map<string, unknown>()
-    get mcache(){
-        return 
-    }
     getGossipIDs (topics: Set<string>): Map<string, Uint8Array[]> {
         const msgIdsByTopic = new Map<string, Uint8Array[]>()
         if(topics.has(this.topic)){
@@ -163,14 +173,23 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
             if (peer.data){
                 const msg = mcache.msgs.get(msgIdStr)!.message
                 const msgId = mcache.history[0]!.find(entry => entry.msgIdStr === msgIdStr)!.msgId
-                const pwd = { id: peerId, data: peer.data, msg, msgId, msgIdStr, iwantCounts: new Map() }
-                if(i != -1) this.peersWithData.splice(i, 1, pwd)
-                else {
-                    this.safeDispatchEvent('add', pwd)
+                let pwd: PeerIdWithDataAndMessage = { id: peerId, data: peer.data, msg, msgId, msgIdStr, iwantCounts: new Map() }
+                if(i != -1){
+                    pwd = Object.assign(this.peersWithData[i]!, pwd)
+                } else {
                     this.peersWithData.push(pwd)
+                    this.safeDispatchEvent('add', { detail: pwd })
                 }
+                clearTimeout(pwd.timeout)
+                pwd.timeout = setTimeout(() => {
+                    const i = this.peersWithData.indexOf(pwd)
+                    this.peersWithData.splice(i, 1)
+                    this.safeDispatchEvent('update')
+                }, RECORD_LIFETIME)
             } else {
+                const pwd = this.peersWithData[i]!
                 this.peersWithData.splice(i, 1)
+                clearTimeout(pwd.timeout)
             }
             this.safeDispatchEvent('update')
 

@@ -1,7 +1,7 @@
 import { RemoteGame } from '../game/game-remote'
 import { LocalServer, RemoteServer } from '../game/server'
 import { type LibP2PNode } from '../node/node'
-import type { AbortOptions } from '@libp2p/interface'
+import { AbortError, type AbortOptions } from '@libp2p/interface'
 import { args } from '../utils/args'
 import { PeerMap } from '@libp2p/peer-collections'
 import type { PeerIdWithData } from '../network/libp2p/discovery/pubsub-discovery'
@@ -10,9 +10,9 @@ import { LocalGame } from '../game/game-local'
 import type { Game } from '../game/game'
 import { render } from '../ui/remote/view'
 import { button, checkbox, form, label, list, type Checkbox, type Form, type Label } from '../ui/remote/types'
-import { AbortPromptError } from '@inquirer/core'
 import { getUsername } from '../utils/namegen/namegen'
 import type { PingResult } from '../network/libp2p/ping'
+import { spinner, AbortPromptError, popup } from '../ui/remote/remote'
 
 interface CacheEntry {
     server: RemoteServer
@@ -33,6 +33,24 @@ export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts
     const ps = node.services.pubsub
     const name = '' //getUsername(node.peerId.toString())
     const pspd = node.services.pubsubPeerDiscovery
+
+    pspd.addEventListener('add', notifyRoomAdded)
+    function notifyRoomAdded(event: CustomEvent<PeerIdWithData>){
+        const pwd = event.detail
+        
+        if(pwd.id.toString() === node.peerId.toString()) return
+
+        const choices = peerInfoToChoices(node, pwd)
+        for(const choice of choices){
+            //const objId = choice.$id!
+            //const game = objs.get(objId)
+            popup({
+                message: (choice.fields!.Map as Label).text!,
+                title: 'New game found',
+                sound: 'air_event_invited_1',
+            })
+        }
+    }
 
     type Action = ['join', RemoteGame] | ['host'] | ['quit']
 
@@ -164,13 +182,36 @@ async function hostRemote(node: LibP2PNode, name: string, lobby: Lobby, setup: S
     function stop(){ pspd.broadcast(game.isJoinable() ? data : null) }
 }
 
+async function deadlyRace(cbs: ((opts: Required<AbortOptions>) => Promise<unknown>)[], opts: Required<AbortOptions>){
+    return new Promise((resolve, reject) => {
+        const controller = new AbortController()
+        const signal = AbortSignal.any([ controller.signal, opts.signal ])
+        void Promise.race(cbs.map(async cb => {
+            return cb({ signal }).catch((reason: Error) => {
+                if(controller.signal.aborted) return // Ignore.
+                controller.abort(reason)
+                reject(reason)
+            })
+        })).then((result) => {
+            controller.abort(new AbortError())
+            resolve(result)
+        })
+    })
+}
+
 async function joinRemote(game: RemoteGame, name: string, lobby: Lobby, opts: Required<AbortOptions>){
     try {
-        await game.connect(opts)
+        await deadlyRace([
+            async (opts) => spinner({ message: 'Joining the game...' }, opts),
+            async (opts) => game.connect(opts),
+        ], opts)
         if(game.password.isSet)
             await game.password.uinput(opts)
         game.join(name, game.password.encode())
         await lobby(game, opts)
+    } catch(err) {
+        if(err instanceof AbortPromptError){ /* Ignore. */ }
+        else throw err
     } finally {
         game.disconnect()
     }
@@ -181,16 +222,14 @@ function getChoices(node: LibP2PNode){
 
     return Object.fromEntries(
         pspd.getPeersWithData()
-            .filter(pwd => !!pwd.data?.serverSettings)
-            .flatMap(pwd => {
-                return peerInfoToChoices(node, pwd)
-            })
+            .flatMap(pwd => peerInfoToChoices(node, pwd))
             .map(choice => [ choice.$id!, choice ])
     )
 }
 
 function peerInfoToChoices(node: LibP2PNode, pwd: PeerIdWithData){
-    const settings = pwd.data.serverSettings!
+    const settings = pwd.data.serverSettings
+    if(!settings) return []
 
     let cacheEntry = cache.get(pwd.id)
     let server = cacheEntry?.server

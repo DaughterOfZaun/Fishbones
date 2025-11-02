@@ -1,6 +1,6 @@
 [gd_scene load_steps=6 format=3 uid="uid://dupn3umgvnkgk"]
 
-[ext_resource type="Script" uid="uid://bsmqr8f010ico" path="res://components/spinner.gd" id="1_q4b70"]
+[ext_resource type="Script" uid="uid://bsmqr8f010ico" path="res://components/spawnable/spinner/spinner.gd" id="1_q4b70"]
 
 [sub_resource type="ButtonGroup" id="ButtonGroup_vljty"]
 
@@ -41,14 +41,15 @@ _data = {
 &"slow_flicker": SubResource("Animation_q4b70")
 }
 
-[node name="CenterContainer" type="CenterContainer" node_paths=PackedStringArray("label")]
+[node name="CenterContainer" type="CenterContainer" node_paths=PackedStringArray("label", "button")]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_q4b70")
-label = NodePath("PanelContainer/MarginContainer/HBoxContainer/Label")
+label = NodePath("PanelContainer/MarginContainer/HBoxContainer/#Label")
+button = NodePath("PanelContainer/Control/#Abort")
 
 [node name="PanelContainer" type="PanelContainer" parent="."]
 layout_mode = 2
@@ -85,6 +86,25 @@ libraries = {
 autoplay = "slow_flicker"
 speed_scale = 0.5
 
-[node name="Label" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer"]
+[node name="#Label" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer"]
 layout_mode = 2
-text = "Waiting for the game to end..."
+text = " Joining the game... "
+
+[node name="Control" type="Control" parent="PanelContainer"]
+layout_mode = 2
+
+[node name="#Abort" type="Button" parent="PanelContainer/Control"]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -105.5
+offset_top = 4.0
+offset_right = 105.5
+offset_bottom = 35.0
+grow_horizontal = 2
+grow_vertical = 0
+size_flags_vertical = 4
+text = "Quit"

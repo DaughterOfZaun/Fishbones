@@ -84,6 +84,7 @@ var handlers: Dictionary[Variant, InputHandler] = {}
 @export var show_console_toggle: Button
 @export var console_container: Container
 @export var console: RichTextLabel
+@export var popup: CustomPopup
 @export_group("")
 
 var active_bars_count := 0
@@ -250,6 +251,9 @@ func _init() -> void:
     methods["exit"] = func() -> void:
         #print('exit')
         get_tree().quit()
+        
+    methods["popup"] = func(title: String, message: String, sound: String) -> void:
+        popup.pop(title, message, sound)
 
 func create_view(config: Dictionary) -> InputHandler:
     
@@ -280,7 +284,7 @@ func bind(cb: Callable, arg0: Variant) -> Callable:
 func create_element(_el_name: String, scene: PackedScene, config: Dictionary, container: Control = self.container) -> void:
     #print(el_name, ' ', last_call_id, ' ', config)
     var instance: InputHandler = scene.instantiate()
-    instance.init(config, bind(resolve, last_call_id))
+    instance.init(config, bind(resolve_or_reject, last_call_id))
     handlers[last_call_id] = instance
     container.add_child(instance)
 
@@ -374,6 +378,10 @@ func _process_action(action: Variant) -> Variant:
     #if id == null: return null
     #return jrpc.make_response(call_ret, id)
     return null
+
+func resolve_or_reject(id: Variant, result: Variant = null) -> void:
+    if result != null: resolve(id, result)
+    else: reject(id, FAILED, 'Operation was aborted')
 
 func resolve(id: Variant, result: Variant = null) -> void:
     var response_string := JSON.stringify(jrpc.make_response(result, id))

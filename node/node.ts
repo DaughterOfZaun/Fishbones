@@ -12,7 +12,7 @@ import { CODE_P2P_CIRCUIT, multiaddr, type Multiaddr } from '@multiformats/multi
 
 import { createLibp2p } from 'libp2p'
 //import { fromString, toString } from 'uint8arrays'
-import { KEEP_ALIVE, type AbortOptions, type ComponentLogger, type Connection, type Logger, type PeerInfo, type PrivateKey } from '@libp2p/interface'
+import { KEEP_ALIVE, type AbortOptions, type ComponentLogger, type Connection, type Libp2pEvents, type Logger, type PeerInfo, type PrivateKey, type TypedEventTarget } from '@libp2p/interface'
 import { tcp } from '@libp2p/tcp'
 import { patchedCrypto } from '../utils/crypto'
 
@@ -28,9 +28,9 @@ import { mdns } from '@libp2p/mdns'
 import { args } from '../utils/args'
 import { appDiscoveryTopic, NAME, rtcConfiguration, VERSION } from '../utils/constants-build'
 import { rendezvousClient } from "@canvas-js/libp2p-rendezvous/client"
-//import { loadOrCreateSelfKey } from '@libp2p/config'
+import { loadOrCreateSelfKey } from '@libp2p/config'
 import { LevelDatastore } from 'datastore-level'
-//import { keychain } from '@libp2p/keychain'
+import { keychain } from '@libp2p/keychain'
 import { downloads } from '../utils/log'
 import path from 'node:path'
 import { console_log } from '../ui/remote/remote'
@@ -46,27 +46,28 @@ type ComponentsContainer = {
         privateKey: PrivateKey
         transportManager: TransportManager
         connectionManager: ConnectionManager
+        events: TypedEventTarget<Libp2pEvents>
     }
 }
 export async function createNode(...args: Parameters<typeof createNodeInternal>){
-    return createNodeInternal(...args) as Promise<LibP2PNode>
+    const node = await (createNodeInternal(...args) as Promise<LibP2PNode>)
+    //node.services.rendezvous['log'] = forComponent('canvas:rendezvous:client')
+    //node.components.connectionManager['log'] = forComponent('libp2p:connection-manager')
+    //node.components.connectionManager['dialQueue']['log'] = forComponent('libp2p:connection-manager:dial-queue')
+    //node.components.events.addEventListener('self:peer:update', (event) => {
+    //   loggerClass.log(
+    //       'self:peer:update [\n'
+    //       + event.detail.previous?.addresses.map(addr => addr.multiaddr.toString()).join(',\n') + '\n], [\n'
+    //       + event.detail.peer.addresses.map(addr => addr.multiaddr.toString()).join(',\n') + '\n]'
+    //   )
+    //})
+    return node 
 }
-async function createNodeInternal(port?: number, opts?: AbortOptions){
-    
-    opts?.signal?.throwIfAborted()
 
-    //const datastore = new LevelDatastore(path.join(downloads, 'datastore'))
-    //await datastore.open()
-
-    opts?.signal?.throwIfAborted()
-
-    //const keychainInit = { /*pass: 'yes-yes-very-secure'*/ }
-    //const privateKey = await loadOrCreateSelfKey(datastore, keychainInit)
-
-    opts?.signal?.throwIfAborted()
-
-    const customLogger = (): ComponentLogger => ({ forComponent })
-    const forComponent = (name: string): Logger => Object.assign(
+const customLogger = (): ComponentLogger => ({ forComponent })
+const forComponent = (name: string): Logger => {
+    loggerClass['stream']!.write('[LOGGER]: Registered component ' + name + '\n')
+    return Object.assign(
         log.bind(null, 'INFO', name),
         {
             enabled: true,
@@ -77,12 +78,39 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
             newScope: (scope: string) => forComponent(name + ':' + scope)
         }
     )
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    function log(type: string, name: string, ...args: any[]): boolean {
-        //if(name !== 'libp2p:gossipsub') return true
-        //// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-        return loggerClass['stream']!.write('[LIBP2P][' + type + '][' + name + ']: ' + args.map(arg => Bun.inspect(arg)).join(' ') /*util.format(...args)*/ + '\n')
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function log(type: string, name: string, ...args: any[]): boolean {
+    //if(name !== 'libp2p:gossipsub') return true
+    //// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+    return loggerClass['stream']!.write('[LIBP2P][' + type + '][' + name + ']: ' + args.map(arg => Bun.inspect(arg)).join(' ') /*util.format(...args)*/ + '\n')
+}
+
+async function createNodeInternal(port?: number, opts?: AbortOptions){
+    
+    opts?.signal?.throwIfAborted()
+
+    const keychainInit = { pass: 'yes-i-know-its-very-secure' } //TODO: Password.
+    
+    let datastore: LevelDatastore | undefined
+        //datastore = new LevelDatastore(path.join(downloads, 'datastore'))
+    try {
+        await datastore?.open()
+    } catch(err) {
+        console_log('Failed to open data store', Bun.inspect(err))
+        datastore = undefined
     }
+
+    opts?.signal?.throwIfAborted()
+
+    let privateKey: PrivateKey | undefined
+    if(datastore) try {
+        privateKey = await loadOrCreateSelfKey(datastore, keychainInit)
+    } catch(err) {
+        console_log('Failed to load private key', Bun.inspect(err))
+    }
+
+    opts?.signal?.throwIfAborted()
 
     const node = await createLibp2p({
         nodeInfo: {
@@ -158,10 +186,10 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
 
             mdns: mdns(),
         },
-        ////@ts-expect-error: Types of parameters 'key' and 'key' are incompatible.
-        //datastore,
-        //privateKey,
-        //keychain: keychain(keychainInit),
+        //@ts-expect-error: Types of parameters 'key' and 'key' are incompatible.
+        datastore,
+        privateKey,
+        keychain: keychain(keychainInit),
         start: false,
     })
 

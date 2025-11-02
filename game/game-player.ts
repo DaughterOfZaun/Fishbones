@@ -6,24 +6,22 @@ import type { WriteonlyMessageStream } from '../utils/pb-stream'
 
 export type PlayerId = number & { readonly brand: unique symbol }
 
-const pickableKeys = ["team", "champion", "spell1", "spell2", "lock"] as const
+const pickableKeys = ["team", "champion", "spell1", "spell2", "lock", "difficulty"] as const
 export type PlayerPickableProps = KeysByValue<GamePlayer, PickableValue>
 export type PPP = PlayerPickableProps
 export class GamePlayer {
     private readonly game: Game
     public readonly id: PlayerId
     public readonly peerId?: PeerId
-    public readonly isBot: boolean
     
     public readonly name = new Name('Player')
 
     stream?: WriteonlyMessageStream<LobbyNotificationMessage, Stream>
     
-    constructor(game: Game, id: PlayerId, peerId?: PeerId, isBot?: boolean){
+    constructor(game: Game, id: PlayerId, peerId?: PeerId){
         this.game = game
         this.id = id
         this.peerId = peerId
-        this.isBot = !!isBot
     }
     
     public readonly team = new Team() //TODO: disallow uinput & decodeInplace
@@ -32,6 +30,8 @@ export class GamePlayer {
     public readonly spell2 = new SummonerSpell(undefined, () => this.game.server.spells)
     public readonly lock = new Lock() //TODO: Hide in test
     public readonly difficulty = new AIDifficulty()
+
+    public get isBot(){ return this.difficulty.value !== undefined }
 
     public encode(ppp?: PPP): PickRequest {
         return ppp ? ({ [ppp]: this[ppp].encode() }) :
@@ -42,9 +42,12 @@ export class GamePlayer {
             )
     }
     public decodeInplace(prs: PickRequest): boolean {
-        return Object.entries(prs).reduce((a, [key, value]) =>
-            a && (value === undefined || this[key as PPP].decodeInplace(value)
-        ), true)
+        return Object.entries(prs).reduce((a, [key, value]) => {
+            let success = false
+            if(/*pickableKeys.includes(key as PPP) &&*/ value !== undefined)
+                success = this[key as PPP].decodeInplace(value)
+            return a && success
+        }, true)
     }
 
     public fillUnset(){

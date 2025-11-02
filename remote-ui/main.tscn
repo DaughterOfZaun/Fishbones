@@ -1,4 +1,4 @@
-[gd_scene load_steps=29 format=3 uid="uid://c88cdpgvxg8v2"]
+[gd_scene load_steps=35 format=3 uid="uid://c88cdpgvxg8v2"]
 
 [ext_resource type="Theme" uid="uid://heyv1rjynqwi" path="res://main_theme.tres" id="1_efxa6"]
 [ext_resource type="Script" uid="uid://dys8mpxtgwbfe" path="res://server_node.gd" id="1_ig7tw"]
@@ -12,7 +12,13 @@
 [ext_resource type="Shader" uid="uid://c4ougvurpqa1d" path="res://components/background/simple_blur.gdshader" id="7_kek77"]
 [ext_resource type="Script" uid="uid://daigcqlxjwp5f" path="res://copy_paste_button.gd" id="11_ycdy4"]
 [ext_resource type="Script" uid="uid://c1341hmee22s6" path="res://dictionary_view.gd" id="13_2cqfq"]
+[ext_resource type="Script" uid="uid://ssnirlom0p0n" path="res://popup_panel.gd" id="14_vivmo"]
 [ext_resource type="Script" uid="uid://co8q1vt1vwjgu" path="res://array_view.gd" id="14_yaehf"]
+[ext_resource type="Texture2D" uid="uid://otwgmcv7cmt7" path="res://icons/icon.png" id="15_2cqfq"]
+[ext_resource type="AudioStream" uid="uid://c4nwhpquh7t73" path="res://sounds/buddy_invite.mp3" id="15_074og"]
+[ext_resource type="AudioStream" uid="uid://bahat51jj7lgm" path="res://sounds/air_event_invited_1.mp3" id="16_2cqfq"]
+[ext_resource type="AudioStream" uid="uid://cycatf0rllipp" path="res://sounds/air_event_invited3.mp3" id="17_cegan"]
+[ext_resource type="AudioStream" uid="uid://dbweirv317212" path="res://sounds/join_chat.mp3" id="18_cegan"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_kek77"]
 shader = ExtResource("7_kek77")
@@ -90,7 +96,7 @@ Button/styles/pressed = SubResource("StyleBoxFlat_ycdy4")
 
 [sub_resource type="ButtonGroup" id="ButtonGroup_2cqfq"]
 
-[node name="Control" type="ColorRect" node_paths=PackedStringArray("views", "container", "bars_container", "show_console_toggle", "console_container", "console")]
+[node name="Control" type="ColorRect" node_paths=PackedStringArray("views", "container", "bars_container", "show_console_toggle", "console_container", "console", "popup")]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -129,6 +135,7 @@ bars_container = NodePath("ConsoleContainer/VBoxContainer/BarsContainer")
 show_console_toggle = NodePath("ShowConsoleToggle")
 console_container = NodePath("ConsoleContainer")
 console = NodePath("ConsoleContainer/VBoxContainer/PanelContainer/MarginContainer/Console")
+popup = NodePath("#Popup")
 
 [node name="Background" type="TextureRect" parent="."]
 layout_mode = 1
@@ -1916,3 +1923,93 @@ pivot_offset = Vector2(32, 16.5)
 toggle_mode = true
 text = "!"
 expand_icon = true
+
+[node name="#Popup" type="Window" parent="." node_paths=PackedStringArray("close", "timer", "header", "body", "player")]
+oversampling_override = 1.0
+position = Vector2i(358, 386)
+size = Vector2i(320, 100)
+visible = false
+unresizable = true
+borderless = true
+always_on_top = true
+popup_window = true
+popup_wm_hint = true
+minimize_disabled = true
+maximize_disabled = true
+force_native = true
+script = ExtResource("14_vivmo")
+close = NodePath("#Close")
+timer = NodePath("Timer")
+header = NodePath("PanelContainer/MarginContainer/HBoxContainer/VBoxContainer/PanelContainer/MarginContainer/#Title")
+body = NodePath("PanelContainer/MarginContainer/HBoxContainer/VBoxContainer/MarginContainer/#Message")
+player = NodePath("../AudioStreamPlayer")
+sounds = Dictionary[String, AudioStream]({
+"air_event_invited3": ExtResource("17_cegan"),
+"air_event_invited_1": ExtResource("16_2cqfq"),
+"buddy_invite": ExtResource("15_074og"),
+"join_chat": ExtResource("18_cegan")
+})
+
+[node name="PanelContainer" type="PanelContainer" parent="#Popup"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="#Popup/PanelContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="#Popup/PanelContainer/MarginContainer"]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="#Popup/PanelContainer/MarginContainer/HBoxContainer"]
+layout_mode = 2
+texture = ExtResource("15_2cqfq")
+expand_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="#Popup/PanelContainer/MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PanelContainer" type="PanelContainer" parent="#Popup/PanelContainer/MarginContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="#Popup/PanelContainer/MarginContainer/HBoxContainer/VBoxContainer/PanelContainer"]
+layout_mode = 2
+
+[node name="#Title" type="Label" parent="#Popup/PanelContainer/MarginContainer/HBoxContainer/VBoxContainer/PanelContainer/MarginContainer"]
+layout_mode = 2
+text = "New game found!"
+
+[node name="MarginContainer" type="MarginContainer" parent="#Popup/PanelContainer/MarginContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="#Message" type="Label" parent="#Popup/PanelContainer/MarginContainer/HBoxContainer/VBoxContainer/MarginContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+text = "Summoner's Rift"
+
+[node name="Button" type="Button" parent="#Popup/PanelContainer"]
+visible = false
+layout_mode = 2
+
+[node name="#Close" type="Button" parent="#Popup"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -37.0
+offset_top = 2.0
+offset_right = -2.0
+offset_bottom = 37.0
+grow_horizontal = 0
+size_flags_horizontal = 4
+size_flags_vertical = 4
+text = "x"
+flat = true
+
+[node name="Timer" type="Timer" parent="#Popup"]
+wait_time = 5.0
+one_shot = true
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="."]

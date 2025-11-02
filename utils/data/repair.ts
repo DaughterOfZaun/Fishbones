@@ -4,6 +4,7 @@ import { gcPkg, gitPkg, gsPkg, PkgInfo, repairTorrents, sdkPkg } from "./package
 import { console_log, fs_copyFile } from "../../ui/remote/remote"
 import { console_log_fs_err, cwd, downloads, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_rmdir } from './fs'
 import { readTrackersTxt } from "./download/trackers"
+//import { repairIcon } from "../../tui/notifier"
 import { appendPartialUnpackFileExt, DataError, repair7z, unpack } from "./unpack"
 import { TerminationError, unwrapAbortError } from "../process/process"
 import type { AbortOptions } from "@libp2p/interface"
@@ -27,6 +28,7 @@ export async function repair(opts: Required<AbortOptions>){
         repairTorrents(opts),
         repair7z(opts),
         repairAria2(opts),
+        //repairIcon(opts),
     ] as Promise<unknown>[])
 
     let gsExeIsMissing = !await fs_exists(gsPkg.dll, opts)
@@ -77,7 +79,7 @@ export async function repair(opts: Required<AbortOptions>){
                 await fs_copyFile(embedded.d3dx9_39_dll, d3dx9_39_dll, opts)
 
             //await ensureSymlink()
-        })
+        }),
     ] as Promise<unknown>[])
 
     //TODO: await fs.cp(gsPkg.gcDir, gcPkg.exeDir, { recursive: true })

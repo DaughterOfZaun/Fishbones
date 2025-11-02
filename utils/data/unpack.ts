@@ -40,6 +40,7 @@ const s7zDataErrorMsgs = new RegExp(
         /\bIs not archive\b/,
         /\bCan(?: ?not|'?t) open (?:(?:the )?file )?as (?:\[\w+\] )?archive\b/,
         /\bUnexpected end of (?:data|archive|(?:input )?stream)\b/,
+        /\bSystem ERROR\b/,
         //TODO: ...
     ]
     .map(regex => regex.source).join('|')

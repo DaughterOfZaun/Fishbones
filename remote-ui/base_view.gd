@@ -58,13 +58,17 @@ func update_child(child: Control, config: Dictionary, strict: bool = false) -> v
         (child as ShowableView).update(config, strict)
     elif child is OptionButton:
         (child as OptionButton).clear()
-        for item: Dictionary in config['options']:
-            var text: String = item['text']
-            var item_id: int = item['id']
-            (child as OptionButton).add_item(text, item_id)
-        var selected_id: int = config.get('selected', -1)
-        var index: int = (child as OptionButton).get_item_index(selected_id)
-        (child as OptionButton).select(index)
+        if 'options' in config:
+            for item: Dictionary in config['options']:
+                var text: String = item['text']
+                var item_id: int = item['id']
+                (child as OptionButton).add_item(text, item_id)
+        if 'selected' in config:
+            var selected_id: int = config['selected']
+            var index: int = (child as OptionButton).get_item_index(selected_id)
+            (child as OptionButton).select(index)
+        if 'disabled' in config:
+            (child as OptionButton).disabled = config['disabled']
     else:
         for key: String in config:
             if key == 'icon' && child is Button:

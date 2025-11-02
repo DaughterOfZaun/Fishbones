@@ -43,7 +43,7 @@ export class LocalGame extends Game {
         counts.forEach((count, team) => {
             for(let i = 0; i < count; i++){
                 const playerId = this.takePlayerId()
-                const bot = this.players_add(playerId, undefined, true)
+                const bot = this.players_add(playerId, undefined)
                 
                 //HACK:
                 const aiChampion = new AIChampion(undefined, () => this.server.champions)
@@ -63,7 +63,7 @@ export class LocalGame extends Game {
                     pickRequest: {
                         team: bot.team.encode(),
                         champion: bot.champion.encode(),
-                        //difficulty: bot.difficulty.encode(),
+                        difficulty: bot.difficulty.encode(),
                     }
                 })
             }

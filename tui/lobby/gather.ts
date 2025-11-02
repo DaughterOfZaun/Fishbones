@@ -7,6 +7,7 @@ import { render } from "../../ui/remote/view";
 import { AIChampion, AIDifficulty, champions } from "../../utils/constants";
 import { gcPkg } from "../../utils/data/packages";
 import { getPseudonym } from "../../utils/namegen/namegen";
+import { popup } from "../../ui/remote/remote";
 
 //export async function lobby(game: Game, opts: Required<AbortOptions>){}
 
@@ -84,6 +85,16 @@ export async function lobby_gather(ctx: Context){
         view.get('Team2/Bots').setItems(players(game, Team.Purple, BOTS, makePlayerForm))
         view.get('Team1/Join').update(button(undefined, game.getPlayer()?.team.value == Team.Blue))
         view.get('Team2/Join').update(button(undefined, game.getPlayer()?.team.value == Team.Purple))
+    }
+
+    view.addEventListener(game, 'joined', notifyPlayerJoined)
+    function notifyPlayerJoined(event: CustomEvent<GamePlayer>){
+        const player = event.detail
+        popup({
+            message: getPseudonym(player.id, false),
+            title: 'New player joined',
+            sound: 'join_chat',
+        })
     }
 
     function autofill(){

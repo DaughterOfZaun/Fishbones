@@ -94,6 +94,16 @@ const extractFile: typeof fs_copyFile = async (from, to, opts) => {
     await remoteInput('copy', { from, to }, opts)
 }
 
+export type Notification = {
+    title: string
+    message: string
+    sound: string
+}
+export function popup(obj: Notification){
+    const { title, message, sound } = obj
+    sendNotification('popup', title, message, sound)
+}
+
 type CancellablePromise<Value> = Promise<Value> //& { cancel: () => void }
 type RemoteInputFuncName = 'spinner' | 'select' | 'checkbox' | 'input' | 'copy'
 async function remoteInput<Value extends JSONValue, Config>(name: RemoteInputFuncName, config: Config, context?: Context, ref?: { id: number }): CancellablePromise<Value> {
@@ -109,7 +119,7 @@ async function remoteInput<Value extends JSONValue, Config>(name: RemoteInputFun
     listeners.set(id, (err, result) => {
         //if(context?.signal?.aborted)
         //    deferred.reject(new AbortPromptError({ cause: context.signal!.reason }))
-        if(err) deferred.reject(new Error('', { cause: err }))
+        if(err) deferred.reject(new AbortPromptError({ cause: err }))
         else deferred.resolve(result as Value)
     })
     deferred.addCleanupCallback(() => listeners.delete(id))

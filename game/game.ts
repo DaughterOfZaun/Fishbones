@@ -23,6 +23,7 @@ interface GameEvents {
     launch: CustomEvent,
     crash: CustomEvent,
     stop: CustomEvent,
+    joined: CustomEvent<GamePlayer>,
 }
 /*
 enum State {
@@ -55,10 +56,10 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     
     protected readonly players = new Map<PlayerId, GamePlayer>()
     protected players_count = 0
-    protected players_add(id: PlayerId, peerId: u|PeerId, isBot?: boolean): GamePlayer {
+    protected players_add(id: PlayerId, peerId: u|PeerId): GamePlayer {
         let player = this.players.get(id)
         if(!player){
-            player = new GamePlayer(this, id, peerId, isBot)
+            player = new GamePlayer(this, id, peerId)
             this.players.set(id, player)
         }
         return player
@@ -520,12 +521,16 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     }
     protected handleResponse(ress: LobbyNotificationMessage){
         if(ress.peersRequests.length){
+            let joinedSelf = false
+            const joinedPlayers = []
             for(const res of ress.peersRequests){
                 let player: u|GamePlayer
                 const playerId = res.playerId as PlayerId
                 if(res.joinRequest){
                     player = this.players_add(playerId, undefined)
                     this.handleJoinResponse(player, res.joinRequest)
+                    joinedSelf ||= !!res.joinRequest.isMe
+                    joinedPlayers.push(player)
                 }
                 if(res.pickRequest && (player = this.players.get(playerId))){
                     this.handlePickResponse(player, res.pickRequest)
@@ -535,6 +540,12 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 }
             }
             this.safeDispatchEvent('update')
+            if(!joinedSelf){
+                for(const player of joinedPlayers){
+                    if(!player.isBot)
+                        this.safeDispatchEvent('joined', { detail: player })
+                }
+            }
         }
         if(ress.switchStateRequest){
             this.handleSwitchStateResponse(ress.switchStateRequest)
