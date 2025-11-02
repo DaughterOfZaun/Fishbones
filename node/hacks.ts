@@ -1,5 +1,5 @@
 import type { GossipSub, GossipsubOpts } from "@chainsafe/libp2p-gossipsub"
-import type { PubSubPeerDiscovery } from "./network/pubsub-discovery"
+import type { PubSubPeerDiscovery } from "../network/libp2p/discovery/pubsub-discovery"
 //import { console_log } from "./ui/remote";
 
 type PeerIdStr = string

@@ -1,6 +1,6 @@
-import type { Game } from "./game"
-import type { GamePlayer } from "./game-player"
-import type { Form } from "./ui/remote-types"
+import type { Game } from "../../game/game"
+import type { GamePlayer } from "../../game/game-player"
+import type { Form } from "../../ui/remote/types"
 
 export interface Context {
     signal: AbortSignal,

@@ -3,16 +3,16 @@ import { AbortPromptError, ExitPromptError } from '@inquirer/core'
 import type { Context } from '@inquirer/type'
 import yoctocolor from 'yoctocolors-cjs'
 
-import { createBar as localBar, console_log as localLog } from './progress'
-import { default as localSelect, type Choice as SelectChoice } from './dynamic-select'
-import { default as localSpinner } from './spinner'
-import { logger } from '../utils/data-shared'
-import { args } from '../utils/args'
+import { createBar as localBar, console_log as localLog } from '../progress'
+import { default as localSelect, type Choice as SelectChoice } from '../inquirer/dynamic-select'
+import { default as localSpinner } from '../inquirer/spinner'
+import { logger } from '../../utils/log'
+import { args } from '../../utils/args'
 
-import { fs_copyFile } from '../utils/data-fs'
-import { Deferred, registerShutdownHandler } from '../utils/data-process'
-import { listeners, sendCall, sendFollowupNotification, sendNotification, type JSONValue } from './remote-jrpc'
-import * as jrpc from './remote-jrpc'
+import { fs_copyFile } from '../../utils/data/fs'
+import { Deferred, registerShutdownHandler } from '../../utils/process/process'
+import { listeners, sendCall, sendFollowupNotification, sendNotification, type JSONValue } from './jrpc'
+import * as jrpc from './jrpc'
 
 export { type SelectChoice as Choice, AbortPromptError, ExitPromptError }
 

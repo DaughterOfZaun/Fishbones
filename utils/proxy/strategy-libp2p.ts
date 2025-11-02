@@ -4,7 +4,7 @@ import { logger } from "@libp2p/logger"
 import { pipe } from "it-pipe"
 import * as lp from 'it-length-prefixed'
 import { AbortError, pushable, type Pushable } from 'it-pushable'
-import { ConnectionStrategy, Role, type AnySocket } from "./data-proxy-shared"
+import { ConnectionStrategy, Role, type AnySocket } from "./shared"
 
 //import { PROXY_PROTOCOL } from "./constants"
 const PROXY_PROTOCOL = `/proxy/${0}`

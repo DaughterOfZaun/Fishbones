@@ -1,8 +1,8 @@
 import type { Libp2p } from "libp2p"
 import type { PeerId, AbortOptions } from "@libp2p/interface"
 import { logger } from "@libp2p/logger"
-import { UseExistingLibP2PConnection } from "./data-proxy-libp2p"
-import { Role, type AnySocket, type ConnectionStrategy } from "./data-proxy-shared"
+import { UseExistingLibP2PConnection } from "./strategy-libp2p"
+import { Role, type AnySocket, type ConnectionStrategy } from "./shared"
 
 //import { LOCALHOST } from "./constants"
 const LOCALHOST = "127.0.0.1"

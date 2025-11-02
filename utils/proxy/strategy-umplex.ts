@@ -1,9 +1,9 @@
 import type { PeerId, AbortOptions } from "@libp2p/interface"
 import { logger } from "@libp2p/logger"
-import { isENet, type BunSocket } from "../network/umplex"
-import * as uMplex from '../network/umplex'
-import { UTPMatcher } from "../network/tcp"
-import { ConnectionStrategy, type AnySocket } from "./data-proxy-shared"
+import { isENet, type BunSocket } from "../../network/umplex"
+import * as uMplex from '../../network/umplex'
+import { UTPMatcher } from "../../network/libp2p/utp"
+import { ConnectionStrategy, type AnySocket } from "./shared"
 
 const log = logger('launcher:proxy')
 

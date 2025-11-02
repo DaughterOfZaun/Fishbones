@@ -1,8 +1,8 @@
-import { AIDifficulty, Champion, Lock, Name, PickableValue, SummonerSpell, Team, type KeysByValue } from './utils/constants'
+import { AIDifficulty, Champion, Lock, Name, PickableValue, SummonerSpell, Team, type KeysByValue } from '../utils/constants'
 import { type PeerId, type Stream } from '@libp2p/interface'
-import { LobbyNotificationMessage, PickRequest } from './message/lobby'
+import { LobbyNotificationMessage, PickRequest } from '../message/lobby'
 import type { Game } from './game'
-import type { WriteonlyMessageStream } from './utils/pb-stream'
+import type { WriteonlyMessageStream } from '../utils/pb-stream'
 
 export type PlayerId = number & { readonly brand: unique symbol }
 

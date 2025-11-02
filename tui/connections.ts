@@ -1,14 +1,14 @@
 import type { AbortOptions, IdentifyResult, PeerId } from "@libp2p/interface";
-import { consumePeerInfoString, getPeerInfoString, validatePeerInfoString, type LibP2PNode } from "./index-node-simple";
-import { console_log } from "./ui/remote";
-import { logger } from "./utils/data-shared";
-import { NAME, VERSION } from "./utils/constants-build";
-import { render, DeferredView } from "./ui/remote-view";
-import { button, form, label, list, text } from "./ui/remote-types";
-import { getUsername } from "./utils/namegen";
+import { consumePeerInfoString, getPeerInfoString, validatePeerInfoString, type LibP2PNode } from "../node/node";
+import { console_log } from "../ui/remote/remote";
+import { logger } from "../utils/log";
+import { NAME, VERSION } from "../utils/constants-build";
+import { render, DeferredView } from "../ui/remote/view";
+import { button, form, label, list, text } from "../ui/remote/types";
+import { getUsername } from "../utils/namegen/namegen";
 import { PeerMap } from "@libp2p/peer-collections";
 import { peerIdFromString } from "@libp2p/peer-id";
-import type { PingResult } from "./network/ping";
+import type { PingResult } from "../network/libp2p/ping";
 
 enum PeerType { Undetermined, Player, Server }
 enum PeerStatus { Disconnected, Connecting, Connected, ConnectionFailed }
@@ -48,6 +48,10 @@ function updatePeerStatus(view: DeferredView<void>, peerId: PeerId, status: Peer
     const prevStatus = info.status
     info.status = status
 
+    const pingString = (info.status !== prevStatus && info.status == PeerStatus.Connected) ?
+        getPing(peerId)?.toFixed()?.concat(' ms') ?? '' :
+        ''
+
     if(info.status == PeerStatus.Disconnected){
         if(info.shownInUI){
             info.shownInUI = false
@@ -57,12 +61,13 @@ function updatePeerStatus(view: DeferredView<void>, peerId: PeerId, status: Peer
         info.shownInUI = true
         view.get('Connections').add(peerId.toString(), form({
             Name: label(getUsername(peerId)),
-            Ping: label(getPing(peerId)?.toFixed()?.concat(' ms') ?? ''),
             Status: label(peerStatusToString[info.status]),
+            Ping: label(pingString),
         }))
     } else if(info.status != prevStatus){
         view.get(`Connections/${peerId.toString()}`).update(form({
-            Status: label(peerStatusToString[info.status])
+            Status: label(peerStatusToString[info.status]),
+            Ping: label(pingString),
         }))
     }
 }
@@ -90,7 +95,7 @@ export async function connections(node: LibP2PNode, opts: Required<AbortOptions>
         const peerId = evt.detail
         if(fbPeers.has(peerId)){
             updatePeerStatus(view, peerId, PeerStatus.Connected, getPing)
-            pingService.ping(peerId).catch(() => { /* Ignore */ })
+            //pingService.ping(peerId).catch(() => { /* Ignore */ })
         }
     })
 
@@ -99,7 +104,7 @@ export async function connections(node: LibP2PNode, opts: Required<AbortOptions>
         const userAgent = `${NAME}/${VERSION}`
         if(agentVersion === userAgent){
             updatePeerStatus(view, peerId, PeerStatus.Connected, getPing)
-            pingService.ping(peerId).catch(() => { /* Ignore */ })
+            //pingService.ping(peerId).catch(() => { /* Ignore */ })
         }
     })
 

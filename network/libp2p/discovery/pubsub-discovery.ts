@@ -2,7 +2,7 @@ import { publicKeyFromProtobuf, publicKeyToProtobuf } from '@libp2p/crypto/keys'
 import { TypedEventEmitter, peerDiscoverySymbol } from '@libp2p/interface'
 import { peerIdFromPublicKey } from '@libp2p/peer-id'
 import { multiaddr } from '@multiformats/multiaddr'
-import { Peer as PBPeer } from '../message/peer.js'
+import { Peer as PBPeer } from '../../../message/peer'
 import type { PeerDiscovery, PeerDiscoveryEvents, PeerId, PeerInfo, Startable, ComponentLogger, Logger, PeerStore } from '@libp2p/interface'
 import type { AddressManager } from '@libp2p/interface-internal'
 import type { GossipSub, GossipsubMessage, GossipsubOpts } from '@chainsafe/libp2p-gossipsub'
@@ -22,7 +22,8 @@ export interface PubSubPeerDiscoveryComponents {
 }
 
 export interface PubSubPeerDiscoveryEvents {
-    update: void
+    add: CustomEvent<PeerIdWithData>
+    update: CustomEvent<void>
 }
 
 type MemoryCache = GossipsubOpts['messageCache']
@@ -31,6 +32,8 @@ type RPCMessage = NonNullable<ReturnType<MemoryCache['get']>>
 export interface PeerIdWithData {
     id: PeerId
     data: PBPeer.AdditionalData
+}
+interface PeerIdWithDataAndMessage extends PeerIdWithData {
     iwantCounts: Map<string, number>
     msgIdStr: string
     msgId: Uint8Array
@@ -45,8 +48,8 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
     public readonly [peerDiscoverySymbol] = true
     public readonly [Symbol.toStringTag] = '@libp2p/pubsub-peer-discovery'
 
-    private peersWithData: PeerIdWithData[] = []
-    getPeersWithData(){
+    private peersWithData: PeerIdWithDataAndMessage[] = []
+    getPeersWithData(): PeerIdWithData[] {
         return this.peersWithData.slice(0)
     }
 
@@ -162,7 +165,10 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
                 const msgId = mcache.history[0]!.find(entry => entry.msgIdStr === msgIdStr)!.msgId
                 const pwd = { id: peerId, data: peer.data, msg, msgId, msgIdStr, iwantCounts: new Map() }
                 if(i != -1) this.peersWithData.splice(i, 1, pwd)
-                else this.peersWithData.push(pwd)
+                else {
+                    this.safeDispatchEvent('add', pwd)
+                    this.peersWithData.push(pwd)
+                }
             } else {
                 this.peersWithData.splice(i, 1)
             }

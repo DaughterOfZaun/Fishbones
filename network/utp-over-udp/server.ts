@@ -4,7 +4,7 @@ import { determineAddressFamily, UTPAddress } from "../utp-native/address"
 import { EventEmitter as TypedEventEmitter } from 'node:events'
 import { Socket, type UTPSocketExt } from "./socket"
 import type { UTPContext } from '../utp-native/context'
-import { isUTP, udpSocket } from '../network/umplex'
+import { isUTP, udpSocket } from '../umplex'
 
 interface ServerEvents {
     listening: [],

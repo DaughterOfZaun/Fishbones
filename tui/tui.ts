@@ -1,15 +1,15 @@
-import { spinner, select, input, AbortPromptError } from './ui/remote'
-import { type Game } from './game'
-import { type LibP2PNode } from './index-node-simple'
-import { TITLE } from './utils/constants-build'
+import { spinner, select, input, AbortPromptError } from '../ui/remote/remote'
+import { type Game } from '../game/game'
+import { type LibP2PNode } from '../node/node'
+import { TITLE } from '../utils/constants-build'
 import { type AbortOptions } from '@libp2p/interface'
-import { getLastLaunchCmd } from './utils/data-client'
+import { getLastLaunchCmd } from '../utils/process/client'
 
-import { browser } from './index-tui-browser'
-import { connections, profilePanel } from './index-tui-connections'
-import { setup } from './index-tui-setup'
-import { lobby_gather } from './index-tui-lobby-gather'
-import { lobby_pick } from './index-tui-lobby-pick'
+import { browser } from './browser'
+import { connections, profilePanel } from './connections'
+import { setup } from './setup'
+import { lobby_gather } from './lobby/gather'
+import { lobby_pick } from './lobby/pick'
 
 export async function main(node: LibP2PNode, opts: Required<AbortOptions>){
     process.title = TITLE

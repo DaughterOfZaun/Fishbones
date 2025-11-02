@@ -1,9 +1,9 @@
-import { sdkPkg, type PkgInfoCSProj } from "./data-packages"
-import { createBar } from "../ui/remote"
+import { sdkPkg, type PkgInfoCSProj } from "./packages"
+import { createBar } from "../../ui/remote/remote"
 import type { AbortOptions } from "@libp2p/interface"
-import { fs_exists, fs_readFile, fs_writeFile, type ReadWriteFileOpts } from "./data-fs"
-import { killIfActive, spawn, successfulTermination, type ChildProcess } from "./data-process"
-import { args } from "./args"
+import { fs_exists, fs_readFile, fs_writeFile, type ReadWriteFileOpts } from "./fs"
+import { killIfActive, spawn, successfulTermination, type ChildProcess } from "../process/process"
+import { args } from "../args"
 
 const LOG_PREFIX = 'SDK'
 

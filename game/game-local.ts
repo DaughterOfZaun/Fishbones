@@ -1,15 +1,15 @@
-import { AIChampion, LOBBY_PROTOCOL, type u } from './utils/constants'
+import { AIChampion, LOBBY_PROTOCOL, type u } from '../utils/constants'
 import { type AbortOptions, type PeerId, type StreamHandler } from '@libp2p/interface'
-import type { LibP2PNode } from './index-node-simple'
+import type { LibP2PNode } from '../node/node'
 import * as lp from 'it-length-prefixed'
 import { pipe } from 'it-pipe'
-import { LobbyRequestMessage, LobbyNotificationMessage, KickReason } from './message/lobby'
+import { LobbyRequestMessage, LobbyNotificationMessage, KickReason } from '../message/lobby'
 import { Game } from './game'
 import { logger } from '@libp2p/logger'
 import type { Server } from './server'
 import type { GamePlayer, PlayerId, PPP } from './game-player'
 import { PeerMap } from '@libp2p/peer-collections'
-import { pbStream } from './utils/pb-stream'
+import { pbStream } from '../utils/pb-stream'
 
 export class LocalGame extends Game {
     protected log = logger('launcher:game-local')

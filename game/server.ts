@@ -11,8 +11,8 @@ import {
     modes,
     champions,
     spells,
-} from "./utils/constants"
-import type { Peer } from "./message/peer"
+} from "../utils/constants"
+import type { Peer } from "../message/peer"
 
 export abstract class Server {
 

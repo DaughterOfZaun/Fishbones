@@ -1,19 +1,19 @@
-import { build } from "./data-build"
-import { download, appendPartialDownloadFileExt, repairAria2 } from "./data-download"
-import { gcPkg, gitPkg, gsPkg, PkgInfo, repairTorrents, sdkPkg } from "./data-packages"
-import { console_log, fs_copyFile } from "../ui/remote"
-import { console_log_fs_err, cwd, downloads, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_rmdir } from './data-fs'
-import { readTrackersTxt } from "./data-trackers"
-import { appendPartialUnpackFileExt, DataError, repair7z, unpack } from "./data-unpack"
-import { TerminationError, unwrapAbortError } from "./data-process"
+import { build } from "./build"
+import { download, appendPartialDownloadFileExt, repairAria2 } from "./download/download"
+import { gcPkg, gitPkg, gsPkg, PkgInfo, repairTorrents, sdkPkg } from "./packages"
+import { console_log, fs_copyFile } from "../../ui/remote/remote"
+import { console_log_fs_err, cwd, downloads, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_rmdir } from './fs'
+import { readTrackersTxt } from "./download/trackers"
+import { appendPartialUnpackFileExt, DataError, repair7z, unpack } from "./unpack"
+import { TerminationError, unwrapAbortError } from "../process/process"
 import type { AbortOptions } from "@libp2p/interface"
 import { promises as fs } from 'fs'
 import path from 'node:path'
-import embedded from './embedded'
+import embedded from './embedded/embedded'
 import os from 'os'
-import { runPostInstall, update } from "./data-update"
+import { runPostInstall, update } from "./update"
 //import { ensureSymlink } from "./data-client"
-import { args } from "./args"
+import { args } from "../args"
 
 const DOTNET_INSTALL_CORRUPT_EXIT_CODES = [ 130, 131, 142, ]
 

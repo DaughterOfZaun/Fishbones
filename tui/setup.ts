@@ -1,9 +1,9 @@
 import type { AbortOptions } from "@libp2p/interface";
-import type { Game } from "./game";
-import type { LocalServer } from "./server";
-import { render } from "./ui/remote-view";
-import { Features, GameMap, GameMode, GameType, PlayerCount, TickRate } from "./utils/constants";
-import { button, checkbox, form, inq2gd, line, option } from "./ui/remote-types";
+import type { Game } from "../game/game";
+import type { LocalServer } from "../game/server";
+import { render } from "../ui/remote/view";
+import { Features, GameMap, GameMode, GameType, PlayerCount, TickRate } from "../utils/constants";
+import { button, checkbox, form, inq2gd, line, option } from "../ui/remote/types";
 import { AbortPromptError } from "@inquirer/core";
 
 export async function setup(game: Game, server: LocalServer, opts: Required<AbortOptions>){

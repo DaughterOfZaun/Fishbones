@@ -1,8 +1,7 @@
 import type { AbortOptions } from "@libp2p/interface"
-import { Deferred } from "../utils/data-process"
-import { handlers, sendCall, sendFollowupNotification, type JSONDict, type JSONValue } from "./remote-jrpc"
-//import * as jrpc from "./remote-jrpc"
-import type { Config, View as IView } from "./remote-types"
+import { Deferred } from "../../utils/process/process"
+import { handlers, sendCall, sendFollowupNotification, type JSONDict, type JSONValue } from "./jrpc"
+import type { Config, View as IView } from "./types"
 
 const SLASH = '/'
 const COLON = ':'

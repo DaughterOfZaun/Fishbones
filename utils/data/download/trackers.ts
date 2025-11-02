@@ -1,9 +1,9 @@
 import path from 'node:path'
-import { console_log, createBar } from '../ui/remote'
-import { downloads, fs_readFile, fs_writeFile } from './data-fs'
+import { console_log, createBar } from '../../../ui/remote/remote'
+import { downloads, fs_readFile, fs_writeFile } from '../fs'
 import type { AbortOptions } from '@libp2p/interface'
-import { logger } from './data-shared'
-import embedded from './embedded'
+import { logger } from '../../log'
+import embedded from '../embedded/embedded'
 
 const trackersTxtName = 'trackers.txt'
 const trackersTxt = path.join(downloads, trackersTxtName)

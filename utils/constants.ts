@@ -1,4 +1,4 @@
-import { input, checkbox, select, type Choice } from "../ui/remote"
+import { input, checkbox, select, type Choice } from "../ui/remote/remote"
 import type { AbortOptions } from "@libp2p/interface"
 type CheckboxChoice<T> = Extract<Parameters<typeof checkbox<T>>[0]['choices'][number], { value: T }>
 

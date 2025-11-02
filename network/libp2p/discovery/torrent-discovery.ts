@@ -41,7 +41,7 @@ import KRPC from 'k-rpc'
 //@ts-expect-error: Could not find a declaration file for module 'k-rpc-socket'
 import type KRPCSocket from 'k-rpc-socket'
 
-import { createSocket, isDHT, type Socket } from '../network/umplex'
+import { createSocket, isDHT, type Socket } from '../umplex'
 import { equals as uint8ArrayEquals } from 'uint8arrays'
 import { peerIdFromCID } from '@libp2p/peer-id'
 import { getThinWaistAddresses } from '@libp2p/utils/get-thin-waist-addresses'

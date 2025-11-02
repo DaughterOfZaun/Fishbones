@@ -1,11 +1,11 @@
 import * as Mega from 'megajs'
-import { packages, type PkgInfo } from './data-packages'
+import { packages, type PkgInfo } from '../packages'
 import type { Readable } from 'stream'
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'http'
 import type { AddressInfo } from 'net'
-import { registerShutdownHandler } from './data-process'
+import { registerShutdownHandler } from '../../process/process'
 import type { AbortOptions } from '@libp2p/interface'
-import { logger } from './data-shared'
+import { logger } from '../../log'
 
 const LOG_PREFIX = 'MEGA'
 

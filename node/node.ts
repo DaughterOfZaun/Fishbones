@@ -14,30 +14,30 @@ import { createLibp2p } from 'libp2p'
 //import { fromString, toString } from 'uint8arrays'
 import { KEEP_ALIVE, type AbortOptions, type ComponentLogger, type Connection, type Logger, type PeerInfo, type PrivateKey } from '@libp2p/interface'
 import { tcp } from '@libp2p/tcp'
-import { patchedCrypto } from './utils/crypto'
+import { patchedCrypto } from '../utils/crypto'
 
 //import { RTCPeerConnection } from 'node-datachannel/polyfill'
 import type { RTCDataChannel, RTCPeerConnection } from '@ipshipyard/node-datachannel/polyfill'
 //import { defaultLogger } from '@libp2p/logger'
 
-import { pubsubPeerDiscovery } from './network/pubsub-discovery'
+import { pubsubPeerDiscovery } from '../network/libp2p/discovery/pubsub-discovery'
 import { GossipSub, gossipsub, type GossipSubComponents, type GossipsubOpts } from '@chainsafe/libp2p-gossipsub'
 import { PeerRecord, RecordEnvelope } from '@libp2p/peer-record'
 import type { ConnectionManager, TransportManager } from '@libp2p/interface-internal'
 import { mdns } from '@libp2p/mdns'
-import { args } from './utils/args'
-import { appDiscoveryTopic, NAME, rtcConfiguration, VERSION } from './utils/constants-build'
+import { args } from '../utils/args'
+import { appDiscoveryTopic, NAME, rtcConfiguration, VERSION } from '../utils/constants-build'
 import { rendezvousClient } from "@canvas-js/libp2p-rendezvous/client"
 //import { loadOrCreateSelfKey } from '@libp2p/config'
 import { LevelDatastore } from 'datastore-level'
 //import { keychain } from '@libp2p/keychain'
-import { downloads } from './utils/data-shared'
+import { downloads } from '../utils/log'
 import path from 'node:path'
-import { console_log } from './ui/remote'
+import { console_log } from '../ui/remote/remote'
 import { toString as uint8ArrayToString } from 'uint8arrays'
-import { tiePubSubWithPeerDiscovery } from './index-node-simple-hacks'
-import { logger as loggerClass } from './utils/data-shared'
-import { customPing } from './network/ping'
+import { tiePubSubWithPeerDiscovery } from '../node/hacks'
+import { logger as loggerClass } from '../utils/log'
+import { customPing } from '../network/libp2p/ping'
 import util from "node:util"
 
 export type LibP2PNode = Awaited<ReturnType<typeof createNodeInternal>> & ComponentsContainer
@@ -162,11 +162,12 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
         //datastore,
         //privateKey,
         //keychain: keychain(keychainInit),
+        start: false,
     })
 
     opts?.signal?.throwIfAborted()
 
-    await node.peerStore.patch(peerIdFromString(''), {
+    await node.peerStore.patch(peerIdFromString('12D3KooWHHyaqcTuPvphwifkP2su2Qis2wWKLZhaobc9cB5qXQak'), {
         tags: { [`${KEEP_ALIVE}-rendezvous`]: { value: 1 } }
     }, opts)
 
@@ -201,6 +202,8 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
     }
 
     tiePubSubWithPeerDiscovery(node)
+
+    await node.start()
 
     return node
 }

@@ -1,8 +1,8 @@
 import path from 'node:path'
-import { gsPkg, sdkPkg } from './data-packages'
-import { killSubprocess, spawn, startProcess, type ChildProcess } from './data-process'
-import { fs_writeFile } from './data-fs'
-import type { GameInfo } from './game-info'
+import { gsPkg, sdkPkg } from '../data/packages'
+import { killSubprocess, spawn, startProcess, type ChildProcess } from './process'
+import { fs_writeFile } from '../data/fs'
+import type { GameInfo } from '../../game/game-info'
 import type { AbortOptions } from '@libp2p/interface'
 
 import net from "net"

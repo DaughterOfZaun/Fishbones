@@ -1,8 +1,8 @@
 import path from 'node:path'
 import { promises as fs } from "node:fs"
 import type { AbortOptions } from '@libp2p/interface'
-import { console_log } from '../ui/remote'
-import { cwd, downloads } from './data-shared'
+import { console_log } from '../../ui/remote/remote'
+import { cwd, downloads } from '../log'
 export { cwd, downloads }
 
 export const rwx_rx_rx =

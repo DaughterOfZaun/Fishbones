@@ -1,10 +1,10 @@
-import type { GamePlayer } from "./game-player";
-import { PLAYERS, BOTS, Team, type Context, players } from "./index-tui-lobby";
-import { button, form, icon, label, list, type Form } from "./ui/remote-types";
-import { render } from "./ui/remote-view";
-import { Champion, champions, spells, SummonerSpell } from "./utils/constants";
-import { gcPkg } from "./utils/data-packages";
-import { getBotName, getPseudonym } from "./utils/namegen";
+import type { GamePlayer } from "../../game/game-player";
+import { PLAYERS, BOTS, Team, type Context, players } from "./lobby";
+import { button, form, icon, label, list, type Form } from "../../ui/remote/types";
+import { render } from "../../ui/remote/view";
+import { Champion, champions, spells, SummonerSpell } from "../../utils/constants";
+import { gcPkg } from "../../utils/data/packages";
+import { getBotName, getPseudonym } from "../../utils/namegen/namegen";
 
 export async function lobby_pick(ctx: Context){
     const { game } = ctx

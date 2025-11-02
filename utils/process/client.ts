@@ -1,6 +1,6 @@
-import { gcPkg } from "./data-packages"
-import { sanitize_bfkey } from "./constants"
-import { killSubprocess, spawn, startProcess, type ChildProcess } from "./data-process"
+import { gcPkg } from "../data/packages"
+import { sanitize_bfkey } from "../constants"
+import { killSubprocess, spawn, startProcess, type ChildProcess } from "../process/process"
 import type { AbortOptions } from "@libp2p/interface"
 import fs from 'node:fs/promises'
 import path from 'node:path'

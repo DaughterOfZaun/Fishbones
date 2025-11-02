@@ -1,12 +1,12 @@
-import { type PkgInfo } from './data-packages'
-import { logger } from './data-shared'
-import { createBar, fs_copyFile } from '../ui/remote'
-import { killIfActive, spawn, successfulTermination, type ChildProcess } from './data-process'
-import { rwx_rx_rx, downloads, fs_chmod, fs_ensureDir, fs_exists, fs_writeFile, fs_removeFile } from './data-fs'
+import { type PkgInfo } from './packages'
+import { logger } from '../log'
+import { createBar, fs_copyFile } from '../../ui/remote/remote'
+import { killIfActive, spawn, successfulTermination, type ChildProcess } from '../process/process'
+import { rwx_rx_rx, downloads, fs_chmod, fs_ensureDir, fs_exists, fs_writeFile, fs_removeFile } from './fs'
 import type { AbortOptions } from '@libp2p/interface'
-import { args } from './args'
+import { args } from '../args'
 import path from 'node:path'
-import embedded from './embedded'
+import embedded from './embedded/embedded'
 
 const s7zExe = path.join(downloads, '7z.exe')
 const s7zDll = path.join(downloads, '7z.dll')

@@ -1,5 +1,5 @@
 import { MultiBar, Presets } from 'cli-progress'
-import { logger } from '../utils/data-shared'
+import { logger } from '../utils/log'
 
 const barOpts = {
     stopOnComplete: true,

@@ -1,8 +1,8 @@
 import path from 'node:path'
 import type { AbortOptions } from '@libp2p/interface'
-import { console_log_fs_err, downloads, fs_exists, fs_moveFile } from './data-fs'
-import { fs_copyFile } from '../ui/remote'
-import embedded from './embedded'
+import { console_log_fs_err, downloads, fs_exists, fs_moveFile } from './fs'
+import { fs_copyFile } from '../../ui/remote/remote'
+import embedded from './embedded/embedded'
 
 const magnet = (ihv1?: string, ihv2?: string, fname?: string, size?: number) => {
     const parts: string[] = []

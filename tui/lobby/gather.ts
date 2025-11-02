@@ -1,12 +1,12 @@
-import { LocalGame } from "./game-local";
-import type { GamePlayer, PlayerId, PPP } from "./game-player";
-import { SwitchViewError } from "./index-tui";
-import { BOTS, players, PLAYERS, Team, type Context } from "./index-tui-lobby";
-import { button, form, icon, inq2gd, label, option, type Form } from "./ui/remote-types";
-import { render } from "./ui/remote-view";
-import { AIChampion, AIDifficulty, champions } from "./utils/constants";
-import { gcPkg } from "./utils/data-packages";
-import { getPseudonym } from "./utils/namegen";
+import { LocalGame } from "../../game/game-local";
+import type { GamePlayer, PlayerId, PPP } from "../../game/game-player";
+import { SwitchViewError } from "../tui";
+import { BOTS, players, PLAYERS, Team, type Context } from "./lobby";
+import { button, form, icon, inq2gd, label, option, type Form } from "../../ui/remote/types";
+import { render } from "../../ui/remote/view";
+import { AIChampion, AIDifficulty, champions } from "../../utils/constants";
+import { gcPkg } from "../../utils/data/packages";
+import { getPseudonym } from "../../utils/namegen/namegen";
 
 //export async function lobby(game: Game, opts: Required<AbortOptions>){}
 

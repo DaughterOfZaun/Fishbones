@@ -5,7 +5,7 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { COPYRIGHT, DESCRIPTION, HIDE_CONSOLE, ICON, NAME, OUTDIR, OUTFILE, OUTFILE_CLI, PUBLISHER, TARGET, TITLE, VERSION } from './utils/constants-build'
 const OUTDIR_FILE_CLI = path.join(OUTDIR, OUTFILE_CLI)
-import { config } from './utils/embedded-config'
+import { config } from './utils/data/embedded/config'
 
 //import { NtExecutable } from 'pe-library'
 //const PE_HEADER_OFFSET_LOCATION = 0x3c
