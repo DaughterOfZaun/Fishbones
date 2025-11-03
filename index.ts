@@ -32,8 +32,12 @@ async function index(opts: Required<AbortOptions>){
         }
     }
 
-    if(args.repair.enabled)
+    if(args.repair.enabled) try {
         await repair(opts)
+    } catch(err) {
+        console_log('Repairing of some critical component has failed.')
+        throw err
+    }
 
     const port = args.port.value
     const node = await createNode(port, opts)

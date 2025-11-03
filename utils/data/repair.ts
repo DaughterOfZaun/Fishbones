@@ -18,22 +18,32 @@ import { args } from "../args"
 
 const DOTNET_INSTALL_CORRUPT_EXIT_CODES = [ 130, 131, 142, ]
 
+function throwAnyRejection(results: PromiseSettledResult<unknown>[]){
+    const reasons = results
+        .filter(result => result.status === 'rejected')
+        .map(result => result.reason as Error)
+    if(reasons.length)
+        throw new AggregateError(reasons)
+}
+
 export async function repair(opts: Required<AbortOptions>){
     //console.log('Running data check and repair...')
 
     await fs_ensureDir(downloads, opts)
     
-    await Promise.all([
-        readTrackersTxt(opts),
-        repairTorrents(opts),
-        repair7z(opts),
-        repairAria2(opts),
+    let results: PromiseSettledResult<unknown>[]
+    results = await Promise.allSettled([
+        readTrackersTxt(opts).catch((err) => { console_log('Restoring torrent trackers list failed:', Bun.inspect(err)) }),
+        repairTorrents(opts).catch((err) => { console_log('Restoring torrent files failed:', Bun.inspect(err)) }),
+        repair7z(opts), //.catch((err) => { console_log('Restoring 7z archiver executable failed:', Bun.inspect(err)); throw err }),
+        repairAria2(opts), //.catch((err) => { console_log('Restoring Aria2 downloader executable failed:', Bun.inspect(err)); throw err }),
         //repairIcon(opts),
-    ] as Promise<unknown>[])
+    ])
+    throwAnyRejection(results)
 
     let gsExeIsMissing = !await fs_exists(gsPkg.dll, opts)
-    await Promise.all([
-        Promise.all([
+    results = await Promise.allSettled([
+        Promise.allSettled([
             repairArchived(sdkPkg, opts),
             (async () => {
                 if(args.update.enabled){
@@ -49,7 +59,9 @@ export async function repair(opts: Required<AbortOptions>){
                         await runPostInstall(opts)
                 }
             })(),
-        ]).then(async () => {
+        ]).then(async (results) => {
+
+            throwAnyRejection(results)
 
             const updated = await update(gsPkg, opts)
 
@@ -80,7 +92,8 @@ export async function repair(opts: Required<AbortOptions>){
 
             //await ensureSymlink()
         }),
-    ] as Promise<unknown>[])
+    ])
+    throwAnyRejection(results)
 
     //TODO: await fs.cp(gsPkg.gcDir, gcPkg.exeDir, { recursive: true })
 }

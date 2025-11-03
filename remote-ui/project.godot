@@ -18,6 +18,8 @@ run/print_header=false
 config/custom_user_dir_name="Fishbones_Data"
 config/features=PackedStringArray("4.5", "GL Compatibility")
 run/low_processor_mode=true
+boot_splash/bg_color=Color(0, 0, 0, 1)
+boot_splash/fullsize=false
 config/icon="uid://otwgmcv7cmt7"
 config/windows_native_icon="res://icons/icon.ico"
 
@@ -34,6 +36,7 @@ gdscript/warnings/return_value_discarded=1
 
 [display]
 
+window/energy_saving/keep_screen_on=false
 window/stretch/aspect="expand"
 
 [editor]

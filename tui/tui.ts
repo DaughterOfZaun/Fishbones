@@ -86,13 +86,28 @@ async function lobby(game: Game, opts: Required<AbortOptions>){
 }
 
 async function lobby_wait_for_start(ctx: Context){
-    const message = 'Waiting for the server to start...'
-    await spinner({ message }, ctx)
+    return abortableSpinner('Waiting for the server to start...', ctx)
 }
 
 async function lobby_wait_for_end(ctx: Context){
-    const message = 'Waiting for the end of the game...'
-    await spinner({ message }, ctx)
+    return abortableSpinner('Waiting for the end of the game...', ctx)
+}
+
+async function abortableSpinner(message: string, ctx: Context){
+    try {
+        await spinner({ message }, ctx)
+    } catch(err) {
+        if(err instanceof AbortPromptError && !ctx.signal.aborted){
+            throw new SwitchViewError({ cause: null })
+            //const { game } = ctx
+            //if(game instanceof LocalGame)
+            //    game.stopListening()
+            //else if(game instanceof RemoteGame)
+            //    game.disconnect()
+        } else {
+            throw err
+        }
+    }
 }
 
 async function lobby_crash_report(ctx: Context){
@@ -113,7 +128,7 @@ async function lobby_crash_report(ctx: Context){
         if(action === 'relaunch'){
             game.relaunch()
             //return await lobby_wait_for_end(ctx)
-            throw new SwitchViewError({ cause: lobby_wait_for_end })   
+            throw new SwitchViewError({ cause: lobby_wait_for_end })
         } else if(action === 'exit'){
             throw new SwitchViewError({ cause: null })
         } else if(action === 'show_cmd'){

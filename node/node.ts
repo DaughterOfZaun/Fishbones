@@ -12,7 +12,7 @@ import { CODE_P2P_CIRCUIT, multiaddr, type Multiaddr } from '@multiformats/multi
 
 import { createLibp2p } from 'libp2p'
 //import { fromString, toString } from 'uint8arrays'
-import { KEEP_ALIVE, type AbortOptions, type ComponentLogger, type Connection, type Libp2pEvents, type Logger, type PeerInfo, type PrivateKey, type TypedEventTarget } from '@libp2p/interface'
+import { KEEP_ALIVE, type AbortOptions, type ComponentLogger, type Connection, type Libp2pEvents, type Logger, type PeerId, type PeerInfo, type PrivateKey, type TypedEventTarget } from '@libp2p/interface'
 import { tcp } from '@libp2p/tcp'
 import { patchedCrypto } from '../utils/crypto'
 
@@ -39,6 +39,7 @@ import { tiePubSubWithPeerDiscovery } from '../node/hacks'
 import { logger as loggerClass } from '../utils/log'
 import { customPing } from '../network/libp2p/ping'
 import util from "node:util"
+import { PeerSet } from '@libp2p/peer-collections'
 
 export type LibP2PNode = Awaited<ReturnType<typeof createNodeInternal>> & ComponentsContainer
 type ComponentsContainer = {
@@ -112,6 +113,12 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
 
     opts?.signal?.throwIfAborted()
 
+    const serverPeerIDString = '12D3KooWHHyaqcTuPvphwifkP2su2Qis2wWKLZhaobc9cB5qXQak'
+    const serverPeerMultiddrStrings = [
+        `/ip4/195.133.146.185/udp/42451/webrtc-direct/certhash/uEiBYh4UvCuTLl07oUNUl_1CNkWJAver2h7jLVdZmE0anig/p2p/${serverPeerIDString}`,
+        `/ip4/195.133.146.185/tcp/41463/p2p/${serverPeerIDString}`,
+    ]
+
     const node = await createLibp2p({
         nodeInfo: {
             name: NAME,
@@ -156,10 +163,7 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
                     autoDiscover: true,
                     autoRegister: {
                         namespaces: [ appDiscoveryTopic ],
-                        multiaddrs: [
-                            '/ip4/195.133.146.185/udp/42451/webrtc-direct/certhash/uEiBYh4UvCuTLl07oUNUl_1CNkWJAver2h7jLVdZmE0anig/p2p/12D3KooWHHyaqcTuPvphwifkP2su2Qis2wWKLZhaobc9cB5qXQak',
-                            '/ip4/195.133.146.185/tcp/41463/p2p/12D3KooWHHyaqcTuPvphwifkP2su2Qis2wWKLZhaobc9cB5qXQak',
-                        ],
+                        multiaddrs: serverPeerMultiddrStrings,
                     },
                 }),
                 bootstrap: bootstrap({
@@ -179,6 +183,12 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
             pubsub: gossipsub({
                 allowPublishToZeroTopicPeers: true,
                 emitSelf: true,
+                directPeers: args.allowInternet.enabled ? [
+                    {
+                        id: peerIdFromString(serverPeerIDString),
+                        addrs: serverPeerMultiddrStrings.map(maStr => multiaddr(maStr)),
+                    },
+                ] : [],
             }) as (components: GossipSubComponents) => GossipSub,
             pubsubPeerDiscovery: pubsubPeerDiscovery({
                 topic: appDiscoveryTopic,
@@ -195,9 +205,11 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
 
     opts?.signal?.throwIfAborted()
 
-    await node.peerStore.patch(peerIdFromString('12D3KooWHHyaqcTuPvphwifkP2su2Qis2wWKLZhaobc9cB5qXQak'), {
-        tags: { [`${KEEP_ALIVE}-rendezvous`]: { value: 1 } }
-    }, opts)
+    if(args.allowInternet.enabled){
+        await node.peerStore.patch(peerIdFromString(serverPeerIDString), {
+            tags: { [`${KEEP_ALIVE}-rendezvous-server`]: { value: 1 } }
+        }, opts)
+    }
 
     //TODO: Reintroduce Autodial.
     //const dialedPeers = new Set<string>()
@@ -210,7 +222,7 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
         //console_log('*:peer', peer.id.toString())
         //if(!dialedPeers.has(peer.id.toString()))
         if(peersDiscoveredFirstByNode.has(peer.id.toString())){
-            node.dial(peer.id).catch((/*err*/) => { /* Ignore */ })
+            patchAndDial(peer.id).catch((/*err*/) => { /* Ignore */ })
             //dialedPeers.add(peer.id.toString())
         } else {
             peersDiscoveredFirstByMechanism.add(peer.id.toString())
@@ -222,11 +234,24 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
         //console_log('discovery:peer', peer.id.toString())
         //if(!dialedPeers.has(peer.id.toString()))
         if(peersDiscoveredFirstByMechanism.has(peer.id.toString())){
-            node.dial(peer.id).catch((/*err*/) => { /* Ignore */ })
+            patchAndDial(peer.id).catch((/*err*/) => { /* Ignore */ })
             //dialedPeers.add(peer.id.toString())
         } else {
             peersDiscoveredFirstByNode.add(peer.id.toString())
         }
+    }
+
+    const patchedPeers = new PeerSet()
+    async function patchAndDial(peerId: PeerId){
+        if(!patchedPeers.has(peerId)){
+            patchedPeers.add(peerId)
+            await node.peerStore.patch(peerId, {
+                tags: {
+                    [`${KEEP_ALIVE}-same-program`]: { value: 1 }
+                }
+            })
+        }
+        await node.dial(peerId)
     }
 
     tiePubSubWithPeerDiscovery(node)

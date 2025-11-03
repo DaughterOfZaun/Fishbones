@@ -1925,6 +1925,7 @@ text = "!"
 expand_icon = true
 
 [node name="#Popup" type="Window" parent="." node_paths=PackedStringArray("close", "timer", "header", "body", "player")]
+transparent_bg = true
 oversampling_override = 1.0
 position = Vector2i(358, 386)
 size = Vector2i(320, 100)
@@ -1932,6 +1933,7 @@ visible = false
 unresizable = true
 borderless = true
 always_on_top = true
+transparent = true
 popup_window = true
 popup_wm_hint = true
 minimize_disabled = true

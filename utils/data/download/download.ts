@@ -96,6 +96,8 @@ async function startAria2(opts: Required<AbortOptions>){
             `--allow-piece-length-change=${true}`,
             `--auto-file-renaming=${true}`,
             `--allow-overwrite=${true}`,
+            //`--retry-wait=${60}`,
+            //`--max-tries=${5}`,
 
             //TODO: These values are tweaked to download exactly two archives.
             //`--min-split-size=${512 * 1024 * 1024}`,

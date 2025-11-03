@@ -97,8 +97,8 @@ export class PickableValue extends ValueDesc<number, number> {
 const mapsTable: [number, string, boolean][] = [
     [0, `Test`, false],
     [1, `Old Summoner's Rift`, true],
-    [2, `Old Summoner's Rift`, true],
-    [3, `Proving Grounds`, true],
+    [2, `Old Summoner's Rift Autumn`, true],
+    [3, `Proving Grounds`, false],
     [4, `Twisted Treeline`, true],
     //[5, `Unknown`, false],
     [6, `Summoner's Rift Winter (2011)`, false],
