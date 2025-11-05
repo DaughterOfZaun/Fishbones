@@ -156,3 +156,16 @@ export function console_log_fs_err(operation: string, path: string, unk_err: unk
     const desc = (err.code && FS_ERR_CODES[err.code]) ?? 'Unknown'
     console_log(`${operation} failed. ${desc}:\n${path}`)
 }
+
+export type ReadDirOpts = { withFileTypes?: true } & Required<AbortOptions>
+export async function fs_readdir(path: string, opts: ReadDirOpts, log = true){
+    let result: string[] = []
+    try {
+        result = await fs.readdir(path)
+    } catch(err){
+        if(log)
+            console_log_fs_err('Reading directory', path, err)
+    }
+    opts.signal.throwIfAborted()
+    return result
+}

@@ -310,5 +310,7 @@ function gameInfoToChoice(
     (choice.fields!.Minions as Checkbox).button_pressed = game.features.isMinionsEnabled;
     (choice.fields!.Cheats as Checkbox).button_pressed = game.features.isCheatsEnabled;
 
+    //TODO: (choice.fields!.Join as Button).disabled = !localClientMaps.includes(game.map.value!);
+
     return choice
 }

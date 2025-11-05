@@ -201,6 +201,10 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
         privateKey,
         keychain: keychain(keychainInit),
         start: false,
+
+        connectionMonitor: {
+            enabled: false,
+        },
     })
 
     opts?.signal?.throwIfAborted()
@@ -212,32 +216,28 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
     }
 
     //TODO: Reintroduce Autodial.
-    //const dialedPeers = new Set<string>()
-    const peersDiscoveredFirstByNode = new Set<string>()
-    const peersDiscoveredFirstByMechanism = new Set<string>()
+    const peersDiscoveredByNode = new Set<string>()
+    const peersDiscoveredByMechanism = new Set<string>()
     node.services.mdns?.addEventListener('peer', onPeerDiscoveredByMechanism)
     node.services.rendezvous?.addEventListener('peer', onPeerDiscoveredByMechanism)
+    node.services.pubsubPeerDiscovery?.addEventListener('peer', onPeerDiscoveredByMechanism)
     function onPeerDiscoveredByMechanism(event: CustomEvent<PeerInfo>){
         const peer = event.detail
         //console_log('*:peer', peer.id.toString())
-        //if(!dialedPeers.has(peer.id.toString()))
-        if(peersDiscoveredFirstByNode.has(peer.id.toString())){
-            patchAndDial(peer.id).catch((/*err*/) => { /* Ignore */ })
-            //dialedPeers.add(peer.id.toString())
-        } else {
-            peersDiscoveredFirstByMechanism.add(peer.id.toString())
+        if(!peersDiscoveredByMechanism.has(peer.id.toString())){
+            peersDiscoveredByMechanism.add(peer.id.toString())
+            if(peersDiscoveredByNode.has(peer.id.toString())){
+                patchAndDial(peer.id).catch((/*err*/) => { /* Ignore */ })
+            }
         }
     }
     node.addEventListener('peer:discovery', onPeerDiscoveredByNode)
     function onPeerDiscoveredByNode(event: CustomEvent<PeerInfo>){
         const peer = event.detail
         //console_log('discovery:peer', peer.id.toString())
-        //if(!dialedPeers.has(peer.id.toString()))
-        if(peersDiscoveredFirstByMechanism.has(peer.id.toString())){
+        peersDiscoveredByNode.add(peer.id.toString())
+        if(peersDiscoveredByMechanism.has(peer.id.toString())){
             patchAndDial(peer.id).catch((/*err*/) => { /* Ignore */ })
-            //dialedPeers.add(peer.id.toString())
-        } else {
-            peersDiscoveredFirstByNode.add(peer.id.toString())
         }
     }
 

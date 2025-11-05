@@ -5,16 +5,16 @@ message Peer {
     repeated bytes addrs = 2;
     optional AdditionalData data = 3;
     message AdditionalData {
-        string name = 1;
-        ServerSettings serverSettings = 2;
-        message ServerSettings {
-            string name = 1;
-            repeated uint32 maps = 2;
-            repeated uint32 modes = 3;
-            uint32 tickRate = 4;
-            repeated int32 champions = 5;
-            repeated int32 spells = 6;
-        }
+        //string name = 1;
+        //ServerSettings serverSettings = 2;
+        //message ServerSettings {
+        //    string name = 1;
+        //    repeated uint32 maps = 2;
+        //    repeated uint32 modes = 3;
+        //    uint32 tickRate = 4;
+        //    repeated int32 champions = 5;
+        //    repeated int32 spells = 6;
+        //}
         repeated GameInfo gameInfos = 3;
         message GameInfo {
             uint32 id = 1;
@@ -25,6 +25,10 @@ message Peer {
             uint32 players_max = 6;
             repeated uint32 features = 7;
             bool passwordProtected = 8;
+            repeated int32 champions = 9;
+            repeated int32 spells = 10;
+            repeated int32 items = 11;
+            uint32 tickRate = 12;
         }
     }
 }

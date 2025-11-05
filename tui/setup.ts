@@ -5,10 +5,17 @@ import { render } from "../ui/remote/view";
 import { Features, GameMap, GameMode, GameType, PlayerCount, TickRate } from "../utils/constants";
 import { button, checkbox, form, inq2gd, line, option } from "../ui/remote/types";
 import { AbortPromptError } from "@inquirer/core";
+import { localClientServerMaps, localMaps } from "../utils/data/local";
 
 export async function setup(game: Game, server: LocalServer, opts: Required<AbortOptions>){
     
     server.loadSettings()
+    
+    const gameMode = () => option(
+        inq2gd(GameMode.choices, localMaps[game.map.value!]!.modes),
+        game.mode.value,
+        value => game.mode.value = value,
+    )
     
     const view = render('CustomGameSetup', form({
         GameName: line(game.name.value, value => game.name.value = value),
@@ -17,8 +24,12 @@ export async function setup(game: Game, server: LocalServer, opts: Required<Abor
         TickRate: option(inq2gd(TickRate.choices), server.tickRate.value, value => server.tickRate.value = value),
         TeamSize: option(inq2gd(PlayerCount.choices), game.playersMax.value, value => game.playersMax.value = value),
         
-        GameMode: option(inq2gd(GameMode.choices), game.mode.value, value => game.mode.value = value),
-        GameMap: option(inq2gd(GameMap.choices), game.map.value, value => game.map.value = value),
+        GameMode: gameMode(),
+        GameMap: option(inq2gd(GameMap.choices, localClientServerMaps), game.map.value, value => {
+            game.map.value = value
+            game.mode.value = localMaps[game.map.value]!.modes[0]
+            view.get('GameMode').update(gameMode())
+        }),
         GameType: option(inq2gd(GameType.choices), game.type.value, value => game.type.value = value),
 
         Manacosts: checkbox(game.features.isManacostsEnabled, value => game.features.set(Features.MANACOSTS_DISABLED, !value)),

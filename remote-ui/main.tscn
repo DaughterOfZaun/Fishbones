@@ -28,9 +28,9 @@ shader_parameter/tint_color = Color(0, 0, 0, 0)
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_efxa6"]
 
-[sub_resource type="ButtonGroup" id="ButtonGroup_efxa6"]
-
 [sub_resource type="ButtonGroup" id="ButtonGroup_dg77c"]
+
+[sub_resource type="ButtonGroup" id="ButtonGroup_efxa6"]
 
 [sub_resource type="ButtonGroup" id="ButtonGroup_ycdy4"]
 
@@ -695,61 +695,32 @@ theme_override_constants/separation = 16
 [node name="VBoxContainer1" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer2"]
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.62
 
 [node name="Button1" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer2/VBoxContainer1"]
-layout_mode = 2
-mouse_filter = 2
-text = "Game Mode"
-flat = true
-
-[node name="#GameMode" type="OptionButton" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer2/VBoxContainer1"]
-layout_mode = 2
-selected = 0
-item_count = 1
-popup/item_0/text = "Classic"
-popup/item_0/id = 0
-
-[node name="GameMode" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer2/VBoxContainer1"]
-visible = false
-layout_mode = 2
-size_flags_horizontal = 3
-script = ExtResource("14_yaehf")
-
-[node name="Button1" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer2/VBoxContainer1/GameMode"]
-layout_mode = 2
-size_flags_vertical = 3
-toggle_mode = true
-button_group = SubResource("ButtonGroup_efxa6")
-text = "Classic"
-
-[node name="VBoxContainer2" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer2"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="Button1" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer2/VBoxContainer2"]
 layout_mode = 2
 mouse_filter = 2
 text = "Game Map"
 flat = true
 
-[node name="#GameMap" type="OptionButton" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer2/VBoxContainer2"]
+[node name="#GameMap" type="OptionButton" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer2/VBoxContainer1"]
 layout_mode = 2
 selected = 0
 item_count = 1
 popup/item_0/text = "Summoner's Rift"
 popup/item_0/id = 0
 
-[node name="ScrollContainer" type="ScrollContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer2/VBoxContainer2"]
+[node name="ScrollContainer" type="ScrollContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer2/VBoxContainer1"]
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="GameMap" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer2/VBoxContainer2/ScrollContainer"]
+[node name="GameMap" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer2/VBoxContainer1/ScrollContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 script = ExtResource("14_yaehf")
 
-[node name="Button1" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer2/VBoxContainer2/ScrollContainer/GameMap"]
+[node name="Button1" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer2/VBoxContainer1/ScrollContainer/GameMap"]
 custom_minimum_size = Vector2(0, 58)
 layout_mode = 2
 size_flags_vertical = 3
@@ -757,9 +728,41 @@ toggle_mode = true
 button_group = SubResource("ButtonGroup_dg77c")
 text = "Summoner's Rift"
 
+[node name="VBoxContainer2" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.38
+
+[node name="Button1" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer2/VBoxContainer2"]
+layout_mode = 2
+mouse_filter = 2
+text = "Game Mode"
+flat = true
+
+[node name="#GameMode" type="OptionButton" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer2/VBoxContainer2"]
+layout_mode = 2
+selected = 0
+item_count = 1
+popup/item_0/text = "Classic"
+popup/item_0/id = 0
+
+[node name="GameMode" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer2/VBoxContainer2"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+script = ExtResource("14_yaehf")
+
+[node name="Button1" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer2/VBoxContainer2/GameMode"]
+layout_mode = 2
+size_flags_vertical = 3
+toggle_mode = true
+button_group = SubResource("ButtonGroup_efxa6")
+text = "Classic"
+
 [node name="VBoxContainer3" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer2"]
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.24
 
 [node name="Button1" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer2/VBoxContainer3"]
 layout_mode = 2
@@ -787,6 +790,11 @@ toggle_mode = true
 button_group = SubResource("ButtonGroup_ycdy4")
 text = "Blind Pick"
 
+[node name="Control" type="Control" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer2"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+
 [node name="HSeparator" type="HSeparator" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer"]
 visible = false
 layout_mode = 2
@@ -806,7 +814,7 @@ size_flags_stretch_ratio = 0.25
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 0
-size_flags_stretch_ratio = 3.0
+size_flags_stretch_ratio = 0.62
 theme_override_constants/separation = 16
 
 [node name="VBoxContainer1" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer1/VBoxContainer1"]
@@ -901,7 +909,7 @@ text = "password"
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 0
-size_flags_stretch_ratio = 2.0
+size_flags_stretch_ratio = 0.38
 theme_override_constants/separation = 16
 
 [node name="VBoxContainer3" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer1/VBoxContainer2"]
@@ -938,6 +946,7 @@ alignment = 0
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 0
+size_flags_stretch_ratio = 0.24
 
 [node name="Label" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer1/VBoxContainer5"]
 layout_mode = 2
@@ -1934,8 +1943,6 @@ unresizable = true
 borderless = true
 always_on_top = true
 transparent = true
-popup_window = true
-popup_wm_hint = true
 minimize_disabled = true
 maximize_disabled = true
 force_native = true

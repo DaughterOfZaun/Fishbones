@@ -61,8 +61,9 @@ class CustomPing extends TypedEventEmitter<PingEvents> implements PingService {
         }
     }
 
-    private defineRTT(peerId: PeerId, obj: object){
+    private defineRTT(peerId: PeerId, obj: { rtt?: number }){
         let rtt: number | undefined
+        this.dispatchEventAndCacheValue(peerId, obj.rtt, false)
         Object.defineProperty(obj, "rtt", {
             get: () => { return rtt },
             set: (ms: number | undefined) => {
@@ -72,9 +73,9 @@ class CustomPing extends TypedEventEmitter<PingEvents> implements PingService {
         });
     }
 
-    private dispatchEventAndCacheValue(peerId: PeerId, ms: number | undefined){
+    private dispatchEventAndCacheValue(peerId: PeerId, ms: number | undefined, dispatch = true){
         if(ms === undefined || ms <= 0) return
-        this.safeDispatchEvent('ping', { detail: { peerId, ms } })
+        if(dispatch) this.safeDispatchEvent('ping', { detail: { peerId, ms } })
         const entry = this.cache_get(peerId)
         entry.ms = ms
     }

@@ -79,7 +79,11 @@ export interface View {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function render(name: string, config: Config){ return undefined! as View }
 
-export const inq2gd = (choices: { value: number, name: string }[]) => choices.map(({ value: id, name: text }) => ({ id, text }))
+export const inq2gd = (choices: { value: number, name: string }[], enabled?: number[]) => {
+    return choices
+        .filter(({ value: id }) => !enabled || enabled.includes(id))
+        .map(({ value: id, name: text }) => ({ id, text }))
+}
 
 export const form = (fields?: Record<string, Config>) => ({ $type: 'form' as const, fields })
 export const list = (items?: Record<string, Config>, placeholderText?: string) => ({ $type: 'list' as const, items, placeholderText })

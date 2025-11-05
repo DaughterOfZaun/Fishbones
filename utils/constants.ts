@@ -1,5 +1,6 @@
 import { input, checkbox, select, type Choice } from "../ui/remote/remote"
 import type { AbortOptions } from "@libp2p/interface"
+
 type CheckboxChoice<T> = Extract<Parameters<typeof checkbox<T>>[0]['choices'][number], { value: T }>
 
 export type u = undefined
@@ -100,19 +101,19 @@ const mapsTable: [number, string, boolean][] = [
     [2, `Old Summoner's Rift Autumn`, true],
     [3, `Proving Grounds`, false],
     [4, `Twisted Treeline`, true],
-    //[5, `Unknown`, false],
+    [5, `Unknown (5)`, false],
     [6, `Summoner's Rift Winter (2011)`, false],
     [7, `Summoner's Rift Winter (2009)`, false],
     [8, `Crystal Scar`, true],
-    [9, `Dominion Test`, true],
+    [9, `Dominion Test`, false],
     [10, `New Twisted Treeline`, false],
     [11, `New Summoner's Rift`, false],
     [12, `Howling Abyss`, false],
     [13, `Magma Chamber`, false],
     [14, `Butcher's Bridge`, false],
-    //[15, `Unknown`, false],
+    [15, `Unknown (15)`, false],
     [16, `Cosmic Ruins`, false],
-    //[17, `Unknown`, false],
+    [17, `Unknown (17)`, false],
     [18, `Valoran City Park`, false],
     [19, `Substructure 43`, false],
     [20, `Crash Site`, false],
@@ -132,7 +133,7 @@ export class GameMap extends PickableValue {
 // short, name, enabled by default
 const modesTable: [string, string, boolean][] = [
     ['CLASSIC', 'Classic', true],
-    ['ARAM', 'ARAM', true],
+    ['ARAM', 'ARAM', false],
     ['ODIN', 'ODIN', true],
 ]
 export const modes = modesTable.map(([ short, name, enabled ], i) => ({ i, short, name, enabled }))
@@ -355,21 +356,24 @@ const spellsTable: [string, string, boolean][] = [
     ["", "Teleport", true],
     ["", "Smite", true],
     ["", "Cleanse", false],
-    ["", "Ignite", false],
-    ["", "BattleCry", true],
+    ["", "Ignite", true],
+    ["", "BattleCry", false],
     ["", "Boost", true],
     ["", "Clairvoyance", true],
-    ["", "Dot", true],
+    ["", "Dot", false],
     ["", "Fortify", true],
     ["", "Haste", true],
     ["", "Mana", true],
     ["", "Rally", true],
     ["", "Revive", true],
     ["", "Promote", false],
-    //["", "OdinPromote", false],
-    //["", "OdinSabotage", false],
-    //["", "OdinGarrison", true],
-    //["", "PromoteSR", true],
+    ["", "OdinPromote", false],
+    ["", "OdinSabotage", false],
+    ["", "OdinGarrison", false],
+    ["", "PromoteSR", false],
+    ["", "Observer", false],
+    ["", "ReviveSpeedBoost", false],
+
 ]
 export const spells = spellsTable.map(([ , name, enabled ], i) => ({ i, name, enabled }))
 export class SummonerSpell extends PickableValue {

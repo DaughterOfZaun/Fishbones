@@ -1,4 +1,4 @@
-import type { AbortOptions, IdentifyResult, PeerId } from "@libp2p/interface";
+import type { AbortOptions, IdentifyResult, PeerId, PeerInfo } from "@libp2p/interface";
 import { consumePeerInfoString, getPeerInfoString, validatePeerInfoString, type LibP2PNode } from "../node/node";
 import { console_log } from "../ui/remote/remote";
 import { logger } from "../utils/log";
@@ -12,8 +12,8 @@ import type { PingResult } from "../network/libp2p/ping";
 
 enum PeerType { Undetermined, Player, Server }
 enum PeerStatus { Disconnected, Connecting, Connected, ConnectionFailed }
-const fbPeers = new PeerMap<PeerInfo>()
-class PeerInfo {
+const fbPeers = new PeerMap<FBPeerInfo>()
+class FBPeerInfo {
     constructor(
         public type = PeerType.Undetermined,
         public status = PeerStatus.Disconnected,
@@ -41,7 +41,7 @@ const peerStatusToString = {
 function updatePeerStatus(view: DeferredView<void>, peerId: PeerId, status: PeerStatus, getPing: (peerId: PeerId) => number | undefined){
     let info = fbPeers.get(peerId)
     if(!info){
-        info = new PeerInfo()
+        info = new FBPeerInfo()
         fbPeers.set(peerId, info)
     }
 
@@ -89,6 +89,18 @@ export async function connections(node: LibP2PNode, opts: Required<AbortOptions>
     const getPing = (peerId: PeerId) => {
         const ms = pingService.getPing(peerId)
         return ms
+    }
+
+    //HACK:
+    if(node.services.mdns)
+    view.addEventListener(node.services.mdns, 'peer', onPeerDiscoveredByMechanism)
+    if(node.services.rendezvous)
+    view.addEventListener(node.services.rendezvous, 'peer', onPeerDiscoveredByMechanism)
+    function onPeerDiscoveredByMechanism(event: CustomEvent<PeerInfo>){
+        const peerId = event.detail.id
+        if(!fbPeers.has(peerId)){
+            //TODO: updatePeerStatus(view, peerId, PeerStatus.Connecting, getPing)
+        }
     }
 
     view.addEventListener(node, 'peer:connect', (evt: CustomEvent<PeerId>) => {
