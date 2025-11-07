@@ -152,7 +152,7 @@ async function hostRemote(node: LibP2PNode, name: string, lobby: Lobby, setup: S
             serverSettings: server.encode(),
             gameInfos: [ game.encode() ],
         }
-        pspd.broadcast(data)
+        pspd.setData(data)
 
         game.addEventListener('update', update)
         game.addEventListener('start', start)
@@ -167,7 +167,7 @@ async function hostRemote(node: LibP2PNode, name: string, lobby: Lobby, setup: S
         game.removeEventListener('start', start)
         game.removeEventListener('stop', stop)
         
-        pspd.broadcast(null)
+        pspd.setData(null)
     }
 
     function update(){
@@ -175,11 +175,11 @@ async function hostRemote(node: LibP2PNode, name: string, lobby: Lobby, setup: S
         gi.players = game.getPlayersCount()
         if(gi.players != prevPlayerCount){
             prevPlayerCount = gi.players
-            pspd.broadcast(game.isJoinable() ? data : null)
+            pspd.setData(game.isJoinable() ? data : null)
         }
     }
-    function start(){ pspd.broadcast(game.isJoinable() ? data: null) }
-    function stop(){ pspd.broadcast(game.isJoinable() ? data : null) }
+    function start(){ pspd.setData(game.isJoinable() ? data: null) }
+    function stop(){ pspd.setData(game.isJoinable() ? data : null) }
 }
 
 async function deadlyRace(cbs: ((opts: Required<AbortOptions>) => Promise<unknown>)[], opts: Required<AbortOptions>){

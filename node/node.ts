@@ -12,7 +12,7 @@ import { CODE_P2P_CIRCUIT, multiaddr, type Multiaddr } from '@multiformats/multi
 
 import { createLibp2p } from 'libp2p'
 //import { fromString, toString } from 'uint8arrays'
-import { KEEP_ALIVE, type AbortOptions, type ComponentLogger, type Connection, type Libp2pEvents, type Logger, type PeerId, type PeerInfo, type PrivateKey, type TypedEventTarget } from '@libp2p/interface'
+import { isPeerId, KEEP_ALIVE, type AbortOptions, type ComponentLogger, type Connection, type Libp2pEvents, type Logger, type OpenConnectionProgressEvents, type Peer, type PeerId, type PeerInfo, type PrivateKey, type Startable, type TypedEventTarget } from '@libp2p/interface'
 import { tcp } from '@libp2p/tcp'
 import { patchedCrypto } from '../utils/crypto'
 
@@ -41,17 +41,22 @@ import { customPing } from '../network/libp2p/ping'
 import util from "node:util"
 import { PeerSet } from '@libp2p/peer-collections'
 
-export type LibP2PNode = Awaited<ReturnType<typeof createNodeInternal>> & ComponentsContainer
-type ComponentsContainer = {
+export type LibP2PNode = Awaited<ReturnType<typeof createNodeInternal>> & {
     components: {
         privateKey: PrivateKey
         transportManager: TransportManager
         connectionManager: ConnectionManager
         events: TypedEventTarget<Libp2pEvents>
     }
-}
-export async function createNode(...args: Parameters<typeof createNodeInternal>){
-    const node = await (createNodeInternal(...args) as Promise<LibP2PNode>)
+} & TypedEventTarget<Libp2pEvents & {
+    'same-program-peer:discovery': CustomEvent<PeerInfo>
+    //'connection:progress': OpenConnectionProgressEvents
+    'connection:begin': CustomEvent<PeerId>
+    'connection:fail': CustomEvent<PeerId>
+}>
+
+export async function createNode(port: number, opts: Required<AbortOptions>){
+    const node = await (createNodeInternal(port, opts) as Promise<LibP2PNode>)
     //node.services.rendezvous['log'] = forComponent('canvas:rendezvous:client')
     //node.components.connectionManager['log'] = forComponent('libp2p:connection-manager')
     //node.components.connectionManager['dialQueue']['log'] = forComponent('libp2p:connection-manager:dial-queue')
@@ -62,6 +67,7 @@ export async function createNode(...args: Parameters<typeof createNodeInternal>)
     //       + event.detail.peer.addresses.map(addr => addr.multiaddr.toString()).join(',\n') + '\n]'
     //   )
     //})
+    await setup(node, opts)
     return node 
 }
 
@@ -87,7 +93,14 @@ function log(type: string, name: string, ...args: any[]): boolean {
     return loggerClass['stream']!.write('[LIBP2P][' + type + '][' + name + ']: ' + args.map(arg => Bun.inspect(arg)).join(' ') /*util.format(...args)*/ + '\n')
 }
 
-async function createNodeInternal(port?: number, opts?: AbortOptions){
+export const serverPeerIDString = '12D3KooWHHyaqcTuPvphwifkP2su2Qis2wWKLZhaobc9cB5qXQak'
+export const serverPeerID = peerIdFromString(serverPeerIDString)
+export const serverPeerMultiddrStrings = [
+    `/ip4/195.133.146.185/udp/42451/webrtc-direct/certhash/uEiBYh4UvCuTLl07oUNUl_1CNkWJAver2h7jLVdZmE0anig/p2p/${serverPeerIDString}`,
+    `/ip4/195.133.146.185/tcp/41463/p2p/${serverPeerIDString}`,
+]
+
+async function createNodeInternal(port: number, opts: Required<AbortOptions>){
     
     opts?.signal?.throwIfAborted()
 
@@ -112,12 +125,6 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
     }
 
     opts?.signal?.throwIfAborted()
-
-    const serverPeerIDString = '12D3KooWHHyaqcTuPvphwifkP2su2Qis2wWKLZhaobc9cB5qXQak'
-    const serverPeerMultiddrStrings = [
-        `/ip4/195.133.146.185/udp/42451/webrtc-direct/certhash/uEiBYh4UvCuTLl07oUNUl_1CNkWJAver2h7jLVdZmE0anig/p2p/${serverPeerIDString}`,
-        `/ip4/195.133.146.185/tcp/41463/p2p/${serverPeerIDString}`,
-    ]
 
     const node = await createLibp2p({
         nodeInfo: {
@@ -168,12 +175,13 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
                 }),
                 bootstrap: bootstrap({
                     list: [
+                        ...serverPeerMultiddrStrings,
                         //src: https://github.com/ipfs/helia/blob/main/packages/helia/src/utils/bootstrappers.ts
                         '/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
                         '/dnsaddr/bootstrap.libp2p.io/p2p/QmbLHAnMoJPWSCR5Zhtx6BHJX9KiKNN6tpvbUcqanj75Nb',
                         '/dnsaddr/bootstrap.libp2p.io/p2p/QmcZf59bWwK5XFi76CZX8cbJ4BhTzzA3gU1ZjYZcYW3dwt',
                         '/dnsaddr/va1.bootstrap.libp2p.io/p2p/12D3KooWKnDdG3iXw9eTFijk3EWSunZcFi54Zka4wmtqtt6rPxc8',
-                        '/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ'
+                        '/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ',
                     ]
                 }),
             } : {}),
@@ -183,12 +191,12 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
             pubsub: gossipsub({
                 allowPublishToZeroTopicPeers: true,
                 emitSelf: true,
-                directPeers: args.allowInternet.enabled ? [
-                    {
-                        id: peerIdFromString(serverPeerIDString),
-                        addrs: serverPeerMultiddrStrings.map(maStr => multiaddr(maStr)),
-                    },
-                ] : [],
+                //directPeers: args.allowInternet.enabled ? [
+                //    {
+                //        id: peerIdFromString(serverPeerIDString),
+                //        addrs: serverPeerMultiddrStrings.map(maStr => multiaddr(maStr)),
+                //    },
+                //] : [],
             }) as (components: GossipSubComponents) => GossipSub,
             pubsubPeerDiscovery: pubsubPeerDiscovery({
                 topic: appDiscoveryTopic,
@@ -203,16 +211,21 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
         start: false,
 
         connectionMonitor: {
-            enabled: false,
+            //enabled: false,
         },
     })
 
     opts?.signal?.throwIfAborted()
 
+    return node
+}
+
+async function setup(node: LibP2PNode, opts: Required<AbortOptions>){
+
     if(args.allowInternet.enabled){
-        await node.peerStore.patch(peerIdFromString(serverPeerIDString), {
-            tags: { [`${KEEP_ALIVE}-rendezvous-server`]: { value: 1 } }
-        }, opts)
+       await node.peerStore.patch(peerIdFromString(serverPeerIDString), {
+           tags: { [`${KEEP_ALIVE}-rendezvous-server`]: { value: 1 } }
+       }, opts)
     }
 
     //TODO: Reintroduce Autodial.
@@ -227,6 +240,7 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
         if(!peersDiscoveredByMechanism.has(peer.id.toString())){
             peersDiscoveredByMechanism.add(peer.id.toString())
             if(peersDiscoveredByNode.has(peer.id.toString())){
+                node.safeDispatchEvent('same-program-peer:discovery', event)
                 patchAndDial(peer.id).catch((/*err*/) => { /* Ignore */ })
             }
         }
@@ -254,11 +268,55 @@ async function createNodeInternal(port?: number, opts?: AbortOptions){
         await node.dial(peerId)
     }
 
+    const cm = node.components.connectionManager
+    const cm_openConnection = cm.openConnection.bind(cm)
+    cm.openConnection = async (peer, options) => {
+        
+        if(!isPeerId(peer))
+            return cm_openConnection(peer, options)
+
+        options ??= {}
+        const options_onProgress = options.onProgress
+        options.onProgress = (event) => {
+            //node.safeDispatchEvent('connection:progress', event)
+            if(event.type === 'dial-queue:add-to-dial-queue')
+                node.safeDispatchEvent('connection:begin', { detail: peer })
+            options_onProgress?.(event)
+        }
+        try {
+            return await cm_openConnection(peer, options)
+        } catch(err) {
+            
+                node.safeDispatchEvent('connection:fail', { detail: peer })
+            throw err
+        }
+    }
+
     tiePubSubWithPeerDiscovery(node)
 
     await node.start()
+}
 
-    return node
+export async function stop(node: LibP2PNode){
+    await Promise.all([
+        (async () => {
+            const pubSubPeerDiscovery = node.services.pubsubPeerDiscovery
+            await pubSubPeerDiscovery.beforeStop()
+            pubSubPeerDiscovery.stop()
+        })(),
+        (async () => {
+            const rendezvous = node.services.rendezvous
+            await rendezvous.connect(serverPeerID, async (point) => {
+                //await point.register(appDiscoveryTopic, { ttl: 1 })
+                await point.unregister(appDiscoveryTopic)
+            })
+            rendezvous.beforeStop()
+            rendezvous.stop()
+        })(),
+    ])
+    const connectionManager = node.components.connectionManager as unknown as Startable
+    await connectionManager.stop()
+    await node.stop()
 }
 
 const CIRCUIT_RELAY_TRANSPORT = 'CircuitRelayTransport'

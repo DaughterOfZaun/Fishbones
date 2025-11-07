@@ -1,4 +1,4 @@
-import { createNode } from './node/node'
+import { createNode, stop } from './node/node'
 import { main } from './tui/tui'
 import { TITLE } from './utils/constants-build'
 import { logger } from './utils/log'
@@ -43,12 +43,7 @@ async function index(opts: Required<AbortOptions>){
     const node = await createNode(port, opts)
     //console.log('node.peerId is', node.peerId.toString())
     registerShutdownHandler(async () => {
-        //await node.services.pubsubPeerWithDataDiscovery?.beforeStop()
-        //await node.services.pubsubPeerDiscovery?.stop()
-        //await node.services.torrentPeerDiscovery?.beforeStop()
-        //await node.services.torrentPeerDiscovery?.stop()
-        //await node_services_upnpNAT?.stop()
-        await node.stop()
+        await stop(node)
         //umplex.shutdown()
     })
 

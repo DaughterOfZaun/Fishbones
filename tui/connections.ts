@@ -1,21 +1,20 @@
 import type { AbortOptions, IdentifyResult, PeerId, PeerInfo } from "@libp2p/interface";
-import { consumePeerInfoString, getPeerInfoString, validatePeerInfoString, type LibP2PNode } from "../node/node";
+import { consumePeerInfoString, getPeerInfoString, serverPeerID, validatePeerInfoString, type LibP2PNode } from "../node/node";
 import { console_log } from "../ui/remote/remote";
 import { logger } from "../utils/log";
-import { NAME, VERSION } from "../utils/constants-build";
+import { NAME } from "../utils/constants-build";
 import { render, DeferredView } from "../ui/remote/view";
 import { button, form, label, list, text } from "../ui/remote/types";
 import { getUsername } from "../utils/namegen/namegen";
 import { PeerMap } from "@libp2p/peer-collections";
-import { peerIdFromString } from "@libp2p/peer-id";
 import type { PingResult } from "../network/libp2p/ping";
 
-enum PeerType { Undetermined, Player, Server }
+//enum PeerType { Undetermined, Player, Server }
 enum PeerStatus { Disconnected, Connecting, Connected, ConnectionFailed }
 const fbPeers = new PeerMap<FBPeerInfo>()
 class FBPeerInfo {
     constructor(
-        public type = PeerType.Undetermined,
+        //public type = PeerType.Undetermined,
         public status = PeerStatus.Disconnected,
         public shownInUI = false,
     ){}
@@ -91,17 +90,28 @@ export async function connections(node: LibP2PNode, opts: Required<AbortOptions>
         return ms
     }
 
-    //HACK:
-    if(node.services.mdns)
-    view.addEventListener(node.services.mdns, 'peer', onPeerDiscoveredByMechanism)
-    if(node.services.rendezvous)
-    view.addEventListener(node.services.rendezvous, 'peer', onPeerDiscoveredByMechanism)
+    view.addEventListener(node, 'same-program-peer:discovery', onPeerDiscoveredByMechanism)
     function onPeerDiscoveredByMechanism(event: CustomEvent<PeerInfo>){
         const peerId = event.detail.id
         if(!fbPeers.has(peerId)){
-            //TODO: updatePeerStatus(view, peerId, PeerStatus.Connecting, getPing)
+            updatePeerStatus(view, peerId, PeerStatus.Disconnected, getPing)
         }
     }
+
+    view.addEventListener(node, 'connection:begin', (evt: CustomEvent<PeerId>) => {
+        const peerId = evt.detail
+        if(fbPeers.has(peerId)){
+            updatePeerStatus(view, peerId, PeerStatus.Connecting, getPing)
+        }
+    })
+
+    view.addEventListener(node, 'connection:fail', (evt: CustomEvent<PeerId>) => {
+        const peerId = evt.detail
+        if(fbPeers.has(peerId)){
+            //updatePeerStatus(view, peerId, PeerStatus.ConnectionFailed, getPing)
+            updatePeerStatus(view, peerId, PeerStatus.Disconnected, getPing)
+        }
+    })
 
     view.addEventListener(node, 'peer:connect', (evt: CustomEvent<PeerId>) => {
         const peerId = evt.detail
@@ -113,8 +123,7 @@ export async function connections(node: LibP2PNode, opts: Required<AbortOptions>
 
     view.addEventListener(node, 'peer:identify', (evt: CustomEvent<IdentifyResult>) => {
         const { peerId, agentVersion } = evt.detail
-        const userAgent = `${NAME}/${VERSION}`
-        if(agentVersion === userAgent){
+        if(agentVersion?.includes(NAME)){
             updatePeerStatus(view, peerId, PeerStatus.Connected, getPing)
             //pingService.ping(peerId).catch(() => { /* Ignore */ })
         }
@@ -136,15 +145,8 @@ export async function connections(node: LibP2PNode, opts: Required<AbortOptions>
         }
     })
 
-    const rendezvousService = node.services.rendezvous
-    if(rendezvousService){
-        const autoRegisterPeers = rendezvousService['autoRegisterPeers'] as Map<string, string[]>
-        for(const peerIdString of autoRegisterPeers.keys()){
-            const peerId = peerIdFromString(peerIdString)
-            //fbPeers.set(peerId, new PeerInfo(PeerType.Server))
-            updatePeerStatus(view, peerId, PeerStatus.Connecting, getPing)
-        }
-    }
+    //fbPeers.set(serverPeerID, new FBPeerInfo(PeerType.Server))
+    updatePeerStatus(view, serverPeerID, PeerStatus.Connecting, getPing)
 
     return view.promise
 }
