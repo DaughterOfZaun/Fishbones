@@ -3,11 +3,9 @@
     <br>
     <br>
     <br>
-    <table>
-    <tr><td></td><td></td><td></td></tr>
-    <tr><td>></td><td align="center"><a width="100%" href="https://github.com/DaughterOfZaun/Fishbones/releases/download/v0.0.4/Fishbones.0.0.3.15.Windows.zip">DOWNLOAD</a></td><td><</td></tr>
-    <tr><td></td><td></td><td></td></tr>
-    </table>
+    <big><a width="100%" href="https://github.com/DaughterOfZaun/Fishbones/releases/download/v0.0.4/Fishbones.0.0.3.15.Windows.zip">> DOWNLOAD <</a></big>
+    <br>
+    <br>
     <br>
     <br>
     <br>
