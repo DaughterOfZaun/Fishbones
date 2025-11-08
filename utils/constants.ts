@@ -356,11 +356,11 @@ const spellsTable: [string, string, boolean][] = [
     ["", "Teleport", true],
     ["", "Smite", true],
     ["", "Cleanse", false],
-    ["", "Ignite", true],
+    ["", "Ignite", false],
     ["", "BattleCry", false],
     ["", "Boost", true],
     ["", "Clairvoyance", true],
-    ["", "Dot", false],
+    ["", "Dot", true],
     ["", "Fortify", true],
     ["", "Haste", true],
     ["", "Mana", true],
@@ -373,7 +373,6 @@ const spellsTable: [string, string, boolean][] = [
     ["", "PromoteSR", false],
     ["", "Observer", false],
     ["", "ReviveSpeedBoost", false],
-
 ]
 export const spells = spellsTable.map(([ , name, enabled ], i) => ({ i, name, enabled }))
 export class SummonerSpell extends PickableValue {

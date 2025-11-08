@@ -33,7 +33,8 @@ async function index(opts: Required<AbortOptions>){
     }
 
     if(args.repair.enabled) try {
-        await repair(opts)
+        const result = await repair(opts)
+        if(result?.mustExit) return
     } catch(err) {
         console_log('Repairing of some critical component has failed.')
         throw err

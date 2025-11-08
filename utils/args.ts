@@ -4,7 +4,8 @@ export class Args {
     allowInternet = new Option('allow-internet', true, 'Сonnect to other players via Internet')
     globalDiscovery = new Option('global-discovery', false, '(Experimental) Search for servers on the global Internet')
     torrentDiscovery = new Option('torrent-discovery', false, '(Experimental) Search for servers on the global Internet via BitTorrent')
-    update = new Option('update', true, 'Download updates from Skelsoft\'s git')
+    update = new Option('update', true, 'Download game server updates')
+    upgrade = new Option('upgrade', false, 'Download launcher updates')
     port = new Parameter('port', 5119, 'Set custom UDP port number to use')
 
     repair = new Option('repair', true, '(Debug) Download+Unpack+Build missing files')
@@ -24,6 +25,7 @@ export class Args {
         //this.globalDiscovery,
         //this.torrentDiscovery,
         this.update,
+        //this.upgrade,
         //this.port,
     ]
 

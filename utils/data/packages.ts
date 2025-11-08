@@ -4,7 +4,7 @@ import { console_log_fs_err, downloads, fs_exists, fs_moveFile } from './fs'
 import { fs_copyFile } from '../../ui/remote/remote'
 import embedded from './embedded/embedded'
 
-const magnet = (ihv1?: string, ihv2?: string, fname?: string, size?: number) => {
+export const magnet = (ihv1?: string, ihv2?: string, fname?: string, size?: number) => {
     const parts: string[] = []
     if(ihv1) parts.push(`xt=urn:btih:${ihv1}`)
     if(ihv2) parts.push(`xt=urn:btmh:${ihv2}`)
@@ -64,8 +64,8 @@ export abstract class PkgInfoCSProj extends PkgInfo {
 export const gc420Pkg = new class extends PkgInfoExe {
     dirName = 'League of Legends_UNPACKED'
     noDedup = false
-    zipExt = '.7z'
-    zipName = `League of Legends_UNPACKED${this.zipExt}`
+    zipExt = '7z'
+    zipName = `League of Legends_UNPACKED.${this.zipExt}`
     zipInfoHashV1 = '4bb197635194f4242d9f937f0f9225851786a0a8'
     zipInfoHashV2 = ''
     zipSize = 2171262108
@@ -97,8 +97,8 @@ export const gc420Pkg = new class extends PkgInfoExe {
 export const gcPkg = new class extends PkgInfoExe {
     dirName = 'playable_client_126'
     noDedup = false
-    zipExt = '.7z'
-    zipName = `${this.dirName}${this.zipExt}`
+    zipExt = '7z'
+    zipName = `${this.dirName}.${this.zipExt}`
     zipInfoHashV1 = '875201f4a9920ffd7c9bff6c9a2ad59e28f041ae'
     zipInfoHashV2 = '6ccbb2911b07b2c084beb666d22018159845b3eae180b989d75b354af39c8af3'
     zipSize = 898175547
@@ -298,8 +298,8 @@ const sdkArch = sdkArchMap[process.arch]
 if(!sdkArch) throw new Error(`Unsupported arch: ${process.arch}`)
 
 const sdkName = `dotnet-sdk-${sdkVer}-${sdkPlatform}-${sdkArch}`
-const sdkZipExt = (sdkPlatform == 'win') ? '.zip' : '.tar.gz'
-const sdkZipName = `${sdkName}${sdkZipExt}`
+const sdkZipExt = (sdkPlatform == 'win') ? 'zip' : 'tar.gz'
+const sdkZipName = `${sdkName}.${sdkZipExt}`
 const sdkZipInfo = {
     'dotnet-sdk-9.0.300-win-x64.zip': {
         ihv1: '249a75bd3c8abba27b59fe42ab0771f77d6caee7',
@@ -358,8 +358,8 @@ export const sdkPkg = new class extends PkgInfoExe {
 export const gs420Pkg = new class extends PkgInfoCSProj {
     dirName = 'GameServer'
     noDedup = false
-    zipExt = '.7z'
-    zipName = `Chronobreak.GameServer${this.zipExt}`
+    zipExt = '7z'
+    zipName = `Chronobreak.GameServer.${this.zipExt}`
     zipInfoHashV1 = 'e4043fdc210a896470d662933f7829ccf3ed781b'
     zipInfoHashV2 = 'cf9bfaba0f9653255ff5b19820ea4c01ac8484d0f8407b109ca358236d4f4abc'
     zipSize = 21309506
@@ -414,8 +414,8 @@ export interface PkgInfoGit extends PkgInfo {
 export const gsPkg = new class extends PkgInfoCSProj {
     dirName = 'ChildrenOfTheGrave-Gameserver'
     noDedup = false
-    zipExt = '.7z'
-    zipName = `${this.dirName}${this.zipExt}`
+    zipExt = '7z'
+    zipName = `${this.dirName}.${this.zipExt}`
     zipInfoHashV1 = '83155823dd0deb73cab3127dfbcfeb4091050f4f'
     zipInfoHashV2 = 'b84a60529bca79815d8858ec6430d180590b37516a8a84af8d4c1c97a0ce7bfd'
     zipSize = 16682132
@@ -477,7 +477,7 @@ export const gsPkg = new class extends PkgInfoCSProj {
 export const gitPkg = new class extends PkgInfoExe {
     dirName = 'PortableGit'
     
-    zipExt = '.7z.exe'
+    zipExt = '7z.exe'
     zipName = 'PortableGit-2.51.0.2-64-bit.7z.exe'
     zipWebSeed = `https://github.com/git-for-windows/git/releases/download/v2.51.0.windows.2/${this.zipName}`
     //zipEmbded = embedded.gitZip

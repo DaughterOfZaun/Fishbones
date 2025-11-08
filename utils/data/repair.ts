@@ -4,7 +4,6 @@ import { gcPkg, gitPkg, gsPkg, PkgInfo, repairTorrents, sdkPkg } from "./package
 import { console_log, fs_copyFile } from "../../ui/remote/remote"
 import { console_log_fs_err, cwd, downloads, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_rmdir } from './fs'
 import { readTrackersTxt } from "./download/trackers"
-//import { repairIcon } from "../../tui/notifier"
 import { appendPartialUnpackFileExt, DataError, repair7z, unpack } from "./unpack"
 import { TerminationError, unwrapAbortError } from "../process/process"
 import type { AbortOptions } from "@libp2p/interface"
@@ -15,6 +14,8 @@ import os from 'os'
 import { runPostInstall, update } from "./update"
 //import { ensureSymlink } from "./data-client"
 import { args } from "../args"
+import { checkForUpdates, fbPkg, isNewVersionAvailable, repairSelfPackage } from "./upgrade"
+import { spawn } from "node:child_process"
 
 const DOTNET_INSTALL_CORRUPT_EXIT_CODES = [ 130, 131, 142, ]
 
@@ -37,12 +38,41 @@ export async function repair(opts: Required<AbortOptions>){
         repairTorrents(opts).catch((err) => { console_log('Restoring torrent files failed:', Bun.inspect(err)) }),
         repair7z(opts), //.catch((err) => { console_log('Restoring 7z archiver executable failed:', Bun.inspect(err)); throw err }),
         repairAria2(opts), //.catch((err) => { console_log('Restoring Aria2 downloader executable failed:', Bun.inspect(err)); throw err }),
-        //repairIcon(opts),
+        (async () => {
+            if(args.upgrade.enabled)
+                return checkForUpdates(opts).catch(err => { console_log('Update check failed:', Bun.inspect(err)) })
+        })(),
     ])
     throwAnyRejection(results)
+    
+    if(isNewVersionAvailable()){
+    
+        await download(fbPkg, opts)
+        await unpack(fbPkg, opts)
+        
+        const now = new Date()
+        const newExe = path.join(downloads, 'Fishbones', 'Fishbones.exe')
+        await fs.utimes(newExe, now, now) // Fix file after unpacking.
+        
+        const currentExe = path.join(cwd, 'Fishbones.exe')
+        const oldExe = path.join(downloads, 'Fishbones', 'Fishbones.outdated.exe')
+        await fs_moveFile(currentExe, oldExe, opts, true)
+        await fs_moveFile(newExe, currentExe, opts, true)
+
+        spawn(currentExe, {
+            cwd: process.cwd(),
+            stdio: 'inherit',
+            detached: true,
+        }).unref()
+
+        return { mustExit: true }
+    }
 
     let gsExeIsMissing = !await fs_exists(gsPkg.dll, opts)
     results = await Promise.allSettled([
+        
+        repairSelfPackage(opts),
+
         Promise.allSettled([
             repairArchived(sdkPkg, opts),
             (async () => {
@@ -215,7 +245,7 @@ async function findPackageZip(pkg: PkgInfo, opts: Required<AbortOptions>){
     return undefined
 }
 
-async function repairArchived(pkg: PkgInfo, opts: Required<AbortOptions>, ignoreUnpacked = false){
+export async function repairArchived(pkg: PkgInfo, opts: Required<AbortOptions>, ignoreUnpacked = false){
 
     if(!ignoreUnpacked)
     if(await fs_exists(pkg.checkUnpackBy, opts)){

@@ -3,25 +3,18 @@
 import { $ } from 'bun'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
-import { COPYRIGHT, DESCRIPTION, HIDE_CONSOLE, ICON, NAME, OUTDIR, OUTFILE, OUTFILE_CLI, PUBLISHER, TARGET, TITLE, VERSION } from './utils/constants-build'
-const OUTDIR_FILE_CLI = path.join(OUTDIR, OUTFILE_CLI)
-import { config } from './utils/data/embedded/config'
-
-//import { NtExecutable } from 'pe-library'
-//const PE_HEADER_OFFSET_LOCATION = 0x3c
-//const SUBSYSTEM_OFFSET = 0x5c
-//const CONSOLE_SUBSYSTEM = 0x3
-//const GUI_SUBSYSTEM = 0x2
+import { NAME, OUTDIR, OUTFILE, VERSION_REGEX } from './utils/constants-build'
+import { config, type Config } from './utils/data/embedded/config'
 
 const release = process.argv.includes('release') ? 'release' : 'debug'
 
-// const supportedPlatforms = [ 'linux' , 'windows' ]
-// type SupportedPlatforms = 'linux' | 'windows'
+const version = process.argv.find(arg => VERSION_REGEX.test(arg))
+console.assert(typeof version === 'string')
+
 const platform =
     process.argv.includes('linux') ? 'linux' :
     process.argv.includes('windows') ? 'windows' :
     undefined!
-    //if(!supportedPlatforms.includes(platform))
 if(platform === undefined)
     throw new Error('Platform not specified or not supported')
     
@@ -35,7 +28,7 @@ async function build_embeds(){
     await $`rm ./remote-ui/embedded/*`
 
     const embeddedJson: Record<string, string> = {}
-    for(const [key, keyConfig] of Object.entries(config)){
+    for(const [key, keyConfig] of Object.entries(config as Config)){
         let from =
             (typeof keyConfig === 'string') ? keyConfig :
             (platform in keyConfig) ? keyConfig[platform]! : ''
@@ -56,7 +49,13 @@ async function build_embeds(){
     await fs.writeFile('./dist/embedded.json', JSON.stringify(embeddedJson, null, 4), 'utf8')
 
     let tscn = await fs.readFile('./remote-ui/main.tscn', 'utf8')
-    const embeddedFiles = Object.values(embeddedJson).filter(file => !!file).toSorted()
+    const embeddedFiles = Object.entries(embeddedJson)
+        .filter(([key, file]) => !!file && !['bunExe', 'indexJs', 'dataChannelLib'].includes(key))
+        .map(([key, file]) => file)
+        .toSorted()
+    tscn = tscn.replace(/^embedded_js = ".*"$/m, `embedded_js = "${embeddedJson['indexJs']}"`)
+    tscn = tscn.replace(/^embedded_exe = ".*"$/m, `embedded_exe = "${embeddedJson['bunExe']}"`)
+    tscn = tscn.replace(/^embedded_lib_0 = ".*"$/m, `embedded_lib_0 = "${embeddedJson['dataChannelLib']}"`)
     tscn = tscn.replace(/(embedded_file_\w+ = ".*"\n)+/g, embeddedFiles.map((file, i) => {
         return `embedded_file_${i} = "${file}"\n`
     }).join(''))
@@ -69,89 +68,26 @@ if(process.argv.includes('embeds'))
 if(process.argv.includes('patch-modules'))
     await patch_npm_modules()
 
-//await build_godot_pck()
-
 if(process.argv.includes('libutp'))
     await build_libUTP()
 
 if(process.argv.includes('bun')){
-if(platform === 'windows'){
-    await $`mv node_modules node_modules_linux_npm`
-    await $`mv node_modules_win_npm node_modules`
-}
-try {
-    //await $`bun build --compile --sourcemap --target="${TARGET}" --outfile="${OUTDIR_FILE_CLI}" --define process.env.IS_COMPILED='true' 'index.ts'`
-    await Bun.build({
-        entrypoints: [ './index.ts' ],
-        sourcemap: true,
-        outdir: OUTDIR,
-        compile: {
-            target: target,
-            outfile: OUTFILE_CLI,
-            windows: {
-                hideConsole: HIDE_CONSOLE,
-                icon: ICON,
-                title: TITLE,
-                publisher: PUBLISHER,
-                version: VERSION,
-                description: DESCRIPTION,
-                copyright: COPYRIGHT,
-            },
-        },
-        define: {
-            'process.env.IS_COMPILED': 'true',
-        },
-        env: 'disable',
-    })
-    //await $`bun build --sourcemap --target="bun" --outdir="${OUTDIR}" 'index-failsafe.ts'`
-    //await $`bun build --compile --sourcemap --target="${TARGET}" --outfile="${OUTDIR_FILE}" './dist/index-failsafe.js' './dist/index.js'`
-
-    //console.log(`bun build --compile --target="${TARGET}" --outfile="${OUTDIR_FILE}" --windows-icon="${ICON}" --windows-title="${TITLE}" --windows-publisher="${PUBLISHER}" --windows-version="${VERSION}" --windows-description="${DESCRIPTION}" --windows-copyright="${COPYRIGHT}" 'index.ts'`)
-    //await $`flatpak run --command='bottles-cli' com.usebottles.bottles run -b 'Default Gaming' -e ${path.join(__dirname, 'bun.exe')} "build --compile --target='${TARGET}' --outfile='${path.join(__dirname, OUTDIR, OUTFILE_CLI)}' --windows-icon='${ICON}' --windows-title='${TITLE}' --windows-publisher='${PUBLISHER}' --windows-version='${VERSION}' --windows-description='${DESCRIPTION}' --windows-copyright='${COPYRIGHT}' --root='${__dirname}' '${path.join(__dirname, 'index.ts')}'"`
-    if(platform === 'windows' && process.argv.includes('rcedit')){
-        const wine = `flatpak run --command='bottles-cli' com.usebottles.bottles run -b 'Default Gaming' -e`
-        const args = [
-            OUTDIR_FILE_CLI,
-            `--set-icon "${ICON}"`,
-            `--set-file-version "${VERSION}"`,
-            `--set-product-version "${VERSION}"`,
-            `--set-version-string "FileDescription" "${DESCRIPTION}"`,
-            `--set-version-string "InternalName" "${NAME}"`,
-            `--set-version-string "OriginalFilename" "${OUTFILE_CLI}"`,
-            `--set-version-string "ProductName" "${NAME}"`,
-            `--set-version-string "CompanyName" "${PUBLISHER}"`,
-            `--set-version-string "LegalCopyright" "${COPYRIGHT}"`,
-        ]
-        await $`${{ raw: wine }} './rcedit-x64.exe' '${{ raw: args.join(' ') }}'`
+    if(platform === 'windows'){
+        await $`mv node_modules node_modules_linux_npm`
+        await $`mv node_modules_win_npm node_modules`
     }
-    
-    /*
-    const exe = await fs.readFile(OUTDIR_FILE)
-    const ntExe = NtExecutable.from(exe, { ignoreCert: true })
-    const ntExeHeader = ntExe.newHeader.optionalHeader
-    console.log('Current subsystem is', ntExeHeader.subsystem)
-    if(ntExeHeader.subsystem !== GUI_SUBSYSTEM){
-        ntExeHeader.subsystem = GUI_SUBSYSTEM
-        await fs.writeFile(OUTDIR_FILE, Buffer.from(ntExe.generate()))
-    }
-    */
-    /*
-    const exe = await fs.readFile(OUTDIR_FILE)
-
-    const peHeaderOffset = exe.readUInt32LE(PE_HEADER_OFFSET_LOCATION)
-    const subsystemOffset = peHeaderOffset + SUBSYSTEM_OFFSET
-    const currentSubsystem = exe.readUInt16LE(subsystemOffset)
-
-    console.log('Current subsystem is', currentSubsystem)
-    if(currentSubsystem !== GUI_SUBSYSTEM){
-        exe.writeUInt16LE(GUI_SUBSYSTEM, subsystemOffset)
-        await fs.writeFile(OUTDIR_FILE, exe)
-    }
-    */
-
-    await $`chmod +x ${OUTDIR_FILE_CLI}`
-    await $`cp ${OUTDIR_FILE_CLI} remote-ui/embedded/${OUTFILE_CLI}`
-
+    try {
+        await Bun.build({
+            entrypoints: [ './index.ts' ],
+            sourcemap: 'inline',
+            outdir: OUTDIR,
+            env: 'disable',
+            target: 'bun',
+            minify: false,
+            define: {
+                'process.env.VERSION': `"${version}"`
+            }
+        })
     } finally {
         if(platform === 'windows'){
             await $`mv node_modules node_modules_win_npm`
@@ -160,8 +96,17 @@ try {
     }
 }
 
-if(process.argv.includes('godot'))
+if(process.argv.includes('godot')){
+
+    const file = './remote-ui/project.godot'
+    let proj = await fs.readFile(file, 'utf8')
+    proj = proj.replace(/^(config\/name)="(.*?)"$/m, `$1="${NAME} v${version}"`)
+    proj = proj.replace(/^(config\/version)="(.*?)"$/m, `$1="${version}"`)
+    await fs.writeFile(file, proj, 'utf8')
+
+    //await build_godot_pck()
     await build_godot_exe()
+}
 
 async function build_godot_exe(){
     const preset = ({
@@ -172,14 +117,14 @@ async function build_godot_exe(){
     --export-${{ raw: release }} ${preset} ${path.join('..', OUTDIR, OUTFILE)} \
     --path ./remote-ui \
     --headless`
- }
+}
 
 async function build_godot_pck(){
     await $`/home/user/Programs/Godot/Godot_v4.5-stable_linux.x86_64 \
     --export-pack 'Windows Desktop' ../dist/RemoteUI.pck \
     --path ./remote-ui \
     --headless`
- }
+}
 
 async function build_libUTP(){
     $.cwd('./node_modules/utp-native/deps/libutp')

@@ -46,7 +46,7 @@ const s7zDataErrorMsgs = new RegExp(
     .map(regex => regex.source).join('|')
 )
 
-const s7zProgressMsg = /(\d+)%/m
+const s7zProgressMsg = /(\d+)%/
 
 enum s7zExitCodes {
     Warning = 1,
@@ -94,7 +94,7 @@ export async function unpack(pkg: PkgInfo, opts: Required<AbortOptions>){
             log: false,
             signal,
         }
-        if(pkg.zipExt == '.tar.gz'){
+        if(pkg.zipExt == 'tar.gz'){
             s7zs[0] = spawn(s7zExe, ['x', '-so', '-tgzip', pkg.zip], {
                 stdio: [ null, 'pipe', 'pipe' ],
                 logPrefix: `7Z ${pid} ${0}`,
@@ -154,4 +154,42 @@ export async function unpack(pkg: PkgInfo, opts: Required<AbortOptions>){
     
     if(!await fs_exists(pkg.checkUnpackBy, opts))
         throw new DataError(`Unable to unpack ${pkg.zipName}`)
+}
+
+export async function pack(pkg: { exe: string, zip: string, zipName: string }, opts: Required<AbortOptions>){
+    const bar = createBar('Packing', pkg.zipName, 100)
+    const logPrefix = `7Z ${pid} ${0}`
+
+    let archiveSize = 0
+    let proc: ReturnType<typeof spawn> | undefined
+    try {
+        proc = spawn(s7zExe, [ 'a', '-mtm-', '-mtc-', '-mta-', '-bsp1', pkg.zip, pkg.exe ], {
+            log: false, logPrefix,
+            cwd: downloads,
+        })
+        pid++
+        
+        proc.stdout.setEncoding('utf8').on('data', onData.bind(null, 'stdout'))
+        proc.stderr.setEncoding('utf8').on('data', onData.bind(null, 'stderr'))
+
+        await successfulTermination(proc.logPrefix, proc, opts)
+        return archiveSize
+
+    } finally {
+        killIfActive(proc)
+        bar.stop()
+    }
+
+    function onData(src: 'stdout' | 'stderr', chunk: string){
+        chunk = chunk.replace(/[\b]/g, '').trim()
+        let m
+        if((m = /Archive size: (\d+) bytes/.exec(chunk)) && m[1]){
+            archiveSize = parseInt(m[1])
+        }
+        if(src === 'stdout' && (m = s7zProgressMsg.exec(chunk)) && m[1]){
+            bar.update(parseInt(m[1]))
+        } else if(chunk){
+            logger.log(logPrefix, chunk)
+        }
+    }
 }

@@ -42,7 +42,15 @@ func just_show_view(view: Control) -> void:
 
 var handlers: Dictionary[Variant, InputHandler] = {}
 
+@export_file var embedded_js: String
 @export_file var embedded_exe: String
+@export_file var embedded_lib_0: String
+
+@onready var embedded_libs: Array[String] = [
+    embedded_js,
+    embedded_exe,
+    embedded_lib_0,
+]
 
 @export_group('Embedded Files', 'embedded_file_')
 @export_file var embedded_file_0: String
@@ -112,28 +120,46 @@ const rwx = \
     FileAccess.UNIX_EXECUTE_OWNER
 
 func _ready() -> void:
-
+    var err: Error
+    
     #printerr('Godot Engine started')
 
+    var exe_args := []
     #var args := OS.get_cmdline_args()
-    var exe_args := OS.get_cmdline_user_args()
     #var exe := get_named_arg(args, "--exe", "../Fishbones.exe")
     #var exe_args_str := get_named_arg(args, "--exe-args", '[]')
     #var exe_args := JSON.parse_string(exe_args_str) as Array
     #if exe_args == null: exe_args = []
     #var exe := exe_args[0]; exe_args.remove_at(0); if !exe: exe = '../Fishbones.exe'
     
-    var err := DirAccess.make_dir_absolute(downloads); assert(err in [ OK, ERR_ALREADY_EXISTS ])
+    err = DirAccess.make_dir_absolute(downloads); assert(err in [ OK, ERR_ALREADY_EXISTS ])
+    
+    var fb_dir := downloads.path_join('Fishbones')
+    err = DirAccess.make_dir_absolute(fb_dir); assert(err in [ OK, ERR_ALREADY_EXISTS ])
+    
+    var copied_exe := fb_dir.path_join('Fishbones.exe')
+    var current_exe_mod_time := FileAccess.get_modified_time(current_exe)
+    var copied_exe_mod_time := FileAccess.get_modified_time(copied_exe)
+    if current_exe_mod_time > copied_exe_mod_time:
+        err = DirAccess.copy_absolute(current_exe, copied_exe); assert(err == OK)
 
     for file in embedded_files:
         embedded_files_by_name[file.get_file()] = file
 
-    var extracted_exe := cwd.path_join(embedded_exe.get_file())
-    #if !FileAccess.file_exists(extracted_exe):
-    if FileAccess.get_modified_time(extracted_exe) < FileAccess.get_modified_time(current_exe):
-        DirAccess.copy_absolute(embedded_exe, extracted_exe)
-        FileAccess.set_unix_permissions(extracted_exe, rwx)
+    var extracted_js := downloads.path_join(embedded_js.get_file())
+    var extracted_exe := downloads.path_join(embedded_exe.get_file())
+    for embedded_file in embedded_libs:
+        var extracted_file := downloads.path_join(embedded_file.get_file())
+        #var embedded_file_mod_time := FileAccess.get_modified_time(embedded_file)
+        var extracted_file_mod_time := FileAccess.get_modified_time(extracted_file)
+        #print(embedded_file.get_file(), ' ', embedded_file_mod_time, ' vs ', extracted_file_mod_time)
+        if current_exe_mod_time > extracted_file_mod_time:
+            err = DirAccess.copy_absolute(embedded_file, extracted_file); #assert(err == OK)
+            if extracted_file.get_extension() == "exe":
+                err = FileAccess.set_unix_permissions(extracted_file, rwx); #assert(err == OK)
 
+    exe_args.append_array([ extracted_js ])
+    exe_args.append_array(OS.get_cmdline_user_args())
     exe_args.append_array([ NO_RELAUNCH_ARG, JSONRPC_GUI_ARG ])
     
     var dict := OS.execute_with_pipe(extracted_exe, exe_args, false)

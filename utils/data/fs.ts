@@ -1,5 +1,5 @@
 import path from 'node:path'
-import { promises as fs } from "node:fs"
+import { promises as fs, Stats } from "node:fs"
 import type { AbortOptions } from '@libp2p/interface'
 import { console_log } from '../../ui/remote/remote'
 import { cwd, downloads } from '../log'
@@ -165,6 +165,18 @@ export async function fs_readdir(path: string, opts: ReadDirOpts, log = true){
     } catch(err){
         if(log)
             console_log_fs_err('Reading directory', path, err)
+    }
+    opts.signal.throwIfAborted()
+    return result
+}
+
+export async function fs_stat(path: string, opts: Required<AbortOptions>, log = true){
+    let result: Stats | undefined
+    try {
+        result = await fs.stat(path)
+    } catch(err){
+        if(log)
+            console_log_fs_err('Reading file stats', path, err)
     }
     opts.signal.throwIfAborted()
     return result

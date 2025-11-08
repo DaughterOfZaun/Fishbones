@@ -7,13 +7,16 @@ import {
 
 //export const cwd = process.cwd()
 //export const cwd = path.dirname(process.execPath)
-export const cwd = path.dirname(process.env.IS_COMPILED ? process.execPath : Bun.main)
+//export const cwd = path.dirname(process.env.IS_COMPILED ? process.execPath : Bun.main)
+export let cwd = path.dirname(Bun.main)
+export const downloadsDirName = 'Fishbones_Data'
+if(path.basename(cwd) === downloadsDirName)
+    cwd = path.dirname(cwd)
 export const cwdWin = cwd.replaceAll('/', '\\') // For logger.
 export const cwdLin = cwd.replaceAll('\\', '/') // For logger.
-export const downloadsDirName = 'Fishbones_Data'
 export const downloads = path.join(cwd, downloadsDirName)
-fs_ensureDirSync(downloads) //TODO: Fix. Just to be extra sure.
 
+fs_ensureDirSync(downloads) //TODO: Fix. Just to be extra sure.
 export function fs_ensureDirSync(path: string){
     try {
         fs_mkdirSync(path)

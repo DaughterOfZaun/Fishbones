@@ -301,17 +301,17 @@ export async function stop(node: LibP2PNode){
     await Promise.all([
         (async () => {
             const pubSubPeerDiscovery = node.services.pubsubPeerDiscovery
-            await pubSubPeerDiscovery.beforeStop()
+            await pubSubPeerDiscovery?.beforeStop()
             pubSubPeerDiscovery.stop()
         })(),
         (async () => {
             const rendezvous = node.services.rendezvous
-            await rendezvous.connect(serverPeerID, async (point) => {
+            await rendezvous?.connect(serverPeerID, async (point) => {
                 //await point.register(appDiscoveryTopic, { ttl: 1 })
                 await point.unregister(appDiscoveryTopic)
             })
-            rendezvous.beforeStop()
-            rendezvous.stop()
+            rendezvous?.beforeStop()
+            rendezvous?.stop()
         })(),
     ])
     const connectionManager = node.components.connectionManager as unknown as Startable
