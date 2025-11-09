@@ -42,12 +42,12 @@ export function start(){
 }
 
 export function stop(){
-    sendNotification('exit')
     process.stdin.removeListener('data', onData)
 }
 
 export const listeners = new Map<JRPCId, (err?: { code?: number, message?: string }, result?: JSONValue) => void>()
 export const handlers = new Map<JRPCId, Record<string, (...args: JSONValue[]) => void>>()
+export const methods: Record<string, (...args: JSONValue[]) => void> = {}
 
 function onData(data: Buffer){
     const lines = data.toString('utf8').split('\n')
@@ -64,17 +64,17 @@ function onData(data: Buffer){
                         handler[obj.method]?.(...(obj.params ?? []))
                     } else if(obj.error){
                         handler['reject']?.(obj.error)
-                    } else {
+                    } else if(obj.result){
                         handler['resolve']?.(obj.result)
                     }
                 } else if('method' in obj){
-                    //TODO: Global methods
-                } else {
+                    //TODO: Global methods.
+                } else /*if('error' in obj || 'result' in obj)*/{
                     const listener = listeners.get(obj.id)
                     listener?.(obj.error, obj.result)
                 }
-            } else {
-                //TODO: Notifications
+            } else if('method' in obj){
+                methods[obj.method]?.(...(obj.params ?? []))
             }
         }
     }

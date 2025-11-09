@@ -1,8 +1,8 @@
 import { build } from "./build"
-import { download, appendPartialDownloadFileExt, repairAria2 } from "./download/download"
+import { download, appendPartialDownloadFileExt, repairAria2, seed } from "./download/download"
 import { gcPkg, gitPkg, gsPkg, PkgInfo, repairTorrents, sdkPkg } from "./packages"
-import { console_log, fs_copyFile } from "../../ui/remote/remote"
-import { console_log_fs_err, cwd, downloads, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_rmdir } from './fs'
+import { console_log, createBar, currentExe, extractFile } from "../../ui/remote/remote"
+import { console_log_fs_err, cwd, downloads, fs_copyFile, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_rmdir } from './fs'
 import { readTrackersTxt } from "./download/trackers"
 import { appendPartialUnpackFileExt, DataError, repair7z, unpack } from "./unpack"
 import { TerminationError, unwrapAbortError } from "../process/process"
@@ -14,7 +14,7 @@ import os from 'os'
 import { runPostInstall, update } from "./update"
 //import { ensureSymlink } from "./data-client"
 import { args } from "../args"
-import { checkForUpdates, fbPkg, isNewVersionAvailable, repairSelfPackage } from "./upgrade"
+import { checkForUpdates, fbPkg, isNewVersionAvailable, prev_fbPkg, repairSelfPackage } from "./upgrade"
 import { spawn } from "node:child_process"
 
 const DOTNET_INSTALL_CORRUPT_EXIT_CODES = [ 130, 131, 142, ]
@@ -31,7 +31,7 @@ export async function repair(opts: Required<AbortOptions>){
     //console.log('Running data check and repair...')
 
     await fs_ensureDir(downloads, opts)
-    
+
     let results: PromiseSettledResult<unknown>[]
     results = await Promise.allSettled([
         readTrackersTxt(opts).catch((err) => { console_log('Restoring torrent trackers list failed:', Bun.inspect(err)) }),
@@ -45,23 +45,28 @@ export async function repair(opts: Required<AbortOptions>){
     ])
     throwAnyRejection(results)
     
-    if(isNewVersionAvailable()){
+    if(prev_fbPkg && isNewVersionAvailable()){
     
+        // A hack to speed up download.
+        if(await fs.exists(prev_fbPkg.zip) && !await fs.exists(fbPkg.zip)){
+            const bar = createBar('Copying', prev_fbPkg.zip)
+            await fs_copyFile(prev_fbPkg.zip, fbPkg.zip, opts)
+            bar.stop()
+        }
         await download(fbPkg, opts)
         await unpack(fbPkg, opts)
         
         const now = new Date()
-        const newExe = path.join(downloads, 'Fishbones', 'Fishbones.exe')
-        await fs.utimes(newExe, now, now) // Fix file after unpacking.
+        await fs.utimes(fbPkg.exe, now, now) // Fix file after unpacking.
         
-        const currentExe = path.join(cwd, 'Fishbones.exe')
-        const oldExe = path.join(downloads, 'Fishbones', 'Fishbones.outdated.exe')
+        console.assert(fbPkg.dir === prev_fbPkg.dir)
+        const oldExe = path.join(prev_fbPkg.dir, `Fishbones.${prev_fbPkg.version}.exe`)
         await fs_moveFile(currentExe, oldExe, opts, true)
-        await fs_moveFile(newExe, currentExe, opts, true)
+        await fs_moveFile(fbPkg.exe, currentExe, opts, true)
 
         spawn(currentExe, {
-            cwd: process.cwd(),
-            stdio: 'inherit',
+            //cwd: process.cwd(),
+            stdio: 'ignore',
             detached: true,
         }).unref()
 
@@ -118,7 +123,7 @@ export async function repair(opts: Required<AbortOptions>){
             
             const d3dx9_39_dll = path.join(gcPkg.exeDir, 'd3dx9_39.dll')
             if(!await fs_exists(d3dx9_39_dll, opts, true))
-                await fs_copyFile(embedded.d3dx9_39_dll, d3dx9_39_dll, opts)
+                await extractFile(embedded.d3dx9_39_dll, d3dx9_39_dll, opts)
 
             //await ensureSymlink()
         }),
@@ -126,6 +131,24 @@ export async function repair(opts: Required<AbortOptions>){
     throwAnyRejection(results)
 
     //TODO: await fs.cp(gsPkg.gcDir, gcPkg.exeDir, { recursive: true })
+
+    if(args.torrentDownload.enabled){
+        //TODO: Seed all downloaded packages.
+        const packages = [ gcPkg, sdkPkg, fbPkg ]
+        void Promise.allSettled(
+            packages.map(async pkg => seed(pkg, opts))
+        ).then((results) => {
+            //throwAnyRejection(results)
+            for(let i = 0; i < results.length; i++){
+                const result = results[i]!
+                const pkg = packages[i]!
+                if(result.status === 'rejected'){
+                    const err = result.reason as Error
+                    console_log(`Failed to seed ${pkg.zipName}:`, Bun.inspect(err))
+                }
+            }
+        })
+    }
 }
 
 // cwd = Z:
@@ -156,7 +179,7 @@ async function getPotentialRoots(opts: Required<AbortOptions>){
     return [
         ...dirents.flat()
         .filter(dirent => dirent.isDirectory() || dirent.isSymbolicLink())
-        .map(dirent => path.join(dirent.parentPath, dirent.name)),        
+        .map(dirent => path.join(dirent.parentPath, dirent.name)),
         
         downloads, // Z:/Fishbones_Data
         cwd, // Z:
@@ -297,7 +320,7 @@ export async function repairArchived(pkg: PkgInfo, opts: Required<AbortOptions>,
     }
 
     if(pkg.zipEmbded){
-        await fs_copyFile(pkg.zipEmbded, pkg.zip, opts)
+        await extractFile(pkg.zipEmbded, pkg.zip, opts)
     } else {
         await download(pkg, opts)
     }

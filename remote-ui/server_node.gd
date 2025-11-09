@@ -1,6 +1,5 @@
 class_name ServerNode extends Control
 
-const NO_RELAUNCH_ARG = "--no-gui"
 const JSONRPC_GUI_ARG = "--jrpc-ui"
 
 var stdio: FileAccess
@@ -137,11 +136,11 @@ func _ready() -> void:
     var fb_dir := downloads.path_join('Fishbones')
     err = DirAccess.make_dir_absolute(fb_dir); assert(err in [ OK, ERR_ALREADY_EXISTS ])
     
-    var copied_exe := fb_dir.path_join('Fishbones.exe')
-    var current_exe_mod_time := FileAccess.get_modified_time(current_exe)
-    var copied_exe_mod_time := FileAccess.get_modified_time(copied_exe)
-    if current_exe_mod_time > copied_exe_mod_time:
-        err = DirAccess.copy_absolute(current_exe, copied_exe); assert(err == OK)
+    #var copied_exe := fb_dir.path_join('Fishbones.exe')
+    #var current_exe_mod_time := FileAccess.get_modified_time(current_exe)
+    #var copied_exe_mod_time := FileAccess.get_modified_time(copied_exe)
+    #if current_exe_mod_time > copied_exe_mod_time:
+    #    err = DirAccess.copy_absolute(current_exe, copied_exe); assert(err == OK)
 
     for file in embedded_files:
         embedded_files_by_name[file.get_file()] = file
@@ -151,16 +150,17 @@ func _ready() -> void:
     for embedded_file in embedded_libs:
         var extracted_file := downloads.path_join(embedded_file.get_file())
         #var embedded_file_mod_time := FileAccess.get_modified_time(embedded_file)
-        var extracted_file_mod_time := FileAccess.get_modified_time(extracted_file)
+        #var extracted_file_mod_time := FileAccess.get_modified_time(extracted_file)
         #print(embedded_file.get_file(), ' ', embedded_file_mod_time, ' vs ', extracted_file_mod_time)
-        if current_exe_mod_time > extracted_file_mod_time:
+        #if current_exe_mod_time > extracted_file_mod_time:
+        if !FileAccess.file_exists(extracted_file):
             err = DirAccess.copy_absolute(embedded_file, extracted_file); #assert(err == OK)
             if extracted_file.get_extension() == "exe":
                 err = FileAccess.set_unix_permissions(extracted_file, rwx); #assert(err == OK)
 
     exe_args.append_array([ extracted_js ])
     exe_args.append_array(OS.get_cmdline_user_args())
-    exe_args.append_array([ NO_RELAUNCH_ARG, JSONRPC_GUI_ARG ])
+    exe_args.append_array([ JSONRPC_GUI_ARG, current_exe ])
     
     var dict := OS.execute_with_pipe(extracted_exe, exe_args, false)
     stdio = dict["stdio"]
@@ -177,15 +177,21 @@ func _ready() -> void:
     for view_name in views:
         var view := views[view_name]
         view.visible = false
+    
+    get_tree().set_auto_accept_quit(false)
 
-#     get_tree().set_auto_accept_quit(false)
-
-# func _notification(what: int) -> void:
-#     if what == NOTIFICATION_WM_CLOSE_REQUEST:
-#         if stderr: stderr.close()
-#         if stdio: stdio.close()
-#         if pid: OS.kill(pid)
-#         get_tree().quit()
+func _notification(what: int) -> void:
+    if what == NOTIFICATION_WM_CLOSE_REQUEST:
+        waiting_for_exit = true
+        #if stderr: stderr.close()
+        #if stdio: stdio.close()
+        if pid:
+            notify('exit')
+            var timer := get_tree().create_timer(7)
+            var os_kill_pid := func () -> void: OS.kill(pid)
+            timer.timeout.connect(os_kill_pid)
+        else:
+            on_process_exit()
 
 func _init() -> void:
 
@@ -276,10 +282,13 @@ func _init() -> void:
 
     methods["exit"] = func() -> void:
         #print('exit')
-        get_tree().quit()
+        #get_tree().quit()
+        waiting_for_exit = true
         
     methods["popup"] = func(title: String, message: String, sound: String) -> void:
         popup.pop(title, message, sound)
+
+var waiting_for_exit := false
 
 func create_view(config: Dictionary) -> InputHandler:
     
@@ -338,14 +347,22 @@ func _process(_delta: float) -> void:
         )
 
     if !OS.is_process_running(pid):
-        console.append_text(
-            '[color=light_coral]Process exited with code {code}[/color]\n'
-            .format({ 'code': OS.get_process_exit_code(pid) })
-        )
-        show_console_toggle.button_pressed = true
-        console_container.visible = true
-        set_process(false)
+        on_process_exit()
         return
+
+func on_process_exit() -> void:
+    
+    if waiting_for_exit:
+        get_tree().quit()
+        return
+        
+    console.append_text(
+        '[color=light_coral]Process exited with code {code}[/color]\n'
+        .format({ 'code': OS.get_process_exit_code(pid) })
+    )
+    show_console_toggle.button_pressed = true
+    console_container.visible = true
+    set_process(false)
 
 func _process_packet(packet_string: String) -> void:
     var response_string := await _process_string(packet_string)
@@ -429,6 +446,12 @@ func callback(id: Variant, method: String, ...params: Array[Variant]) -> void:
     stdio.store_string(response_string + '\n')
     if method == 'resolve' || method == 'reject':
         abort_handler(id)
+    stdio.flush()
+    
+func notify(method: String, ...params: Array[Variant]) -> void:
+    var response_string := JSON.stringify(jrpc.make_notification(method, params))
+    print('notify', ' ', response_string)
+    stdio.store_string(response_string + '\n')
     stdio.flush()
 
 var null_InputHandler := InputHandler.new() #HACK:

@@ -1,4 +1,4 @@
-import path from 'node:path'
+//import path from 'node:path'
 import { promises as fs, Stats } from "node:fs"
 import type { AbortOptions } from '@libp2p/interface'
 import { console_log } from '../../ui/remote/remote'
@@ -54,14 +54,27 @@ export async function fs_ensureDir(path: string, opts: Required<AbortOptions>){
 }
 
 //TODO: { rethrow?: true } ?
-export async function fs_copyFile(src: string, dest: string, opts: Required<AbortOptions>){
-    //const bytes = await fs.readFile(src)
-    const srcName = path.basename(src)
-    const bytes = await Bun.embeddedFiles.find(
-        blob => 'name' in blob && blob.name === srcName
-    )!.bytes() //HACK: Walkaround
-    await fs.writeFile(dest, bytes)
+//export async function fs_copyFile(src: string, dest: string, opts: Required<AbortOptions>){
+//    //const bytes = await fs.readFile(src)
+//    const srcName = path.basename(src)
+//    const bytes = await Bun.embeddedFiles.find(
+//        blob => 'name' in blob && blob.name === srcName
+//    )!.bytes() //HACK: Walkaround
+//    await fs.writeFile(dest, bytes)
+//    opts.signal.throwIfAborted()
+//}
+
+export async function fs_copyFile(src: string, dest: string, opts: Required<AbortOptions>, log = true){
+    let result = false
+    try {
+        await fs.copyFile(src, dest)
+        result = true
+    } catch(err) {
+        if(log)
+            console_log_fs_err('Copying file', `${src} -> ${dest}`, err)
+    }
     opts.signal.throwIfAborted()
+    return result
 }
 
 export type TextBufferEncoding = 'utf8' | 'base64'

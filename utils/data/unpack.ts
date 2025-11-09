@@ -1,29 +1,30 @@
 import { type PkgInfo } from './packages'
 import { logger } from '../log'
-import { createBar, fs_copyFile } from '../../ui/remote/remote'
+import { createBar, extractFile } from '../../ui/remote/remote'
 import { killIfActive, spawn, successfulTermination, type ChildProcess } from '../process/process'
 import { rwx_rx_rx, downloads, fs_chmod, fs_ensureDir, fs_exists, fs_writeFile, fs_removeFile } from './fs'
 import type { AbortOptions } from '@libp2p/interface'
 import { args } from '../args'
 import path from 'node:path'
 import embedded from './embedded/embedded'
+import { createReadStream as fs_createReadStream } from "node:fs"
 
-const s7zExe = path.join(downloads, '7z.exe')
-const s7zDll = path.join(downloads, '7z.dll')
+const s7zExe = path.join(downloads, path.basename(embedded.s7zExe))
+//const s7zDll = path.join(downloads, embedded.s7zDll)
 
 export async function repair7z(opts: Required<AbortOptions>){
     try {
         await Promise.all([
             (async () => {
                 if(!await fs_exists(s7zExe, opts)){
-                    await fs_copyFile(embedded.s7zExe, s7zExe, opts)
+                    await extractFile(embedded.s7zExe, s7zExe, opts)
                     await fs_chmod(s7zExe, rwx_rx_rx, opts)
                 }
             })(),
-            (async () => {
-                if(s7zDll && embedded.s7zDll && !await fs_exists(s7zDll, opts))
-                    await fs_copyFile(embedded.s7zDll, s7zDll, opts)
-            })(),
+            //(async () => {
+            //    if(s7zDll && embedded.s7zDll && !await fs_exists(s7zDll, opts))
+            //        await extractFile(embedded.s7zDll, s7zDll, opts)
+            //})(),
         ])
     } catch(unk_err){
         const err = unk_err as ErrnoException
@@ -156,23 +157,37 @@ export async function unpack(pkg: PkgInfo, opts: Required<AbortOptions>){
         throw new DataError(`Unable to unpack ${pkg.zipName}`)
 }
 
-export async function pack(pkg: { exe: string, zip: string, zipName: string }, opts: Required<AbortOptions>){
+export function appendPartialPackFileExt(path: string){
+    return `${path}.being-packed`
+}
+
+//TODO: The file name in the archive must be Fishbones.exe
+export async function pack(pkg: { exe: string, exeName: string, zip: string, zipName: string }, opts: Required<AbortOptions>){
     const bar = createBar('Packing', pkg.zipName, 100)
     const logPrefix = `7Z ${pid} ${0}`
 
     let archiveSize = 0
     let proc: ReturnType<typeof spawn> | undefined
     try {
-        proc = spawn(s7zExe, [ 'a', '-mtm-', '-mtc-', '-mta-', '-bsp1', pkg.zip, pkg.exe ], {
+
+        const lockfile = appendPartialPackFileExt(pkg.zip)
+        await fs_writeFile(lockfile, '', { ...opts, encoding: 'utf8' })
+
+        proc = spawn(s7zExe, [ 'a', '-mtm-', '-mtc-', '-mta-', '-bsp1', /*`-si${pkg.exeName}`,*/ pkg.zip, pkg.exe ], {
+            stdio: [ 'pipe', 'pipe', 'pipe' ],
             log: false, logPrefix,
             cwd: downloads,
         })
         pid++
         
+        fs_createReadStream(pkg.exe).pipe(proc.stdin)
+
         proc.stdout.setEncoding('utf8').on('data', onData.bind(null, 'stdout'))
         proc.stderr.setEncoding('utf8').on('data', onData.bind(null, 'stderr'))
 
         await successfulTermination(proc.logPrefix, proc, opts)
+        await fs_removeFile(lockfile, opts)
+
         return archiveSize
 
     } finally {
@@ -189,7 +204,7 @@ export async function pack(pkg: { exe: string, zip: string, zipName: string }, o
         if(src === 'stdout' && (m = s7zProgressMsg.exec(chunk)) && m[1]){
             bar.update(parseInt(m[1]))
         } else if(chunk){
-            logger.log(logPrefix, chunk)
+            logger.log(logPrefix, `[${src.toUpperCase()}]`, chunk)
         }
     }
 }

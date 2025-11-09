@@ -1,7 +1,7 @@
 import path from 'node:path'
 import type { AbortOptions } from '@libp2p/interface'
 import { console_log_fs_err, downloads, fs_exists, fs_moveFile } from './fs'
-import { fs_copyFile } from '../../ui/remote/remote'
+import { extractFile } from '../../ui/remote/remote'
 import embedded from './embedded/embedded'
 
 export const magnet = (ihv1?: string, ihv2?: string, fname?: string, size?: number) => {
@@ -533,7 +533,7 @@ export async function repairTorrents(opts: Required<AbortOptions>){
         return pkg.zipTorrent && pkg.zipTorrentEmbedded
     }).map(async pkg => {
         if(!await fs_exists(pkg.zipTorrent, opts)) try {
-            await fs_copyFile(pkg.zipTorrentEmbedded, pkg.zipTorrent, opts)
+            await extractFile(pkg.zipTorrentEmbedded, pkg.zipTorrent, opts)
         } catch(err) {
             console_log_fs_err('Extracting embedded torrent file', `${pkg.zipTorrentEmbedded} -> ${pkg.zipTorrent}`, err)
         }

@@ -28,12 +28,13 @@
     "strictNullChecks": true,
     //"exactOptionalPropertyTypes": true,
   },
-  "exclude": [
-    "node_modules",
-    "node_modules_linux_bun",
-    "node_modules_linux_deno",
-    "node_modules_linux_npm",
-    "node_modules_win_npm",
-    "node_modules_bak",
-  ]
+  "include": [
+    "game/**/*.ts",
+    "network/**/*.ts",
+    "node/**/*.ts",
+    "tui/**/*.ts",
+    "ui/**/*.ts",
+    "utils/**/*.ts",
+    "*.ts"
+  ],
 }

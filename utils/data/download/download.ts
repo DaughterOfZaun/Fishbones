@@ -2,9 +2,9 @@ import path from 'node:path'
 import { aria2, open, createWebSocket, type Conn } from 'maria2/dist/index.js'
 import { randomBytes } from '@libp2p/crypto'
 import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
-import { createBar, fs_copyFile } from '../../../ui/remote/remote'
+import { createBar, extractFile } from '../../../ui/remote/remote'
 import { killSubprocess, spawn, startProcess, type ChildProcess } from '../../process/process'
-import { rwx_rx_rx, downloads, fs_chmod, fs_exists, fs_exists_and_size_eq, fs_readFile } from '../../data/fs'
+import { rwx_rx_rx, downloads, fs_chmod, fs_exists, fs_exists_and_size_eq, fs_readFile, fs_removeFile } from '../../data/fs'
 import type { AbortOptions } from '@libp2p/interface'
 import { getAnnounceAddrs } from './trackers'
 import type { PkgInfo } from '../../data/packages'
@@ -15,20 +15,20 @@ import embedded from '../../data/embedded/embedded'
 
 const LOG_PREFIX = 'ARIA2C'
 
-const ariaExe = path.join(downloads, 'aria2c.exe')
-const ariaConf = path.join(downloads, 'aria2.conf')
+const ariaExe = path.join(downloads, path.basename(embedded.ariaExe))
+//const ariaConf = path.join(downloads, path.basename(embedded.ariaConf))
 
 export async function repairAria2(opts: Required<AbortOptions>){
     return Promise.all([
         (async () => {
             if(await fs_exists(ariaExe, opts)) return
-            await fs_copyFile(embedded.ariaExe, ariaExe, opts)
+            await extractFile(embedded.ariaExe, ariaExe, opts)
             await fs_chmod(ariaExe, rwx_rx_rx, opts)
         })(),
-        (async () => {
-            if(await fs_exists(ariaConf, opts)) return
-            await fs_copyFile(embedded.ariaConf, ariaConf, opts)
-        })(),
+        //(async () => {
+        //    if(await fs_exists(ariaConf, opts)) return
+        //    await extractFile(embedded.ariaConf, ariaConf, opts)
+        //})(),
     ])
 }
 
@@ -53,6 +53,8 @@ async function startAria2(opts: Required<AbortOptions>){
             `--rpc-allow-origin-all=${false}`,
             `--rpc-secret=${aria2secret}`,
 
+            `--stop-with-process=${process.pid}`,
+
             //`--conf-path=${ariaConf}`,
             //`--log=${'aria2.log'}`,
             
@@ -70,32 +72,35 @@ async function startAria2(opts: Required<AbortOptions>){
             //`--bt-tracker-connect-timeout=${10}`,
 
             `--enable-peer-exchange=${true}`,
-            
             `--bt-enable-lpd=${true}`,
 
             // All *.torrent files are embedded now.
-            //`--bt-save-metadata=${true}`,
-            //`--bt-load-saved-metadata=${true}`,
-            //`--rpc-save-upload-metadata=${true}`,
+            `--bt-save-metadata=${false}`,
+            `--bt-load-saved-metadata=${false}`,
+            `--rpc-save-upload-metadata=${false}`,
             
+            // Session managment.
             //`--input-file=${ariaSession}`,
             //`--save-session=${ariaSession}`,
+            `--auto-save-interval=${1}`,
             
-            //`--dir=${downloads}`,
-            `--check-integrity=${true}`,
+            `--dir=${downloads}`,
+            //`--check-integrity=${true}`,
             `--check-certificate=${false}`,
-            `--bt-hash-check-seed=${true}`,
+            //`--bt-hash-check-seed=${true}`,
             //`--file-allocation=${'prealloc'}`,
+            `--seed-ratio=${0}`,
 
+            // Progress logging.
             `--summary-interval=${1}`,
             `--show-console-readout=${false}`,
             `--truncate-console-readout=${false}`,
             `--human-readable=${false}`,
 
-            // Stability tweaks
-            `--allow-piece-length-change=${true}`,
-            `--auto-file-renaming=${true}`,
-            `--allow-overwrite=${true}`,
+            // Stability tweaks.
+            //`--allow-piece-length-change=${true}`,
+            //`--auto-file-renaming=${true}`,
+            //`--allow-overwrite=${true}`,
             //`--retry-wait=${60}`,
             //`--max-tries=${5}`,
 
@@ -161,17 +166,15 @@ export async function download(pkg: PkgInfo, opts: Required<AbortOptions>){
 
         try {
             await startAria2(opts)
-            
-            const aria2args = {
-                'bt-save-metadata': true,
-                'bt-load-saved-metadata': true,
-                'rpc-save-upload-metadata': true,
-                dir: downloads,
-                out: pkg.zipName,
-            }
-            
+                        
             let gid
             try {
+                const aria2args = {
+                    dir: downloads,
+                    //out: pkg.zipName,
+                    'check-integrity': 'true',
+                    //'bt-hash-check-seed': 'false',
+                }
                 let b64
                 if(args.torrentDownload.enabled && pkg.zipTorrent && (
                     b64 = await fs_readFile(pkg.zipTorrent, { ...opts, encoding: 'base64' })
@@ -188,6 +191,12 @@ export async function download(pkg: PkgInfo, opts: Required<AbortOptions>){
             opts.signal.throwIfAborted()
 
             await forCompletion(gid, false, p => bar.update(p), pkg.zipName)
+
+            //HACK: Aria2 does not delete control file after checking and downloading
+            // if the download took less than the autosave interval
+            // and was followed by seeding
+            const lockfile = appendPartialDownloadFileExt(pkg.zip)
+            await fs_removeFile(lockfile, opts)
             
         } finally {
             if(pkg.zipMega && args.megaDownload.enabled){
@@ -264,4 +273,14 @@ async function forCompletion(gid: string, isMetadata: boolean, cb: (progress: nu
 
 export function appendPartialDownloadFileExt(zip: string){
     return `${zip}.aria2`
+}
+
+export async function seed(pkg: { zipName: string, zipTorrent: string }, opts: Required<AbortOptions>) {
+    await startAria2(opts)
+    const b64 = await fs_readFile(pkg.zipTorrent, { ...opts, encoding: 'base64', rethrow: true })
+    await aria2.addTorrent(aria2conn, b64!, [], {
+        dir: downloads,
+        //out: pkg.zipName,
+        'bt-seed-unverified': 'true',
+    })
 }

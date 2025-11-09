@@ -68,7 +68,7 @@ export async function createNode(port: number, opts: Required<AbortOptions>){
     //   )
     //})
     await setup(node, opts)
-    return node 
+    return node
 }
 
 const customLogger = (): ComponentLogger => ({ forComponent })

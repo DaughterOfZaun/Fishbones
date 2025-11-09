@@ -11,6 +11,8 @@ const release = process.argv.includes('release') ? 'release' : 'debug'
 const version = process.argv.find(arg => VERSION_REGEX.test(arg))
 console.assert(typeof version === 'string')
 
+const indexJS = `./${OUTDIR}/index-${version}.js`
+
 const platform =
     process.argv.includes('linux') ? 'linux' :
     process.argv.includes('windows') ? 'windows' :
@@ -27,6 +29,8 @@ async function build_embeds(){
 
     await $`rm ./remote-ui/embedded/*`
 
+    config['indexJS'] = indexJS
+
     const embeddedJson: Record<string, string> = {}
     for(const [key, keyConfig] of Object.entries(config as Config)){
         let from =
@@ -36,7 +40,7 @@ async function build_embeds(){
         if(from){
             from = path.resolve(from)
             let fileName = path.basename(from)
-            if(!fileName.includes('.')) fileName += '.exe'
+            if(!path.extname(fileName)) fileName += '.exe'
             const to = `./remote-ui/embedded/${fileName}`
             embeddedJson[key] = to.replace('./remote-ui/', 'res://')
             //console.log(`ln -sf "${from}" "${to}"`)
@@ -50,10 +54,10 @@ async function build_embeds(){
 
     let tscn = await fs.readFile('./remote-ui/main.tscn', 'utf8')
     const embeddedFiles = Object.entries(embeddedJson)
-        .filter(([key, file]) => !!file && !['bunExe', 'indexJs', 'dataChannelLib'].includes(key))
+        .filter(([key, file]) => !!file && !['bunExe', 'indexJS', 'dataChannelLib'].includes(key))
         .map(([key, file]) => file)
         .toSorted()
-    tscn = tscn.replace(/^embedded_js = ".*"$/m, `embedded_js = "${embeddedJson['indexJs']}"`)
+    tscn = tscn.replace(/^embedded_js = ".*"$/m, `embedded_js = "${embeddedJson['indexJS']}"`)
     tscn = tscn.replace(/^embedded_exe = ".*"$/m, `embedded_exe = "${embeddedJson['bunExe']}"`)
     tscn = tscn.replace(/^embedded_lib_0 = ".*"$/m, `embedded_lib_0 = "${embeddedJson['dataChannelLib']}"`)
     tscn = tscn.replace(/(embedded_file_\w+ = ".*"\n)+/g, embeddedFiles.map((file, i) => {
@@ -88,6 +92,7 @@ if(process.argv.includes('bun')){
                 'process.env.VERSION': `"${version}"`
             }
         })
+        await fs.rename(`./${OUTDIR}/index.js`, indexJS)
     } finally {
         if(platform === 'windows'){
             await $`mv node_modules node_modules_win_npm`

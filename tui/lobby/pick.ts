@@ -41,7 +41,7 @@ export async function lobby_pick(ctx: Context){
             const disabled = (!game.server.champions.value.includes(i)) ? true : undefined
             return { i, name, relativeIconPath, disabled }
         })
-        //.filter(info => info.relativeIconPath)
+        .filter(info => info.relativeIconPath)
         .map(({ i, name, relativeIconPath, disabled }) => {
             return [ i, icon(relativeIconPath, name, disabled) ]
         })
@@ -54,7 +54,7 @@ export async function lobby_pick(ctx: Context){
             const disabled = (!game.server.spells.value.includes(i)) ? true : undefined
             return { i, name, relativeIconPath, disabled }
         })
-        //.filter((info) => info.relativeIconPath)
+        .filter((info) => info.relativeIconPath)
         .map(({ i, name, relativeIconPath, disabled }) => {
             return [i, icon(relativeIconPath, name, disabled)]
         })

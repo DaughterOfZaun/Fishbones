@@ -10,12 +10,14 @@ config_version=5
 
 [application]
 
-config/name="Fishbones v0.0.3.15"
+config/name="Fishbones v0.0.3.17"
 config/description="Yet another LeagueSandbox launcher with a twist"
-config/version="0.0.3.15"
+config/version="0.0.3.17"
 run/main_scene="uid://c88cdpgvxg8v2"
 run/print_header=false
 config/custom_user_dir_name="Fishbones_Data"
+config/auto_accept_quit=false
+config/quit_on_go_back=false
 config/features=PackedStringArray("4.5", "GL Compatibility")
 run/low_processor_mode=true
 boot_splash/bg_color=Color(0, 0, 0, 1)

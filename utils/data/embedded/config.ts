@@ -4,20 +4,20 @@ export const config = {
 
     ariaExe: {
         windows: './thirdparty/aria2/aria2c-1.37.0-win-64bit-build1.exe',
-        linux: './thirdparty/Motrix/extra/linux/x64/engine/aria2c',
+        linux: './thirdparty/aria2/aria2c-1.36.0-linux-x64.exe',
     },
-    ariaConf: {
-        windows: './thirdparty/Motrix/extra/win32/x64/engine/aria2.conf',
-        linux: './thirdparty/Motrix/extra/linux/x64/engine/aria2.conf',
-    },
+    //ariaConf: {
+    //    windows: './thirdparty/Motrix/extra/win32/x64/engine/aria2.conf',
+    //    linux: './thirdparty/Motrix/extra/linux/x64/engine/aria2.conf',
+    //},
     
     s7zExe: {
-        windows: './node_modules/7z-bin/bin/win/x64/7z.exe',
-        linux: './node_modules/7z-bin/bin/linux/x64/7zzs',
+        windows: './thirdparty/7z/7za-2501-windows-x64.exe',
+        linux: './thirdparty/7z/7zzs-2501-linux-x64.exe',
     },
-    s7zDll: {
-        windows: './node_modules/7z-bin/bin/win/x64/7z.dll',
-    },
+    //s7zDll: {
+    //    windows: './node_modules/7z-bin/bin/win/x64/7z.dll',
+    //},
 
     gc420ZipTorrent: '', //'./Fishbones_Data/League of Legends_UNPACKED.7z.torrent',
     gs420PkgZipTorrent: '', //'./Fishbones_Data/Chronobreak.GameServer.7z.torrent',
@@ -50,11 +50,11 @@ export const config = {
     //icon: './remote-ui/icons/icon.png',
 
     bunExe: {
-        windows: './thirdparty/bun/bun-windows-x64-baseline.exe',
-        linux: './thirdparty/bun/bun-linux-x64-baseline',
+        windows: './thirdparty/bun/bun-1.3.2-windows-x64-baseline.exe',
+        linux: './thirdparty/bun/bun-1.3.2-linux-x64-baseline.exe',
     },
 
-    indexJs: './dist/index.js',
+    indexJS: './dist/index.js',
 
     //trackersTxt: './Fishbones_Data/trackers.txt',
 
@@ -63,4 +63,4 @@ export const config = {
         windows: './dist/node_datachannel-8fg8wz1b.node',
     }
 
-} as const
+}

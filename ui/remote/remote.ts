@@ -1,5 +1,6 @@
 import { input as localInput, checkbox as localCheckbox } from '@inquirer/prompts'
 import { AbortPromptError, ExitPromptError } from '@inquirer/core'
+import type { AbortOptions } from '@libp2p/interface'
 import type { Context } from '@inquirer/type'
 import yoctocolor from 'yoctocolors-cjs'
 
@@ -9,21 +10,31 @@ import { default as localSpinner } from '../inquirer/spinner'
 import { logger } from '../../utils/log'
 import { args } from '../../utils/args'
 
-import { fs_copyFile } from '../../utils/data/fs'
-import { Deferred, registerShutdownHandler } from '../../utils/process/process'
+//import { fs_copyFile } from '../../utils/data/fs'
+import { Deferred, registerShutdownHandler, shutdown } from '../../utils/process/process'
 import { listeners, sendCall, sendFollowupNotification, sendNotification, type JSONValue } from './jrpc'
 import * as jrpc from './jrpc'
 
 export { type SelectChoice as Choice, AbortPromptError, ExitPromptError }
 
-export const guiDisabled = !args.gui.enabled
 export const jsonRpcDisabled = !args.jRPCUI.enabled
+export const currentExe = args.jRPCUI.value
 
 if(!jsonRpcDisabled){
     jrpc.start()
+    let exitRequestedByRemote = false
+    jrpc.methods['exit'] = () => {
+        exitRequestedByRemote = true
+        shutdown('call')
+    }
+    let shutdownHandlerExecuted = false
     registerShutdownHandler((force, source) => {
-        if(source === 'call')
+        if(!shutdownHandlerExecuted){
+            shutdownHandlerExecuted = true
+            if(source === 'call' && !exitRequestedByRemote)
+                sendNotification('exit')
             jrpc.stop()
+        }
     })
 }
 
@@ -89,8 +100,8 @@ export function createSpinner(message: string) {
     }
 }
 
-export { extractFile as fs_copyFile }
-const extractFile: typeof fs_copyFile = async (from, to, opts) => {
+//const extractFile: typeof fs_copyFile = async (from, to, opts) => {
+export async function extractFile(from: string, to: string, opts: Required<AbortOptions>){
     await remoteInput('copy', { from, to }, opts)
 }
 
