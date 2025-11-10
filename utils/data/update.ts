@@ -13,7 +13,7 @@ export async function runPostInstall(opts: Required<AbortOptions>){
         const logPrefix = "GIT POST-INSTALL CMD"
         const proc = spawn(
             //gitPkg.postInstall, [],
-            'git-bash.exe', [ '--no-needs-console', '--hide', '--no-cd', '--command=post-install.bat' ],
+            'git-bash.exe', [ '--no-needs-console', '--hide', '--no-cd', `--command=${gitPkg.postInstallName}` ],
             {
                 log: true, logPrefix,
                 cwd: gitPkg.dir,

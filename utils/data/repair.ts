@@ -2,7 +2,7 @@ import { build } from "./build"
 import { download, appendPartialDownloadFileExt, repairAria2, seed } from "./download/download"
 import { gcPkg, gitPkg, gsPkg, PkgInfo, repairTorrents, sdkPkg } from "./packages"
 import { console_log, createBar, currentExe, extractFile } from "../../ui/remote/remote"
-import { console_log_fs_err, cwd, downloads, fs_copyFile, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_rmdir } from './fs'
+import { console_log_fs_err, cwd, downloads, fs_chmod, fs_copyFile, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_rmdir, rwx_rx_rx } from './fs'
 import { readTrackersTxt } from "./download/trackers"
 import { appendPartialUnpackFileExt, DataError, repair7z, unpack } from "./unpack"
 import { TerminationError, unwrapAbortError } from "../process/process"
@@ -57,7 +57,9 @@ export async function repair(opts: Required<AbortOptions>){
         await unpack(fbPkg, opts)
         
         const now = new Date()
-        await fs.utimes(fbPkg.exe, now, now) // Fix file after unpacking.
+        // Fix file after unpacking.
+        await fs.utimes(fbPkg.exe, now, now)
+        await fs_chmod(fbPkg.exe, rwx_rx_rx, opts)
         
         console.assert(fbPkg.dir === prev_fbPkg.dir)
         const oldExe = path.join(prev_fbPkg.dir, `Fishbones.${prev_fbPkg.version}.exe`)

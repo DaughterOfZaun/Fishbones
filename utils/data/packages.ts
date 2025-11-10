@@ -486,7 +486,8 @@ export const gitPkg = new class extends PkgInfoExe {
     dir = path.join(downloads, this.dirName)
     zip = path.join(downloads, this.zipName)
     
-    postInstallRelative = path.join(this.dirName, 'post-install.bat')
+    postInstallName = 'post-install.bat'
+    postInstallRelative = path.join(this.dirName, this.postInstallName)
     postInstall = path.join(downloads, this.postInstallRelative)
 
     exeDir = path.join(this.dir, 'bin')
@@ -507,13 +508,13 @@ export const gitPkg = new class extends PkgInfoExe {
         'usr',
         'git-cmd.exe',
         'git-bash.exe',
+        'post-install.bat',
     ]
     topLevelEntriesOptional = [
         'tmp',
         'dev',
         'LICENSE.txt',
         'README.portable',
-        'post-install.bat',
     ]
 }
 

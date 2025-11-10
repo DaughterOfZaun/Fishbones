@@ -18,7 +18,7 @@ namespace GitHub {
         name: string
         size: number
         digest: string
-        uploaded_at: string
+        updated_at: string
         browser_download_url: string
     }
 }
@@ -30,7 +30,7 @@ const platform =
     undefined!
 
 const date = (str: string) => new Date(str).getTime()
-const extractVersion = (str: string) => {
+const version = (str: string) => {
     const m = str.match(VERSION_REGEX)
     if(m){
         return 0
@@ -56,7 +56,10 @@ class FBPkgInfo extends PkgInfo {
     readonly releasesURL = 'https://api.github.com/repos/DaughterOfZaun/Fishbones/releases'
 
     readonly dirName = 'Fishbones'
-    readonly exeName = 'Fishbones.exe'
+    readonly exeName =
+        platform === 'Windows' ? 'Fishbones.exe' :
+        platform === 'Linux' ? 'Fishbones' :
+        undefined!
     readonly noDedup = true
     readonly zipExt = 'zip'
 
@@ -113,7 +116,7 @@ export async function checkForUpdates(opts: Required<AbortOptions>){
         const releasesJSON = await fetch(fbPkg.releasesURL, opts)
         const releases = await releasesJSON.json() as GitHub.Release[]
         const release = releases.sort((a, b) => date(b.published_at) - date(a.published_at)).at(0)!
-        const assets = release.assets.sort((a, b) => date(b.uploaded_at) - date(a.uploaded_at))
+        const assets = release.assets.sort((a, b) => version(b.name) - version(a.name))
         const zip = assets.find(asset => asset.name.includes(platform) && asset.name.endsWith('.' + fbPkg.zipExt))
 
         if(!zip){
@@ -121,8 +124,8 @@ export async function checkForUpdates(opts: Required<AbortOptions>){
             return
         }
         
-        const zipVersion = extractVersion(zip.name)
-        const fbVersion = extractVersion(fbPkg.version)
+        const zipVersion = version(zip.name)
+        const fbVersion = version(fbPkg.version)
         console_log(
             `Latest available version: ${zip.name} (${zipVersion})\n` +
             `Currently running version: ${fbPkg.zipName} (${fbVersion})`
