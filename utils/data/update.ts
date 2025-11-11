@@ -29,7 +29,8 @@ export async function runPostInstall(opts: Required<AbortOptions>){
 
 export async function update(pkg: PkgInfoGit, opts: Required<AbortOptions>){
 
-    if(!args.update.enabled){
+    args.mr.enabled = !!args.mr.value
+    if(!args.update.enabled && !args.mr.enabled){
         //console.log(`Pretending to update ${pkg.dirName}...`)
         return
     }
@@ -46,7 +47,18 @@ export async function update(pkg: PkgInfoGit, opts: Required<AbortOptions>){
             updated = true
         } else {
             const prevHash = await getHeadCommitHash(pkg, opts)
-            await git([ 'pull' ], pkg, opts)
+            if(args.mr.enabled){
+                const newBranchName = `mr-${'origin'}-${args.mr.value}`
+                console_log(`Switching the branch to ${newBranchName}...`)
+
+                await git([ 'fetch', 'origin', `merge-requests/${args.mr.value}/head:${newBranchName}`], pkg, opts)
+                await git([ 'checkout',  newBranchName ], pkg, opts)
+            } else {
+                console_log(`Switching the branch to ${pkg.gitBranch}...`)
+
+                await git([ 'checkout', pkg.gitBranch ], pkg, opts)
+                await git([ 'pull' ], pkg, opts)
+            }
             const currHash = await getHeadCommitHash(pkg, opts)
             updated = prevHash != currHash
         }

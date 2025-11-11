@@ -7,6 +7,7 @@ export class Args {
     update = new Option('update', true, 'Download game server updates')
     upgrade = new Option('upgrade', true, 'Download launcher updates')
     port = new Parameter<number>('port', false, 5119, 'Set custom UDP port number to use')
+    mr = new Parameter<number>('mr', false, 0, 'Select a merge request to test')
 
     repair = new Option('repair', true, '(Debug) Download+Unpack+Build missing files')
     download = new Option('download', true, '(Debug) Download missing files')
@@ -26,6 +27,7 @@ export class Args {
         this.update,
         this.upgrade,
         //this.port,
+        this.mr,
     ]
 
     all: Option[]

@@ -429,6 +429,7 @@ export const gsPkg = new class extends PkgInfoCSProj {
     zipEmbded = embedded.gsPkgZip
 
     gitRevision = '4592f1379ddaa972ce0b5dc6cebb9caf09c812ab'
+    gitLabMRs = 'https://gitgud.io/api/v4/projects/40035/merge_requests?state=opened'
     gitOrigin = 'https://gitgud.io/skelsoft/brokenwings.git'
     gitBranch = 'master'
 

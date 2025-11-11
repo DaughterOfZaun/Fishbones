@@ -1,4 +1,4 @@
-[gd_scene load_steps=35 format=3 uid="uid://c88cdpgvxg8v2"]
+[gd_scene load_steps=39 format=3 uid="uid://c88cdpgvxg8v2"]
 
 [ext_resource type="Theme" uid="uid://heyv1rjynqwi" path="res://main_theme.tres" id="1_efxa6"]
 [ext_resource type="Script" uid="uid://dys8mpxtgwbfe" path="res://server_node.gd" id="1_ig7tw"]
@@ -96,6 +96,45 @@ Button/styles/pressed = SubResource("StyleBoxFlat_ycdy4")
 
 [sub_resource type="ButtonGroup" id="ButtonGroup_2cqfq"]
 
+[sub_resource type="ButtonGroup" id="ButtonGroup_cegan"]
+
+[sub_resource type="Animation" id="Animation_5cohb"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:self_modulate:a")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [1.0]
+}
+
+[sub_resource type="Animation" id="Animation_q4b70"]
+resource_name = "slow_flicker"
+loop_mode = 1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:self_modulate:a")
+tracks/0/interp = 2
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.5, 1),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [0.0, 1.0, 0.0]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_egw64"]
+_data = {
+&"RESET": SubResource("Animation_5cohb"),
+&"slow_flicker": SubResource("Animation_q4b70")
+}
+
 [node name="Control" type="ColorRect" node_paths=PackedStringArray("views", "container", "bars_container", "show_console_toggle", "console_container", "console", "popup")]
 anchors_preset = 15
 anchor_right = 1.0
@@ -112,6 +151,7 @@ views = {
 "CustomsBrowser": NodePath("Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser"),
 "DirectConnect": NodePath("Container/TabContainer/#DirectConnect"),
 "GatheringLobby": NodePath("Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby"),
+"MergeRequests": NodePath("Container/TabContainer/#MergeRequests"),
 "ProfilePanel": NodePath("Container/TabContainer/MarginContainer1/HBoxContainer1/VBoxContainer2/MarginContainer/VBoxContainer/#ProfilePanel")
 }
 bar = ExtResource("3_h2yge")
@@ -119,16 +159,15 @@ spinner = ExtResource("4_ycdy4")
 select = ExtResource("5_w48qg")
 checkbox = ExtResource("6_vivmo")
 input = ExtResource("7_2cqfq")
-embedded_js = "res://embedded/index-0.0.3.18.js"
-embedded_exe = "res://embedded/bun-1.3.2-windows-x64-baseline.exe"
-embedded_lib_0 = "res://embedded/node_datachannel-8fg8wz1b.node"
-embedded_file_0 = "res://embedded/7za-2501-windows-x64.exe"
+embedded_js = "res://embedded/index-0.0.3.19.js"
+embedded_exe = "res://embedded/bun-1.3.2-linux-x64-baseline.exe"
+embedded_lib_0 = "res://embedded/node_datachannel-bfgv6pn8.node"
+embedded_file_0 = "res://embedded/7zzs-2501-linux-x64.exe"
 embedded_file_1 = "res://embedded/ChildrenOfTheGrave-Gameserver.7z.torrent"
-embedded_file_2 = "res://embedded/PortableGit-2.51.0.2-64-bit.7z.exe.torrent"
-embedded_file_3 = "res://embedded/aria2c-1.37.0-win-64bit-build1.exe"
-embedded_file_4 = "res://embedded/d3dx9_39.dll"
-embedded_file_5 = "res://embedded/dotnet-sdk-9.0.300-win-x64.zip.torrent"
-embedded_file_6 = "res://embedded/playable_client_126.7z.torrent"
+embedded_file_2 = "res://embedded/aria2c-1.36.0-linux-x64.exe"
+embedded_file_3 = "res://embedded/d3dx9_39.dll"
+embedded_file_4 = "res://embedded/dotnet-sdk-9.0.300-linux-x64.tar.gz.torrent"
+embedded_file_5 = "res://embedded/playable_client_126.7z.torrent"
 container = NodePath("MariginContainer")
 bars_container = NodePath("ConsoleContainer/VBoxContainer/BarsContainer")
 show_console_toggle = NodePath("ShowConsoleToggle")
@@ -1863,6 +1902,130 @@ expand_icon = true
 
 [node name="Control" type="Control" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer3/ScrollContainer/#Team2/PanelContainer/HBoxContainer"]
 layout_mode = 2
+
+[node name="#MergeRequests" type="MarginContainer" parent="Container/TabContainer"]
+visible = false
+layout_mode = 2
+theme_override_constants/margin_left = 0
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 0
+script = ExtResource("13_2cqfq")
+metadata/_tab_index = 3
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Container/TabContainer/#MergeRequests"]
+layout_mode = 2
+
+[node name="Control1" type="Control" parent="Container/TabContainer/#MergeRequests/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Container/TabContainer/#MergeRequests/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 6
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer"]
+layout_mode = 2
+
+[node name="Placeholder" type="PanelContainer" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 55)
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/Placeholder"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/Placeholder/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/Placeholder/MarginContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="CheckBox1" type="CheckBox" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/Placeholder/MarginContainer/HBoxContainer/MarginContainer"]
+layout_mode = 2
+disabled = true
+button_group = SubResource("ButtonGroup_cegan")
+
+[node name="CheckBox2" type="CheckBox" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/Placeholder/MarginContainer/HBoxContainer/MarginContainer"]
+layout_mode = 2
+disabled = true
+button_pressed = true
+button_group = SubResource("ButtonGroup_cegan")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/Placeholder/MarginContainer/HBoxContainer/MarginContainer/CheckBox2"]
+libraries = {
+&"": SubResource("AnimationLibrary_egw64")
+}
+autoplay = "slow_flicker"
+speed_scale = 0.5
+
+[node name="Label" type="Label" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/Placeholder/MarginContainer/HBoxContainer"]
+layout_mode = 2
+text = "Loading data..."
+
+[node name="#List" type="VBoxContainer" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer" node_paths=PackedStringArray("placeholder_container", "placeholder_label")]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+script = ExtResource("14_yaehf")
+placeholder_container = NodePath("../Placeholder")
+placeholder_label = NodePath("../Placeholder/MarginContainer/HBoxContainer/Label")
+
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/#List"]
+layout_mode = 2
+theme_override_constants/margin_left = 0
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 0
+script = ExtResource("13_2cqfq")
+
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/#List/MarginContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/#List/MarginContainer/MarginContainer"]
+layout_mode = 2
+
+[node name="Control" type="Control" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/#List/MarginContainer/MarginContainer/HBoxContainer"]
+custom_minimum_size = Vector2(48, 0)
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/#List/MarginContainer/MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = -2
+
+[node name="#Title" type="Label" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/#List/MarginContainer/MarginContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_font_sizes/font_size = 18
+text = "Minor rework of character data. "
+
+[node name="#Info" type="Label" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/#List/MarginContainer/MarginContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 0
+text = "!36 · created 20 hours ago by Jinx"
+
+[node name="#Button" type="Button" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/#List/MarginContainer"]
+show_behind_parent = true
+layout_mode = 2
+
+[node name="#Cancel" type="Button" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Don't change the branch"
+
+[node name="Control2" type="Control" parent="Container/TabContainer/#MergeRequests/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="MariginContainer" type="MarginContainer" parent="."]
 layout_mode = 1

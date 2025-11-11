@@ -4,6 +4,10 @@ export interface Id {
     tooltip_text?: string
 }
 
+export interface Base extends Id {
+    $type: 'base'
+}
+
 export interface Form extends Id {
     $type: 'form'
     fields?: Record<string, Config>
@@ -65,7 +69,7 @@ export interface Option extends Id {
     }
 }
 
-export type Config = Form | List | Label | LineEdit | TextEdit | Button | Checkbox | Option
+export type Config = Base | Form | List | Label | LineEdit | TextEdit | Button | Checkbox | Option
 
 export interface View {
     //path: string
