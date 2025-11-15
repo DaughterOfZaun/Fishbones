@@ -69,16 +69,16 @@ async function build_embeds(){
 if(process.argv.includes('embeds'))
     await build_embeds()
 
-if(process.argv.includes('patch-modules'))
-    await patch_npm_modules()
-
-if(process.argv.includes('libutp'))
-    await build_libUTP()
-
 if(process.argv.includes('bun')){
     if(platform === 'windows'){
         await $`mv node_modules node_modules_linux_npm`
         await $`mv node_modules_win_npm node_modules`
+    }
+    if(process.argv.includes('patch-modules')){
+        await patch_npm_modules()
+    }
+    if(process.argv.includes('libutp')){
+        await build_libUTP()
     }
     try {
         await Bun.build({
@@ -156,6 +156,7 @@ async function patch_npm_modules(){
         patch_node_datachannel(),
         patch_node_datachannel_again(),
         patch_ipshipyard_node_datachannel(),
+        patch_simple_peer(),
     ])
 }
 
@@ -216,5 +217,15 @@ const { name, version } = req('../../package.json');
     `.trim(), `
 import { name, version } from '../../package.json';
     `.trim())
+    await fs.writeFile(file, js, 'utf8')
+}
+
+async function patch_simple_peer(){
+    const file = './node_modules/@thaunknown/simple-peer/lite.js'
+    let js = await fs.readFile(file, 'utf8')
+    js = js.replace(
+        /import (.*) from 'webrtc-polyfill'/,
+        "import $1 from '@ipshipyard/node-datachannel/polyfill'"
+    )
     await fs.writeFile(file, js, 'utf8')
 }

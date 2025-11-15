@@ -46,52 +46,8 @@ import { equals as uint8ArrayEquals } from 'uint8arrays'
 import { peerIdFromCID } from '@libp2p/peer-id'
 import { getThinWaistAddresses } from '@libp2p/utils/get-thin-waist-addresses'
 import { isUint8Array } from 'node:util/types'
+import type { DHTInit, DiscoveryInit } from './torrent-discovery-types'
 //import { isPrivateIp } from '@libp2p/utils/private-ip'
-
-interface KRPCSocketInit {
-    timeout?: number //= 2000
-    isIP?: (input: string) => number
-    socket?: Socket
-}
-
-interface KRPCInit extends KRPCSocketInit {
-    idLength?: number //= 20
-    id?: string | Buffer | ArrayBufferView
-    nodeId?: string | Buffer | ArrayBufferView
-    krpcSocket?: KRPCSocket
-    nodes?: boolean | { host: string, port: number }[]
-    bootstrap?: boolean | { host: string, port: number }[]
-    concurrency?: number //= 16
-    backgroundConcurrency?: number //= 4
-    k?: number //= 20
-}
-
-interface DHTInit extends KRPCInit {
-    maxTables?: number //= 1000
-    maxValues?: number //= 1000
-    maxAge?: number //= 0
-    maxPeers?: number //= 10000
-    hash?: (data: BinaryLike) => Buffer
-    krpc?: KRPC
-    verify?: (signature: Uint8Array, data: Uint8Array, publicKeyRaw: Uint8Array) => boolean //= null
-    host?: string //= null
-    timeBucketOutdated?: number //= 15 * 60 * 1000
-    bootstrap?: boolean //= true
-}
-
-interface DiscoveryInit {
-    peerId: string | Buffer
-    infoHash: string | Buffer
-    port: number
-
-    userAgent?: string
-    announce?: string[] //= []
-    intervalMs?: number //= 15 * 60 * 1000
-    tracker?: boolean | object
-    dht?: boolean | DHTInit
-    dhtPort?: number
-    lsd?: boolean
-}
 
 const ms = 1
 const s = 1000*ms

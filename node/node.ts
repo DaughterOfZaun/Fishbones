@@ -40,6 +40,7 @@ import { logger as loggerClass } from '../utils/log'
 import { customPing } from '../network/libp2p/ping'
 import util from "node:util"
 import { PeerSet } from '@libp2p/peer-collections'
+import { torrentPeerDiscovery } from '../network/libp2p/discovery/torrent-discovery-v2'
 
 export type LibP2PNode = Awaited<ReturnType<typeof createNodeInternal>> & {
     components: {
@@ -49,7 +50,7 @@ export type LibP2PNode = Awaited<ReturnType<typeof createNodeInternal>> & {
         events: TypedEventTarget<Libp2pEvents>
     }
 } & TypedEventTarget<Libp2pEvents & {
-    'same-program-peer:discovery': CustomEvent<PeerInfo>
+    'same-program-peer:discovery': CustomEvent<PeerId>
     //'connection:progress': OpenConnectionProgressEvents
     'connection:begin': CustomEvent<PeerId>
     'connection:fail': CustomEvent<PeerId>
@@ -175,6 +176,7 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
                 }),
                 bootstrap: bootstrap({
                     list: [
+                        //TODO: Unhardcode.
                         ...serverPeerMultiddrStrings,
                         //src: https://github.com/ipfs/helia/blob/main/packages/helia/src/utils/bootstrappers.ts
                         '/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
@@ -184,8 +186,12 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
                         '/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ',
                     ]
                 }),
+                torrentPeerDiscovery: torrentPeerDiscovery({
+                    topic: appDiscoveryTopic,
+                    autodial: true,
+                }),
             } : {}),
-
+            
             //logger: customLogger,
 
             pubsub: gossipsub({
@@ -240,7 +246,7 @@ async function setup(node: LibP2PNode, opts: Required<AbortOptions>){
         if(!peersDiscoveredByMechanism.has(peer.id.toString())){
             peersDiscoveredByMechanism.add(peer.id.toString())
             if(peersDiscoveredByNode.has(peer.id.toString())){
-                node.safeDispatchEvent('same-program-peer:discovery', event)
+                node.safeDispatchEvent('same-program-peer:discovery', { detail: peer.id })
                 patchAndDial(peer.id).catch((/*err*/) => { /* Ignore */ })
             }
         }
@@ -254,7 +260,6 @@ async function setup(node: LibP2PNode, opts: Required<AbortOptions>){
             patchAndDial(peer.id).catch((/*err*/) => { /* Ignore */ })
         }
     }
-
     const patchedPeers = new PeerSet()
     async function patchAndDial(peerId: PeerId){
         if(!patchedPeers.has(peerId)){
@@ -267,6 +272,22 @@ async function setup(node: LibP2PNode, opts: Required<AbortOptions>){
         }
         await node.dial(peerId)
     }
+
+    const peersDiscoveredByTorrent = new Set<string>()
+    node.services.torrentPeerDiscovery?.addEventListener('peer', (event) => {
+        const peer = event.detail
+        //console_log('*:peer', peer.id.toString())
+        if(!peersDiscoveredByTorrent.has(peer.id.toString())){
+            peersDiscoveredByTorrent.add(peer.id.toString())
+            node.safeDispatchEvent('same-program-peer:discovery', { detail: peer.id })
+        }
+    })
+    node.services.torrentPeerDiscovery?.addEventListener('connection:begin', (event) => {
+        node.safeDispatchEvent('connection:begin', event)
+    })
+    node.services.torrentPeerDiscovery?.addEventListener('connection:fail', (event) => {
+        node.safeDispatchEvent('connection:fail', event)
+    })
 
     const cm = node.components.connectionManager
     const cm_openConnection = cm.openConnection.bind(cm)
@@ -286,8 +307,7 @@ async function setup(node: LibP2PNode, opts: Required<AbortOptions>){
         try {
             return await cm_openConnection(peer, options)
         } catch(err) {
-            
-                node.safeDispatchEvent('connection:fail', { detail: peer })
+            node.safeDispatchEvent('connection:fail', { detail: peer })
             throw err
         }
     }

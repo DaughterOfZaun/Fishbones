@@ -52,10 +52,12 @@ export abstract class Server {
     }
 
     public validate(){
-        return this.maps.value.length > 0
-            && this.modes.value.length > 0
+        // eslint-disable-next-line no-constant-binary-expression
+        return true
+            //&& this.maps.value.length > 0
+            //&& this.modes.value.length > 0
             && this.champions.value.length > 0
-            && this.spells.value.length > 0
+            //&& this.spells.value.length > 0
     }
 }
 

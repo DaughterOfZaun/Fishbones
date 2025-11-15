@@ -146,10 +146,21 @@ export async function checkForUpdates(opts: Required<AbortOptions>){
 
             const torrent = assets.find(asset => asset.name == zip.name + '.torrent')
             if(torrent){
-                const zipTorrentURL = torrent.browser_download_url
-                const zipTorrentResponse = await fetch(zipTorrentURL, opts)
-                const zipTorrentBytes = await zipTorrentResponse.bytes()
-                await fs.writeFile(fbPkg.zipTorrent, zipTorrentBytes)
+                try {
+                    if(await fs_exists(fbPkg.zipTorrent, opts)){
+                        console_log(`${fbPkg.zipTorrent} exists already`)
+                    } else {
+                        const zipTorrentURL = torrent.browser_download_url
+                        const zipTorrentResponse = await fetch(zipTorrentURL, opts)
+                        const zipTorrentBytes = await zipTorrentResponse.bytes()
+                        const zipTorrentPartial = appendPartialDownloadFileExt(fbPkg.zipTorrent)
+                        await fs.writeFile(zipTorrentPartial, zipTorrentBytes)
+                        await fs.rename(zipTorrentPartial, fbPkg.zipTorrent)
+                    }
+                } catch(err) {
+                    console_log(`${fbPkg.zipTorrent} download failed:`, Bun.inspect(err))
+                    fbPkg.zipTorrent = ''
+                }
             } else {
                 fbPkg.zipTorrent = ''
             }
@@ -160,6 +171,10 @@ export async function checkForUpdates(opts: Required<AbortOptions>){
     } finally {
         bar.stop()
     }
+}
+
+export function appendPartialDownloadFileExt(zip: string){
+    return `${zip}.part`
 }
 
 export async function repairSelfPackage(opts: Required<AbortOptions>){

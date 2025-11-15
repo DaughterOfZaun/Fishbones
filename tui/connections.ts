@@ -1,4 +1,4 @@
-import type { AbortOptions, IdentifyResult, PeerId, PeerInfo } from "@libp2p/interface";
+import type { AbortOptions, IdentifyResult, PeerId } from "@libp2p/interface";
 import { consumePeerInfoString, getPeerInfoString, serverPeerID, validatePeerInfoString, type LibP2PNode } from "../node/node";
 import { console_log } from "../ui/remote/remote";
 import { logger } from "../utils/log";
@@ -66,7 +66,7 @@ function updatePeerStatus(view: DeferredView<void>, peerId: PeerId, status: Peer
     } else if(info.status != prevStatus){
         view.get(`Connections/${peerId.toString()}`).update(form({
             Status: label(peerStatusToString[info.status]),
-            Ping: label(pingString),
+            //Ping: label(pingString),
         }))
     }
 }
@@ -91,8 +91,8 @@ export async function connections(node: LibP2PNode, opts: Required<AbortOptions>
     }
 
     view.addEventListener(node, 'same-program-peer:discovery', onPeerDiscoveredByMechanism)
-    function onPeerDiscoveredByMechanism(event: CustomEvent<PeerInfo>){
-        const peerId = event.detail.id
+    function onPeerDiscoveredByMechanism(event: CustomEvent<PeerId>){
+        const peerId = event.detail
         if(!fbPeers.has(peerId)){
             updatePeerStatus(view, peerId, PeerStatus.Disconnected, getPing)
         }

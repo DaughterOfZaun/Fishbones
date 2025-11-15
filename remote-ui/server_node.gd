@@ -185,11 +185,11 @@ func _notification(what: int) -> void:
         waiting_for_exit = true
         #if stderr: stderr.close()
         #if stdio: stdio.close()
-        if pid:
-            notify('exit')
+        if pid and OS.is_process_running(pid):
             var timer := get_tree().create_timer(7)
             var os_kill_pid := func () -> void: OS.kill(pid)
             timer.timeout.connect(os_kill_pid)
+            notify('exit')
         else:
             on_process_exit()
 
