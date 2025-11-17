@@ -44,8 +44,8 @@ export async function input(config: InputConfig, context?: Context): Promise<str
     return remoteInput('input', config, context)
 }
 
-type CheckboxChoice<Value> = Extract<Parameters<typeof localCheckbox<Value>>[0]['choices'][number], { value: Value }>
-type CheckboxConfig<Value> = Omit<Parameters<typeof localCheckbox<Value>>[0], 'choices'> & { choices: CheckboxChoice<Value>[] }
+export type CheckboxChoice<Value> = Extract<Parameters<typeof localCheckbox<Value>>[0]['choices'][number], { value: Value }>
+export type CheckboxConfig<Value> = Omit<Parameters<typeof localCheckbox<Value>>[0], 'choices'> & { choices: CheckboxChoice<Value>[] }
 export async function checkbox<Value>(config: CheckboxConfig<Value>, context?: Context): Promise<Value[]> {
     if(jsonRpcDisabled) return localCheckbox<Value>(config, context)
 

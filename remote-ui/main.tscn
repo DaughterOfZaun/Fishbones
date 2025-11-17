@@ -159,7 +159,7 @@ spinner = ExtResource("4_ycdy4")
 select = ExtResource("5_w48qg")
 checkbox = ExtResource("6_vivmo")
 input = ExtResource("7_2cqfq")
-embedded_js = "res://embedded/index-0.0.3.20.js"
+embedded_js = "res://embedded/index-0.0.3.21.js"
 embedded_exe = "res://embedded/bun-1.3.2-windows-x64-baseline.exe"
 embedded_lib_0 = "res://embedded/node_datachannel-8fg8wz1b.node"
 embedded_file_0 = "res://embedded/7za-2501-windows-x64.exe"
@@ -227,6 +227,7 @@ theme_override_constants/margin_bottom = 0
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_efxa6")
 tab_alignment = 1
+current_tab = 2
 tabs_visible = false
 deselect_enabled = true
 
@@ -1564,7 +1565,6 @@ size_flags_horizontal = 3
 disabled = true
 
 [node name="#ChampionSelect" type="MarginContainer" parent="Container/TabContainer"]
-visible = false
 layout_mode = 2
 theme_override_constants/margin_left = 0
 theme_override_constants/margin_right = 0
@@ -1579,7 +1579,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="LineEdit" type="Control" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer"]
-custom_minimum_size = Vector2(0, 31)
+custom_minimum_size = Vector2(0, 27)
 layout_mode = 2
 
 [node name="ScrollContainer" type="ScrollContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer"]
@@ -1658,34 +1658,41 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.5
 
-[node name="VBoxContainer2" type="VBoxContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2"]
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="LineEdit" type="LineEdit" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2"]
+[node name="LineEdit" type="LineEdit" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2"]
 visible = false
 layout_mode = 2
 
-[node name="LineEdit2" type="Control" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2"]
+[node name="LineEdit2" type="Control" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2"]
+visible = false
 custom_minimum_size = Vector2(0, 31)
 layout_mode = 2
 
-[node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2"]
+[node name="VBoxContainer2" type="TabContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2"]
 layout_mode = 2
 size_flags_vertical = 3
+current_tab = 0
 
-[node name="ScrollContainer" type="ScrollContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/PanelContainer"]
+[node name="Champions" type="MarginContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 0
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 0
+metadata/_tab_index = 0
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/Champions"]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 vertical_scroll_mode = 4
 
-[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/PanelContainer/ScrollContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/Champions/ScrollContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="#Champions" type="HFlowContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/PanelContainer/ScrollContainer/MarginContainer"]
+[node name="#Champions" type="HFlowContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/Champions/ScrollContainer/MarginContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -1695,7 +1702,7 @@ alignment = 1
 last_wrap_alignment = 1
 script = ExtResource("14_yaehf")
 
-[node name="Button1" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/PanelContainer/ScrollContainer/MarginContainer/#Champions"]
+[node name="Button1" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/Champions/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(60, 60)
 layout_mode = 2
 theme = SubResource("Theme_dg77c")
@@ -1706,15 +1713,43 @@ autowrap_trim_flags = 192
 icon_alignment = 1
 expand_icon = true
 
-[node name="Button2" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/PanelContainer/ScrollContainer/MarginContainer/#Champions"]
+[node name="Skins" type="MarginContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2"]
 visible = false
-custom_minimum_size = Vector2(92.8, 92.8)
 layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "Nunu & Willump (Working)"
-autowrap_mode = 3
-icon_alignment = 1
-expand_icon = true
+theme_override_constants/margin_left = 0
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 0
+metadata/_tab_index = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/Skins"]
+layout_mode = 2
+follow_focus = true
+horizontal_scroll_mode = 4
+vertical_scroll_mode = 0
+
+[node name="#Skins" type="HBoxContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/Skins/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 0
+alignment = 1
+script = ExtResource("14_yaehf")
+
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/Skins/ScrollContainer/#Skins"]
+layout_mode = 2
+theme_override_constants/margin_top = 64
+theme_override_constants/margin_bottom = 64
+script = ExtResource("13_2cqfq")
+
+[node name="#Texture" type="TextureRect" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/Skins/ScrollContainer/#Skins/MarginContainer"]
+layout_mode = 2
+expand_mode = 3
+stretch_mode = 5
+
+[node name="#Button" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/Skins/ScrollContainer/#Skins/MarginContainer"]
+show_behind_parent = true
+layout_mode = 2
 
 [node name="HSeparator1" type="HSeparator" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2"]
 visible = false
@@ -1785,6 +1820,10 @@ layout_mode = 2
 layout_mode = 2
 size_flags_horizontal = 3
 
+[node name="Control2" type="Control" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
 [node name="#LockIn" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -1819,16 +1858,12 @@ grow_vertical = 0
 value = 66.27
 show_percentage = false
 
-[node name="Control2" type="Control" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-
 [node name="VBoxContainer3" type="VBoxContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2"]
 layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="LineEdit" type="Control" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer3"]
-custom_minimum_size = Vector2(0, 31)
+custom_minimum_size = Vector2(0, 27)
 layout_mode = 2
 
 [node name="ScrollContainer" type="ScrollContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer3"]

@@ -40,7 +40,7 @@ import { logger as loggerClass } from '../utils/log'
 import { customPing } from '../network/libp2p/ping'
 import util from "node:util"
 import { PeerSet } from '@libp2p/peer-collections'
-import { torrentPeerDiscovery } from '../network/libp2p/discovery/torrent-discovery-v2'
+//import { torrentPeerDiscovery } from '../network/libp2p/discovery/torrent-discovery-v2'
 
 export type LibP2PNode = Awaited<ReturnType<typeof createNodeInternal>> & {
     components: {
@@ -186,10 +186,10 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
                         '/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ',
                     ]
                 }),
-                torrentPeerDiscovery: torrentPeerDiscovery({
-                    topic: appDiscoveryTopic,
-                    autodial: true,
-                }),
+                //torrentPeerDiscovery: torrentPeerDiscovery({
+                //    topic: appDiscoveryTopic,
+                //    autodial: true,
+                //}),
             } : {}),
             
             //logger: customLogger,
@@ -273,21 +273,21 @@ async function setup(node: LibP2PNode, opts: Required<AbortOptions>){
         await node.dial(peerId)
     }
 
-    const peersDiscoveredByTorrent = new Set<string>()
-    node.services.torrentPeerDiscovery?.addEventListener('peer', (event) => {
-        const peer = event.detail
-        //console_log('*:peer', peer.id.toString())
-        if(!peersDiscoveredByTorrent.has(peer.id.toString())){
-            peersDiscoveredByTorrent.add(peer.id.toString())
-            node.safeDispatchEvent('same-program-peer:discovery', { detail: peer.id })
-        }
-    })
-    node.services.torrentPeerDiscovery?.addEventListener('connection:begin', (event) => {
-        node.safeDispatchEvent('connection:begin', event)
-    })
-    node.services.torrentPeerDiscovery?.addEventListener('connection:fail', (event) => {
-        node.safeDispatchEvent('connection:fail', event)
-    })
+    //const peersDiscoveredByTorrent = new Set<string>()
+    //node.services.torrentPeerDiscovery?.addEventListener('peer', (event) => {
+    //    const peer = event.detail
+    //    //console_log('*:peer', peer.id.toString())
+    //    if(!peersDiscoveredByTorrent.has(peer.id.toString())){
+    //        peersDiscoveredByTorrent.add(peer.id.toString())
+    //        node.safeDispatchEvent('same-program-peer:discovery', { detail: peer.id })
+    //    }
+    //})
+    //node.services.torrentPeerDiscovery?.addEventListener('connection:begin', (event) => {
+    //    node.safeDispatchEvent('connection:begin', event)
+    //})
+    //node.services.torrentPeerDiscovery?.addEventListener('connection:fail', (event) => {
+    //    node.safeDispatchEvent('connection:fail', event)
+    //})
 
     const cm = node.components.connectionManager
     const cm_openConnection = cm.openConnection.bind(cm)

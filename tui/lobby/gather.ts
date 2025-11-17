@@ -4,10 +4,10 @@ import { SwitchViewError } from "../tui";
 import { BOTS, players, PLAYERS, Team, type Context } from "./lobby";
 import { button, form, icon, inq2gd, label, option, type Form } from "../../ui/remote/types";
 import { render } from "../../ui/remote/view";
-import { AIChampion, AIDifficulty, champions } from "../../utils/constants";
-import { gcPkg } from "../../utils/data/packages";
+import { champions, AIChampion, AIDifficulty } from "../../utils/data/constants/champions";
 import { getPseudonym } from "../../utils/namegen/namegen";
 import { popup } from "../../ui/remote/remote";
+import { mapsById } from "../../utils/data/constants/maps";
 
 //export async function lobby(game: Game, opts: Required<AbortOptions>){}
 
@@ -15,12 +15,13 @@ export async function lobby_gather(ctx: Context){
     const { game } = ctx
     const localGame = game instanceof LocalGame ? game : undefined!
 
+    const mapInfo = mapsById.get(game.map.value!)!
+
     const makePlayerForm = (player: GamePlayer): Form => {
         
-        const { short, name: championName } =
+        const { name: championName, icon: iconPath } =
             (player.champion.value !== undefined) ?
                 champions[player.champion.value]! : {}
-        const iconPath = short && gcPkg.getRelativeChampionIconPath(short)
 
         if(!player.isBot){
             const isMe = game.getPlayer() === player
@@ -33,7 +34,7 @@ export async function lobby_gather(ctx: Context){
         } else {
             return form({
                 Icon: icon(iconPath, championName),
-                Champion: option(inq2gd(AIChampion.choices), player.champion.value, undefined, !localGame),
+                Champion: option(inq2gd(AIChampion.choices, mapInfo.bots), player.champion.value, undefined, !localGame),
                 Difficulty: option(inq2gd(AIDifficulty.choices), player.difficulty.value, undefined, !localGame),
                 Kick: button(undefined, !localGame),
             })
@@ -42,7 +43,7 @@ export async function lobby_gather(ctx: Context){
     
     const team = (team: Team) => form({
         Join: button(() => game.set('team', team), game.getPlayer()?.team.value == team),
-        AddBot: button(() => localGame.addBot(team), !localGame),
+        AddBot: button(() => localGame.addBot(team), !localGame || mapInfo.bots.length === 0),
         //Players: list(players(game, team, PLAYERS, makePlayerForm)),
         //Bots: list(players(game, team, BOTS, makePlayerForm)),
     })

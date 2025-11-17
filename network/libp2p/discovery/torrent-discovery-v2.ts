@@ -169,6 +169,19 @@ export class TorrentPeerDiscovery extends TypedEventEmitter<TorrentPeerDiscovery
                 type Data = { peerId?: string, sdp?: string }
                 type Peer = { peerId?: PeerId } & SimplePeer
                 
+                opts ??= {}
+                opts.sdpTransform = function(sdp){
+                    return sdp.replace(/a=ice-options:(.*?)\s\n/g, (m, optsString: string) => {
+                        const optsSet = new Set(optsString.split(','))
+                              optsSet.delete('trickle')
+                        if(optsSet.size > 0){
+                            optsString = [...optsSet.values()].join(',')
+                            return `a=ice-options:${optsString}\r\n`
+                        }
+                        return ''
+                    })
+                }
+
                 const peerIdSDPRegex = /a=peer-id:(?<peerId>.*)\s\n/
                 const peer = tracker_createPeer(opts) as Peer
 

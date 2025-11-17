@@ -1,17 +1,11 @@
 import type { PeerId } from "@libp2p/interface"
 import { logger } from "@libp2p/logger"
 import type { Libp2p } from "libp2p"
-import {
-    ChampionsEnabled,
-    GameMapsEnabled,
-    GameModesEnabled,
-    Name, TickRate,
-    SummonerSpellsEnabled,
-    maps,
-    modes,
-    champions,
-    spells,
-} from "../utils/constants"
+import { Name, TickRate } from "../utils/constants"
+import { GameMapsEnabled, maps } from "../utils/data/constants/maps"
+import { GameModesEnabled, modes } from "../utils/data/constants/modes"
+import { champions, ChampionsEnabled } from "../utils/data/constants/champions"
+import { spells, SummonerSpellsEnabled } from "../utils/data/constants/spells"
 import type { Peer } from "../message/peer"
 
 export abstract class Server {

@@ -1,4 +1,4 @@
-import { AIChampion, LOBBY_PROTOCOL, type u } from '../utils/constants'
+import { LOBBY_PROTOCOL, type u } from '../utils/constants'
 import { type AbortOptions, type PeerId, type StreamHandler } from '@libp2p/interface'
 import type { LibP2PNode } from '../node/node'
 import * as lp from 'it-length-prefixed'
@@ -10,6 +10,7 @@ import type { Server } from './server'
 import type { GamePlayer, PlayerId, PPP } from './game-player'
 import { PeerMap } from '@libp2p/peer-collections'
 import { pbStream } from '../utils/pb-stream'
+import { mapsById } from '../utils/data/constants/maps'
 
 export class LocalGame extends Game {
     protected log = logger('launcher:game-local')
@@ -38,21 +39,25 @@ export class LocalGame extends Game {
 
     public addBots(counts: number[]){
 
+        const bots: number[] = []
+        const info = mapsById.get(this.map.value!)!
         const peersRequests: LobbyNotificationMessage.PeerRequests[] = []
-        
+
         counts.forEach((count, team) => {
             for(let i = 0; i < count; i++){
                 const playerId = this.takePlayerId()
                 const bot = this.players_add(playerId, undefined)
                 
-                //HACK:
-                const aiChampion = new AIChampion(undefined, () => this.server.champions)
-                aiChampion.setRandom()
+                if(bots.length === 0)
+                    bots.push(...info.bots)
+                const champion = (bots.length > 0) ?
+                    bots.splice(Math.floor(Math.random() * bots.length), 1)[0] :
+                    undefined
 
                 bot.name.value = 'Bot'
                 bot.team.value = team
                 //this.assignTeamTo(bot)
-                bot.champion.value = aiChampion.value
+                bot.champion.value = champion
                 bot.difficulty.value = 2 //HACK: Advanced.
 
                 peersRequests.push({

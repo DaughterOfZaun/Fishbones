@@ -1,9 +1,9 @@
 import type { GamePlayer } from "../../game/game-player";
 import { PLAYERS, BOTS, Team, type Context, players } from "./lobby";
-import { button, form, icon, label, list, type Form } from "../../ui/remote/types";
+import { button, form, icon, label, list, texture, type Form } from "../../ui/remote/types";
 import { render } from "../../ui/remote/view";
-import { Champion, champions, spells, SummonerSpell } from "../../utils/constants";
-import { gcPkg } from "../../utils/data/packages";
+import { Champion, champions } from "../../utils/data/constants/champions";
+import { spells, SummonerSpell } from "../../utils/data/constants/spells";
 import { getBotName, getPseudonym } from "../../utils/namegen/namegen";
 
 export async function lobby_pick(ctx: Context){
@@ -12,14 +12,16 @@ export async function lobby_pick(ctx: Context){
     const makePlayerForm = (player: GamePlayer): Form => {
         
         const championInfo = (player.champion.value !== undefined) ? champions[player.champion.value]! : undefined
-        const relativeChampionIconPath = championInfo?.short ? gcPkg.getRelativeChampionIconPath(championInfo.short) ?? '' : ''
+        const relativeChampionIconPath = championInfo?.icon ?? ''
         const championName = championInfo?.name ?? ''
 
-        const spellName1 = (player.spell1.value !== undefined) ? spells[player.spell1.value]!.name : ''
-        const relativeSpellIconPath1 = spellName1 ? gcPkg.getRelativeSummonerSpellIconPath(spellName1) ?? '' : ''
+        const spellInfo1 = (player.spell1.value !== undefined) ? spells[player.spell1.value] : undefined
+        const relativeSpellIconPath1 = spellInfo1?.icon ?? ''
+        const spellName1 = spellInfo1?.name ?? ''
         
-        const spellName2 = (player.spell2.value !== undefined) ? spells[player.spell2.value]!.name : ''
-        const relativeSpellIconPath2 = spellName2 ? gcPkg.getRelativeSummonerSpellIconPath(spellName2) ?? '' : ''
+        const spellInfo2 = (player.spell2.value !== undefined) ? spells[player.spell2.value] : undefined
+        const relativeSpellIconPath2 = spellInfo2?.icon ?? ''
+        const spellName2 = spellInfo2?.name ?? ''
         
         const isMe = game.getPlayer() === player
         const playerId = player.isBot ? getBotName(championName) : getPseudonym(player.id, isMe)
@@ -36,8 +38,8 @@ export async function lobby_pick(ctx: Context){
 
     const championsItems = Object.fromEntries(
         Champion.choices
-        .map(({ name, short }, i) => {
-            const relativeIconPath = gcPkg.getRelativeChampionIconPath(short) ?? ''
+        .map(({ name, value }, i) => {
+            const relativeIconPath = champions[value]?.icon
             const disabled = (!game.server.champions.value.includes(i)) ? true : undefined
             return { i, name, relativeIconPath, disabled }
         })
@@ -49,8 +51,8 @@ export async function lobby_pick(ctx: Context){
 
     const summonerSpellsItems = Object.fromEntries(
         SummonerSpell.choices
-        .map(({ name }, i) => {
-            const relativeIconPath = gcPkg.getRelativeSummonerSpellIconPath(name) ?? ''
+        .map(({ name, value }, i) => {
+            const relativeIconPath = spells[value]?.icon
             const disabled = (!game.server.spells.value.includes(i)) ? true : undefined
             return { i, name, relativeIconPath, disabled }
         })
@@ -73,6 +75,18 @@ export async function lobby_pick(ctx: Context){
             listener: (m) => {
                 const championIndex = parseInt(m.groups!.championIndex!)
                 game.set('champion', championIndex)
+
+                view.get('Skins').setItems(
+                    Object.fromEntries(
+                        champions[championIndex]!.skins
+                        .map(({ i, image }) => {
+                            const skinForm = form({
+                                Texture: texture(image)
+                            })
+                            return [ i, skinForm ]
+                        })
+                    )
+                )
             }
         },
         {
@@ -82,6 +96,13 @@ export async function lobby_pick(ctx: Context){
                 const spellNumber = m.groups!.spellNumber!
                 const prop = ('spell' + spellNumber) as ('spell1' | 'spell2')
                 game.set(prop, spellIndex)
+            }
+        },
+        {
+            regex: /\.\/Skins\/(?<skinIndex>\d+)\/Button:pressed/,
+            listener: (m) => {
+                const skinIndex = parseInt(m.groups!.skinIndex!)
+                game.set('skin', skinIndex)
             }
         },
     ])

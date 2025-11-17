@@ -69,7 +69,12 @@ export interface Option extends Id {
     }
 }
 
-export type Config = Base | Form | List | Label | LineEdit | TextEdit | Button | Checkbox | Option
+export interface Texture extends Id {
+    $type: 'texture',
+    texture?: string,
+}
+
+export type Config = Base | Form | List | Label | LineEdit | TextEdit | Button | Checkbox | Option | Texture
 
 export interface View {
     //path: string
@@ -97,6 +102,7 @@ export const text = (text?: string, changed?: (text: string) => void) => ({ $typ
 export const checkbox = (button_pressed?: boolean, toggled?: (on: boolean) => void) => ({ $type: 'checkbox' as const, button_pressed, $listeners: { toggled } })
 export const button = (pressed?: () => void, disabled?: boolean) => ({ $type: 'button' as const, disabled, $listeners: { pressed } })
 export const option = (options?: { id?: number, text?: string }[], selected?: number, item_selected?: (index: number) => void, disabled?: boolean) => ({ $type: 'option' as const, disabled, selected, options, $listeners: { selected: item_selected } })
+export const texture = (texture?: string) => ({ $type: 'texture' as const, texture })
 export const icon = (icon?: string, placeholderText?: string, disabled?: boolean) => ({
     $type: 'button' as const,
     text: (!icon) ? placeholderText : undefined,

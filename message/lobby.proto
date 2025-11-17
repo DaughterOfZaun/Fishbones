@@ -55,4 +55,5 @@ message PickRequest {
     optional uint32 spell2 = 4;
     optional uint32 lock = 5;
     optional uint32 difficulty = 6;
+    optional uint32 skin = 7;
 }

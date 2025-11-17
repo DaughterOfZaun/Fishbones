@@ -71,12 +71,10 @@ func update_child(child: Control, config: Dictionary, strict: bool = false) -> v
             (child as OptionButton).disabled = config['disabled']
     else:
         for key: String in config:
-            if key == 'icon' && child is Button:
+            if (child is Button && key == 'icon')\
+            || (child is TextureRect && key == 'texture'):
                 var path: String = config[key]
-                if !path.is_empty():
-                    (child as Button).icon = ImageLoader.get_texture(path)
-                else:
-                    (child as Button).set_button_icon(null)
+                child[key] = ImageLoader.get_texture(path) if !path.is_empty() else null
             else:
                 child[key] = config[key]
 

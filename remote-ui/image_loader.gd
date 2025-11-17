@@ -40,10 +40,11 @@ static var texture_cache: Dictionary[String, ImageTexture] = {}
 static func get_texture(path: String) -> ImageTexture:
     var texture: ImageTexture = texture_cache.get(path, null_ImageTexture)
     if texture == null_ImageTexture:
-        path = downloads.path_join(path)
-        #print('loading', ' ', path)
-        var bytes := FileAccess.get_file_as_bytes(path)
+        var long_path := downloads.path_join(path)
+        #print('loading', ' ', long_path)
+        var bytes := FileAccess.get_file_as_bytes(long_path)
         var image := Image.new()
         var err := image.load_dds_from_buffer(bytes); assert(err == OK)
         texture = ImageTexture.create_from_image(image)
+        texture_cache.set(path, texture)
     return texture

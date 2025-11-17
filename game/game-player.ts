@@ -1,4 +1,7 @@
-import { AIDifficulty, Champion, Lock, Name, PickableValue, SummonerSpell, Team, type KeysByValue } from '../utils/constants'
+import type { PickableValue } from '../utils/data/constants/values/pickable'
+import { Lock, Name, Team } from '../utils/constants'
+import { SummonerSpell } from '../utils/data/constants/spells'
+import { Champion, Skin, AIDifficulty } from '../utils/data/constants/champions'
 import { type PeerId, type Stream } from '@libp2p/interface'
 import { LobbyNotificationMessage, PickRequest } from '../message/lobby'
 import type { Game } from './game'
@@ -7,6 +10,7 @@ import type { WriteonlyMessageStream } from '../utils/pb-stream'
 export type PlayerId = number & { readonly brand: unique symbol }
 
 const pickableKeys = ["team", "champion", "spell1", "spell2", "lock", "difficulty"] as const
+export type KeysByValue<T, V> = Exclude<{ [K in keyof T]: T[K] extends V ? K : undefined }[keyof T], undefined>
 export type PlayerPickableProps = KeysByValue<GamePlayer, PickableValue>
 export type PPP = PlayerPickableProps
 export class GamePlayer {
@@ -30,6 +34,7 @@ export class GamePlayer {
     public readonly spell2 = new SummonerSpell(undefined, () => this.game.server.spells)
     public readonly lock = new Lock() //TODO: Hide in test
     public readonly difficulty = new AIDifficulty()
+    public readonly skin = new Skin()
 
     public get isBot(){ return this.difficulty.value !== undefined }
 

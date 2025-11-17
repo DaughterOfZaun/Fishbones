@@ -1,4 +1,4 @@
-import { blowfishKey, FeaturesEnabled, GameMap as GameMap, GameMode as GameMode, GameType, LOCALHOST, Name, Password, PlayerCount, runes, talents, Team, type u } from '../utils/constants'
+import { blowfishKey, FeaturesEnabled, GameType, LOCALHOST, Name, Password, PlayerCount, Team, type u } from '../utils/constants'
 import { TypedEventEmitter, type AbortOptions, type PeerId, type Stream } from '@libp2p/interface'
 import type { LibP2PNode } from '../node/node'
 import { GamePlayer, type PlayerId, type PPP } from './game-player'
@@ -14,6 +14,10 @@ import { launchServer, stopServer } from '../utils/process/server'
 import { safeOptions, shutdownOptions } from '../utils/process/process'
 import { logger } from '../utils/log'
 import { getBotName } from '../utils/namegen/namegen'
+import { GameMap } from '../utils/data/constants/maps'
+import { GameMode } from '../utils/data/constants/modes'
+import { runes } from '../utils/data/constants/runes'
+import { talents } from '../utils/data/constants/talents'
 
 interface GameEvents {
     update: CustomEvent,
@@ -614,7 +618,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 name: player.isBot ? getBotName(player.champion.toString()) : (player.name.value ?? `Player ${i + 1}`),
                 champion: player.champion.toString(), //TODO: Fix
                 team: player.team.toString().toUpperCase(),
-                skin: 0,
+                skin: player.skin.value ?? 0,
                 summoner1:
                     player.isBot ? `SummonerHeal` :
                     (player.spell1.value !== undefined) ? `Summoner${player.spell1.toString()}` :

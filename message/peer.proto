@@ -28,6 +28,7 @@ message Peer {
             repeated int32 champions = 9;
             repeated int32 spells = 10;
             repeated int32 items = 11;
+            repeated int32 bots = 13;
             uint32 tickRate = 12;
         }
     }
