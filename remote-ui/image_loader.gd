@@ -40,11 +40,27 @@ static var texture_cache: Dictionary[String, ImageTexture] = {}
 static func get_texture(path: String) -> ImageTexture:
     var texture: ImageTexture = texture_cache.get(path, null_ImageTexture)
     if texture == null_ImageTexture:
-        var long_path := downloads.path_join(path)
-        #print('loading', ' ', long_path)
-        var bytes := FileAccess.get_file_as_bytes(long_path)
-        var image := Image.new()
-        var err := image.load_dds_from_buffer(bytes); assert(err == OK)
+        var image: Image
+
+        if path.begins_with('res://'):
+            var layer := 0
+            var slices := path.split(':')
+            if len(slices) > 2:
+                path = slices[0] + ':' + slices[1]
+                layer = slices[2].to_int()
+            var unk_texture: Variant = load(path)
+            if unk_texture is TextureLayered:
+                image = (unk_texture as TextureLayered).get_layer_data(layer)
+            elif unk_texture is Texture2D:
+                image = (unk_texture as Texture2D).get_image()
+        else:
+            var long_path := downloads.path_join(path)
+            #print('loading', ' ', long_path)
+            var bytes := FileAccess.get_file_as_bytes(long_path)
+            image = Image.new()
+            var err := image.load_dds_from_buffer(bytes); assert(err == OK)
+
         texture = ImageTexture.create_from_image(image)
         texture_cache.set(path, texture)
+    
     return texture

@@ -3,13 +3,13 @@ class_name BaseView extends ShowableView
 func bind_child(child: Control) -> void:
     
     if (child is CheckBox || child is CheckButton):
-        var err := (child as Button).toggled.connect(on_button_toggled.bind(child)); assert(err == OK)
+        var err := (child as BaseButton).toggled.connect(on_button_toggled.bind(child)); assert(err == OK)
     elif child is OptionButton:
         var err := (child as OptionButton).item_selected.connect(on_item_selected.bind(child)); assert(err == OK)
-    elif child is Button \
+    elif child is BaseButton \
     && !(child is ColorPickerButton) \
     && !(child is MenuButton):
-        var err := (child as Button).pressed.connect(on_button_pressed.bind(child)); assert(err == OK)
+        var err := (child as BaseButton).pressed.connect(on_button_pressed.bind(child)); assert(err == OK)
     
     if child is LineEdit:
         var err := (child as LineEdit).text_changed.connect(on_line_changed.bind(child)); assert(err == OK)
@@ -39,11 +39,6 @@ func on_text_changed(child: TextEdit) -> void:
     var new_text := child.text
     var path: String = child.get_meta('path')
     callback.call('call', path, 'changed', new_text)
-
-func strip_name_hashtag(child: Control) -> String:
-    var key := child.name.substr(1)
-    #key = key.substr(0, 1).to_lower() + child.name.substr(1)
-    return key
 
 func init_child(child_name: String, child: Control, cb: Callable) -> void:
     var child_path := path + '/' + child_name

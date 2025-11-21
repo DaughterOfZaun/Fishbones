@@ -6,6 +6,8 @@ var items: Dictionary[String, Control] = {}
 @export var placeholder_label: Label
 @export var container: Control
 @export var item_prefab: PackedScene
+#@export var copy_mode: CopyMode = CopyMode.DUPLICATE
+#enum CopyMode { DUPLICATE, REPACK }
 var first_item: Control
 
 func _ready() -> void:
@@ -14,20 +16,23 @@ func _ready() -> void:
         placeholder_container = placeholder_label
     if !container:
         container = self
-
+    
     first_item = container.get_child(0)
     if first_item != null:
         
-        #item_prefab = PackedScene.new()
         var children := first_item.find_children("*", "", true, false)
         for child: Node in children:
             child.owner = first_item
-            child.remove_meta('registered')
+        
+        #if copy_mode == CopyMode.REPACK:
+        #item_prefab = PackedScene.new()
         #var err := item_prefab.pack(first_item); assert(err == OK)
         
-        container.remove_child(first_item)
+        first_item.visible = false
+        #container.remove_child(first_item)
         for i in range(container.get_child_count() -1, -1, -1):
             var child := container.get_child(i)
+            if child == first_item: continue
             container.remove_child(child)
             child.queue_free()
 
@@ -74,7 +79,9 @@ func set_items(item_configs: Dictionary) -> void:
 func add_item(item_name: String, item_config: Dictionary, strict: bool = false) -> void:
     var item: Control
     if item_prefab: item = item_prefab.instantiate()
-    else: item = first_item.duplicate()
+    else:
+        item = first_item.duplicate()
+        item.visible = true
     
     var children := item.find_children("*", "", true, false)
     for child: Node in children:

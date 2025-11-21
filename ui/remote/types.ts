@@ -2,6 +2,7 @@ export interface Id {
     $id?: string
     visible?: boolean
     tooltip_text?: string
+    self_modulate?: string
 }
 
 export interface Base extends Id {

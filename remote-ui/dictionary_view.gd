@@ -3,15 +3,25 @@ class_name DictionaryView extends BaseView
 var fields: Dictionary[String, Control]
 
 func _ready() -> void:
-    var children := find_children("#*", "", true, false)
-    for child: Control in children:
-        if child.get_meta('registered', false): continue
-        child.set_meta('registered', true)
+    
+    var children_to_process: Array[Node] = get_children()
+    children_to_process.reverse()
+    while true:
+        var nullable_child: Variant = children_to_process.pop_back()
+        if nullable_child == null: break
+        var child: Node = nullable_child
         
-        var field_name := strip_name_hashtag(child)
-        fields[field_name] = child
+        if child.name.begins_with('#'):
+            var key := child.name.substr(1)
+            #key = key.substr(0, 1).to_lower() + child.name.substr(1)
+            fields[key] = child
         
-        bind_child(child)
+        if child is Control:
+            bind_child(child as Control)
+
+        if !(child is ArrayView || child is DictionaryView):
+            var children := child.get_children(); children.reverse()
+            children_to_process.append_array(children)
 
 func init(config: Dictionary, cb: Callable) -> void:
     super.init(config, cb)

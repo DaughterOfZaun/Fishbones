@@ -20,11 +20,13 @@ class FBPeerInfo {
     ){}
 }
 
-export async function profilePanel(node: LibP2PNode, opts: Required<AbortOptions>){
+type MasteriesPage = (opts: Required<AbortOptions>) => Promise<void>
+export async function profilePanel(node: LibP2PNode, masteries: MasteriesPage, opts: Required<AbortOptions>){
     
     const view = render('ProfilePanel', form({
         Name: label(getUsername(node.peerId)),
-        Status: label(''),
+        Edit: button(() => void masteries(opts)),
+        //Status: label(''),
     }), opts)
 
     return view.promise

@@ -10,12 +10,13 @@ import { connections, profilePanel } from './connections'
 import { setup } from './setup'
 import { lobby_gather } from './lobby/gather'
 import { lobby_pick } from './lobby/pick'
+import { masteries } from './masteries'
 
 export async function main(node: LibP2PNode, opts: Required<AbortOptions>){
     process.title = TITLE
     await Promise.race([
         browser(node, lobby, setup, opts),
-        profilePanel(node, opts),
+        profilePanel(node, masteries, opts),
         connections(node, opts),
     ])
 }
