@@ -12,6 +12,7 @@ import { render } from './ui/remote/view'
 import { button, form, label, list } from './ui/remote/types'
 import { gsPkg } from './utils/data/packages'
 import { loadSkins } from './utils/data/constants/champions'
+import * as pages from './tui/masteries/pages'
 
 logger.log(`${'-'.repeat(35)} ${TITLE} started ${'-'.repeat(35)}`)
 
@@ -109,7 +110,10 @@ async function index(opts: Required<AbortOptions>){
         //umplex.shutdown()
     })
 
-    await loadSkins(opts)
+    await Promise.all([
+        loadSkins(opts),
+        pages.load(opts),
+    ])
     
     await main(node, opts)
 }

@@ -9,7 +9,8 @@ func bind_child(child: Control) -> void:
     elif child is BaseButton \
     && !(child is ColorPickerButton) \
     && !(child is MenuButton):
-        var err := (child as BaseButton).pressed.connect(on_button_pressed.bind(child)); assert(err == OK)
+        #var err := (child as BaseButton).pressed.connect(on_button_pressed.bind(child)); assert(err == OK)
+        var err := (child as BaseButton).gui_input.connect(on_button_gui_input.bind(child)); assert(err == OK)
     
     if child is LineEdit:
         var err := (child as LineEdit).text_changed.connect(on_line_changed.bind(child)); assert(err == OK)
@@ -21,6 +22,18 @@ func bind_child(child: Control) -> void:
 func on_button_pressed(child: Control) -> void:
     var path: String = child.get_meta('path')
     callback.call('call', path, 'pressed')
+
+func on_button_gui_input(unk_event: InputEvent, child: BaseButton) -> void:
+    if !(unk_event is InputEventMouseButton): return
+    var event := unk_event as InputEventMouseButton
+
+    #print('InputEventMouseButton', ' index:', event.button_index, ' pressed:', event.pressed)
+
+    if child.action_mode == BaseButton.ACTION_MODE_BUTTON_PRESS && event.pressed \
+    or child.action_mode == BaseButton.ACTION_MODE_BUTTON_RELEASE && !event.pressed:
+        if event.button_index > 0 && (child.button_mask & (1 << (event.button_index - 1))) != 0:
+            var path: String = child.get_meta('path')
+            callback.call('call', path, 'pressed', event.button_index)
     
 func on_button_toggled(on: bool, child: Control) -> void:
     var path: String = child.get_meta('path')
@@ -84,7 +97,7 @@ func external_call(child_path: String, method_name: String, ...method_args: Arra
         if 'items' in current: children = current['items']
         current = children[child_name]
     if current is ShowableView:
-        assert(method_name in ['update', 'add_item', 'remove_item', 'set_items'])
+        assert(method_name in ['update', 'add_item', 'remove_item', 'set_items', 'show_self', 'hide_self'])
         current.callv(method_name, method_args)
     else:
         assert(method_name == 'update')

@@ -64,6 +64,12 @@ export class DeferredView<T> extends Deferred<T> implements IView {
     public remove(name: string){
         this.call('remove_item', name)
     }
+    public show(){
+        this.call('show_self')
+    }
+    public hide(){
+        this.call('hide_self')
+    }
 }
 
 function recursive(path: string, config: Config, cb: (path: string, control: Config) => void){
@@ -85,9 +91,9 @@ type GListener = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     listener: (m: RegExpMatchArray, ...args: any[]) => void
 }
-export function render<T = void>(name: string, config: Config, opts: Required<AbortOptions>, gListeners: GListener[] = []){
+export function render<T = void>(name: string, config: Config, opts: Required<AbortOptions>, gListeners: GListener[] = [], hidden = false){
 
-    const id = sendCall('render', name, config as unknown as JSONDict)
+    const id = sendCall('render', name, config as unknown as JSONDict, hidden)
 
     const deferred = new DeferredView<T>(id)
 

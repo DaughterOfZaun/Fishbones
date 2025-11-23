@@ -10,13 +10,14 @@ import { connections, profilePanel } from './connections'
 import { setup } from './setup'
 import { lobby_gather } from './lobby/gather'
 import { lobby_pick } from './lobby/pick'
-import { masteries } from './masteries'
+import * as masteries from './masteries'
 
 export async function main(node: LibP2PNode, opts: Required<AbortOptions>){
     process.title = TITLE
+    void masteries.prerender(opts)
     await Promise.race([
         browser(node, lobby, setup, opts),
-        profilePanel(node, masteries, opts),
+        profilePanel(node, masteries.show, opts),
         connections(node, opts),
     ])
 }

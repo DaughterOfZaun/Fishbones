@@ -273,8 +273,9 @@ func _init() -> void:
         var instance := create_view(config)
         container.add_child(instance)
 
-    methods["render"] = func(name: String, config: Dictionary) -> void:
+    methods["render"] = func(name: String, config: Dictionary, hidden: bool) -> void:
         var instance := views[name]
+        instance.is_hidden = hidden
         instance.is_top_level = true
         instance.init({}, bind(callback, last_call_id))
         instance.update(config, true)
