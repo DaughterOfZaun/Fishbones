@@ -277,7 +277,9 @@ func _init() -> void:
         var instance := views[name]
         instance.is_hidden = hidden
         instance.is_top_level = true
-        instance.init({}, bind(callback, last_call_id))
+        var bound_callback := bind(callback, last_call_id)
+        #print('BOUND ', bound_callback.hash(), ' TO ', last_call_id)
+        instance.init({}, bound_callback)
         instance.update(config, true)
         handlers[last_call_id] = instance
 

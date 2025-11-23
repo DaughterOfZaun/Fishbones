@@ -17,7 +17,6 @@ import { getBotName } from '../utils/namegen/namegen'
 import { GameMap } from '../utils/data/constants/maps'
 import { GameMode } from '../utils/data/constants/modes'
 import { runes } from '../utils/data/constants/runes'
-import { talents } from '../utils/data/constants/talents'
 
 interface GameEvents {
     update: CustomEvent,
@@ -376,11 +375,13 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             pickRequest: player.encode(prop)
         })
     }
-    public set(prop: PPP, value: number){
+    public set<T extends PPP>(prop: T, value: GamePlayer[T]['value']){
         const player = this.getPlayer()
         if(!player) return false
+        
         //if(value !== undefined)
         player[prop].value = value
+        
         return this.stream_write({
             pickRequest: player.encode(prop)
         })
@@ -630,8 +631,8 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 ribbon: 2, // Unused
                 useDoomSpells: false,
                 icon: 0, //Math.floor(Math.random() * 29),
+                talents: Object.fromEntries(player.talents.value.entries()),
                 runes,
-                talents,
             }))
         }
     }

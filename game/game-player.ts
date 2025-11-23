@@ -1,7 +1,7 @@
-import type { PickableValue } from '../utils/data/constants/values/pickable'
+import type { ValueDesc } from '../utils/data/constants/values/desc'
 import { Lock, Name, Team } from '../utils/constants'
 import { SummonerSpell } from '../utils/data/constants/spells'
-import { Champion, Skin, AIDifficulty } from '../utils/data/constants/champions'
+import { Champion, Skin, AIDifficulty, Talents } from '../utils/data/constants/champions'
 import { type PeerId, type Stream } from '@libp2p/interface'
 import { LobbyNotificationMessage, PickRequest } from '../message/lobby'
 import type { Game } from './game'
@@ -9,10 +9,9 @@ import type { WriteonlyMessageStream } from '../utils/pb-stream'
 
 export type PlayerId = number & { readonly brand: unique symbol }
 
-const pickableKeys = ["team", "champion", "spell1", "spell2", "lock", "difficulty"] as const
+const pickableKeys = ["team", "champion", "spell1", "spell2", "lock", "difficulty", "skin", "name", "talents"] as const
 export type KeysByValue<T, V> = Exclude<{ [K in keyof T]: T[K] extends V ? K : undefined }[keyof T], undefined>
-export type PlayerPickableProps = KeysByValue<GamePlayer, PickableValue>
-export type PPP = PlayerPickableProps
+export type PPP = KeysByValue<GamePlayer, ValueDesc<unknown, unknown>>
 export class GamePlayer {
     private readonly game: Game
     public readonly id: PlayerId
@@ -35,6 +34,7 @@ export class GamePlayer {
     public readonly lock = new Lock() //TODO: Hide in test
     public readonly difficulty = new AIDifficulty()
     public readonly skin = new Skin()
+    public readonly talents = new Talents()
 
     public get isBot(){ return this.difficulty.value !== undefined }
 
@@ -50,7 +50,7 @@ export class GamePlayer {
         return Object.entries(prs).reduce((a, [key, value]) => {
             let success = false
             if(/*pickableKeys.includes(key as PPP) &&*/ value !== undefined)
-                success = this[key as PPP].decodeInplace(value)
+                success = this[key as PPP].decodeInplace(value as never)
             return a && success
         }, true)
     }

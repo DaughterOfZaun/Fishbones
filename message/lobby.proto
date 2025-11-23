@@ -56,4 +56,5 @@ message PickRequest {
     optional uint32 lock = 5;
     optional uint32 difficulty = 6;
     optional uint32 skin = 7;
+    map<uint32, uint32> talents = 8;  
 }

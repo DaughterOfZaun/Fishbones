@@ -13,13 +13,13 @@ export enum PlayerType { Player = 1, Bot = 2 }
 export const PLAYERS = PlayerType.Player
 export const BOTS = PlayerType.Bot
 
-export const players = (game: Game, team: Team, type: PlayerType, makeForm: (player: GamePlayer) => Form) => {
+export const players = (game: Game, team: Team, type: PlayerType, makeForm: (player: GamePlayer, game: Game) => Form) => {
     return Object.fromEntries(
         game.getPlayers()
         .filter(player => {
             return player.team.value == team
                 && ((1 << (+player.isBot)) & type) != 0
         })
-        .map(player => [ player.id, makeForm(player) ])
+        .map(player => [ player.id, makeForm(player, game) ])
     )
 }

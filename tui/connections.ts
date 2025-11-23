@@ -8,6 +8,7 @@ import { button, form, label, list, text } from "../ui/remote/types";
 import { getUsername } from "../utils/namegen/namegen";
 import { PeerMap } from "@libp2p/peer-collections";
 import type { PingResult } from "../network/libp2p/ping";
+import { args } from "../utils/args";
 
 //enum PeerType { Undetermined, Player, Server }
 enum PeerStatus { Disconnected, Connecting, Connected, ConnectionFailed }
@@ -147,8 +148,10 @@ export async function connections(node: LibP2PNode, opts: Required<AbortOptions>
         }
     })
 
-    //fbPeers.set(serverPeerID, new FBPeerInfo(PeerType.Server))
-    updatePeerStatus(view, serverPeerID, PeerStatus.Connecting, getPing)
+    if(args.allowInternet.enabled){
+        //fbPeers.set(serverPeerID, new FBPeerInfo(PeerType.Server))
+        updatePeerStatus(view, serverPeerID, PeerStatus.Connecting, getPing)
+    }
 
     return view.promise
 }

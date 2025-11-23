@@ -1,6 +1,6 @@
 import type { AbortOptions } from "@libp2p/interface";
-import { downloads, fs_readFile } from "../../utils/data/fs";
-import type { PageInfo, RuntimeMasteryInfo, RuntimePageInfo } from "./types";
+import { downloads, fs_readFile, fs_writeFile } from "../../utils/data/fs";
+import type { PageInfo, RuntimeMasteryInfo, RuntimePageInfo, RuntimeTreeInfo } from "./types";
 import path from 'node:path'
 import { byId, byPos } from "./trees";
 
@@ -10,11 +10,8 @@ let nextPageIndex = 0
 export const pages: Map<number, RuntimePageInfo> = new Map()
 for(let i = 0; i < 5; i++) createPage()
 export let page: RuntimePageInfo = pages.values().next().value!
-export function page_set(to: RuntimePageInfo){
+export function set_page(to: RuntimePageInfo){
     page = to
-    byPos.forEach(tree => {
-        tree.points = page.pointsPerTree[tree.index]!
-    })
 }
 
 function createPage(){
@@ -36,17 +33,35 @@ export function set_rank(info: RuntimeMasteryInfo, rank: number){
     else page.talents.set(info.id, rank)
 }
 
+export function get_tree_points(info: RuntimeTreeInfo){
+    return page.pointsPerTree[info.index]!
+}
+export function set_tree_points(info: RuntimeTreeInfo, points: number){
+    return page.pointsPerTree[info.index] = points
+}
+
+const saveFileName = 'mastery-pages.json'
+const saveFilePath = path.join(downloads, saveFileName)
 export async function load(opts: Required<AbortOptions>){
-    const saveFile = await fs_readFile(path.join(downloads, 'mastery-pages.json'), { ...opts, encoding: 'utf8' })
+    const saveFile = await fs_readFile(saveFilePath, { ...opts, encoding: 'utf8' })
     const staticPages = saveFile ? JSON.parse(saveFile) as PageInfo[] : []
     if(staticPages.length > 0){
-        //pages.clear()
-        //staticPages.forEach(loadPage)
-        //page_set(pages.values().next().value!)
+        pages.clear()
+        staticPages.forEach(loadPage)
+        set_page(pages.values().next().value!)
     }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function save(opts: Required<AbortOptions>){
+    const staticPages: PageInfo[] = [...pages.values()].map(page => {
+        return {
+            name: page.name,
+            talents: Object.fromEntries(page.talents.entries())
+        }
+    })
+    await fs_writeFile(saveFilePath, JSON.stringify(staticPages, null, 4) + '\n', { ...opts, encoding: 'utf8' })
+}
+
 function loadPage(staticPage: PageInfo, index: number){
     const talents = new Map(Object.entries(staticPage.talents).map(([k, v]) => [ parseInt(k), v ]))
     const pointsPerTree = Array(byPos.length).fill(0) as number[]

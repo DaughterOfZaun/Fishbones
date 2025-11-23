@@ -2,9 +2,9 @@ import type { AbortOptions } from "@libp2p/interface";
 import { DeferredView, render, View } from "../ui/remote/view";
 import { button, form, label, line, list, MouseButton, option, type Form } from "../ui/remote/types";
 import type { RuntimeMasteryInfo, RuntimePageInfo, RuntimeTreeInfo } from "./masteries/types";
-import { MAX_POINTS, page, get_rank, set_rank, pages, page_set } from "./masteries/pages";
+import { MAX_POINTS, page, get_rank, set_rank, pages, set_page, get_tree_points, set_tree_points, save } from "./masteries/pages";
 import { COLS, ROWS, byId, byPos } from "./masteries/trees";
-import { console_log } from "../ui/remote/remote";
+import { shutdownOptions } from "../utils/process/process";
 
 const emptyCell = form({
     Inner: {
@@ -30,9 +30,7 @@ function cell_tooltip(info: RuntimeMasteryInfo){
 
 function cell_icon(info: RuntimeMasteryInfo){
     //return info.rank ? '#ffffff' : '#626262' // Color(0.1, 0.1, 0.1, 0.3)
-    const req = Math.floor((info.index - 1) / COLS) * COLS
-    const parent = info.parentInfo
-    if(info.tree.points >= req && (!parent || get_rank(parent) === parent.ranks))
+    if(get_enabled(info))
         return info.iconEnabled
     return info.iconDisabled
 }
@@ -53,6 +51,7 @@ function tree(tree: RuntimeTreeInfo){
             Icon: {
                 $type: 'button',
                 icon: cell_icon(info),
+                disabled: !get_enabled(info),
                 tooltip_text: cell_tooltip(info),
             },
             Label: cell_label(info),
@@ -61,9 +60,9 @@ function tree(tree: RuntimeTreeInfo){
     }) as [ string, Form ][]
     return form({
         Name: label(tree.name),
-        Points: label(tree.points.toString()),
+        Points: label(get_tree_points(tree).toString()),
         Return: button(() => {
-            setPoints(page, page.points + tree.points)
+            setPoints(page, page.points + get_tree_points(tree))
             setTreePoints(tree, 0)
             for(const id of [...page.talents.keys()]){
                 const info = byId.get(id)!
@@ -73,6 +72,15 @@ function tree(tree: RuntimeTreeInfo){
         }),
         Grid: list(Object.fromEntries(entries)),
     })
+}
+
+export function option_pages(cb?: (id: number) => void){
+    return option([...pages.values()].map(page => {
+        return {
+            id: page.index,
+            text: page.name,
+        }
+    }), page.index, cb)
 }
 
 let view: DeferredView<void>
@@ -100,15 +108,18 @@ export function prerender(opts: Required<AbortOptions>){
                 Array(ROWS).fill(0).map((e, i) => [ i, form({ Label: label(`${i * COLS}`) }) ])
             )
         ),
-        Name: line(page.name, (text) => { page.name = text }),
-        Pages: option([...pages.values()].map(page => {
-            return {
-                id: page.index,
-                text: page.name,
-            }
-        }), page.index, (index) => {
+        Name: line(page.name, (text) => {
+            page.name = text
+            view.update(form({
+                Pages: option_pages(),
+            }))
+        }),
+        Pages: option_pages((index) => {
             setPage(index)
         }),
+        Save: button(() => {
+            void save(shutdownOptions) //TODO:
+        })
     }), opts, [
         {
             regex: /^\.\/Trees\/(?<treeIndex>\d+)_(?<treeName>\w+)\/Grid\/(?<cellIndex>\d+)_(?<masteryID>\d+)\/Icon:pressed/,
@@ -117,19 +128,16 @@ export function prerender(opts: Required<AbortOptions>){
     ], true)
 }
 
-//TODO: getTreeName
-//TODO: getInfoName
-
 function setPage(index: number){
-    const prevPage = page
-    page_set(pages.get(index)!)
+    //const prevPage = page
+    set_page(pages.get(index)!)
 
     view.update(form({
         Name: line(page.name),
         Points: label(page.points.toString()),
         Trees: list(
             Object.fromEntries(
-                byPos.map((info, i) => [ `${i}_${info.name}`, tree(info) ])
+                byPos.map(info => [ `${info.index}_${info.name}`, tree(info) ])
             )
         ),
     }))
@@ -137,13 +145,14 @@ function setPage(index: number){
     function tree(tree: RuntimeTreeInfo){
         const entries = tree.grid.flatMap(info => {
             if(!info) return []
-            if(!page.talents.has(info.index))
-            if(!prevPage.talents.has(info.index))
-                return []
+            //if(!page.talents.has(info.index))
+            //if(!prevPage.talents.has(info.index))
+            //    return []
             const cell = form({
                 Icon: {
                     $type: 'button',
                     icon: cell_icon(info),
+                    disabled: !get_enabled(info),
                     tooltip_text: cell_tooltip(info),
                 },
                 Label: cell_label(info),
@@ -152,32 +161,42 @@ function setPage(index: number){
             return [ entry ] as [ string, Form ][]
         })
         return form({
-            Points: label(tree.points.toString()),
+            Points: label(get_tree_points(tree).toString()),
             Grid: list(Object.fromEntries(entries))
         })
     }
 }
 
+function get_requirement(info: RuntimeMasteryInfo){
+    return Math.floor((info.index - 1) / COLS) * COLS
+}
+
+function get_enabled(info: RuntimeMasteryInfo){
+    const tree = info.tree
+    const parent = info.parentInfo
+    return get_tree_points(tree) >= get_requirement(info)
+        && (!parent || get_rank(parent) === parent.ranks)
+}
+
 function onCellPressed(m: RegExpMatchArray, button: MouseButton){
     //if(![MouseButton.Left, MouseButton.Right].includes(button)) return
 
-    const treeIndex = parseInt(m.groups!.treeIndex!)
+    //const treeIndex = parseInt(m.groups!.treeIndex!)
+    //const tree = byPos[treeIndex]!
     const masteryID = parseInt(m.groups!.masteryID!)
     const info = byId.get(masteryID)!
-    const parent = info.parentInfo
-    const tree = byPos[treeIndex]!
-    
+    const tree = info.tree
+
     const delta =
         (button == MouseButton.Left) ? 1 :
         (button == MouseButton.Right) ? -1 :
         0
     
-    const newTreePoints = tree.points + delta
+    const newTreePoints = get_tree_points(tree) + delta
     const newRank = get_rank(info) + delta
     const newPoints = page.points - delta
-    const req = Math.floor((info.index - 1) / COLS) * COLS
     
-    if(tree.points >= req && (!parent || get_rank(parent) === parent.ranks))
+    if(get_enabled(info))
     if(newPoints >= 0 && newPoints <= MAX_POINTS)
     if(newRank >= 0 && newRank <= info.ranks){
         setRank(info, newRank)
@@ -194,11 +213,17 @@ export function show(opts: Required<AbortOptions>){
     view.show()
 }
 
+function getTreeElementName(tree: RuntimeTreeInfo){
+    return `${tree.index}_${tree.name}`
+}
 function getTreeElement(tree: RuntimeTreeInfo){
-    return view.get(`Trees/${tree.index}_${tree.name}`)
+    return view.get(`Trees/${getTreeElementName(tree)}`)
+}
+function getCellElementName(info: RuntimeMasteryInfo){
+    return `${(info.index - 1)}_${info.id}`
 }
 function getCellElement(treeElement: View, info: RuntimeMasteryInfo){
-    return treeElement.get(`Grid/${(info.index - 1)}_${info.id}`)
+    return treeElement.get(`Grid/${getCellElementName(info)}`)
 }
 
 function setPoints(page: RuntimePageInfo, newPoints: number){
@@ -215,6 +240,7 @@ function setRank(info: RuntimeMasteryInfo, newRank: number){
         Icon: {
             $type: 'button',
             //icon: cell_icon(info, tree),
+            //disabled: !get_enabled(info),
             tooltip_text: cell_tooltip(info),
         },
         Label: cell_label(info),
@@ -229,6 +255,7 @@ function updateIcon(info: RuntimeMasteryInfo){
         Icon: {
             $type: 'button',
             icon: cell_icon(info),
+            disabled: !get_enabled(info),
         },
         Label: cell_label(info),
     }))
@@ -237,9 +264,9 @@ function updateIcon(info: RuntimeMasteryInfo){
 function setTreePoints(tree: RuntimeTreeInfo, newTreePoints: number){
     const treeElement = getTreeElement(tree)
 
-    const prevTreePoints = tree.points
-    tree.points = newTreePoints
-    treeElement.get('Points').update(label(tree.points.toString()))
+    const prevTreePoints = get_tree_points(tree)
+    set_tree_points(tree, newTreePoints)
+    treeElement.get('Points').update(label(get_tree_points(tree).toString()))
 
     for(const info of tree.grid){
         if(!info) continue
@@ -253,6 +280,7 @@ function setTreePoints(tree: RuntimeTreeInfo, newTreePoints: number){
             cellElement.get('Icon').update({
                 $type: 'button',
                 icon: cell_icon(info),
+                disabled: !get_enabled(info),
             })
         }
     }

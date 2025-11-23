@@ -6,6 +6,7 @@ var is_top_level: bool
 var is_hidden: bool
 
 func init(_config: Dictionary, cb: Callable) -> void:
+    #print('INIT ', get_path(), ' WITH ', cb.hash())
     if !is_hidden: show_self()
     self.callback = cb
     #self.update(config)

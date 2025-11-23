@@ -5,36 +5,39 @@ import { render } from "../../ui/remote/view";
 import { Champion, champions } from "../../utils/data/constants/champions";
 import { spells, SummonerSpell } from "../../utils/data/constants/spells";
 import { getBotName, getPseudonym } from "../../utils/namegen/namegen";
+import { option_pages } from "../masteries";
+import { page, pages } from "../masteries/pages";
+import type { Game } from "../../game/game";
+
+function makePlayerForm(player: GamePlayer, game: Game): Form {
+        
+    const championInfo = (player.champion.value !== undefined) ? champions[player.champion.value]! : undefined
+    const relativeChampionIconPath = championInfo?.icon ?? ''
+    const championName = championInfo?.name ?? ''
+
+    const spellInfo1 = (player.spell1.value !== undefined) ? spells[player.spell1.value] : undefined
+    const relativeSpellIconPath1 = spellInfo1?.icon ?? ''
+    const spellName1 = spellInfo1?.name ?? ''
+    
+    const spellInfo2 = (player.spell2.value !== undefined) ? spells[player.spell2.value] : undefined
+    const relativeSpellIconPath2 = spellInfo2?.icon ?? ''
+    const spellName2 = spellInfo2?.name ?? ''
+    
+    const isMe = game.getPlayer() === player
+    const playerId = player.isBot ? getBotName(championName) : getPseudonym(player.id, isMe)
+    //const statusText = (player.lock.value || player.isBot) ? 'Locked' : 'Chooses...'
+
+    return form({
+        Name: label(playerId),
+        Status: label(championName),
+        Icon: icon(relativeChampionIconPath, championName),
+        SummonerSpell1: icon(relativeSpellIconPath1, spellName1),
+        SummonerSpell2: icon(relativeSpellIconPath2, spellName2),
+    })
+}
 
 export async function lobby_pick(ctx: Context){
     const { game } = ctx
-
-    const makePlayerForm = (player: GamePlayer): Form => {
-        
-        const championInfo = (player.champion.value !== undefined) ? champions[player.champion.value]! : undefined
-        const relativeChampionIconPath = championInfo?.icon ?? ''
-        const championName = championInfo?.name ?? ''
-
-        const spellInfo1 = (player.spell1.value !== undefined) ? spells[player.spell1.value] : undefined
-        const relativeSpellIconPath1 = spellInfo1?.icon ?? ''
-        const spellName1 = spellInfo1?.name ?? ''
-        
-        const spellInfo2 = (player.spell2.value !== undefined) ? spells[player.spell2.value] : undefined
-        const relativeSpellIconPath2 = spellInfo2?.icon ?? ''
-        const spellName2 = spellInfo2?.name ?? ''
-        
-        const isMe = game.getPlayer() === player
-        const playerId = player.isBot ? getBotName(championName) : getPseudonym(player.id, isMe)
-        //const statusText = (player.lock.value || player.isBot) ? 'Locked' : 'Chooses...'
-
-        return form({
-            Name: label(playerId),
-            Status: label(championName),
-            Icon: icon(relativeChampionIconPath, championName),
-            SummonerSpell1: icon(relativeSpellIconPath1, spellName1),
-            SummonerSpell2: icon(relativeSpellIconPath2, spellName2),
-        })
-    }
 
     const championsItems = Object.fromEntries(
         Champion.choices
@@ -62,13 +65,21 @@ export async function lobby_pick(ctx: Context){
         })
     )
 
+    //HACK:
+    game.set('talents', page.talents)
+
     const view = render('ChampionSelect', form({
         Team1: list(),
         Team2: list(),
         LockIn: button(() => game.set('lock', +true)),
         Champions: list(championsItems),
+        Skins: list({}),
         SummonerSpell1: list(summonerSpellsItems),
         SummonerSpell2: list(summonerSpellsItems),
+        Pages: option_pages((index) => {
+            const page = pages.get(index)!
+            game.set('talents', page.talents)
+        })
     }), ctx, [
         {
             regex: /\.\/Champions\/(?<championIndex>\d+):pressed/,

@@ -48,6 +48,7 @@ export interface TextEdit extends Id {
 export interface Button extends Id {
     $type: 'button'
     disabled?: boolean
+    button_pressed?: boolean
     icon?: string
     $listeners?: {
         pressed?: () => void
@@ -106,10 +107,11 @@ export const checkbox = (button_pressed?: boolean, toggled?: (on: boolean) => vo
 export const button = (pressed?: () => void, disabled?: boolean) => ({ $type: 'button' as const, disabled, $listeners: { pressed } })
 export const option = (options?: { id: number, text: string }[], selected?: number, item_selected?: (index: number) => void, disabled?: boolean) => ({ $type: 'option' as const, disabled, selected, options, $listeners: { selected: item_selected } })
 export const texture = (texture?: string) => ({ $type: 'texture' as const, texture })
-export const icon = (icon?: string, placeholderText?: string, disabled?: boolean) => ({
+export const icon = (icon?: string, placeholderText?: string, disabled?: boolean, pressed?: boolean) => ({
     $type: 'button' as const,
     text: (!icon) ? placeholderText : undefined,
     tooltip_text: (icon) ? placeholderText : undefined,
+    button_pressed: pressed,
     disabled,
     icon,
 })

@@ -36,6 +36,13 @@ func _ready() -> void:
             container.remove_child(child)
             child.queue_free()
 
+#TODO: parent?.id ?? id
+func init(config: Dictionary, cb: Callable) -> void:
+    super.init(config, cb)
+    for item_name: String in items:
+        var item := items[item_name]
+        init_child(item_name, item, cb)
+
 func update(config: Dictionary, strict: bool = false) -> void:
     if len(config) == 0: return #HACK:
     

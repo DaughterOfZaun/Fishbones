@@ -44,19 +44,19 @@ static func get_texture(path: String) -> ImageTexture:
 
         if path.begins_with('res://'):
             var layer := 0
+            var path_to_load := path
             var slices := path.split(':')
             if len(slices) > 2:
-                path = slices[0] + ':' + slices[1]
+                path_to_load = slices[0] + ':' + slices[1]
                 layer = slices[2].to_int()
-            var unk_texture: Variant = load(path)
+            var unk_texture: Variant = load(path_to_load)
             if unk_texture is TextureLayered:
                 image = (unk_texture as TextureLayered).get_layer_data(layer)
             elif unk_texture is Texture2D:
                 image = (unk_texture as Texture2D).get_image()
         else:
-            var long_path := downloads.path_join(path)
-            #print('loading', ' ', long_path)
-            var bytes := FileAccess.get_file_as_bytes(long_path)
+            var path_to_load := downloads.path_join(path)
+            var bytes := FileAccess.get_file_as_bytes(path_to_load)
             image = Image.new()
             var err := image.load_dds_from_buffer(bytes); assert(err == OK)
 

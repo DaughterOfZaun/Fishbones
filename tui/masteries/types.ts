@@ -11,7 +11,6 @@ export type RuntimeMasteryInfo = MastryInfo & {
 export type RuntimeTreeInfo = {
     name: string
     index: number
-    points: number
     grid: (RuntimeMasteryInfo | undefined)[]
 }
 

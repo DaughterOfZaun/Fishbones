@@ -33,6 +33,7 @@ func on_button_gui_input(unk_event: InputEvent, child: BaseButton) -> void:
     or child.action_mode == BaseButton.ACTION_MODE_BUTTON_RELEASE && !event.pressed:
         if event.button_index > 0 && (child.button_mask & (1 << (event.button_index - 1))) != 0:
             var path: String = child.get_meta('path')
+            #print('CALL ', callback.hash(), ' ', get_path(), ':pressed')
             callback.call('call', path, 'pressed', event.button_index)
     
 func on_button_toggled(on: bool, child: Control) -> void:
