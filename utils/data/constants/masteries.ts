@@ -272,7 +272,7 @@ export const data: MastryInfo[][] = [
         {
             id: 132,
             index: 3,
-            name: "Perseverance",
+            name: "Perseverence",
             ranks: 3,
             desc: "+#% Total Health Regeneration and Mana Regeneration.",
             rankInfo: [2, 3, 4],

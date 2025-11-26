@@ -359,7 +359,7 @@ export class Talents extends ValueDesc<
         this.value = new Map(v.entries().filter(([ key ]) => byId.has(key)))
         return true
     }
-    //TODO: Deprecate uinput
+    //TODO: Deprecate uinput.
     // eslint-disable-next-line @typescript-eslint/promise-function-async, @typescript-eslint/no-unused-vars
     uinput(opts: Required<AbortOptions>): Promise<unknown> {
         throw new Error("Method not implemented.")

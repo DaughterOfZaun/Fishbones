@@ -1,5 +1,8 @@
 import { blowfishKey, FeaturesEnabled, GameType, LOCALHOST, Name, Password, PlayerCount, Team, type u } from '../utils/constants'
 import { TypedEventEmitter, type AbortOptions, type PeerId, type Stream } from '@libp2p/interface'
+import { publicKeyFromProtobuf, publicKeyToProtobuf } from '@libp2p/crypto/keys'
+import { peerIdFromPublicKey } from '@libp2p/peer-id'
+import { multiaddr } from '@multiformats/multiaddr'
 import type { LibP2PNode } from '../node/node'
 import { GamePlayer, type PlayerId, type PPP } from './game-player'
 import type { Peer as PBPeer } from '../message/peer'
@@ -164,8 +167,11 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
 
         player.team.value = team
     }
-    private handleJoinRequest(player: GamePlayer, { name }: LobbyRequestMessage.JoinRequest) {
-
+    private handleJoinRequest(player: GamePlayer, req: LobbyRequestMessage.JoinRequest){
+        void this.handleJoinRequestAsync(player, req, shutdownOptions)
+    }
+    private async handleJoinRequestAsync(player: GamePlayer, { name }: LobbyRequestMessage.JoinRequest, opts: Required<AbortOptions>){
+        
         player.name.decodeInplace(name)
         this.assignTeamTo(player)
 
@@ -173,7 +179,10 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             {
                 peersRequests: [{
                     playerId: player.id,
-                    joinRequest: { name: player.name.encode(), },
+                    joinRequest: {
+                        name: player.name.encode(),
+                        info: await this.getPeerInfo(player, opts),
+                    },
                     pickRequest: player.encode('team'),
                 }]
             },
@@ -184,23 +193,49 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         const newPlayer = player
         this.broadcast(
             {
-                peersRequests: [...this.players.values()].map(player => ({
-                    playerId: player.id,
-                    joinRequest: {
-                        name: player.name.encode(),
-                        isMe: player == newPlayer,
-                    },
-                    pickRequest: player.encode(),
-                }))
+                peersRequests: await Promise.all(
+                    [...this.players.values()].map(async player => ({
+                        playerId: player.id,
+                        joinRequest: {
+                            name: player.name.encode(),
+                            isMe: player == newPlayer,
+                            info: await this.getPeerInfo(player, opts),
+                        },
+                        pickRequest: player.encode(),
+                    }))
+                )
             },
             [ player ],
         )
     }
+    private async getPeerInfo(player: GamePlayer, opts: Required<AbortOptions>){
+        const peerId = player.peerId
+        const { peerStore } = this.node.components
+        if(peerId && peerId != this.node.peerId && this.features.isHalfPingEnabled){
+            const { multiaddrs } = await peerStore.getInfo(peerId, opts)
+            return {
+                publicKey: publicKeyToProtobuf(peerId.publicKey!),
+                addrs: multiaddrs.map(multiaddr => multiaddr.bytes),
+            }
+        }
+        //return undefined
+    }
     private handleJoinResponse(player: GamePlayer, res: LobbyNotificationMessage.JoinRequest){
+        void this.handleJoinResponseAsync(player, res, shutdownOptions)
+    }
+    private async handleJoinResponseAsync(player: GamePlayer, res: LobbyNotificationMessage.JoinRequest, opts: Required<AbortOptions>){
+        const { peerStore } = this.node.components
+
         player.name.decodeInplace(res.name)
+
         if(res.isMe){
             this.player = player
             this.joined = true
+        } else if(!player.stream && player.peerId && res.info){
+            const peerId = player.peerId
+            const multiaddrs = res.info.addrs.map(addr => multiaddr(addr))
+            await peerStore.patch(peerId, { multiaddrs }, opts)
+            await this.node.dial(peerId, opts)
         }
     }
 
@@ -237,6 +272,8 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             players,
         )
         
+        if(this.features.isHalfPingEnabled) return
+
         try {
             const proc = await launchServer(this.getGameInfo(), opts)
             proc.once('exit', this.onServerExit)
@@ -250,6 +287,11 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             return false
         }
 
+        this.broadcastLaunchRequests()
+    }
+    private broadcastLaunchRequests(){
+        const players = this.getPlayers()
+        
         let i = 1
         for(const player of players)
         this.broadcast(
@@ -280,6 +322,9 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         )
     }
     private handleSwitchStateResponse(state: State){
+        void this.handleSwitchStateResponseAsync(state, shutdownOptions)
+    }
+    private async handleSwitchStateResponseAsync(state: State, opts: Required<AbortOptions>){
         switch(state){
             //case State.UNDEFINED: break
             case State.STOPPED:
@@ -303,13 +348,30 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 this.launched = false
                 this.safeDispatchEvent('start')
                 break
-            case State.LAUNCHED:
+            case State.LAUNCHED: {
                 this.started = true
                 this.launched = true
                 this.safeDispatchEvent('wait')
+
+                if(this.features.isHalfPingEnabled){
+                    const gameInfo = this.getGameInfo()
+                    try {
+                        const proc = await launchServer(gameInfo, opts)
+                        proc.once('exit', this.onServerExit)
+                    } catch(err) {
+                        logger.log('Failed to start server:', Bun.inspect(err))
+                        this.onServerExit()
+                    }
+
+                    //TODO: Start proxy.
+
+                    this.set('serverStarted', true)
+                }
                 break
+            }
         }
     }
+
     private handleLaunchResponse(res: LobbyNotificationMessage.LaunchRequest){
         this.started = true
         this.launched = true
@@ -366,15 +428,6 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             this.safeDispatchEvent('crash')
     }
 
-    public async pick(prop: PPP, opts: Required<AbortOptions>) {
-        const player = this.getPlayer()
-        if(!player) return false
-        const pdesc = player[prop]
-        await pdesc.uinput(opts)
-        return this.stream_write({
-            pickRequest: player.encode(prop)
-        })
-    }
     public set<T extends PPP>(prop: T, value: GamePlayer[T]['value']){
         const player = this.getPlayer()
         if(!player) return false
@@ -387,32 +440,38 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         })
     }
     private handlePickRequest(player: GamePlayer, req: PickRequest){
-        
-        if(req.lock !== undefined){
-            player.lock.value = +true
-            req.lock = player.lock.encode()
-        }
 
-        if(player.lock.value){
-            if(req.lock !== undefined) req = { lock: req.lock }
+        if(this.launched){
+            if(!player.serverStarted.value)
+                filterObject(req, true, [ 'serverStarted' ])
             else return false
-        }
-
-        if(this.started) {
-            delete req.team
-        } else {
-            if(req.team !== undefined) req = { team: req.team }
+        } else if(this.started){
+            if(!player.lock.value)
+                //filterObject(req, false, [ 'team', 'serverStarted', 'difficulty' ])
+                filterObject(req, true, [ 'lock', 'champion', 'spell1', 'spell2', 'skin', 'talents' ])
             else return false
+        } else if(this.joined){
+            filterObject(req, true, [ 'team' ])
         }
 
         if(this.started && req.lock !== undefined){
             player.lock.value = +true
             
             const players = this.getPlayers()
-            if(players.every(p => !!p.lock.value || p.isBot)){
+            if(players.every(p => p.isBot || !!p.lock.value)){
                 for(const player of players)
                     player.fillUnset()
                 this.launch()
+                return
+            }
+        }
+
+        if(this.launched && req.serverStarted){
+            player.serverStarted.value = true
+
+            const players = this.getPlayers()
+            if(players.every(p => p.isBot || !!p.serverStarted.value)){
+                this.broadcastLaunchRequests()
                 return
             }
         }
@@ -426,6 +485,15 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             },
             this.players.values(),
         )
+
+        function filterObject<T extends Record<string, unknown>>(obj: T, allowed: boolean, keys: (keyof T)[]): number {
+            let keysAccepted = 0
+            for(const key in obj){
+                if(keys.includes(key) === allowed) keysAccepted++
+                else delete obj[key]
+            }
+            return keysAccepted
+        }
     }
     private handlePickResponse(player: GamePlayer, res: PickRequest){
         player.decodeInplace(res)
@@ -503,6 +571,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             ret &&= this.name.decodeInplace(gi.name)
             ret &&= this.map.decodeInplace(gi.map)
             ret &&= this.mode.decodeInplace(gi.mode)
+            //ret &&= this.type.decodeInplace(gi.type)
             this.players_count = gi.players
             ret &&= this.playersMax.decodeInplace(gi.playersMax)
             ret &&= this.features.decodeInplace(gi.features)
@@ -532,7 +601,12 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 let player: u|GamePlayer
                 const playerId = res.playerId as PlayerId
                 if(res.joinRequest){
-                    player = this.players_add(playerId, undefined)
+                    let peerId: PeerId | undefined
+                    if(res.joinRequest.info){
+                        const publicKey = publicKeyFromProtobuf(res.joinRequest.info.publicKey)
+                        peerId = peerIdFromPublicKey(publicKey)
+                    }
+                    player = this.players_add(playerId, peerId)
                     this.handleJoinResponse(player, res.joinRequest)
                     joinedSelf ||= !!res.joinRequest.isMe
                     joinedPlayers.push(player)

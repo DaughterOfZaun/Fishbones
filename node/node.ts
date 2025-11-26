@@ -12,7 +12,7 @@ import { CODE_P2P_CIRCUIT, multiaddr, type Multiaddr } from '@multiformats/multi
 
 import { createLibp2p } from 'libp2p'
 //import { fromString, toString } from 'uint8arrays'
-import { isPeerId, KEEP_ALIVE, type AbortOptions, type ComponentLogger, type Connection, type Libp2pEvents, type Logger, type OpenConnectionProgressEvents, type Peer, type PeerId, type PeerInfo, type PrivateKey, type Startable, type TypedEventTarget } from '@libp2p/interface'
+import { isPeerId, KEEP_ALIVE, type AbortOptions, type ComponentLogger, type Connection, type Libp2pEvents, type Logger, type OpenConnectionProgressEvents, type Peer, type PeerId, type PeerInfo, type PeerStore, type PrivateKey, type Startable, type TypedEventTarget } from '@libp2p/interface'
 import { tcp } from '@libp2p/tcp'
 import { patchedCrypto } from '../utils/crypto'
 
@@ -48,6 +48,7 @@ export type LibP2PNode = Awaited<ReturnType<typeof createNodeInternal>> & {
         transportManager: TransportManager
         connectionManager: ConnectionManager
         events: TypedEventTarget<Libp2pEvents>
+        peerStore: PeerStore
     }
 } & TypedEventTarget<Libp2pEvents & {
     'same-program-peer:discovery': CustomEvent<PeerId>

@@ -19,7 +19,11 @@ registerShutdownHandler(() => {
     openSockets.clear()
 })
 */
-export enum Role { Server, Client }
+export enum Role {
+    Unset = 0,
+    Client = 1, Server = 2,
+    ClientServer = Client & Server
+}
 export abstract class ConnectionStrategy {
     
     protected readonly role: Role

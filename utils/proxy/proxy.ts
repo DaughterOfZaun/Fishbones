@@ -67,7 +67,7 @@ class Proxy {
         return peer
     }
 
-    private async createSocketToProgram(programHost: string, programPort: number, onData: (data: Buffer, programHostPort: string) => void, opts: Required<AbortOptions>): Promise<SocketToProgram> {
+    protected async createSocketToProgram(programHost: string, programPort: number, onData: (data: Buffer, programHostPort: string) => void, opts: Required<AbortOptions>): Promise<SocketToProgram> {
         let programHostLastUsed: string = programHost
         let programPortLastUsed: number = programPort
         const socket = await Bun.udpSocket({
@@ -181,5 +181,50 @@ export class ProxyClient extends Proxy {
     public getPort(id = this.serverId){
         console.assert(id && id.equals(this.serverId), 'id && id.equals(this.serverId)')
         return super.getPort(id!)
+    }
+}
+
+export class ClientServerProxy extends Proxy {
+    public constructor(node: Libp2p){
+        super(node, Role.ClientServer)
+    }
+
+    public async start(serverPort: number, peerIds: PeerId[], opts: Required<AbortOptions>){
+        const programHost: string = LOCALHOST
+        let clientPort = 0
+
+        await Promise.all([
+            this.strategy.createMainSocketToRemote(opts),
+        ])
+        const SocketToClient = await this.createSocketToProgram(programHost, clientPort, (data: Buffer, programHostPort: string) => {}, opts)
+        const SocketToServer = await this.createSocketToProgram(programHost, serverPort, (data: Buffer, programHostPort: string) => {}, opts)
+        const socketsToRemote = await this.strategy.createSocketToRemote(id, (data: Buffer, remoteHostPort: string) => {}, opts) 
+    }
+
+    private async createDirectedPeer(id: PeerId, programPort: number, opts: Required<AbortOptions>){
+        
+
+        log('creating internal socket for peer %p', id)
+
+        const peer: PeerData = {
+            peerId: id,
+            socketToRemote: this.node.peerId.equals(id) ? undefined! : await this.strategy.createSocketToRemote(id, (data: Buffer, remoteHostPort: string) => {
+                log.trace('external socket: redirecting pkt from %s through %s to %s', remoteHostPort, peer.socketToProgram.sourceHostPort, peer.socketToProgram.targetHostPort)
+                peer.socketToProgram.send(data)
+            }, opts),
+            socketToProgram: await this.createSocketToProgram(programHost, programPort, (data: Buffer, programHostPort: string) => {
+                log.trace('internal socket: redirecting pkt from %s through %s to %s', programHostPort, peer.socketToRemote.sourceHostPort, peer.socketToRemote.targetHostPort)
+                peer.socketToRemote.send(data)
+            }, opts)
+        }
+        //openSockets.add(peer.socketToProgram)
+
+        log('created internal socket for peer %p at %s', peer.peerId, peer.socketToProgram.sourceHostPort)
+
+        this.peersByPeerId.set(peer.peerId.toString(), peer)
+
+        opts.signal.throwIfAborted()
+        
+        return peer
     }
 }

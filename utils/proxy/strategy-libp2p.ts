@@ -21,7 +21,7 @@ export class UseExistingLibP2PConnection extends ConnectionStrategy {
     }>()
 
     closeSockets(): void {
-        if(this.role === Role.Server)
+        if((this.role & Role.Server) != 0)
             this.node.unhandle(PROXY_PROTOCOL).catch(err => log.error(err))
         for(const socket of this.socketsByPeerId.values())
             socket.close()
@@ -30,7 +30,7 @@ export class UseExistingLibP2PConnection extends ConnectionStrategy {
     }
     
     async createMainSocketToRemote(opts: Required<AbortOptions>): Promise<void> {
-        if(this.role === Role.Server){
+        if((this.role & Role.Server) != 0){
             await this.node.handle(PROXY_PROTOCOL, ({ stream, connection }: IncomingStreamData) => {
                 const id = connection.remotePeer
                 if(this.peersAllowed.has(id)){
@@ -69,7 +69,7 @@ export class UseExistingLibP2PConnection extends ConnectionStrategy {
         this.socketsByPeerId.set(id, socket)
         this.peersAllowed.add(id)
         
-        if(this.role === Role.Client){
+        if((this.role & Role.Client) != 0){
             const stream = await this.node.dialProtocol(id, PROXY_PROTOCOL)
             this.handleStream(id, stream)
         }

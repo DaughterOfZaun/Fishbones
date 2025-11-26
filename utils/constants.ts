@@ -1,6 +1,8 @@
 import { PickableValue } from "./data/constants/values/pickable"
 import { InputableValue } from "./data/constants/values/inputable"
 import { Enabled } from "./data/constants/values/enabled"
+import { ValueDesc } from "./data/constants/values/desc"
+import type { AbortOptions } from "@libp2p/interface"
 
 export type u = undefined
 
@@ -36,6 +38,24 @@ export class Lock extends PickableValue {
     public static readonly name = 'Lock'
     public static readonly values = [ "Unlocked", "Locked" ]
     public static readonly choices = PickableValue.normalize(Lock.values)
+}
+
+export class Bool extends ValueDesc<boolean, boolean>{
+    encode(): boolean {
+        return this.value!
+    }
+    decodeInplace(v: boolean): boolean {
+        this.value = v
+        return true
+    }
+    //TODO: Deprecate uinput.
+    // eslint-disable-next-line @typescript-eslint/promise-function-async, @typescript-eslint/no-unused-vars
+    uinput(opts: Required<AbortOptions>): Promise<unknown> {
+        throw new Error("Method not implemented.")
+    }
+    toString(): string {
+        throw new Error("Method not implemented.")
+    }
 }
 
 export class PlayerCount extends PickableValue {
@@ -94,6 +114,7 @@ export enum Features {
     MANACOSTS_DISABLED = 1 << 1,
     COOLDOWNS_DISABLED = 1 << 2,
     MINIONS_DISABLED = 1 << 3,
+    HALF_PING_MODE_ENABLED = 1 << 4,
 }
 
 export class FeaturesEnabled extends Enabled {
@@ -103,6 +124,7 @@ export class FeaturesEnabled extends Enabled {
         [Features.MANACOSTS_DISABLED]: 'Disable Manacosts',
         [Features.COOLDOWNS_DISABLED]: 'Disable Cooldowns',
         [Features.MINIONS_DISABLED]: 'Disable Minions',
+        [Features.HALF_PING_MODE_ENABLED]: 'Enable Half-Ping Mode',
     }
     public static readonly choices = PickableValue.normalize(FeaturesEnabled.values)
     
@@ -110,12 +132,5 @@ export class FeaturesEnabled extends Enabled {
     public get isManacostsEnabled(){ return !this.value.includes(Features.MANACOSTS_DISABLED) }
     public get isCooldownsEnabled(){ return !this.value.includes(Features.COOLDOWNS_DISABLED) }
     public get isMinionsEnabled(){ return !this.value.includes(Features.MINIONS_DISABLED) }
-    public asString(): string {
-        let ret = ''
-        if(this.isCheatsEnabled) ret += '[CHEATS]'
-        if(!this.isManacostsEnabled) ret += '[NO MANA]'
-        if(!this.isCooldownsEnabled) ret += '[NO CD]'
-        if(!this.isMinionsEnabled) ret += '[NO MINIONS]'
-        return ret
-    }
+    public get isHalfPingEnabled(){ return this.value.includes(Features.HALF_PING_MODE_ENABLED) }
 }

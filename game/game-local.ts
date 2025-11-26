@@ -39,8 +39,12 @@ export class LocalGame extends Game {
 
     public addBots(counts: number[]){
 
-        const bots: number[] = []
+        const existingBots = [...this.players.values()]
+            .filter(player => player.isBot && player.champion.value !== undefined)
+            .map(player => player.champion.value!)
+
         const info = mapsById.get(this.map.value!)!
+        const bots: number[] = [...(new Set(info.bots).difference(new Set(existingBots))).values()]
         const peersRequests: LobbyNotificationMessage.PeerRequests[] = []
 
         counts.forEach((count, team) => {
@@ -96,8 +100,8 @@ export class LocalGame extends Game {
     private handleIncomingStream: StreamHandler = async ({ stream, connection }) => {
         const wrapped = pbStream(stream).pb(LobbyRequestMessage, LobbyNotificationMessage)
 
-        let kickReason = KickReason.UNDEFINED
         let checkPassed = false
+        let kickReason = KickReason.UNDEFINED
         let firstReq: u|LobbyRequestMessage = undefined
         try {
             firstReq = await wrapped.read()

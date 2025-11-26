@@ -1,5 +1,5 @@
 import type { ValueDesc } from '../utils/data/constants/values/desc'
-import { Lock, Name, Team } from '../utils/constants'
+import { Bool, Lock, Name, Team } from '../utils/constants'
 import { SummonerSpell } from '../utils/data/constants/spells'
 import { Champion, Skin, AIDifficulty, Talents } from '../utils/data/constants/champions'
 import { type PeerId, type Stream } from '@libp2p/interface'
@@ -32,6 +32,7 @@ export class GamePlayer {
     public readonly spell1 = new SummonerSpell(undefined, () => this.game.server.spells)
     public readonly spell2 = new SummonerSpell(undefined, () => this.game.server.spells)
     public readonly lock = new Lock() //TODO: Hide in test
+    public readonly serverStarted = new Bool()
     public readonly difficulty = new AIDifficulty()
     public readonly skin = new Skin()
     public readonly talents = new Talents()
