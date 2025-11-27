@@ -41,6 +41,7 @@ export async function setup(game: Game, server: LocalServer, opts: Required<Abor
         Cooldowns: checkbox(game.features.isCooldownsEnabled, value => game.features.set(Features.COOLDOWNS_DISABLED, !value)),
         Minions: checkbox(game.features.isMinionsEnabled, value => game.features.set(Features.MINIONS_DISABLED, !value)),
         Cheats: checkbox(game.features.isCheatsEnabled, value => game.features.set(Features.CHEATS_ENABLED, value)),
+        HalfPing: checkbox(game.features.isHalfPingEnabled, value => game.features.set(Features.HALF_PING_MODE_ENABLED, value)),
     
         Champions: button(() => { server.champions.uinput(opts).catch(() => { /* Ignore */ }) }),
         SummonerSpells: button(() => { server.spells.uinput(opts).catch(() => { /* Ignore */ }) }),

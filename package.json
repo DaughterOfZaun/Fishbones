@@ -81,6 +81,7 @@
     "uint8arraylist": "^2.4.8",
     "uint8arrays": "^5.1.0",
     "utp-native": "^2.5.3",
+    "yocto-queue": "^1.2.2",
     "yoctocolors-cjs": "^2.1.2"
   },
   "trustedDependencies": [

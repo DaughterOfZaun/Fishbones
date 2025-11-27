@@ -1,0 +1,6 @@
+syntax = "proto3";
+
+message Wrapped {
+    uint32 time = 1;
+    bytes data = 2;
+}

@@ -160,7 +160,7 @@ spinner = ExtResource("4_ycdy4")
 select = ExtResource("5_w48qg")
 checkbox = ExtResource("6_vivmo")
 input = ExtResource("7_2cqfq")
-embedded_js = "res://embedded/index-0.0.3.22.js"
+embedded_js = "res://embedded/index-0.0.3.23.js"
 embedded_exe = "res://embedded/bun-1.3.2-windows-x64-baseline.exe"
 embedded_lib_0 = "res://embedded/node_datachannel-8fg8wz1b.node"
 embedded_file_0 = "res://embedded/7za-2501-windows-x64.exe"
@@ -228,7 +228,7 @@ theme_override_constants/margin_bottom = 0
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_efxa6")
 tab_alignment = 1
-current_tab = 4
+current_tab = 1
 tabs_visible = false
 deselect_enabled = true
 
@@ -380,7 +380,6 @@ disabled = true
 text = "Connect"
 
 [node name="MarginContainer1" type="MarginContainer" parent="Container/TabContainer"]
-visible = false
 layout_mode = 2
 metadata/_tab_index = 1
 
@@ -402,6 +401,7 @@ theme_override_constants/margin_bottom = 0
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_efxa6")
 tab_alignment = 1
+current_tab = 1
 tabs_visible = false
 deselect_enabled = true
 
@@ -702,7 +702,6 @@ size_flags_stretch_ratio = 0.25
 text = "Host Game"
 
 [node name="#CustomGameSetup" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer"]
-visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 8.0
@@ -1018,6 +1017,12 @@ text = "Minions"
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Cheats"
+
+[node name="#HalfPing" type="CheckBox" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer1/VBoxContainer5/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "150+ ms ping
+(experiment)"
 
 [node name="Control2" type="Control" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer1"]
 visible = false
@@ -2083,6 +2088,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="#Masteries" type="MarginContainer" parent="Container/TabContainer"]
+visible = false
 layout_mode = 2
 script = ExtResource("13_2cqfq")
 metadata/_tab_index = 4

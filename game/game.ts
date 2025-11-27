@@ -10,7 +10,7 @@ import type { Server } from './server'
 import { KickReason, LobbyNotificationMessage, PickRequest, State, type LobbyRequestMessage } from '../message/lobby'
 import { arr2text, text2arr } from 'uint8-util'
 import type { GameInfo } from '../game/game-info'
-import { ProxyClient, ProxyServer } from '../utils/proxy/proxy'
+import { ClientServerProxy, ProxyClient, ProxyServer } from '../utils/proxy/proxy'
 import type { WriteonlyMessageStream } from '../utils/pb-stream'
 import { launchClient, relaunchClient, stopClient } from '../utils/process/client'
 import { launchServer, stopServer } from '../utils/process/server'
@@ -102,11 +102,15 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         })
         this.proxyClient?.disconnect()
         this.proxyClient = undefined
+
         stopServer(safeOptions).catch(err => {
             logger.log('An error occurred when stopping the server:', Bun.inspect(err))
         })
         this.proxyServer?.stop()
         this.proxyServer = undefined
+
+        this.proxyClientServer?.stop()
+        this.proxyClientServer = undefined
         
         this.players.clear()
         
@@ -121,6 +125,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
 
     private proxyServer?: ProxyServer
     private proxyClient?: ProxyClient
+    private proxyClientServer?: ClientServerProxy
 
     public isJoinable(): boolean {
         return this.getKickReason() == KickReason.UNDEFINED
@@ -211,7 +216,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     private async getPeerInfo(player: GamePlayer, opts: Required<AbortOptions>){
         const peerId = player.peerId
         const { peerStore } = this.node.components
-        if(peerId && peerId != this.node.peerId && this.features.isHalfPingEnabled){
+        if(peerId && !peerId.equals(this.node.peerId) && this.features.isHalfPingEnabled){
             const { multiaddrs } = await peerStore.getInfo(peerId, opts)
             return {
                 publicKey: publicKeyToProtobuf(peerId.publicKey!),
@@ -312,6 +317,9 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         this.proxyServer?.stop()
         this.proxyServer = undefined
 
+        this.proxyClientServer?.stop()
+        this.proxyClientServer = undefined
+
         this.broadcast(
             {
                 switchStateRequest: State.STOPPED,
@@ -356,16 +364,21 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 if(this.features.isHalfPingEnabled){
                     const gameInfo = this.getGameInfo()
                     try {
+                        //let proc: Awaited<ReturnType<typeof launchServer>>
                         const proc = await launchServer(gameInfo, opts)
                         proc.once('exit', this.onServerExit)
+
+                        const players = this.getPlayers()
+                        const peerIds = players.filter(p => !!p.peerId).map(p => p.peerId!)
+                        this.proxyClientServer = new ClientServerProxy(this.node)
+                        await this.proxyClientServer.start(proc.port, peerIds, opts)
+
+                        this.set('serverStarted', true)
+
                     } catch(err) {
                         logger.log('Failed to start server:', Bun.inspect(err))
                         this.onServerExit()
                     }
-
-                    //TODO: Start proxy.
-
-                    this.set('serverStarted', true)
                 }
                 break
             }
@@ -391,12 +404,19 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         //const { port, clientId } = res
         const { clientId } = res
         
-        //TODO: try-catch
-        this.proxyClient = new ProxyClient(this.node)
-        await this.proxyClient.connect(this.ownerId, this.proxyServer, opts)
-        const port = this.proxyClient.getPort()!
         const ip = LOCALHOST
-        
+        let port = 0
+
+        if(this.features.isHalfPingEnabled){
+            await this.proxyClientServer!.connect(opts)
+            port = this.proxyClientServer!.getClientPort()!
+        } else {
+            //TODO: try-catch
+            this.proxyClient = new ProxyClient(this.node)
+            await this.proxyClient.connect(this.ownerId, this.proxyServer, opts)
+            port = this.proxyClient.getPort()!
+        }
+
         try {
             const proc = await launchClient(ip, port, key, clientId, opts)
             proc.once('exit', this.onClientExit)
@@ -442,14 +462,9 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     private handlePickRequest(player: GamePlayer, req: PickRequest){
 
         if(this.launched){
-            if(!player.serverStarted.value)
-                filterObject(req, true, [ 'serverStarted' ])
-            else return false
+            filterObject(req, true, [ 'serverStarted' ])
         } else if(this.started){
-            if(!player.lock.value)
-                //filterObject(req, false, [ 'team', 'serverStarted', 'difficulty' ])
-                filterObject(req, true, [ 'lock', 'champion', 'spell1', 'spell2', 'skin', 'talents' ])
-            else return false
+            filterObject(req, true, [ 'lock', 'champion', 'spell1', 'spell2', 'skin', 'talents' ])
         } else if(this.joined){
             filterObject(req, true, [ 'team' ])
         }
@@ -488,7 +503,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
 
         function filterObject<T extends Record<string, unknown>>(obj: T, allowed: boolean, keys: (keyof T)[]): number {
             let keysAccepted = 0
-            for(const key in obj){
+            for(const key of Object.keys(obj)){
                 if(keys.includes(key) === allowed) keysAccepted++
                 else delete obj[key]
             }
@@ -501,19 +516,10 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
 
     private unlockAllPlayers(){
         const remainingPlayers = this.players.values()
-        //const unlockRequests: LobbyNotificationMessage.PeerRequests[] = []
         for(const player of remainingPlayers){
-            if(player.lock.value){
-                player.lock.value = +false
-                //unlockRequests.push({
-                //    playerId: player.id,
-                //    pickRequest: {
-                //        lock: player.lock.encode()
-                //    }
-                //})
-            }
+            player.serverStarted.value = false
+            player.lock.value = +false
         }
-        //return unlockRequests
     }
     private handleLeaveRequest(player: GamePlayer){
         

@@ -3,6 +3,8 @@ import type { PeerId, AbortOptions } from "@libp2p/interface"
 import { logger } from "@libp2p/logger"
 import { UseExistingLibP2PConnection } from "./strategy-libp2p"
 import { Role, type AnySocket, type ConnectionStrategy } from "./shared"
+import { Wrapped } from '../../message/proxy'
+import Queue from 'yocto-queue'
 
 //import { LOCALHOST } from "./constants"
 const LOCALHOST = "127.0.0.1"
@@ -184,47 +186,152 @@ export class ProxyClient extends Proxy {
     }
 }
 
+type Task = {
+    time: number
+    callback: (...args: unknown[]) => void,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    args: any[]
+}
+class Scheduler {
+    
+    private interval: ReturnType<typeof setInterval> | undefined
+    private queue = new Queue<Task>()
+
+    public stop(){
+        clearInterval(this.interval)
+        this.queue.clear()
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    public enqueue<T extends (...args: any[]) => void>(time: number, callback: T, ...args: Parameters<T>){
+        const task = { time, callback, args }
+        this.queue.enqueue(task)
+        if(!this.interval){
+            this.interval = setInterval(this.onInterval, 1)
+        }
+    }
+    private onInterval = () => {
+        while(true){
+            const task = this.queue.peek()
+            if(!task){
+                clearInterval(this.interval)
+                this.interval = undefined
+                break
+            }
+            if(task.time <= Date.now()){
+                task.callback.apply(null, task.args)
+                this.queue.dequeue()
+                continue
+            }
+            break
+        }
+    }
+}
+
+const INPUT_DELAY = 150
+
 export class ClientServerProxy extends Proxy {
+
+    private scheduler = new Scheduler()
+    private socketToClient: SocketToProgram | null = null
+    private ownPeer: PeerData | null = null
+
     public constructor(node: Libp2p){
         super(node, Role.ClientServer)
     }
 
     public async start(serverPort: number, peerIds: PeerId[], opts: Required<AbortOptions>){
         const programHost: string = LOCALHOST
-        let clientPort = 0
+        const clientPort = 0
+
+        for(const peerId of peerIds){
+            const peer: PeerData = {
+                peerId,
+                socketToRemote: undefined!,
+                socketToProgram: undefined!,
+            }
+            this.peersByPeerId.set(peerId.toString(), peer)
+        }
+
+        this.ownPeer = this.peersByPeerId.get(this.node.peerId.toString())!
+        console.assert(this.ownPeer)
 
         await Promise.all([
             this.strategy.createMainSocketToRemote(opts),
+            (async () => {
+                const peer = this.ownPeer!
+                this.socketToClient = await this.createSocketToProgram(
+                    programHost, clientPort, this.onClientData.bind(this, peer), opts
+                )
+            })(),
+            ...this.peersByPeerId.values().map(async (peer) => {
+                peer.socketToProgram = await this.createSocketToProgram(
+                    programHost, serverPort, this.onServerData.bind(this, peer), opts
+                )
+            }),
         ])
-        const SocketToClient = await this.createSocketToProgram(programHost, clientPort, (data: Buffer, programHostPort: string) => {}, opts)
-        const SocketToServer = await this.createSocketToProgram(programHost, serverPort, (data: Buffer, programHostPort: string) => {}, opts)
-        const socketsToRemote = await this.strategy.createSocketToRemote(id, (data: Buffer, remoteHostPort: string) => {}, opts) 
     }
 
-    private async createDirectedPeer(id: PeerId, programPort: number, opts: Required<AbortOptions>){
-        
+    public async connect(opts: Required<AbortOptions>){
+        await Promise.all(this.peersByPeerId.values().map(async (peer) => {
+            if(peer === this.ownPeer) return
+            peer.socketToRemote = await this.strategy.createSocketToRemote(
+                peer.peerId, this.onRemoteData.bind(this, peer), opts
+            )
+        }))
+    }
 
-        log('creating internal socket for peer %p', id)
+    private onClientData = (peer: PeerData, data: Buffer) => {
+        //console_log('onClientData')
 
-        const peer: PeerData = {
-            peerId: id,
-            socketToRemote: this.node.peerId.equals(id) ? undefined! : await this.strategy.createSocketToRemote(id, (data: Buffer, remoteHostPort: string) => {
-                log.trace('external socket: redirecting pkt from %s through %s to %s', remoteHostPort, peer.socketToProgram.sourceHostPort, peer.socketToProgram.targetHostPort)
-                peer.socketToProgram.send(data)
-            }, opts),
-            socketToProgram: await this.createSocketToProgram(programHost, programPort, (data: Buffer, programHostPort: string) => {
-                log.trace('internal socket: redirecting pkt from %s through %s to %s', programHostPort, peer.socketToRemote.sourceHostPort, peer.socketToRemote.targetHostPort)
-                peer.socketToRemote.send(data)
-            }, opts)
+        const time = Date.now()
+        const wrapped = Buffer.from(Wrapped.encode({ time, data }))
+        for(const peer of this.peersByPeerId.values()){
+            if(peer === this.ownPeer){
+                this.onRemoteDataUnwrapped(peer, time, data)
+            } else {
+                peer.socketToRemote.send(wrapped)
+            }
         }
-        //openSockets.add(peer.socketToProgram)
-
-        log('created internal socket for peer %p at %s', peer.peerId, peer.socketToProgram.sourceHostPort)
-
-        this.peersByPeerId.set(peer.peerId.toString(), peer)
-
-        opts.signal.throwIfAborted()
-        
-        return peer
     }
+
+    private onRemoteData = (peer: PeerData, data: Buffer) => {
+        //console_log('onRemoteData')
+
+        const unwrapped = Wrapped.decode(data)
+        const unwrapped_data = Buffer.from(unwrapped.data)
+        this.onRemoteDataUnwrapped(peer, unwrapped.time, unwrapped_data)
+    }
+
+    private onRemoteDataUnwrapped = (peer: PeerData, time: number, data: Buffer) => {
+        //console_log('onRemoteDataUnwrapped')
+
+        const socket = peer.socketToProgram
+        this.scheduler.enqueue(time + INPUT_DELAY, socketSend, socket, data)
+    }
+
+    private onServerData = (peer: PeerData, data: Buffer) => {
+        //console_log('onServerData')
+
+        if(peer === this.ownPeer){
+            this.socketToClient!.send(data)
+        }
+    }
+
+    public getClientPort(){
+        return this.socketToClient?.port
+    }
+
+    public stop(){
+        this.scheduler.stop()
+        this.closeSockets()
+        this.socketToClient = null
+        this.ownPeer = null
+    }
+}
+
+function socketSend(socket: SocketToProgram, data: Buffer){
+    //console_log('socketSend')
+
+    socket.send(data)
 }
