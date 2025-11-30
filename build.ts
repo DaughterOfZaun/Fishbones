@@ -74,6 +74,9 @@ if(process.argv.includes('bun')){
         await $`mv node_modules node_modules_linux_npm`
         await $`mv node_modules_win_npm node_modules`
     }
+    if(process.argv.includes('install')){
+        await $`bun install --linker hoisted`
+    }
     if(process.argv.includes('patch-modules')){
         await patch_npm_modules()
     }
@@ -121,7 +124,8 @@ async function build_godot_exe(){
     await $`/home/user/Programs/Godot/Godot_v4.5-stable_linux.x86_64 \
     --export-${{ raw: release }} ${preset} ${path.join('..', OUTDIR, OUTFILE)} \
     --path ./remote-ui \
-    --headless`
+    --headless\
+    --quiet`
 }
 
 async function build_godot_pck(){

@@ -216,7 +216,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     private async getPeerInfo(player: GamePlayer, opts: Required<AbortOptions>){
         const peerId = player.peerId
         const { peerStore } = this.node.components
-        if(peerId && !peerId.equals(this.node.peerId) && this.features.isHalfPingEnabled){
+        if(peerId /*&& !peerId.equals(this.node.peerId)*/ && this.features.isHalfPingEnabled){
             const { multiaddrs } = await peerStore.getInfo(peerId, opts)
             return {
                 publicKey: publicKeyToProtobuf(peerId.publicKey!),
@@ -320,6 +320,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         this.proxyClientServer?.stop()
         this.proxyClientServer = undefined
 
+        if(this.node.peerId.equals(this.ownerId))
         this.broadcast(
             {
                 switchStateRequest: State.STOPPED,
@@ -364,14 +365,16 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 if(this.features.isHalfPingEnabled){
                     const gameInfo = this.getGameInfo()
                     try {
+                        const players = this.getPlayers()
+                        const peerIds = players.filter(p => !!p.peerId).map(p => p.peerId!)
+                        this.proxyClientServer = new ClientServerProxy(this.node)
+                        await this.proxyClientServer.start(peerIds, opts)
+
                         //let proc: Awaited<ReturnType<typeof launchServer>>
                         const proc = await launchServer(gameInfo, opts)
                         proc.once('exit', this.onServerExit)
 
-                        const players = this.getPlayers()
-                        const peerIds = players.filter(p => !!p.peerId).map(p => p.peerId!)
-                        this.proxyClientServer = new ClientServerProxy(this.node)
-                        await this.proxyClientServer.start(proc.port, peerIds, opts)
+                        this.proxyClientServer.afterStart(proc.port)
 
                         this.set('serverStarted', true)
 
@@ -408,7 +411,6 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         let port = 0
 
         if(this.features.isHalfPingEnabled){
-            await this.proxyClientServer!.connect(opts)
             port = this.proxyClientServer!.getClientPort()!
         } else {
             //TODO: try-catch
@@ -474,8 +476,29 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             
             const players = this.getPlayers()
             if(players.every(p => p.isBot || !!p.lock.value)){
-                for(const player of players)
-                    player.fillUnset()
+                const notification: LobbyNotificationMessage = {
+                    peersRequests: []
+                }
+                for(const player of players){
+                    let reqIsEmpty = true
+                    const pickRequest: PickRequest = {}
+                    for(const prop of ['champion', 'spell1', 'spell2'] as const){
+                        if(player[prop].value === undefined){
+                            player[prop].setRandom()
+                            pickRequest[prop] = player[prop].encode()
+                            reqIsEmpty = false
+                        }
+                    }
+                    if(!reqIsEmpty){
+                        notification.peersRequests.push({
+                            playerId: player.id,
+                            pickRequest: pickRequest,
+                        })
+                    }
+                }
+                if(notification.peersRequests.length){
+                    this.broadcast(notification, players)
+                }
                 this.launch()
                 return
             }

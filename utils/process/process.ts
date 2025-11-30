@@ -283,7 +283,7 @@ export function spawn(cmd: string, args: readonly string[], opts: SpawnOptions){
         function onData(src: string, chunk: string){
             chunk = chunk.trim()
             if(chunk) //TODO: [#e69e0c 0B/20MiB(0%) CN:1 SD:0 DL:0B]
-                logger.log(opts.logPrefix, src, chunk)
+                logger.log(opts.logPrefix, `[${proc.pid}]`, src, chunk)
         }
     }
 

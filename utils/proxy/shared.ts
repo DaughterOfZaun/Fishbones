@@ -1,4 +1,4 @@
-import type { Libp2p } from "libp2p"
+import type { LibP2PNode } from "../../node/node"
 import type { PeerId, AbortOptions } from "@libp2p/interface"
 //import { registerShutdownHandler } from "./data-process"
 
@@ -22,13 +22,13 @@ registerShutdownHandler(() => {
 export enum Role {
     Unset = 0,
     Client = 1, Server = 2,
-    ClientServer = Client & Server
+    ClientServer = Client | Server
 }
 export abstract class ConnectionStrategy {
     
     protected readonly role: Role
-    protected readonly node: Libp2p
-    public constructor(node: Libp2p, role: Role){
+    protected readonly node: LibP2PNode
+    public constructor(node: LibP2PNode, role: Role){
         this.node = node
         this.role = role
     }

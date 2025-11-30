@@ -1,15 +1,20 @@
-import type { Libp2p } from "libp2p"
+import type { LibP2PNode } from "../../node/node"
 import type { PeerId, AbortOptions } from "@libp2p/interface"
-import { logger } from "@libp2p/logger"
+//import { Protocol, ProtocolHeader, Reader, Version } from "./enet"
 import { UseExistingLibP2PConnection } from "./strategy-libp2p"
-import { Role, type AnySocket, type ConnectionStrategy } from "./shared"
+import { Role, type AnySocket } from "./shared"
 import { Wrapped } from '../../message/proxy'
 import Queue from 'yocto-queue'
 
 //import { LOCALHOST } from "./constants"
 const LOCALHOST = "127.0.0.1"
 
+import { logger } from "@libp2p/logger"
 const log = logger('launcher:proxy')
+
+//import { logger as ourLogger } from "../log"
+//const ourLog = () => ourLogger.log.bind(logger, 'PROXY')
+const ourLog = (...args: Parameters<typeof console['log']>) => console.log(...args)
 
 type u = undefined
 type PeerIdStr = string
@@ -20,16 +25,19 @@ interface PeerData {
     socketToProgram: SocketToProgram,
 }
 
-type SocketToProgram = AnySocket & { port: number }
+type SocketToProgram = AnySocket & {
+    setPort(port: number): void
+    port: number
+}
 
 class Proxy {
     
-    protected readonly strategy: ConnectionStrategy
+    protected readonly strategy: UseExistingLibP2PConnection
     protected readonly peersByPeerId = new Map<PeerIdStr, PeerData>()
 
     protected readonly role: Role
-    protected readonly node: Libp2p
-    protected constructor(node: Libp2p, role: Role){
+    protected readonly node: LibP2PNode
+    protected constructor(node: LibP2PNode, role: Role){
         this.strategy = new UseExistingLibP2PConnection(node, role)
         this.node = node
         this.role = role
@@ -98,6 +106,7 @@ class Proxy {
             get sourceHostPort(){ return `${socket.hostname}:${socket.port}` },
             get targetHostPort(){ return `${programHostLastUsed}:${programPortLastUsed}` },
             get connected(){ return !!(programHostLastUsed && programPortLastUsed) },
+            setPort(port: number){ programPortLastUsed = port },
             send(data: Buffer): boolean {
                 if(socket.closed){
                     log.error('attempting to send data through a closed socket')
@@ -121,7 +130,7 @@ class Proxy {
 
 export class ProxyServer extends Proxy {
 
-    public constructor(node: Libp2p){
+    public constructor(node: LibP2PNode){
         super(node, Role.Server)
     }
 
@@ -144,7 +153,7 @@ export class ProxyServer extends Proxy {
 
 export class ProxyClient extends Proxy {
     
-    public constructor(node: Libp2p){
+    public constructor(node: LibP2PNode){
         super(node, Role.Client)
     }
 
@@ -199,6 +208,7 @@ class Scheduler {
 
     public stop(){
         clearInterval(this.interval)
+        this.interval = undefined
         this.queue.clear()
     }
 
@@ -211,7 +221,7 @@ class Scheduler {
         }
     }
     private onInterval = () => {
-        while(true){
+        while(this.interval){
             const task = this.queue.peek()
             if(!task){
                 clearInterval(this.interval)
@@ -236,13 +246,12 @@ export class ClientServerProxy extends Proxy {
     private socketToClient: SocketToProgram | null = null
     private ownPeer: PeerData | null = null
 
-    public constructor(node: Libp2p){
+    public constructor(node: LibP2PNode){
         super(node, Role.ClientServer)
     }
 
-    public async start(serverPort: number, peerIds: PeerId[], opts: Required<AbortOptions>){
-        const programHost: string = LOCALHOST
-        const clientPort = 0
+    public async start(peerIds: PeerId[], opts: Required<AbortOptions>){
+        ourLog(this.node.peerId.toString(), 'start', JSON.stringify(peerIds.map(id => id.toString()), null, 4))
 
         for(const peerId of peerIds){
             const peer: PeerData = {
@@ -254,35 +263,56 @@ export class ClientServerProxy extends Proxy {
         }
 
         this.ownPeer = this.peersByPeerId.get(this.node.peerId.toString())!
-        console.assert(this.ownPeer)
+        console.assert(this.ownPeer, 'typeof this.ownPeer != "object"')
 
+        const clientPort = 0
+        const serverPort = 0
+        
         await Promise.all([
-            this.strategy.createMainSocketToRemote(opts),
+            
             (async () => {
                 const peer = this.ownPeer!
                 this.socketToClient = await this.createSocketToProgram(
-                    programHost, clientPort, this.onClientData.bind(this, peer), opts
+                    LOCALHOST, clientPort, this.onClientData.bind(this, peer), opts
                 )
             })(),
+            
             ...this.peersByPeerId.values().map(async (peer) => {
                 peer.socketToProgram = await this.createSocketToProgram(
-                    programHost, serverPort, this.onServerData.bind(this, peer), opts
+                    LOCALHOST, serverPort, this.onServerData.bind(this, peer), opts
+                )
+            }),
+            
+            this.strategy.createMainSocketToRemote(opts),
+
+            ...this.peersByPeerId.values().filter(peer => peer != this.ownPeer).map(async (peer) => {
+                peer.socketToRemote = await this.strategy.createSocketToRemote(
+                    peer.peerId, this.onRemoteData.bind(this, peer), opts
                 )
             }),
         ])
+
+        await Bun.sleep(1000) //HACK: By this time the main socket should be created on all machines.
+        await this.strategy.connectSockets(opts)
     }
 
-    public async connect(opts: Required<AbortOptions>){
-        await Promise.all(this.peersByPeerId.values().map(async (peer) => {
-            if(peer === this.ownPeer) return
-            peer.socketToRemote = await this.strategy.createSocketToRemote(
-                peer.peerId, this.onRemoteData.bind(this, peer), opts
-            )
-        }))
+    public afterStart(serverPort: number){
+        ourLog(this.node.peerId.toString().slice(-8), 'afterStart', serverPort)
+
+        for(const peer of this.peersByPeerId.values()){
+            peer.socketToProgram.setPort(serverPort)
+        }
     }
 
-    private onClientData = (peer: PeerData, data: Buffer) => {
-        //console_log('onClientData')
+    //// eslint-disable-next-line @typescript-eslint/no-unused-vars
+    private onClientData = (peer: PeerData, data: Buffer, hostport: string) => {
+        ourLog(this.node.peerId.toString().slice(-8), 'onClientData', Bun.hash(data).toString(36), 'from', peer.peerId.toString().slice(-8) + '/' + hostport)
+
+        //const reader = new Reader(data)
+        //const version = Version.Seasson12
+        //const header = ProtocolHeader.create(reader, version)
+        //const body = header ? Protocol.create(reader, version) : null
+        //console.log({ header, body })
 
         const time = Date.now()
         const wrapped = Buffer.from(Wrapped.encode({ time, data }))
@@ -290,31 +320,37 @@ export class ClientServerProxy extends Proxy {
             if(peer === this.ownPeer){
                 this.onRemoteDataUnwrapped(peer, time, data)
             } else {
+                ourLog(this.node.peerId.toString().slice(-8), 'Sending', Bun.hash(data).toString(36), 'to', peer.socketToRemote.targetHostPort)
                 peer.socketToRemote.send(wrapped)
             }
         }
     }
 
-    private onRemoteData = (peer: PeerData, data: Buffer) => {
-        //console_log('onRemoteData')
-
+    //// eslint-disable-next-line @typescript-eslint/no-unused-vars
+    private onRemoteData = (peer: PeerData, data: Buffer, hostport: string) => {
         const unwrapped = Wrapped.decode(data)
         const unwrapped_data = Buffer.from(unwrapped.data)
+
+        ourLog(this.node.peerId.toString().slice(-8), 'onRemoteData', Bun.hash(unwrapped_data).toString(36), 'from', peer.peerId.toString().slice(-8) + '/' + hostport)
+
         this.onRemoteDataUnwrapped(peer, unwrapped.time, unwrapped_data)
     }
 
     private onRemoteDataUnwrapped = (peer: PeerData, time: number, data: Buffer) => {
-        //console_log('onRemoteDataUnwrapped')
-
         const socket = peer.socketToProgram
-        this.scheduler.enqueue(time + INPUT_DELAY, socketSend, socket, data)
+        ourLog(this.node.peerId.toString().slice(-8), 'Delaying', Bun.hash(data).toString(36), 'to', socket.targetHostPort)
+        this.scheduler.enqueue(time + INPUT_DELAY, socketSend, this.node, socket, data)
+        //socketSend(node, socket, data)
     }
 
-    private onServerData = (peer: PeerData, data: Buffer) => {
-        //console_log('onServerData')
+    //// eslint-disable-next-line @typescript-eslint/no-unused-vars
+    private onServerData = (peer: PeerData, data: Buffer, hostport: string) => {
+        ourLog(this.node.peerId.toString().slice(-8), 'onServerData', Bun.hash(data).toString(36), 'from', peer.peerId.toString().slice(-8) + '/' + hostport)
 
         if(peer === this.ownPeer){
-            this.socketToClient!.send(data)
+            const socket = this.socketToClient!
+            ourLog(this.node.peerId.toString().slice(-8), 'Sending', Bun.hash(data).toString(36), 'to', socket.targetHostPort)
+            socket.send(data)
         }
     }
 
@@ -330,8 +366,8 @@ export class ClientServerProxy extends Proxy {
     }
 }
 
-function socketSend(socket: SocketToProgram, data: Buffer){
-    //console_log('socketSend')
+function socketSend(this_node: LibP2PNode, socket: SocketToProgram, data: Buffer){
+    ourLog(this_node.peerId.toString().slice(-8), 'Sending', Bun.hash(data).toString(36), 'to', socket.targetHostPort)
 
     socket.send(data)
 }
