@@ -72,9 +72,9 @@ export class Writer {
         private readonly buffer: Buffer
     ){}
 
-    public writeByte(value: number){ const result = this.buffer.writeUInt8(value, this.position); this.position += 1; return result }
-    public writeUInt16(value: number){ const result = this.buffer.writeUInt16BE(value, this.position); this.position += 2; return result }
-    public writeUInt32(value: number){ const result = this.buffer.writeUInt32BE(value, this.position); this.position += 4; return result }
+    public writeByte(value: number){ const result = this.buffer.writeUInt8(value & 0xFF, this.position); this.position += 1; return result }
+    public writeUInt16(value: number){ const result = this.buffer.writeUInt16BE(value & 0xFFFF, this.position); this.position += 2; return result }
+    public writeUInt32(value: number){ const result = this.buffer.writeUInt32BE(value & 0xFFFFFFFF, this.position); this.position += 4; return result }
     public writeBytes(data: Buffer){
         const result = this.buffer.set(data, this.position)
         this.position += data.length
@@ -93,6 +93,7 @@ export class ProtocolHeader
         const result = new ProtocolHeader()
 
         if(reader.bytesLeft < (version.maxHeaderSizeReceive - 2)){
+            console.log('ERROR: reader.bytesLeft < (version.maxHeaderSizeReceive - 2)')
             return null
         }
 
@@ -118,6 +119,7 @@ export class ProtocolHeader
 
         if(hasSentTime){
             if(reader.bytesLeft < 2){
+                console.log('ERROR: reader.bytesLeft < 2')
                 return null
             }
             result.timeSent = reader.readUInt16()
@@ -161,6 +163,7 @@ export abstract class Protocol
         const BASE_SIZE = 4
 
         if(BASE_SIZE > reader.bytesLeft){
+            console.log('ERROR: BASE_SIZE > reader.bytesLeft')
             return null
         }
 
@@ -186,6 +189,7 @@ export abstract class Protocol
         }
 
         if(result == null || (result.size - BASE_SIZE) > reader.bytesLeft){
+            console.log('ERROR: result == null || (result.size - BASE_SIZE) > reader.bytesLeft')
             return null
         }
 

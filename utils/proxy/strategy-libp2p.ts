@@ -44,7 +44,7 @@ class ProxyService implements Startable {
     }
     private handler: StreamHandler = this.defaultHandler
     public handle(handler: StreamHandler){
-        console.assert(this.handler === this.defaultHandler, 'this.handler != default')
+        console.assert(this.handler === this.defaultHandler, 'Assertion failed: this.handler != default')
         this.handler = handler
     }
     public unhandle(){
@@ -137,7 +137,7 @@ export class UseExistingLibP2PConnection extends ConnectionStrategy {
         if((this.role & (Role.Client | Role.Server)) != 0){
             const a = this.node.peerId.toString()
             const b = id.toString()
-            console.assert(a.length === b.length, 'a.length != b.length')
+            console.assert(a.length === b.length, 'Assertion failed: a.length != b.length')
             relativeRole = (a > b) ? Role.Client : Role.Server
         }
         if((relativeRole & Role.Client) != 0){
