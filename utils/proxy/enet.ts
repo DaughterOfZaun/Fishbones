@@ -1,5 +1,6 @@
 export enum ProtocolFlag
 {
+    NONE = 0,
     ACKNOWLEDGE = 1 << 7,
     UNSEQUENCED = 1 << 6,
 }
@@ -12,7 +13,7 @@ export enum ProtocolCommand
     VERIFY_CONNECT = 0x03,
     DISCONNECT = 0x04,
     PING = 0x05,
-    SEND_SEQUENCED = 0x06,
+    SEND_RELIABLE = 0x06,
     SEND_UNRELIABLE = 0x07,
     SEND_FRAGMENT = 0x08,
     SEND_UNSEQUENCED = 0x09,
@@ -31,11 +32,11 @@ export class Version
     public get maxHeaderSizeSend(){ return this.checksumSizeSend + this.maxHeaderSizeBase }
     public get maxHeaderSizeReceive(){ return this.checksumSizeReceive + this.maxHeaderSizeBase }
 
-    public static Seasson12 = new Version(0x7FFF, 0, 0, 8, 1000, 10000)
-    public static Seasson34 = new Version(0x7F, 0, 0, 4, 0xFFFFFFFF, 0xFFFFFFFF)
+    public static Season12 = new Version(0x7FFF, 0, 0, 8, 1000, 10000)
+    public static Season34 = new Version(0x7F, 0, 0, 4, 0xFFFFFFFF, 0xFFFFFFFF)
     public static Patch420 = new Version(0x7F, 4, 4, 4, 0xFFFFFFFF, 0xFFFFFFFF)
-    public static Seasson8_Client = new Version(0x7F, 8, 0, 4, 0xFFFFFFFF, 0xFFFFFFFF)
-    public static Seasson8_Server = new Version(0x7F, 0, 8, 4, 0xFFFFFFFF, 0xFFFFFFFF)
+    public static Season8_Client = new Version(0x7F, 8, 0, 4, 0xFFFFFFFF, 0xFFFFFFFF)
+    public static Season8_Server = new Version(0x7F, 0, 8, 4, 0xFFFFFFFF, 0xFFFFFFFF)
 
     private constructor(maxPeerID: number, checksumSizeSend: number, checksumSizeReceive: number, maxHeaderSizeBase: number, bandwidthThrottleInterval: number, packetLossInterval: number)
     {
@@ -58,6 +59,11 @@ export class Reader {
     public readByte(){ const result = this.buffer.readUInt8(this.position); this.position += 1; return result }
     public readUInt16(){ const result = this.buffer.readUInt16BE(this.position); this.position += 2; return result }
     public readUInt32(){ const result = this.buffer.readUInt32BE(this.position); this.position += 4; return result }
+    public readBytes(count: number){
+        const result = this.buffer.subarray(this.position, this.position + count)
+        this.position += count
+        return result
+    }
 }
 
 export class Writer {
@@ -69,6 +75,11 @@ export class Writer {
     public writeByte(value: number){ const result = this.buffer.writeUInt8(value, this.position); this.position += 1; return result }
     public writeUInt16(value: number){ const result = this.buffer.writeUInt16BE(value, this.position); this.position += 2; return result }
     public writeUInt32(value: number){ const result = this.buffer.writeUInt32BE(value, this.position); this.position += 4; return result }
+    public writeBytes(data: Buffer){
+        const result = this.buffer.set(data, this.position)
+        this.position += data.length
+        return result
+    }
 }
 
 export class ProtocolHeader
@@ -81,7 +92,7 @@ export class ProtocolHeader
     {
         const result = new ProtocolHeader()
 
-        if ((version.maxHeaderSizeReceive - 2) > reader.bytesLeft){
+        if(reader.bytesLeft < (version.maxHeaderSizeReceive - 2)){
             return null
         }
 
@@ -89,24 +100,24 @@ export class ProtocolHeader
 
         let hasSentTime = false
 
-        if (version.maxPeerID > 0x7F){
+        if(version.maxPeerID > 0x7F){
             result.sessionID = reader.readUInt32()
             const peerID = reader.readUInt16()
-            if ((peerID & 0x8000) != 0){
+            if((peerID & 0x8000) != 0){
                 hasSentTime = true
             }
             result.peerID = peerID & 0x7FFF
         } else {
             result.sessionID = reader.readByte()
             const peerID = reader.readByte()
-            if ((peerID & 0x80) != 0){
+            if((peerID & 0x80) != 0){
                 hasSentTime = true
             }
             result.peerID = peerID & 0x7F
         }
 
-        if (hasSentTime){
-            if (reader.bytesLeft < 2){
+        if(hasSentTime){
+            if(reader.bytesLeft < 2){
                 return null
             }
             result.timeSent = reader.readUInt16()
@@ -118,7 +129,7 @@ export class ProtocolHeader
     public write(writer: Writer, version: Version){
         writer.position += version.checksumSizeSend
 
-        if (version.maxPeerID > 0x7F){
+        if(version.maxPeerID > 0x7F){
             writer.writeUInt32(this.sessionID)
             const peerID = this.peerID | (this.timeSent != null ? 0x8000 : 0)
             writer.writeUInt16(peerID)
@@ -128,7 +139,7 @@ export class ProtocolHeader
             writer.writeByte(peerID)
         }
 
-        if (this.timeSent != null){
+        if(this.timeSent != null){
             writer.writeUInt16(this.timeSent)
         }
     }
@@ -145,13 +156,11 @@ export abstract class Protocol
     protected abstract readInternal(reader: Reader, version: Version): void
     protected abstract writeInternal(writer: Writer, version: Version): void
 
-    protected constructor(){}
-
     public static create(reader: Reader, version: Version): Protocol | null
     {
         const BASE_SIZE = 4
 
-        if (BASE_SIZE > reader.bytesLeft){
+        if(BASE_SIZE > reader.bytesLeft){
             return null
         }
 
@@ -160,7 +169,7 @@ export abstract class Protocol
         const reliableSequenceNumber = reader.readUInt16()
 
         let result: Protocol | null
-        switch ((commandFlags & 0x0F) as ProtocolCommand){
+        switch((commandFlags & 0x0F) as ProtocolCommand){
             case ProtocolCommand.NONE: result = null; break
             case ProtocolCommand.ACKNOWLEDGE: result = new Acknowledge(); break
             case ProtocolCommand.CONNECT: result = new Connect(); break
@@ -168,7 +177,7 @@ export abstract class Protocol
             case ProtocolCommand.DISCONNECT: result = new Disconnect(); break
             case ProtocolCommand.PING: result = new Ping(); break
             case ProtocolCommand.SEND_FRAGMENT: result = new SendFragment(); break
-            case ProtocolCommand.SEND_SEQUENCED: result = new SendSequenced(); break
+            case ProtocolCommand.SEND_RELIABLE: result = new SendReliable(); break
             case ProtocolCommand.SEND_UNRELIABLE: result = new SendUnreliable(); break
             case ProtocolCommand.SEND_UNSEQUENCED: result = new SendUnsequenced(); break
             case ProtocolCommand.BANDWIDTH_LIMIT: result = new BandwidthLimit(); break
@@ -176,7 +185,7 @@ export abstract class Protocol
             default: result = null; break
         }
 
-        if (result == null || (result.size - BASE_SIZE) > reader.bytesLeft){
+        if(result == null || (result.size - BASE_SIZE) > reader.bytesLeft){
             return null
         }
 
@@ -232,7 +241,7 @@ export class Connect extends Protocol
     public override readonly command = ProtocolCommand.CONNECT
 
     protected override readInternal(reader: Reader, version: Version){
-        if (version.maxPeerID > 0x7F){
+        if(version.maxPeerID > 0x7F){
             this.outgoingPeerID = reader.readUInt16()
         } else {
             this.outgoingPeerID = reader.readByte()
@@ -248,7 +257,7 @@ export class Connect extends Protocol
         this.packetThrottleAcceleration = reader.readUInt32()
         this.packetThrottleDeceleration = reader.readUInt32()
 
-        if (version.maxPeerID > 0x7F){
+        if(version.maxPeerID > 0x7F){
             this.sessionID = reader.readUInt32()
         } else {
             this.sessionID = reader.readByte()
@@ -257,7 +266,7 @@ export class Connect extends Protocol
     }
 
     protected override writeInternal(writer: Writer, version: Version){
-        if (version.maxPeerID > 0x7F){
+        if(version.maxPeerID > 0x7F){
             writer.writeUInt16(this.outgoingPeerID)
         } else {
             writer.writeByte(this.outgoingPeerID)
@@ -273,7 +282,7 @@ export class Connect extends Protocol
         writer.writeUInt32(this.packetThrottleAcceleration)
         writer.writeUInt32(this.packetThrottleDeceleration)
 
-        if (version.maxPeerID > 0x7F){
+        if(version.maxPeerID > 0x7F){
             writer.writeUInt32(this.sessionID)
         } else {
             writer.writeByte(this.sessionID)
@@ -298,7 +307,7 @@ export class VerifyConnect extends Protocol
     public override readonly command = ProtocolCommand.VERIFY_CONNECT
 
     protected override readInternal(reader: Reader, version: Version){
-        if (version.maxPeerID > 0x7F){
+        if(version.maxPeerID > 0x7F){
             this.outgoingPeerID = reader.readUInt16()
         } else {
             this.outgoingPeerID = reader.readByte()
@@ -315,7 +324,7 @@ export class VerifyConnect extends Protocol
     }
 
     protected override writeInternal(writer: Writer, version: Version){
-        if (version.maxPeerID > 0x7F){
+        if(version.maxPeerID > 0x7F){
             writer.writeUInt16(this.outgoingPeerID)
         } else {
             writer.writeByte(this.outgoingPeerID)
@@ -425,45 +434,25 @@ export abstract class Send extends Protocol
     public abstract dataLength: number
 }
 
-export class SendSequenced extends Send
-{
-    public override dataLength!: number
-
-    public override readonly size = 4 + 2
-    public override readonly command = ProtocolCommand.SEND_SEQUENCED
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    protected override readInternal(reader: Reader, version: Version){
-        this.dataLength = reader.readUInt16()
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    protected override writeInternal(writer: Writer, version: Version){
-        writer.writeUInt16(this.dataLength)
-    }
-}
-
-//TODO: Merge SendReliable with SendSequenced.
-//// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export class SendReliable extends Send
 {
     public override dataLength!: number
 
     public override readonly size = 4 + 2
-    public override readonly command = ProtocolCommand.SEND_SEQUENCED
+    public override readonly command = ProtocolCommand.SEND_RELIABLE
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     protected override readInternal(reader: Reader, version: Version){
         this.dataLength = reader.readUInt16()
     }
-    
+
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     protected override writeInternal(writer: Writer, version: Version){
         writer.writeUInt16(this.dataLength)
     }
 }
 
-export class SendUnreliable extends Protocol
+export class SendUnreliable extends Send
 {
     public unreliableSequenceNumber!: number
     public dataLength!: number
@@ -485,7 +474,7 @@ export class SendUnreliable extends Protocol
 }
 
 //TODO: Merge SendUnsequenced with SendUnreliable.
-export class SendUnsequenced extends Protocol
+export class SendUnsequenced extends Send
 {
     public unsequencedGroup!: number
     public dataLength!: number
@@ -506,7 +495,7 @@ export class SendUnsequenced extends Protocol
     }
 }
 
-export class SendFragment extends Protocol
+export class SendFragment extends Send
 {
     public startSequenceNumber!: number
     public dataLength!: number
