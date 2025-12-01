@@ -10,6 +10,17 @@ class Channel {
     ){}
 }
 
+type Packet = {
+    header: ProtocolHeader
+    body: Protocol
+    data: Buffer | null
+}
+
+export type WrappedPacket = {
+    channelID: number
+    data: Buffer
+}
+
 function assign<A extends object>(a: A, b: Partial<{ [ K in keyof A ]: A[K] }>){
     return Object.assign(a, b)
 }
@@ -31,14 +42,14 @@ export class Peer {
     }
 
     constructor(
-        public readonly name: string,
+        private readonly name: string,
     ){}
 
     public onsend!: (data: Buffer) => void
     //public ondata!: (data: Buffer) => void
 
-    private send(header: ProtocolHeader, body: Protocol, data?: Buffer){
-        const buffer = this.writePacket(header, body, data)
+    private send(packets: Packet[]){
+        const buffer = this.writePackets(packets)
         return this.onsend(buffer)
     }
 
@@ -72,18 +83,29 @@ export class Peer {
             //size: 40,
         })
 
-        this.send(header, body)
+        const packet = { header, body, data: null }
+        this.send([ packet ])
     }
 
-    public receive(data: Buffer){
-        
-        const request = this.readPacket(data)
-
-        if(!request){
-            console.log('ERROR: !request')
-            return null
+    public receivePackets(data: Buffer): WrappedPacket[] {
+        const requests = this.readPackets(data)
+        const responses: Packet[] = []
+        for(const request of requests){
+            this.appendResponse(responses, request)
         }
+        
+        this.send(responses)
 
+        return requests
+            .filter(packet => packet.data)
+            .map((packet) => ({
+                channelID: packet.body.channelID,
+                data: packet.data!,
+            }))
+    }
+
+    private appendResponse(responses: Packet[] = [], request: Packet): void {
+        
         if(request.body instanceof Connect){
 
             this.sessionId = request.body.sessionID //TODO:
@@ -114,43 +136,55 @@ export class Peer {
                 //size: 36,
             })
 
-            this.send(header, body)
+            const response = { header, body, data: null }
+            responses.push(response)
+
+            return
+        }
         
-        } else {
-        
-            if(request.body instanceof VerifyConnect){
-                this.sessionId = request.header.sessionID //TODO:
-                this.outgoingId = request.body.outgoingPeerID
-            }
-
-            if((request.body.flags & ProtocolFlag.ACKNOWLEDGE) != 0){
-                
-                console.assert(request.header.timeSent !== null, 'Assertion failed: request.header.timeSent is null')
-
-                const channel = this.channels_get(request.body.channelID)
-                const header = assign(new ProtocolHeader(), {
-                    sessionID: this.sessionId,
-                    peerID: this.outgoingId,
-                    timeSent: null,
-                })
-                const body = assign(new Acknowledge(), {
-                    flags: ProtocolFlag.NONE,
-                    channelID: channel.id,
-                    reliableSequenceNumber: channel.reliableSequenceNumber,
-                    receivedReliableSequenceNumber: request.body.reliableSequenceNumber,
-                    receivedSentTime: request.header.timeSent!,
-                    //command: 1,
-                    //size: 8,
-                })
-
-                this.send(header, body)
-            }
+        if(request.body instanceof VerifyConnect){
+            this.sessionId = request.header.sessionID //TODO:
+            this.outgoingId = request.body.outgoingPeerID
         }
 
-        return request
+        if((request.body.flags & ProtocolFlag.ACKNOWLEDGE) != 0){
+            
+            console.assert(request.header.timeSent !== null, 'Assertion failed: request.header.timeSent is null')
+
+            const channel = this.channels_get(request.body.channelID)
+            const header = assign(new ProtocolHeader(), {
+                sessionID: this.sessionId,
+                peerID: this.outgoingId,
+                timeSent: null,
+            })
+            const body = assign(new Acknowledge(), {
+                flags: ProtocolFlag.NONE,
+                channelID: channel.id,
+                reliableSequenceNumber: channel.reliableSequenceNumber,
+                receivedReliableSequenceNumber: request.body.reliableSequenceNumber,
+                receivedSentTime: request.header.timeSent!,
+                //command: 1,
+                //size: 8,
+            })
+
+            const response = { header, body, data: null }
+            responses.push(response)
+        }
     }
 
-    public sendUnreliable(channelID: number, data: Buffer){
+    public sendUnreliable(wrappedPackets: WrappedPacket[]){
+        const packets: Packet[] = []
+        for(const wrappedPacket of wrappedPackets){
+            const packet = this.unwrapUnreliablePacket(wrappedPacket)
+            packets.push(packet)
+        }
+        const buffer = this.writePackets(packets)
+        return this.onsend(buffer)
+    }
+
+    private unwrapUnreliablePacket(wrappedPacket: WrappedPacket): Packet {
+        const { channelID, data } = wrappedPacket
+
         const channel = this.channels_get(channelID)
         const reliableSequenceNumber = channel.reliableSequenceNumber
         const unreliableSequenceNumber = ++channel.unreliableSequenceNumber
@@ -168,11 +202,12 @@ export class Peer {
             //command: 7,
             //size: 8,
         })
-        const buffer = this.writePacket(header, body, data)
-        return this.onsend(buffer)
+        return { header, body, data }
     }
 
-    public sendReliable(channelID: number, data: Buffer){
+    private unwrapReliablePacket(wrappedPacket: WrappedPacket){
+        const { channelID, data } = wrappedPacket
+        
         const channel = this.channels_get(channelID)
         const timeSent = Date.now() - this.startTime
         const reliableSequenceNumber = ++channel.reliableSequenceNumber
@@ -189,34 +224,70 @@ export class Peer {
             //command: 6,
             //size: 6,
         })
-        const buffer = this.writePacket(header, body, data)
-        return this.onsend(buffer)
+        return { header, body, data }
     }
 
-    readPacket(buffer: Buffer){
+    private readPackets(buffer: Buffer): Packet[] {
         const reader = new Reader(buffer)
+
+        const packets: Packet[] = []
+        while(true){
+            const packet = this.readPacket(reader)
+            if(packet != null){
+                packets.push(packet)
+                if(reader.position === buffer.length){
+                    break
+                }
+            } else {
+                console.log('ERROR: packet == null')
+                break
+            }
+        }
+
+        //console.assert(reader.position === buffer.length, `Assertion failed: reader.position (${reader.position}) != buffer.length (${buffer.length})`)
+
+        return packets
+    }
+
+    private readPacket(reader: Reader): Packet | null {
         const header = ProtocolHeader.create(reader, version)
         const body = header ? Protocol.create(reader, version) : null
         const data = (body instanceof Send) ? reader.readBytes(body.dataLength) : null
 
         if(!header || !body){
             console.log('ERROR: !header || !body')
-            return
+            return null
         }
         
         console.assert(!(body instanceof SendFragment), 'Assertion failed: requestBody instanceof SendFragment')
 
-        const message = { header, body, data }
+        const packet = { header, body, data }
         if(body instanceof Ping) console.log(this.name, 'read', 'ping')
         else if(body instanceof Acknowledge) console.log(this.name, 'read', 'ack')
-        else console.log(this.name, 'read', message)
+        else console.log(this.name, 'read', packet)
 
-        console.assert(reader.position === buffer.length, `Assertion failed: reader.position (${reader.position}) != buffer.length (${buffer.length})`)
-
-        return message
+        return packet
     }
 
-    writePacket(header: ProtocolHeader, body: Protocol, data: Buffer | null = null){
+    //private readonly buffer = Buffer.alloc(32 * 1024)
+    private writePackets(packets: Packet[]): Buffer {
+        const bufferLength = packets.reduce((a, packet) => a + this.calculatePacketSize(packet), 0)
+        const this_buffer = Buffer.alloc(bufferLength)
+        console.assert(bufferLength <= this_buffer.length, 'Assertion failed: bufferLength > this.buffer.length')
+
+        const writer = new Writer(this_buffer)
+        for(const packet of packets){
+            this.writePacket(writer, packet)
+        }
+
+        console.assert(writer.position === bufferLength, 'Assertion failed: writer.position != bufferLength')
+        //return this_buffer.subarray(0, writer.position)
+        return this_buffer
+    }
+
+    private calculatePacketSize(packet: Packet){
+        const { header, body, data } = packet
+
         let header_size = version.maxHeaderSizeSend
         if(header.timeSent === null) header_size -= 2
 
@@ -224,8 +295,12 @@ export class Peer {
         const dataLengthInPacket = (body instanceof Send) ? body.dataLength : 0
         console.assert(dataLength === dataLengthInPacket, `Assertion failed: dataLength (${dataLength}) != dataLengthInPacket (${dataLengthInPacket})`)
 
-        const buffer = Buffer.alloc(header_size + body.size + dataLength)
-        const writer = new Writer(buffer)
+        return header_size + body.size + dataLength
+    }
+
+    private writePacket(writer: Writer, packet: Packet){
+        const { header, body, data } = packet
+
         header.write(writer, version)
         body.write(writer, version)
         if(data) writer.writeBytes(data)
@@ -234,7 +309,5 @@ export class Peer {
         if(body instanceof Ping) console.log(this.name, 'write', 'ping')
         else if(body instanceof Acknowledge) console.log(this.name, 'write', 'ack')
         else console.log(this.name, 'write', message)
-
-        return buffer
     }
 }

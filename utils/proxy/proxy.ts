@@ -4,7 +4,7 @@ import { UseExistingLibP2PConnection } from "./strategy-libp2p"
 import { Role, type AnySocket } from "./shared"
 import { Wrapped } from '../../message/proxy'
 import Queue from 'yocto-queue'
-import { Peer } from "./peer"
+import { Peer, type WrappedPacket } from "./peer"
 
 //import { LOCALHOST } from "./constants"
 const LOCALHOST = "127.0.0.1"
@@ -323,62 +323,47 @@ export class ClientServerProxy extends Proxy {
 
     //// eslint-disable-next-line @typescript-eslint/no-unused-vars
     private onClientData = (peer: PeerData, rawdata: Buffer, hostport: string) => {
-        const time = Date.now()
-        
         ourLog(formatPeer(this.node), 'onClientData', formatData(rawdata), 'from', formatPeer(peer) + '/' + hostport)
 
-        //ourLog(formatPeer(this.node), 'Delaying', formatData(data), 'to', peer.socketToProgram.targetHostPort)        
-        //this.scheduler.enqueue(time + INPUT_DELAY, peerSend, this.node, peer, data)
-        
-        //const message = readPacket(this.peerToClient!.name, data)
-        const message = this.peerToClient!.receive(rawdata)!
-        //if(message && message.data && this.peersByPeerId.size > 1){
-        if(message && message.data){
-            const { data, body: { channelID } } = message
-            //const channelID = message.body.channelID
-            const wrapped = Buffer.from(Wrapped.encode({ time, data, channelID }))
-            for(const peer of this.peersByPeerId.values()){
-                if(peer === this.ownPeer){
-                    //ourLog(formatPeer(this.node), 'Delaying', formatData(data), 'to', peer.socketToProgram.targetHostPort)
-                    //this.scheduler.enqueue(time + INPUT_DELAY, peerSendUnreliable, this.node, peer, data, channelID)
-                    ourLog(formatPeer(this.node), 'Sending', formatData(data), 'to', 'localhost')
-                    this.onRemoteData(peer, wrapped, 'localhost')
-                } else {
-                    ourLog(formatPeer(this.node), 'Sending', formatData(data), 'to', peer.socketToRemote.targetHostPort)
-                    peer.socketToRemote.send(wrapped)
-                }
+        const packets = this.peerToClient!.receivePackets(rawdata)
+        if(packets.length === 0) return
+
+        const wrapped = Buffer.from(Wrapped.encode({ time: Date.now(), packets }))
+        for(const peer of this.peersByPeerId.values()){
+            if(peer === this.ownPeer){
+                ourLog(formatPeer(this.node), 'Sending', formatData(packets[0]!.data), 'to', 'localhost')
+                this.onRemoteData(peer, wrapped, 'localhost')
+            } else {
+                ourLog(formatPeer(this.node), 'Sending', formatData(packets[0]!.data), 'to', peer.socketToRemote.targetHostPort)
+                peer.socketToRemote.send(wrapped)
             }
         }
     }
 
     //// eslint-disable-next-line @typescript-eslint/no-unused-vars
     private onRemoteData = (peer: PeerData, rawdata: Buffer, hostport: string) => {
+        ourLog(formatPeer(this.node), 'onRemoteData', formatData(rawdata), 'from', formatPeer(peer) + '/' + hostport)
+        
         const unwrapped = Wrapped.decode(rawdata)
-        const { time, channelID } = unwrapped
-        const data = Buffer.from(unwrapped.data)
+        const time = unwrapped.time
+        const packets = unwrapped.packets.map(packet => ({
+            channelID: packet.channelID,
+            data: Buffer.from(packet.data),
+        }))
 
-        ourLog(formatPeer(this.node), 'onRemoteData', formatData(data), 'from', formatPeer(peer) + '/' + hostport)
-        ourLog(formatPeer(this.node), 'Delaying', formatData(data), 'to', peer.socketToProgram.targetHostPort)
-
-        this.scheduler.enqueue(time + INPUT_DELAY, peerSendUnreliable, this.node, peer, data, channelID)
+        ourLog(formatPeer(this.node), 'Delaying', formatData(packets[0]!.data), 'to', peer.socketToProgram.targetHostPort)
+        this.scheduler.enqueue(time + INPUT_DELAY, peerSendUnreliable, this.node, peer, packets)
     }
 
     //// eslint-disable-next-line @typescript-eslint/no-unused-vars
-    private onServerData = (peer: PeerData, data: Buffer, hostport: string) => {
-        ourLog(formatPeer(this.node), 'onServerData', formatData(data), 'from', formatPeer(peer) + '/' + hostport)
-
-        //const message = readPacket(peer.peerToProgram!.name, data)
-        //if(message && peer === this.ownPeer){
-        //    ourLog(formatPeer(this.node), 'Sending', formatData(data), 'to', this.socketToClient!.targetHostPort)
-        //    this.socketToClient!.send(data)
-        //}
+    private onServerData = (peer: PeerData, rawdata: Buffer, hostport: string) => {
+        ourLog(formatPeer(this.node), 'onServerData', formatData(rawdata), 'from', formatPeer(peer) + '/' + hostport)
         
-        const message = peer.peerToProgram!.receive(data)
-        if(message && message.data && peer === this.ownPeer){
-            const { data, body: { channelID } } = message
-            ourLog(formatPeer(this.node), 'Sending', formatData(data), 'to', this.socketToClient!.targetHostPort)
-            this.peerToClient!.sendReliable(channelID, data)
-        }
+        const packets = peer.peerToProgram!.receivePackets(rawdata)
+        if(packets.length === 0) return
+
+        ourLog(formatPeer(this.node), 'Sending', formatData(packets[0]!.data), 'to', this.socketToClient!.targetHostPort)
+        this.peerToClient!.sendUnreliable(packets)
     }
 
     public getClientPort(){
@@ -394,13 +379,11 @@ export class ClientServerProxy extends Proxy {
 }
 
 //function peerSend(this_node: LibP2PNode, peer: PeerData, data: Buffer){
-//    const socket = peer.socketToProgram
-//    ourLog(formatPeer(this_node), 'Sending', formatData(data), 'to', socket.targetHostPort)
-//    socket.send(data)
+//    ourLog(formatPeer(this_node), 'Sending', formatData(data), 'to', peer.socketToProgram.targetHostPort)
+//    peer.socketToProgram.send(data)
 //}
 
-function peerSendUnreliable(this_node: LibP2PNode, peer: PeerData, data: Buffer, channelID: number){
-    const socket = peer.socketToProgram
-    ourLog(formatPeer(this_node), 'Sending', formatData(data), 'to', socket.targetHostPort)
-    peer.peerToProgram!.sendReliable(channelID, data)
+function peerSendUnreliable(this_node: LibP2PNode, peer: PeerData, packets: WrappedPacket[]){
+    ourLog(formatPeer(this_node), 'Sending', formatData(packets[0]!.data), 'to', peer.socketToProgram.targetHostPort)
+    peer.peerToProgram!.sendUnreliable(packets)
 }
