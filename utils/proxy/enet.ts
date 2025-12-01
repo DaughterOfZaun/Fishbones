@@ -53,15 +53,28 @@ export class Reader {
     public position = 0
     public get bytesLeft(){ return this.buffer.length - this.position }
     constructor(
-        private readonly buffer: Buffer
+        public readonly buffer: Buffer
     ){}
 
-    public readByte(){ const result = this.buffer.readUInt8(this.position); this.position += 1; return result }
-    public readUInt16(){ const result = this.buffer.readUInt16BE(this.position); this.position += 2; return result }
-    public readUInt32(){ const result = this.buffer.readUInt32BE(this.position); this.position += 4; return result }
+    public readByte(){
+        const result = this.buffer.readUInt8(this.position);
+        this.position += 1;
+        return result
+    }
+    public readUInt16(){
+        const result = this.buffer.readUInt16BE(this.position);
+        this.position += 2;
+        return result
+    }
+    public readUInt32(){
+        const result = this.buffer.readUInt32BE(this.position);
+        this.position += 4;
+        return result
+    }
     public readBytes(count: number){
+        console.assert(this.position + count <= this.buffer.length, `Assertion failed: this.position (${this.position}) + count (${count}) <= this.buffer.length (${this.buffer.length})`)
         const result = this.buffer.subarray(this.position, this.position + count)
-        this.position += count
+        this.position += result.length
         return result
     }
 }
@@ -93,7 +106,9 @@ export class ProtocolHeader
         const result = new ProtocolHeader()
 
         if(reader.bytesLeft < (version.maxHeaderSizeReceive - 2)){
-            console.log('ERROR: reader.bytesLeft < (version.maxHeaderSizeReceive - 2)')
+            console.log(`ERROR: reader.bytesLeft (${reader.bytesLeft}) < (version.maxHeaderSizeReceive (${ version.maxHeaderSizeReceive }) - 2)`)
+            console.log(`ERROR: reader.buffer.length (${reader.buffer.length}) - reader.position (${reader.position})`)
+            console.log(`ERROR:`, reader.buffer)
             return null
         }
 
@@ -435,31 +450,33 @@ export class None extends Protocol
 
 export abstract class Send extends Protocol
 {
-    public abstract dataLength: number
+    public abstract data: Buffer
 }
 
 export class SendReliable extends Send
 {
-    public override dataLength!: number
+    public override data!: Buffer
 
     public override readonly size = 4 + 2
     public override readonly command = ProtocolCommand.SEND_RELIABLE
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     protected override readInternal(reader: Reader, version: Version){
-        this.dataLength = reader.readUInt16()
+        const dataLength = reader.readUInt16()
+        this.data = reader.readBytes(dataLength)
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     protected override writeInternal(writer: Writer, version: Version){
-        writer.writeUInt16(this.dataLength)
+        writer.writeUInt16(this.data.length)
+        writer.writeBytes(this.data)
     }
 }
 
 export class SendUnreliable extends Send
 {
     public unreliableSequenceNumber!: number
-    public dataLength!: number
+    public data!: Buffer
 
     public override readonly size = 4 + 4
     public override readonly command = ProtocolCommand.SEND_UNRELIABLE
@@ -467,13 +484,15 @@ export class SendUnreliable extends Send
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     protected override readInternal(reader: Reader, version: Version){
         this.unreliableSequenceNumber = reader.readUInt16()
-        this.dataLength = reader.readUInt16()
+        const dataLength = reader.readUInt16()
+        this.data = reader.readBytes(dataLength)
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     protected override writeInternal(writer: Writer, version: Version){
         writer.writeUInt16(this.unreliableSequenceNumber)
-        writer.writeUInt16(this.dataLength)
+        writer.writeUInt16(this.data.length)
+        writer.writeBytes(this.data)
     }
 }
 
@@ -481,7 +500,7 @@ export class SendUnreliable extends Send
 export class SendUnsequenced extends Send
 {
     public unsequencedGroup!: number
-    public dataLength!: number
+    public data!: Buffer
 
     public override readonly size = 4 + 4
     public override readonly command = ProtocolCommand.SEND_UNSEQUENCED
@@ -489,24 +508,27 @@ export class SendUnsequenced extends Send
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     protected override readInternal(reader: Reader, version: Version){
         this.unsequencedGroup = reader.readUInt16()
-        this.dataLength = reader.readUInt16()
+        const dataLength = reader.readUInt16()
+        this.data = reader.readBytes(dataLength)
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     protected override writeInternal(writer: Writer, version: Version){
         writer.writeUInt16(this.unsequencedGroup)
-        writer.writeUInt16(this.dataLength)
+        writer.writeUInt16(this.data.length)
+        writer.writeBytes(this.data)
     }
 }
 
 export class SendFragment extends Send
 {
     public startSequenceNumber!: number
-    public dataLength!: number
     public fragmentCount!: number
     public fragmentNumber!: number
     public totalLength!: number
     public fragmentOffset!: number
+
+    public data!: Buffer
 
     public override readonly size = 4 + 20
     public override readonly command = ProtocolCommand.SEND_FRAGMENT
@@ -514,20 +536,22 @@ export class SendFragment extends Send
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     protected override readInternal(reader: Reader, version: Version){
         this.startSequenceNumber = reader.readUInt16()
-        this.dataLength = reader.readUInt16()
+        const dataLength = reader.readUInt16()
         this.fragmentCount = reader.readUInt32()
         this.fragmentNumber = reader.readUInt32()
         this.totalLength = reader.readUInt32()
         this.fragmentOffset = reader.readUInt32()
+        this.data = reader.readBytes(dataLength)
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     protected override writeInternal(writer: Writer, version: Version){
         writer.writeUInt16(this.startSequenceNumber)
-        writer.writeUInt16(this.dataLength)
+        writer.writeUInt16(this.data.length)
         writer.writeUInt32(this.fragmentCount)
         writer.writeUInt32(this.fragmentNumber)
         writer.writeUInt32(this.totalLength)
         writer.writeUInt32(this.fragmentOffset)
+        writer.writeBytes(this.data)
     }
 }
