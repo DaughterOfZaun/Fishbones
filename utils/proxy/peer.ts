@@ -8,6 +8,16 @@ class Channel {
     constructor(
         public readonly id: number
     ){}
+
+    public fragmentStartSequenceNumbers = new Map<number, number>() // remote -> local
+    public fragmentStartSequenceNumbers_get(remoteNumber: number, defaultValue: number){
+        let localNumber = this.fragmentStartSequenceNumbers.get(remoteNumber)
+        if(!localNumber){
+            localNumber = defaultValue
+            this.fragmentStartSequenceNumbers.set(remoteNumber, localNumber)
+        }
+        return localNumber
+    }
 }
 
 type Packets = {
@@ -22,7 +32,7 @@ export type WrappedPacket = {
         fragmentNumber: number
         totalLength: number
         fragmentOffset: number
-    } | null,
+    } | undefined,
     channelID: number
     data: Buffer
 }
@@ -118,7 +128,7 @@ export class Peer {
                         fragmentNumber: packet.fragmentNumber,
                         totalLength: packet.totalLength,
                         fragmentOffset: packet.fragmentOffset,
-                    } : null,
+                    } : undefined,
                     channelID: packet.channelID,
                     data: packet.data,
                 }
@@ -194,6 +204,25 @@ export class Peer {
         const { channelID, data } = wrappedPacket
 
         const channel = this.channels_get(channelID)
+        
+        const fragment = wrappedPacket.fragment
+        if(fragment){
+            const { fragmentCount, fragmentNumber, fragmentOffset, totalLength } = fragment
+            const reliableSequenceNumber = ++channel.reliableSequenceNumber
+            const startSequenceNumber = channel.fragmentStartSequenceNumbers_get(
+                fragment.startSequenceNumber, reliableSequenceNumber
+            )
+            const packet = assign(new SendFragment(), {
+                channelID, flags: ProtocolFlag.ACKNOWLEDGE,
+                reliableSequenceNumber, startSequenceNumber,
+                fragmentCount, fragmentNumber, fragmentOffset,
+                data, totalLength,
+                //command: 8,
+                //size: 24,
+            })
+            return packet
+        }
+
         const reliableSequenceNumber = channel.reliableSequenceNumber
         const unreliableSequenceNumber = ++channel.unreliableSequenceNumber
         const packet = assign(new SendUnreliable(), {
@@ -259,11 +288,6 @@ export class Peer {
         if(!packet){
             console.log('ERROR: !packet')
             return null
-        }
-        
-        if(packet instanceof SendFragment){
-            console.log('ERROR: packet instanceof SendFragment')
-            //return null
         }
         
         //if(packet instanceof Ping) console.log(this.name, 'read', 'ping')
