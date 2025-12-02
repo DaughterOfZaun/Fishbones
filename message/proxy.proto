@@ -4,7 +4,15 @@ message Wrapped {
     uint64 time = 1 [jstype = JS_NUMBER];
     repeated Packet packets = 2;
     message Packet {
-        uint32 channelID = 3;
-        bytes data = 2;
+        optional FragmentInfo fragment = 1;
+        message FragmentInfo {
+            uint32 startSequenceNumber = 1;
+            uint32 fragmentCount = 2;
+            uint32 fragmentNumber = 3;
+            uint32 totalLength = 4;
+            uint32 fragmentOffset = 5;
+        }
+        uint32 channelID = 2;
+        bytes data = 3;
     }
 }

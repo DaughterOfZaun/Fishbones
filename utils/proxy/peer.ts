@@ -16,6 +16,13 @@ type Packets = {
 }
 
 export type WrappedPacket = {
+    fragment: {
+        startSequenceNumber: number
+        fragmentCount: number
+        fragmentNumber: number
+        totalLength: number
+        fragmentOffset: number
+    } | null,
     channelID: number
     data: Buffer
 }
@@ -102,10 +109,21 @@ export class Peer {
 
         return requests
             .filter(packet => packet instanceof Send)
-            .map((packet) => ({
-                channelID: packet.channelID,
-                data: packet.data,
-            }))
+            .map((packet) => {
+                //const channel = this.channels_get(packet.channelID)
+                const wrapped: WrappedPacket = {
+                    fragment: (packet instanceof SendFragment) ? {
+                        startSequenceNumber: packet.startSequenceNumber,
+                        fragmentCount: packet.fragmentCount,
+                        fragmentNumber: packet.fragmentNumber,
+                        totalLength: packet.totalLength,
+                        fragmentOffset: packet.fragmentOffset,
+                    } : null,
+                    channelID: packet.channelID,
+                    data: packet.data,
+                }
+                return wrapped
+            })
     }
 
     private createResponse(request: Protocol, request_header: ProtocolHeader): Protocol | null {

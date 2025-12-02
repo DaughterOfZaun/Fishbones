@@ -362,6 +362,7 @@ export class ClientServerProxy extends Proxy {
         const unwrapped = Wrapped.decode(rawdata)
         const time = unwrapped.time
         const packets = unwrapped.packets.map(packet => ({
+            fragment: packet.fragment,
             channelID: packet.channelID,
             data: Buffer.from(packet.data),
         }))
