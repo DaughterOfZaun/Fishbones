@@ -57,6 +57,13 @@ export function getPseudonym(playerId: number, isMe: boolean){
     return name
 }
 
+type GamePlayer = { id: number, peerId?: PeerId }
+export function getName(player: GamePlayer, isMe: boolean){
+    return player.peerId ?
+        getUsername(player.peerId) :
+        getPseudonym(player.id, isMe)
+}
+
 function formatUInt32(i: number){
     return (i >>> 0).toString(36).toUpperCase()//.padStart(7, '0')
 }

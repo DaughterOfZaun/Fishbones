@@ -204,10 +204,15 @@ type Task = {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     args: any[]
 }
+type TimeSource = { now(): number }
 class Scheduler {
     
     private interval: ReturnType<typeof setInterval> | undefined
     private queue = new Queue<Task>()
+
+    constructor(
+        private readonly timeSource: TimeSource,
+    ){}
 
     public stop(){
         clearInterval(this.interval)
@@ -217,7 +222,7 @@ class Scheduler {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public enqueue<T extends (...args: any[]) => void>(time: number, callback: T, ...args: Parameters<T>){
-        if(time <= Date.now()){
+        if(time <= this.timeSource.now()){
             callback(...args)
             return
         }
@@ -235,7 +240,7 @@ class Scheduler {
                 this.interval = undefined
                 break
             }
-            if(task.time <= Date.now()){
+            if(task.time <= this.timeSource.now()){
                 task.callback.apply(null, task.args)
                 this.queue.dequeue()
                 continue
@@ -249,13 +254,16 @@ const INPUT_DELAY = 150
 
 export class ClientServerProxy extends Proxy {
 
-    private scheduler = new Scheduler()
+    private scheduler: Scheduler
+    private timeSource: TimeSource
     private peerToClient: Peer | null = null
     private socketToClient: SocketToProgram | null = null
     private ownPeer: PeerData | null = null
 
     public constructor(node: LibP2PNode){
         super(node, Role.ClientServer)
+        this.timeSource = node.services.time
+        this.scheduler = new Scheduler(this.timeSource)
     }
 
     public async start(peerIds: PeerId[], opts: Required<AbortOptions>){
@@ -343,7 +351,7 @@ export class ClientServerProxy extends Proxy {
         const packets = this.peerToClient!.receivePackets(rawdata)
         if(packets.length === 0) return
 
-        const wrapped = Buffer.from(Wrapped.encode({ time: Date.now(), packets }))
+        const wrapped = Buffer.from(Wrapped.encode({ time: this.timeSource.now(), packets }))
         for(const peer of this.peersByPeerId.values()){
             if(peer === this.ownPeer){
                 //ourLog(formatPeer(this.node), 'Sending', formatData(packets[0]!.data), 'to', 'localhost')

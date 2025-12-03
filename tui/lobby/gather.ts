@@ -5,7 +5,7 @@ import { BOTS, players, PLAYERS, Team, type Context } from "./lobby";
 import { button, form, icon, inq2gd, label, option, type Form } from "../../ui/remote/types";
 import { render } from "../../ui/remote/view";
 import { champions, AIChampion, AIDifficulty } from "../../utils/data/constants/champions";
-import { getPseudonym } from "../../utils/namegen/namegen";
+import { getName } from "../../utils/namegen/namegen";
 import { popup } from "../../ui/remote/remote";
 import { mapsById } from "../../utils/data/constants/maps";
 
@@ -25,7 +25,7 @@ export async function lobby_gather(ctx: Context){
 
         if(!player.isBot){
             const isMe = game.getPlayer() === player
-            const playerId = getPseudonym(player.id, isMe)
+            const playerId = getName(player, isMe)
             return form({
                 Name: label(playerId),
                 Icon: icon(iconPath, championName),
@@ -92,7 +92,7 @@ export async function lobby_gather(ctx: Context){
     function notifyPlayerJoined(event: CustomEvent<GamePlayer>){
         const player = event.detail
         popup({
-            message: getPseudonym(player.id, false),
+            message: getName(player, false),
             title: 'New player joined',
             sound: 'join_chat',
         })

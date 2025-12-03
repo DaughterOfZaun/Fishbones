@@ -41,6 +41,7 @@ import { customPing } from '../network/libp2p/ping'
 import util from "node:util"
 import { PeerSet } from '@libp2p/peer-collections'
 import { proxy } from '../utils/proxy/strategy-libp2p'
+import { time } from '../utils/proxy/time'
 //import { torrentPeerDiscovery } from '../network/libp2p/discovery/torrent-discovery-v2'
 
 export type LibP2PNode = Awaited<ReturnType<typeof createNodeInternal>> & {
@@ -213,6 +214,7 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
             mdns: mdns(),
 
             proxy: proxy(),
+            time: time(),
         },
         //@ts-expect-error: Types of parameters 'key' and 'key' are incompatible.
         datastore,

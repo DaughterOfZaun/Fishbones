@@ -4,7 +4,7 @@ import { button, form, icon, label, list, texture, type Form } from "../../ui/re
 import { render } from "../../ui/remote/view";
 import { Champion, champions } from "../../utils/data/constants/champions";
 import { spells, SummonerSpell } from "../../utils/data/constants/spells";
-import { getBotName, getPseudonym } from "../../utils/namegen/namegen";
+import { getBotName, getName } from "../../utils/namegen/namegen";
 import { option_pages } from "../masteries";
 import { page, pages } from "../masteries/pages";
 import type { Game } from "../../game/game";
@@ -24,7 +24,7 @@ function makePlayerForm(player: GamePlayer, game: Game): Form {
     const spellName2 = spellInfo2?.name ?? ''
     
     const isMe = game.getPlayer() === player
-    const playerId = player.isBot ? getBotName(championName) : getPseudonym(player.id, isMe)
+    const playerId = player.isBot ? getBotName(championName) : getName(player, isMe)
     //const statusText = (player.lock.value || player.isBot) ? 'Locked' : 'Chooses...'
 
     return form({

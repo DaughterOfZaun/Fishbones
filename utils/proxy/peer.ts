@@ -213,7 +213,7 @@ export class Peer {
                 fragment.startSequenceNumber, reliableSequenceNumber
             )
             const packet = assign(new SendFragment(), {
-                channelID, flags: ProtocolFlag.ACKNOWLEDGE,
+                channelID, flags: 0, //ProtocolFlag.ACKNOWLEDGE,
                 reliableSequenceNumber, startSequenceNumber,
                 fragmentCount, fragmentNumber, fragmentOffset,
                 data, totalLength,
