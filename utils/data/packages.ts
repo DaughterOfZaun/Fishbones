@@ -15,8 +15,9 @@ export const magnet = (ihv1?: string, ihv2?: string, fname?: string, size?: numb
 
 //TODO: PkgInfoDownloadable/Embedded
 export abstract class PkgInfo {
+    abstract name: string
     abstract dirName: string
-    abstract noDedup: boolean
+    abstract makeDir: boolean
     
     abstract zipExt: string
     abstract zipName: string
@@ -62,8 +63,9 @@ export abstract class PkgInfoCSProj extends PkgInfo {
 }
 
 export const gc420Pkg = new class extends PkgInfoExe {
+    name = 'Game Client'
     dirName = 'League of Legends_UNPACKED'
-    noDedup = false
+    makeDir = false
     zipExt = '7z'
     zipName = `League of Legends_UNPACKED.${this.zipExt}`
     zipInfoHashV1 = '4bb197635194f4242d9f937f0f9225851786a0a8'
@@ -95,15 +97,20 @@ export const gc420Pkg = new class extends PkgInfoExe {
 }()
 
 export const gcPkg = new class extends PkgInfoExe {
+    name = 'Game Client'
     dirName = 'playable_client_126'
-    noDedup = false
+    makeDir = false
     zipExt = '7z'
     zipName = `${this.dirName}.${this.zipExt}`
     zipInfoHashV1 = '875201f4a9920ffd7c9bff6c9a2ad59e28f041ae'
     zipInfoHashV2 = '6ccbb2911b07b2c084beb666d22018159845b3eae180b989d75b354af39c8af3'
     zipSize = 898175547
 
-    dir = path.join(downloads, this.dirName)
+    release = '0.0.0.51' //TODO: Are you sure about that?
+    dir = process.platform == 'win32' ?
+        path.join('C:', 'Riot Games', 'League of Legends', 'RADS', 'solutions', 'lol_game_client_sln', 'releases', this.release) :
+        path.join(downloads, this.dirName)
+    
     zip = path.join(downloads, this.zipName)
     zipTorrentEmbedded = embedded.gcZipTorrent
     zipTorrent = `${this.zip}.torrent`
@@ -113,8 +120,6 @@ export const gcPkg = new class extends PkgInfoExe {
     exeDir = this.dir
     exeName = 'League of Legends.exe'
     exe = path.join(this.exeDir, this.exeName)
-
-    release = '0.0.0.51' // Are you sure about that?
 
     topLevelEntries = [
         'LEVELS',
@@ -134,6 +139,7 @@ export const gcPkg = new class extends PkgInfoExe {
     ]
     topLevelEntriesOptional = [
         'launch_client.bat',
+        'd3dx9_39.dll',
     ]
 }()
 
@@ -177,8 +183,9 @@ if(!sdkZipInfo)
     throw new Error(`Unsupported dotnet-sdk-version-platform-arch.ext combination: ${sdkZipName}`)
 
 export const sdkPkg = new class extends PkgInfoExe {
+    name = '.NET SDK'
     dirName = sdkName
-    noDedup = true
+    makeDir = true
     zipExt = sdkZipExt
     zipName = sdkZipName
     zipInfoHashV1 = sdkZipInfo!.ihv1
@@ -215,8 +222,9 @@ export const sdkPkg = new class extends PkgInfoExe {
 }()
 
 export const gs420Pkg = new class extends PkgInfoCSProj {
+    name = 'Game Server'
     dirName = 'GameServer'
-    noDedup = false
+    makeDir = false
     zipExt = '7z'
     zipName = `Chronobreak.GameServer.${this.zipExt}`
     zipInfoHashV1 = 'e4043fdc210a896470d662933f7829ccf3ed781b'
@@ -271,8 +279,9 @@ export interface PkgInfoGit extends PkgInfo {
 }
 
 export const gsPkg = new class extends PkgInfoCSProj {
+    name = 'Game Server'
     dirName = 'ChildrenOfTheGrave-Gameserver'
-    noDedup = false
+    makeDir = false
     zipExt = '7z'
     zipName = `${this.dirName}.${this.zipExt}`
     zipInfoHashV1 = '83155823dd0deb73cab3127dfbcfeb4091050f4f'
@@ -335,13 +344,14 @@ export const gsPkg = new class extends PkgInfoCSProj {
 }()
 
 export const gitPkg = new class extends PkgInfoExe {
+    name = 'Git'
     dirName = 'PortableGit'
     
     zipExt = '7z.exe'
     zipName = 'PortableGit-2.51.0.2-64-bit.7z.exe'
     zipWebSeed = `https://github.com/git-for-windows/git/releases/download/v2.51.0.windows.2/${this.zipName}`
     //zipEmbded = embedded.gitZip
-    noDedup = true
+    makeDir = true
     
     dir = path.join(downloads, this.dirName)
     zip = path.join(downloads, this.zipName)

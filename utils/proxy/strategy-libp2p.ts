@@ -134,7 +134,7 @@ export class UseExistingLibP2PConnection extends ConnectionStrategy {
 
     async connectToRemote(id: PeerId, opts: Required<AbortOptions>){
         let relativeRole = this.role
-        if((this.role & (Role.Client | Role.Server)) != 0){
+        if((this.role & Role.Client) != 0 && (this.role & Role.Server) != 0){
             const a = this.node.peerId.toString()
             const b = id.toString()
             console.assert(a.length === b.length, 'Assertion failed: a.length != b.length')

@@ -1,7 +1,6 @@
 
 import { PickableValue } from "./values/pickable"
 import { enabled } from "./values/enabled"
-import { gcPkg } from "../packages"
 import path from 'node:path'
 
 // short, name, enabled by default
@@ -57,7 +56,7 @@ const spellIcons = [
     "Summoner_Boost.dds",
 ]
 
-const spellsDirRelative = path.join(gcPkg.dirName, 'DATA', 'Spells', 'Icons2D')
+const spellsDirRelative = path.join('%DATA%', 'Spells', 'Icons2D')
 
 const spellsIconsCache = Object.fromEntries(
     spellIcons

@@ -278,7 +278,7 @@ const championsIcons = [
     "Zilean/Info/Chronokeeper_Square.dds",
 ]
 
-const charactersDirRelative = path.join(gcPkg.dirName, 'DATA', 'Characters')
+const charactersDirRelative = path.join('%DATA%', 'Characters')
 const charactersDir = path.join(gcPkg.dir, 'DATA', 'Characters')
 
 const championsIconsCache = Object.fromEntries(

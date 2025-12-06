@@ -2,7 +2,7 @@ import { type PkgInfo } from './packages'
 import { logger } from '../log'
 import { createBar, extractFile } from '../../ui/remote/remote'
 import { killIfActive, spawn, successfulTermination, type ChildProcess } from '../process/process'
-import { rwx_rx_rx, downloads, fs_chmod, fs_ensureDir, fs_exists, fs_writeFile, fs_removeFile } from './fs'
+import { rwx_rx_rx, downloads, fs_chmod, fs_ensureDir, fs_exists, fs_writeFile, fs_removeFile, fs_moveFile } from './fs'
 import type { AbortOptions } from '@libp2p/interface'
 import { args } from '../args'
 import path from 'node:path'
@@ -78,7 +78,16 @@ export async function unpack(pkg: PkgInfo, opts: Required<AbortOptions>){
 
     try {
     
-        await fs_ensureDir(pkg.dir, opts)
+        //let pkgDir = pkg.dir  // Resulting folder.
+        let outDir = pkg.dir    // Folder containing the final and intermediate folders.
+        let outFile = pkg.dir   // Unpacked root folder from the archive.
+        if(!pkg.makeDir){
+            outDir = path.dirname(pkg.dir)
+            outFile = path.join(outDir, pkg.dirName)
+            const fs_opts = { ...opts, recursive: true, force: true }
+            await fs_removeFile(outFile, fs_opts, false) //TODO: Be less destructive.
+        }
+        await fs_ensureDir(outDir, opts)
     
         const lockfile = appendPartialUnpackFileExt(pkg.zip)
         await fs_writeFile(lockfile, '', { ...opts, encoding: 'utf8' })
@@ -87,8 +96,8 @@ export async function unpack(pkg: PkgInfo, opts: Required<AbortOptions>){
         //const signal = AbortSignal.any([ controller.signal, opts.signal ])
         const { signal } = controller
 
-        const args = ['-aoa', `-o${pkg.dir}`, '-bsp1']
-        if(!pkg.noDedup) args.push('-spe')
+        const args = ['-aoa', `-o${outDir}`, '-bsp1']
+        //if(!pkg.makeDir) args.push('-spe')
         
         const spawnOpts = {
             cwd: downloads,
@@ -145,6 +154,11 @@ export async function unpack(pkg: PkgInfo, opts: Required<AbortOptions>){
         await Promise.all(s7zs.map(async (proc) => successfulTermination(
             proc.logPrefix, proc, opts, [ 0, s7zExitCodes.Warning ]
         )))
+
+        if(outFile != pkg.dir){
+            await fs_moveFile(outFile, pkg.dir, opts)
+        }
+        
         await fs_removeFile(lockfile, opts)
     
     } finally {

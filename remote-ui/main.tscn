@@ -1,4 +1,4 @@
-[gd_scene load_steps=39 format=3 uid="uid://c88cdpgvxg8v2"]
+[gd_scene load_steps=40 format=3 uid="uid://c88cdpgvxg8v2"]
 
 [ext_resource type="Theme" uid="uid://heyv1rjynqwi" path="res://main_theme.tres" id="1_efxa6"]
 [ext_resource type="Script" uid="uid://dys8mpxtgwbfe" path="res://server_node.gd" id="1_ig7tw"]
@@ -12,6 +12,7 @@
 [ext_resource type="Shader" uid="uid://c4ougvurpqa1d" path="res://components/background/simple_blur.gdshader" id="7_kek77"]
 [ext_resource type="Script" uid="uid://daigcqlxjwp5f" path="res://copy_paste_button.gd" id="11_ycdy4"]
 [ext_resource type="Script" uid="uid://c1341hmee22s6" path="res://dictionary_view.gd" id="13_2cqfq"]
+[ext_resource type="Texture2D" uid="uid://cxy05krshktbp" path="res://images/discord-icon-circle.png" id="14_82xsv"]
 [ext_resource type="Script" uid="uid://ssnirlom0p0n" path="res://popup_panel.gd" id="14_vivmo"]
 [ext_resource type="Script" uid="uid://co8q1vt1vwjgu" path="res://array_view.gd" id="14_yaehf"]
 [ext_resource type="Texture2D" uid="uid://otwgmcv7cmt7" path="res://icons/icon.png" id="15_2cqfq"]
@@ -160,7 +161,7 @@ spinner = ExtResource("4_ycdy4")
 select = ExtResource("5_w48qg")
 checkbox = ExtResource("6_vivmo")
 input = ExtResource("7_2cqfq")
-embedded_js = "res://embedded/index-0.0.3.23.js"
+embedded_js = "res://embedded/index-0.0.3.24.js"
 embedded_exe = "res://embedded/bun-1.3.2-windows-x64-baseline.exe"
 embedded_lib_0 = "res://embedded/node_datachannel-8fg8wz1b.node"
 embedded_file_0 = "res://embedded/7za-2501-windows-x64.exe"
@@ -172,7 +173,7 @@ embedded_file_5 = "res://embedded/dotnet-sdk-9.0.300-win-x64.zip.torrent"
 embedded_file_6 = "res://embedded/playable_client_126.7z.torrent"
 container = NodePath("MariginContainer")
 bars_container = NodePath("ConsoleContainer/VBoxContainer/BarsContainer")
-show_console_toggle = NodePath("ShowConsoleToggle")
+show_console_toggle = NodePath("VBoxContainer/ShowConsoleToggle")
 console_container = NodePath("ConsoleContainer")
 console = NodePath("ConsoleContainer/VBoxContainer/PanelContainer/MarginContainer/Console")
 popup = NodePath("#Popup")
@@ -228,7 +229,6 @@ theme_override_constants/margin_bottom = 0
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_efxa6")
 tab_alignment = 1
-current_tab = 1
 tabs_visible = false
 deselect_enabled = true
 
@@ -380,6 +380,7 @@ disabled = true
 text = "Connect"
 
 [node name="MarginContainer1" type="MarginContainer" parent="Container/TabContainer"]
+visible = false
 layout_mode = 2
 metadata/_tab_index = 1
 
@@ -401,7 +402,6 @@ theme_override_constants/margin_bottom = 0
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_efxa6")
 tab_alignment = 1
-current_tab = 1
 tabs_visible = false
 deselect_enabled = true
 
@@ -702,6 +702,7 @@ size_flags_stretch_ratio = 0.25
 text = "Host Game"
 
 [node name="#CustomGameSetup" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer"]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 8.0
@@ -2436,7 +2437,7 @@ theme_override_constants/separation = 24
 visible = false
 layout_mode = 2
 
-[node name="ShowConsoleToggle" type="Button" parent="."]
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 3
 anchor_left = 1.0
@@ -2444,14 +2445,34 @@ anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = -32.0
-offset_top = -124.0
+offset_top = -140.0
 offset_right = 3.0
-offset_bottom = -92.0
+offset_bottom = -72.0
 grow_horizontal = 0
 grow_vertical = 0
-pivot_offset = Vector2(32, 16.5)
+
+[node name="DiscordLink" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(32, 31)
+layout_mode = 2
+tooltip_text = "Discord"
+icon = ExtResource("14_82xsv")
+expand_icon = true
+
+[node name="LinkButton" type="LinkButton" parent="VBoxContainer/DiscordLink"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+tooltip_text = "Discord"
+uri = "https://discord.gg/tdxas6nKXP"
+
+[node name="ShowConsoleToggle" type="Button" parent="VBoxContainer"]
+custom_minimum_size = Vector2(32, 31)
+layout_mode = 2
 toggle_mode = true
-text = "!"
+text = ">_  "
 expand_icon = true
 
 [node name="#Popup" type="Window" parent="." node_paths=PackedStringArray("close", "timer", "header", "body", "player")]

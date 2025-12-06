@@ -171,7 +171,7 @@ func _ready() -> void:
     show_console_toggle.toggled.connect(
         func(toggled_on: bool) -> void:
             console_container.visible = toggled_on
-            show_console_toggle.text = 'x' if toggled_on else '!'
+            show_console_toggle.text = '✕' if toggled_on else '>_  '
     )
 
     for view_name in views:

@@ -32,10 +32,10 @@ export async function update(pkg: PkgInfoGit, opts: Required<AbortOptions>){
     args.mr.enabled = !!args.mr.value
     if(!args.update.enabled && !args.mr.enabled){
         //console.log(`Pretending to update ${pkg.dirName}...`)
-        return
+        return false
     }
 
-    const bar = createBar('Updating', pkg.dirName)
+    const bar = createBar('Updating', pkg.name)
     let updated = false
     try {
         await fs_ensureDir(pkg.dir, opts)

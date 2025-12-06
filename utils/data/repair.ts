@@ -75,7 +75,8 @@ export async function repair(opts: Required<AbortOptions>){
         return { mustExit: true }
     }
 
-    let gsExeIsMissing = !await fs_exists(gsPkg.dll, opts)
+    let updated = false
+    const gsExeIsMissing = !await fs_exists(gsPkg.dll, opts)
     results = await Promise.allSettled([
         
         repairSelfPackage(opts),
@@ -84,7 +85,7 @@ export async function repair(opts: Required<AbortOptions>){
             repairArchived(sdkPkg, opts),
             (async () => {
                 if(args.update.enabled){
-                    // The update procedure will install files from Git later.
+                    updated = await update(gsPkg, opts)
                 } else {
                     await repairArchived(gsPkg, opts)
                 }
@@ -100,10 +101,9 @@ export async function repair(opts: Required<AbortOptions>){
 
             throwAnyRejection(results)
 
-            const updated = await update(gsPkg, opts)
-
             // Allow packages to contain already built exe.
-            gsExeIsMissing = !await fs_exists(gsPkg.dll, opts)
+            //gsExeIsMissing = !await fs_exists(gsPkg.dll, opts)
+            
             if(gsExeIsMissing || updated){
                 try {
                     await build(gsPkg, opts)
@@ -123,9 +123,13 @@ export async function repair(opts: Required<AbortOptions>){
         repairArchived(gcPkg, opts).then(async () => {
             //await fs_ensureDir(gcPkg.exeDir, opts)
             
-            const d3dx9_39_dll = path.join(gcPkg.exeDir, 'd3dx9_39.dll')
-            if(!await fs_exists(d3dx9_39_dll, opts, true))
-                await extractFile(embedded.d3dx9_39_dll, d3dx9_39_dll, opts)
+            const d3dx9_39_dll_name = 'd3dx9_39.dll'
+            const d3dx9_39_dll_src = path.join(downloads, d3dx9_39_dll_name)
+            const d3dx9_39_dll_dst = path.join(gcPkg.exeDir, d3dx9_39_dll_name)
+            if(!await fs_exists(d3dx9_39_dll_dst, opts, true)){
+                await extractFile(embedded.d3dx9_39_dll, d3dx9_39_dll_src, opts)
+                await fs_copyFile(d3dx9_39_dll_src, d3dx9_39_dll_dst, opts) //HACK: To bypass "Access denied" error.
+            }
 
             //await ensureSymlink()
         }),
@@ -190,19 +194,34 @@ async function getPotentialRoots(opts: Required<AbortOptions>){
 
 //TODO: Compare files to PkgInfo.topLevelEntries
 async function findPackageDir(pkg: PkgInfo, opts: Required<AbortOptions>){
-    const { dir: pkgDir, checkUnpackBy: filePath } = pkg
-    console.assert(filePath.startsWith(downloads))
-    console.assert(pkgDir.startsWith(downloads))
+    const { dirName: pkgDirName, checkUnpackBy: filePath } = pkg
+    console.assert(filePath.startsWith(pkg.dir))
 
-    const potentialRoots = await getPotentialRoots(opts)
+    //const zipNameWithoutExt = pkg.zipName
+    //    .replace('.' + pkg.zipExt, '')
+    //    .replace(pkg.zipExt, '')
+
+    const potentialRoots = new Set([
+        ...await getPotentialRoots(opts),
+        path.join(path.dirname(pkg.dir), pkg.dirName),
+    ])
+    
+    potentialRoots.delete(pkg.dir)
+
     for(const root of potentialRoots){
-        if(root != downloads && // not (the way it should be)
-            await fs_exists(filePath.replace(downloads, root), opts, false) // GameServer/GameServer.sln
-        ) return pkgDir.replace(downloads, root)
+        const pathsToTest = new Set<string>([
+            root, // GameServer.sln
+            path.join(root, pkgDirName), // GameServer/GameServer.sln
+            //path.join(root, zipNameWithoutExt),
+            //path.join(root, zipNameWithoutExt, pkgDirName),
+        ])
         
-        if(//root != cwd && root != downloads && // not (danger)
-            await fs_exists(filePath.replace(pkgDir, root), opts, false) // GameServer.sln
-        ) return root
+        pathsToTest.delete(pkg.dir)
+
+        for(const pathToTest of pathsToTest){
+            if(await fs_exists(filePath.replace(pkg.dir, pathToTest), opts, false))
+                return pathToTest
+        }
     }
     return undefined
 }

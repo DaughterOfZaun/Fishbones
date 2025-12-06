@@ -55,12 +55,13 @@ class FBPkgInfo extends PkgInfo {
     
     readonly releasesURL = 'https://api.github.com/repos/DaughterOfZaun/Fishbones/releases'
 
+    readonly name = 'Launcher'
     readonly dirName = 'Fishbones'
     readonly exeName =
         platform === 'Windows' ? 'Fishbones.exe' :
         platform === 'Linux' ? 'Fishbones' :
         undefined!
-    readonly noDedup = true
+    readonly makeDir = true
     readonly zipExt = 'zip'
 
     // Mutable variables.

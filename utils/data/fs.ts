@@ -1,5 +1,5 @@
 //import path from 'node:path'
-import { promises as fs, Stats } from "node:fs"
+import { promises as fs, Stats, type MakeDirectoryOptions, type RmDirOptions, type RmOptions } from "node:fs"
 import type { AbortOptions } from '@libp2p/interface'
 import { console_log } from '../../ui/remote/remote'
 import { cwd, downloads } from '../log'
@@ -42,9 +42,11 @@ export async function fs_exists_and_size_eq(path: string, size: number, opts: Re
     return result
 }
 
-export async function fs_ensureDir(path: string, opts: Required<AbortOptions>){
+//type MakeDirectoryOptions = Parameters<(typeof fs)['mkdir']>[1]
+export async function fs_ensureDir(path: string, opts: MakeDirectoryOptions & Required<AbortOptions>){
+    if(opts.recursive !== false) opts.recursive = true
     try {
-        await fs.mkdir(path)
+        await fs.mkdir(path, opts)
     } catch(unk_err) {
         const err = unk_err as ErrnoException
         if(err.code != 'EEXIST')
@@ -135,10 +137,10 @@ export async function fs_moveFile(src: string, dest: string, opts: Required<Abor
     return result
 }
 
-export async function fs_rmdir(path: string, opts: Required<AbortOptions>, log = true){
+export async function fs_rmdir(path: string, opts: RmDirOptions & Required<AbortOptions>, log = true){
     let result = false
     try {
-        await fs.rmdir(path)
+        await fs.rmdir(path, opts)
         result = true
     } catch(err){
         if(log)
@@ -148,7 +150,7 @@ export async function fs_rmdir(path: string, opts: Required<AbortOptions>, log =
     return result
 }
 
-export async function fs_removeFile(path: string, opts: Required<AbortOptions>, log = true){
+export async function fs_removeFile(path: string, opts: RmOptions & Required<AbortOptions>, log = true){
     let result = false
     try {
         await fs.rm(path)
@@ -166,7 +168,7 @@ const FS_ERR_CODES: Record<string, string> = {
 }
 export function console_log_fs_err(operation: string, path: string, unk_err: unknown){
     const err = unk_err as ErrnoException
-    const desc = (err.code && FS_ERR_CODES[err.code]) ?? 'Unknown'
+    const desc = err.code ? (FS_ERR_CODES[err.code] ?? `Code: ${err.code}`) : 'Unknown'
     console_log(`${operation} failed. ${desc}:\n${path}`)
 }
 
