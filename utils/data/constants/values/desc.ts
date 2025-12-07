@@ -6,6 +6,13 @@ export abstract class ValueDesc<I, E> {
     public value?: I
     abstract encode(): E
     abstract decodeInplace(v: E): boolean
-    abstract uinput(opts: Required<AbortOptions>): Promise<unknown>
-    abstract toString(): string
+
+    //TODO: Deprecate uinput.
+    // eslint-disable-next-line @typescript-eslint/promise-function-async, @typescript-eslint/no-unused-vars
+    uinput(opts: Required<AbortOptions>): Promise<unknown> {
+        throw new Error("Method not implemented.")
+    }
+    toString(): string {
+        throw new Error("Method not implemented.")
+    }
 }

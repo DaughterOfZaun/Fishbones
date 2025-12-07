@@ -106,7 +106,8 @@ export class LocalGame extends Game {
         try {
             firstReq = await wrapped.read()
             if(firstReq.joinRequest){
-                kickReason = this.getKickReason(firstReq.joinRequest.password)
+                const { password, version } = firstReq.joinRequest
+                kickReason = this.getKickReason(true, password, version)
                 checkPassed = kickReason === KickReason.UNDEFINED
             }
             if(kickReason != KickReason.UNDEFINED){

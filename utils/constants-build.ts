@@ -27,3 +27,31 @@ export const rtcConfiguration = {
         },
     ],
 }
+
+export const arch = 'x64' //TODO:
+export const platform =
+    process.platform === 'win32' ? 'Windows' :
+    process.platform === 'linux' ? 'Linux' :
+    undefined!
+
+export const date = (str: string) => new Date(str).getTime()
+export const versionFromString = (str: string) => {
+    const m = str.match(VERSION_REGEX)
+    if(m){
+        return 0
+            | parseInt(m[4]!) << 8 * 0
+            | parseInt(m[3]!) << 8 * 1
+            | parseInt(m[2]!) << 8 * 2
+            | parseInt(m[1]!) << 8 * 3
+    }
+    return 0
+}
+
+export const versionToString = (num: number) => {
+    return [
+        (num >> 8 * 3) & 0xFF,
+        (num >> 8 * 2) & 0xFF,
+        (num >> 8 * 1) & 0xFF,
+        (num >> 8 * 0) & 0xFF,
+    ].join('.')
+}

@@ -5,7 +5,7 @@ import { fs_readdir } from "../fs"
 import path from 'node:path'
 import { enabled } from "./values/enabled"
 import { ValueDesc } from "./values/desc"
-import { byId } from "../../../tui/masteries/trees"
+//import { byId } from "../../../tui/masteries/trees"
 
 type InternalName = string
 type ExternalName = string
@@ -356,15 +356,8 @@ export class Talents extends ValueDesc<
         return this.value
     }
     decodeInplace(v: Map<number, number>): boolean {
-        this.value = new Map(v.entries().filter(([ key ]) => byId.has(key)))
+        //this.value = new Map(v.entries().filter(([ key ]) => byId.has(key)))
+        this.value = v //TODO: Sanitize.
         return true
-    }
-    //TODO: Deprecate uinput.
-    // eslint-disable-next-line @typescript-eslint/promise-function-async, @typescript-eslint/no-unused-vars
-    uinput(opts: Required<AbortOptions>): Promise<unknown> {
-        throw new Error("Method not implemented.")
-    }
-    toString(): string {
-        throw new Error("Method not implemented.")
     }
 }

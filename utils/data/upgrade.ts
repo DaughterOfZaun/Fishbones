@@ -1,6 +1,6 @@
 import type { AbortOptions } from "@libp2p/interface"
 import { console_log, createBar, currentExe } from "../../ui/remote/remote"
-import { VERSION, VERSION_REGEX } from "../constants-build"
+import { arch, platform, VERSION, versionFromString as version, versionToString, date } from "../constants-build"
 import { downloads, fs_exists } from "./fs"
 import { PkgInfo } from "./packages"
 import path from 'node:path'
@@ -21,34 +21,6 @@ namespace GitHub {
         updated_at: string
         browser_download_url: string
     }
-}
-
-const arch = 'x64' //TODO:
-const platform =
-    process.platform === 'win32' ? 'Windows' :
-    process.platform === 'linux' ? 'Linux' :
-    undefined!
-
-const date = (str: string) => new Date(str).getTime()
-const version = (str: string) => {
-    const m = str.match(VERSION_REGEX)
-    if(m){
-        return 0
-            | parseInt(m[4]!) << 8 * 0
-            | parseInt(m[3]!) << 8 * 1
-            | parseInt(m[2]!) << 8 * 2
-            | parseInt(m[1]!) << 8 * 3
-    }
-    return 0
-}
-
-const versionToString = (num: number) => {
-    return [
-        (num >> 8 * 3) & 0xFF,
-        (num >> 8 * 2) & 0xFF,
-        (num >> 8 * 1) & 0xFF,
-        (num >> 8 * 0) & 0xFF,
-    ].join('.')
 }
 
 class FBPkgInfo extends PkgInfo {

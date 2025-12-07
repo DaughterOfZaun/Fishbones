@@ -161,7 +161,7 @@ spinner = ExtResource("4_ycdy4")
 select = ExtResource("5_w48qg")
 checkbox = ExtResource("6_vivmo")
 input = ExtResource("7_2cqfq")
-embedded_js = "res://embedded/index-0.0.3.24.js"
+embedded_js = "res://embedded/index-0.0.3.25.js"
 embedded_exe = "res://embedded/bun-1.3.2-windows-x64-baseline.exe"
 embedded_lib_0 = "res://embedded/node_datachannel-8fg8wz1b.node"
 embedded_file_0 = "res://embedded/7za-2501-windows-x64.exe"
@@ -670,6 +670,10 @@ disabled = true
 layout_mode = 2
 tooltip_text = "Cheats"
 disabled = true
+
+[node name="#HalfPing" type="CheckBox" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer2"]
+visible = false
+layout_mode = 2
 
 [node name="Placeholder" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms"]
 layout_mode = 2

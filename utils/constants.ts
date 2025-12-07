@@ -2,7 +2,6 @@ import { PickableValue } from "./data/constants/values/pickable"
 import { InputableValue } from "./data/constants/values/inputable"
 import { Enabled } from "./data/constants/values/enabled"
 import { ValueDesc } from "./data/constants/values/desc"
-import type { AbortOptions } from "@libp2p/interface"
 
 export type u = undefined
 
@@ -48,13 +47,15 @@ export class Bool extends ValueDesc<boolean, boolean>{
         this.value = v
         return true
     }
-    //TODO: Deprecate uinput.
-    // eslint-disable-next-line @typescript-eslint/promise-function-async, @typescript-eslint/no-unused-vars
-    uinput(opts: Required<AbortOptions>): Promise<unknown> {
-        throw new Error("Method not implemented.")
+}
+
+export class Float extends ValueDesc<number, number>{
+    encode(): number {
+        return this.value!
     }
-    toString(): string {
-        throw new Error("Method not implemented.")
+    decodeInplace(v: number): boolean {
+        this.value = v
+        return true
     }
 }
 

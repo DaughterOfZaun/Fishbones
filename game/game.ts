@@ -20,6 +20,9 @@ import { getBotName } from '../utils/namegen/namegen'
 import { GameMap } from '../utils/data/constants/maps'
 import { GameMode } from '../utils/data/constants/modes'
 import { runes } from '../utils/data/constants/runes'
+import { VERSION, versionFromString } from '../utils/constants-build'
+import { console_log } from '../ui/remote/remote'
+export const versionNumber = versionFromString(VERSION)
 
 interface GameEvents {
     update: CustomEvent,
@@ -131,14 +134,16 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         return this.getKickReason() == KickReason.UNDEFINED
     }
 
-    protected getKickReason(password?: string): KickReason {
+    protected getKickReason(joining?: true, password?: string, version?: number): KickReason {
         let kickReason = KickReason.UNDEFINED
         if(this.started){
             kickReason = KickReason.STARTED
         } else if(this.getPlayersCount() >= 2 * (this.playersMax.value ?? 0)){
             kickReason = KickReason.MAX_PLAYERS
-        } else if(this.password.isSet && this.password.encode() != password){
+        } else if(joining && this.password.isSet && this.password.value != password){
             kickReason = KickReason.WRONG_PASSWORD
+        } else if(joining && this.features.isHalfPingEnabled && (version ?? 0) < 793 /*0.0.3.24*/){
+            kickReason = KickReason.OLD_VERSION
         }
         return kickReason
     }
@@ -158,7 +163,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         if(this.joined) return true
 
         return this.stream_write({
-            joinRequest: { name, password },
+            joinRequest: { name, password, version: versionNumber },
         })
     }
     protected assignTeamTo(player: GamePlayer){
@@ -297,6 +302,13 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     private broadcastLaunchRequests(){
         const players = this.getPlayers()
         
+        const maxPingObserved = players.filter(player => !!player.peerId).reduce((v, player) => {
+            return Math.max(v, player.maxPingObserved.value ?? 0)
+        }, 0)
+        const delay = Math.ceil(maxPingObserved * 0.5) // It's very naive of me.
+
+        console_log(`An input delay of ${delay}ms is set.`)
+
         let i = 1
         for(const player of players)
         this.broadcast(
@@ -306,7 +318,8 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                     ip: 0n,
                     port: 0,
                     key: text2arr(blowfishKey),
-                    clientId: i++
+                    clientId: i++,
+                    delay,
                 },
             },
             [ player ],
@@ -376,6 +389,11 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
 
                         this.proxyClientServer.afterStart(proc.port)
 
+                        const maxPingObserved = peerIds.reduce((v, peerId) => {
+                            return Math.max(v, this.node.services.ping.getMaxPing(peerId))
+                        }, 0)
+                        this.set('maxPingObserved', maxPingObserved)
+
                         this.set('serverStarted', true)
 
                     } catch(err) {
@@ -411,7 +429,11 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         let port = 0
 
         if(this.features.isHalfPingEnabled){
-            port = this.proxyClientServer!.getClientPort()!
+            const proxy = this.proxyClientServer!
+            port = proxy.getClientPort()!
+            if(res.delay){
+                proxy.setDelay(res.delay)
+            }
         } else {
             //TODO: try-catch
             this.proxyClient = new ProxyClient(this.node)
@@ -464,7 +486,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     private handlePickRequest(player: GamePlayer, req: PickRequest){
 
         if(this.launched){
-            filterObject(req, true, [ 'serverStarted' ])
+            filterObject(req, true, [ 'serverStarted', 'maxPingObserved' ])
         } else if(this.started){
             filterObject(req, true, [ 'lock', 'champion', 'spell1', 'spell2', 'skin', 'talents' ])
         } else if(this.joined){

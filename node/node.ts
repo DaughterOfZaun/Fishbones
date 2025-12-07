@@ -1,48 +1,46 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { noise } from '@chainsafe/libp2p-noise'
-import { yamux } from '@chainsafe/libp2p-yamux'
-import { bootstrap } from '@libp2p/bootstrap'
-import { circuitRelayTransport } from '@libp2p/circuit-relay-v2'
-import { identify, identifyPush } from '@libp2p/identify'
-import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
-import { peerIdFromCID, peerIdFromString } from '@libp2p/peer-id'
-import { webRTC, webRTCDirect } from '@libp2p/webrtc'
-import { CODE_P2P_CIRCUIT, multiaddr, type Multiaddr } from '@multiformats/multiaddr'
-
 import { createLibp2p } from 'libp2p'
-//import { fromString, toString } from 'uint8arrays'
-import { isPeerId, KEEP_ALIVE, type AbortOptions, type ComponentLogger, type Connection, type Libp2pEvents, type Logger, type OpenConnectionProgressEvents, type Peer, type PeerId, type PeerInfo, type PeerStore, type PrivateKey, type Startable, type TypedEventTarget } from '@libp2p/interface'
-import { tcp } from '@libp2p/tcp'
+import { tiePubSubWithPeerDiscovery } from '../node/hacks'
 import { patchedCrypto } from '../utils/crypto'
 
-//import { RTCPeerConnection } from 'node-datachannel/polyfill'
-import type { RTCDataChannel, RTCPeerConnection } from '@ipshipyard/node-datachannel/polyfill'
-//import { defaultLogger } from '@libp2p/logger'
+import { noise } from '@chainsafe/libp2p-noise'
+import { yamux } from '@chainsafe/libp2p-yamux'
 
-import { pubsubPeerDiscovery } from '../network/libp2p/discovery/pubsub-discovery'
-import { GossipSub, gossipsub, type GossipSubComponents, type GossipsubOpts } from '@chainsafe/libp2p-gossipsub'
-import { PeerRecord, RecordEnvelope } from '@libp2p/peer-record'
-import type { ConnectionManager, TransportManager } from '@libp2p/interface-internal'
-import { mdns } from '@libp2p/mdns'
-import { args } from '../utils/args'
-import { appDiscoveryTopic, NAME, rtcConfiguration, VERSION } from '../utils/constants-build'
 import { rendezvousClient } from "@canvas-js/libp2p-rendezvous/client"
-import { loadOrCreateSelfKey } from '@libp2p/config'
-import { LevelDatastore } from 'datastore-level'
-import { keychain } from '@libp2p/keychain'
-import { downloads } from '../utils/log'
-import path from 'node:path'
-import { console_log } from '../ui/remote/remote'
-import { toString as uint8ArrayToString } from 'uint8arrays'
-import { tiePubSubWithPeerDiscovery } from '../node/hacks'
-import { logger as loggerClass } from '../utils/log'
+import { GossipSub, gossipsub, type GossipSubComponents } from '@chainsafe/libp2p-gossipsub'
+import { bootstrap } from '@libp2p/bootstrap'
+import { identify, identifyPush } from '@libp2p/identify'
+import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
+import { mdns } from '@libp2p/mdns'
+import { uPnPNAT } from '@libp2p/upnp-nat'
+import { autoNATv2 } from '@libp2p/autonat-v2'
+import { pubsubPeerDiscovery } from '../network/libp2p/discovery/pubsub-discovery'
 import { customPing } from '../network/libp2p/ping'
-import util from "node:util"
-import { PeerSet } from '@libp2p/peer-collections'
+import { logger as loggerClass } from '../utils/log'
 import { proxy } from '../utils/proxy/strategy-libp2p'
 import { time } from '../utils/proxy/time'
-//import { torrentPeerDiscovery } from '../network/libp2p/discovery/torrent-discovery-v2'
+
+import { keychain } from '@libp2p/keychain'
+import { LevelDatastore } from 'datastore-level'
+
+import { circuitRelayTransport } from '@libp2p/circuit-relay-v2'
+import { tcp } from '@libp2p/tcp'
+import { webRTC, webRTCDirect } from '@libp2p/webrtc'
+
+import { loadOrCreateSelfKey } from '@libp2p/config'
+import { isPeerId, KEEP_ALIVE, type AbortOptions, type ComponentLogger, type Connection, type Libp2pEvents, type Logger, type PeerId, type PeerInfo, type PeerStore, type PrivateKey, type Startable, type TypedEventTarget } from '@libp2p/interface'
+import { PeerMap, PeerSet } from '@libp2p/peer-collections'
+import { peerIdFromCID, peerIdFromString } from '@libp2p/peer-id'
+import { PeerRecord, RecordEnvelope } from '@libp2p/peer-record'
+import { CODE_P2P_CIRCUIT, multiaddr, type Multiaddr } from '@multiformats/multiaddr'
+
+import type { RTCDataChannel, RTCPeerConnection } from '@ipshipyard/node-datachannel/polyfill'
+import type { ConnectionManager, TransportManager } from '@libp2p/interface-internal'
+
+import { console_log } from '../ui/remote/remote'
+import { args } from '../utils/args'
+import { appDiscoveryTopic, NAME, rtcConfiguration, VERSION } from '../utils/constants-build'
 
 export type LibP2PNode = Awaited<ReturnType<typeof createNodeInternal>> & {
     components: {
@@ -139,7 +137,8 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
         addresses: {
             listen: [
                 `/ip4/0.0.0.0/udp/0/webrtc-direct`,
-                '/p2p-circuit',
+                ...Array<string>(3).fill('/p2p-circuit'),
+                `/ip4/0.0.0.0/tcp/0`,
                 '/webrtc',
             ]
         },
@@ -193,6 +192,8 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
                 //    topic: appDiscoveryTopic,
                 //    autodial: true,
                 //}),
+                autoNATv2: autoNATv2(),
+                uPnPNAT: uPnPNAT(),
             } : {}),
             
             //logger: customLogger,
@@ -295,6 +296,9 @@ async function setup(node: LibP2PNode, opts: Required<AbortOptions>){
     //    node.safeDispatchEvent('connection:fail', event)
     //})
 
+    type ConnectionHandle = object
+    const pendingConnections = new PeerMap<{ connecting: boolean, set: Set<ConnectionHandle> }>()
+
     const cm = node.components.connectionManager
     const cm_openConnection = cm.openConnection.bind(cm)
     cm.openConnection = async (peer, options) => {
@@ -302,20 +306,44 @@ async function setup(node: LibP2PNode, opts: Required<AbortOptions>){
         if(!isPeerId(peer))
             return cm_openConnection(peer, options)
 
+        const handle: ConnectionHandle = {}
+        let info = pendingConnections.get(peer)
+        if(!info){
+            info = { connecting: false, set: new Set() }
+            pendingConnections.set(peer, info)
+        }
+        info.set.add(handle)
+
         options ??= {}
         const options_onProgress = options.onProgress
         options.onProgress = (event) => {
             //node.safeDispatchEvent('connection:progress', event)
-            if(event.type === 'dial-queue:add-to-dial-queue')
+            if(!info.connecting && event.type === 'dial-queue:add-to-dial-queue'){
                 node.safeDispatchEvent('connection:begin', { detail: peer })
+                info.connecting = true
+            }
             options_onProgress?.(event)
         }
+
+        let error: Error | undefined
+        let connection: Connection | undefined
         try {
-            return await cm_openConnection(peer, options)
+            connection = await cm_openConnection(peer, options)
         } catch(err) {
-            node.safeDispatchEvent('connection:fail', { detail: peer })
-            throw err
+            error = err as Error
         }
+
+        info.set.delete(handle)
+        if(info.set.size === 0){
+            if(error && info.connecting){
+                node.safeDispatchEvent('connection:fail', { detail: peer })
+            }
+            pendingConnections.delete(peer)
+            info.connecting = false
+        }
+
+        if(error) throw error
+        return connection!
     }
 
     tiePubSubWithPeerDiscovery(node)

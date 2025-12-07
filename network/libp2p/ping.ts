@@ -3,6 +3,9 @@ import { type Multiaddr } from '@multiformats/multiaddr'
 import { isPeerId, serviceCapabilities, TypedEventEmitter, type AbortOptions, type Connection, type Libp2pEvents, type PeerId, type Startable, type TypedEventTarget } from '@libp2p/interface'
 import { PeerMap } from '@libp2p/peer-collections'
 
+//const HISTORY_DURATION = 10 * 60 * 1000
+const HISTORY_LENGTH = 50
+
 export type PingResult = {
     peerId: PeerId
     ms: number
@@ -20,7 +23,8 @@ type PingService = Ping & Startable & {
 }
 
 interface CacheEntry {
-    ms?: number
+    time: number
+    ms: number
 }
 
 interface CustomPingComponents extends PingComponents {
@@ -76,18 +80,23 @@ class CustomPing extends TypedEventEmitter<PingEvents> implements PingService {
     private dispatchEventAndCacheValue(peerId: PeerId, ms: number | undefined, dispatch = true){
         if(ms === undefined || ms <= 0) return
         if(dispatch) this.safeDispatchEvent('ping', { detail: { peerId, ms } })
-        const entry = this.cache_get(peerId)
-        entry.ms = ms
+        
+        const entries = this.history_get(peerId)
+        if(entries.length > HISTORY_LENGTH){
+            entries.splice(0, entries.length - HISTORY_LENGTH)
+        }
+        const time = Date.now()
+        entries.push({ ms, time })
     }
 
-    private readonly cache = new PeerMap<CacheEntry>()
-    private cache_get(peerId: PeerId){
-        let entry = this.cache.get(peerId)
-        if(!entry){
-            entry = {}
-            this.cache.set(peerId, entry)
+    private readonly history = new PeerMap<CacheEntry[]>()
+    private history_get(peerId: PeerId): CacheEntry[] {
+        let entries = this.history.get(peerId)
+        if(!entries){
+            entries = []
+            this.history.set(peerId, entries)
         }
-        return entry
+        return entries
     }
     
     public async ping(peer: PeerId | Multiaddr | Multiaddr[], options: AbortOptions = {}): Promise<number> {
@@ -99,8 +108,16 @@ class CustomPing extends TypedEventEmitter<PingEvents> implements PingService {
     }
     
     public getPing(peerId: PeerId){
-        const entry = this.cache_get(peerId)
-        return entry.ms
+        const entries = this.history_get(peerId)
+        const entry = entries.at(-1)
+        return entry?.ms
+    }
+
+    public getMaxPing(peerId: PeerId): number {
+        const entries = this.history_get(peerId)
+        return entries.reduce((v, entry) => {
+            return Math.max(v, entry.ms)
+        }, 0)
     }
 }
 

@@ -250,8 +250,6 @@ class Scheduler {
     }
 }
 
-const INPUT_DELAY = 150
-
 export class ClientServerProxy extends Proxy {
 
     private scheduler: Scheduler
@@ -259,11 +257,16 @@ export class ClientServerProxy extends Proxy {
     private peerToClient: Peer | null = null
     private socketToClient: SocketToProgram | null = null
     private ownPeer: PeerData | null = null
+    private delay: number = 150
 
     public constructor(node: LibP2PNode){
         super(node, Role.ClientServer)
         this.timeSource = node.services.time
         this.scheduler = new Scheduler(this.timeSource)
+    }
+
+    public setDelay(ping: number){
+        this.delay = ping
     }
 
     public async start(peerIds: PeerId[], opts: Required<AbortOptions>){
@@ -376,7 +379,7 @@ export class ClientServerProxy extends Proxy {
         }))
 
         //ourLog(formatPeer(this.node), 'Delaying', formatData(packets[0]!.data), 'to', peer.socketToProgram.targetHostPort)
-        this.scheduler.enqueue(time + INPUT_DELAY, peerSendUnreliable, this.node, peer, packets)
+        this.scheduler.enqueue(time + this.delay, peerSendUnreliable, this.node, peer, packets)
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
