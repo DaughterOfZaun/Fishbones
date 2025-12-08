@@ -1,14 +1,29 @@
 import type { AbortOptions } from "@libp2p/interface";
 import { downloads, fs_readFile, fs_writeFile } from "../../utils/data/fs";
 import type { PageInfo, RuntimeMasteryInfo, RuntimePageInfo, RuntimeTreeInfo } from "./types";
-import path from 'node:path'
+//import { talents } from "../../utils/data/constants/talents";
 import { byId, byPos } from "./trees";
+import path from 'node:path'
 
 export const MAX_POINTS = 30
 
 let nextPageIndex = 0
 export const pages: Map<number, RuntimePageInfo> = new Map()
 for(let i = 0; i < 5; i++) createPage()
+/*
+loadPage({ name: 'NewPage', talents }, 0)
+const firstPage = pages.get(0)!
+for(let i = 0; i < 5; i++){
+    const page: RuntimePageInfo = {
+        name: firstPage.name,
+        index: nextPageIndex++,
+        points: firstPage.points,
+        pointsPerTree: [...firstPage.pointsPerTree],
+        talents: new Map(firstPage.talents),
+    }
+    pages.set(page.index, page)
+}
+*/
 export let page: RuntimePageInfo = pages.values().next().value!
 export function set_page(to: RuntimePageInfo){
     page = to

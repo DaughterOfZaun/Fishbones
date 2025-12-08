@@ -33,6 +33,7 @@ export interface LineEdit extends Id {
     disabled?: boolean
     $listeners?: {
         changed?: (text: string) => void
+        submitted?: (text: string) => void
     }
 }
 

@@ -4,6 +4,7 @@ import { type LibP2PNode } from '../node/node'
 import { TITLE } from '../utils/constants-build'
 import { type AbortOptions } from '@libp2p/interface'
 import { getLastLaunchCmd } from '../utils/process/client'
+import { Deferred } from '../utils/process/process'
 
 import { browser } from './browser'
 import { connections, profilePanel } from './connections'
@@ -11,9 +12,11 @@ import { setup } from './setup'
 import { lobby_gather } from './lobby/gather'
 import { lobby_pick } from './lobby/pick'
 import * as masteries from './masteries'
+import { chat } from './chat'
 
 export async function main(node: LibP2PNode, opts: Required<AbortOptions>){
     process.title = TITLE
+    void chat.prerender(opts)
     void masteries.prerender(opts)
     await Promise.race([
         browser(node, lobby, setup, opts),
@@ -38,6 +41,9 @@ export class SwitchViewError extends Error {
 async function lobby(game: Game, opts: Required<AbortOptions>){
     type View = null | ((opts: Context) => Promise<unknown>)
 
+    const deferred = new Deferred<void>()
+    chat.bind(deferred, game)
+
     let controller = new AbortController()
     const createSignal = () => AbortSignal.any([ controller.signal, opts.signal ]) 
     const ctx: Context = {
@@ -61,7 +67,7 @@ async function lobby(game: Game, opts: Required<AbortOptions>){
     
     const handlers_keys = Object.keys(handlers) as (keyof typeof handlers)[]
     for(const name of handlers_keys)
-        game.addEventListener(name, handlers[name])
+        deferred.addEventListener(game, name, handlers[name])
     
     try {
         let view: View = lobby_gather
@@ -82,8 +88,7 @@ async function lobby(game: Game, opts: Required<AbortOptions>){
             }
         }
     } finally {
-        for(const name of handlers_keys)
-            game.removeEventListener(name, handlers[name])
+        deferred.resolve()
     }
 }
 

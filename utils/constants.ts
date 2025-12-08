@@ -39,7 +39,7 @@ export class Lock extends PickableValue {
     public static readonly choices = PickableValue.normalize(Lock.values)
 }
 
-export class Bool extends ValueDesc<boolean, boolean>{
+export class BooleanValue extends ValueDesc<boolean, boolean>{
     encode(): boolean {
         return this.value!
     }
@@ -49,7 +49,7 @@ export class Bool extends ValueDesc<boolean, boolean>{
     }
 }
 
-export class Float extends ValueDesc<number, number>{
+export class FloatValue extends ValueDesc<number, number>{
     encode(): number {
         return this.value!
     }

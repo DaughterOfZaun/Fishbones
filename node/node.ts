@@ -296,9 +296,6 @@ async function setup(node: LibP2PNode, opts: Required<AbortOptions>){
     //    node.safeDispatchEvent('connection:fail', event)
     //})
 
-    type ConnectionHandle = object
-    const pendingConnections = new PeerMap<{ connecting: boolean, set: Set<ConnectionHandle> }>()
-
     const cm = node.components.connectionManager
     const cm_openConnection = cm.openConnection.bind(cm)
     cm.openConnection = async (peer, options) => {
@@ -306,21 +303,12 @@ async function setup(node: LibP2PNode, opts: Required<AbortOptions>){
         if(!isPeerId(peer))
             return cm_openConnection(peer, options)
 
-        const handle: ConnectionHandle = {}
-        let info = pendingConnections.get(peer)
-        if(!info){
-            info = { connecting: false, set: new Set() }
-            pendingConnections.set(peer, info)
-        }
-        info.set.add(handle)
-
         options ??= {}
         const options_onProgress = options.onProgress
         options.onProgress = (event) => {
             //node.safeDispatchEvent('connection:progress', event)
-            if(!info.connecting && event.type === 'dial-queue:add-to-dial-queue'){
+            if(event.type === 'dial-queue:add-to-dial-queue' && node.getConnections(peer).length === 0){
                 node.safeDispatchEvent('connection:begin', { detail: peer })
-                info.connecting = true
             }
             options_onProgress?.(event)
         }
@@ -333,13 +321,8 @@ async function setup(node: LibP2PNode, opts: Required<AbortOptions>){
             error = err as Error
         }
 
-        info.set.delete(handle)
-        if(info.set.size === 0){
-            if(error && info.connecting){
-                node.safeDispatchEvent('connection:fail', { detail: peer })
-            }
-            pendingConnections.delete(peer)
-            info.connecting = false
+        if(error && node.getConnections(peer).length === 0){
+            node.safeDispatchEvent('connection:fail', { detail: peer })
         }
 
         if(error) throw error

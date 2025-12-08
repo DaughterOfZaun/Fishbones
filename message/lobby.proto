@@ -20,10 +20,14 @@ message LobbyRequestMessage {
     optional JoinRequest join_request = 1;
     optional PickRequest pick_request = 2;
     optional bool leave_request = 3;
+    optional ChatRequest chat_request = 4;
     message JoinRequest {
         string name = 1;
         optional string password = 2;
         optional uint32 version = 3;
+    }
+    message ChatRequest {
+        string message = 1;
     }
 }
 
@@ -40,9 +44,10 @@ message LobbyNotificationMessage {
     repeated PeerRequests peers_requests = 3;
     message PeerRequests {
         uint32 playerId = 1;
+        optional bool leave_request = 2;
         optional JoinRequest join_request = 3;
         optional PickRequest pick_request = 4;
-        optional bool leave_request = 2;
+        optional ChatRequest chat_request = 5;
     }
     message JoinRequest {
         string name = 1;
@@ -52,6 +57,9 @@ message LobbyNotificationMessage {
             bytes publicKey = 1;
             repeated bytes addrs = 2;
         }
+    }
+    message ChatRequest {
+        string message = 1;
     }
     optional KickReason kick_request = 4;
 }

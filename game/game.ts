@@ -33,6 +33,11 @@ interface GameEvents {
     crash: CustomEvent,
     stop: CustomEvent,
     joined: CustomEvent<GamePlayer>,
+    chat: CustomEvent<ChatEventDetail>,
+}
+export type ChatEventDetail = {
+    player: GamePlayer
+    message: string
 }
 /*
 enum State {
@@ -605,6 +610,30 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         this.safeDispatchEvent('kick', { reason })
     }
 
+    public appendToChat(message: string) {
+        this.stream_write({
+            chatRequest: { message },
+        })
+    }
+    private handleChatRequest(player: GamePlayer, req: LobbyRequestMessage.ChatRequest){
+        const { message } = req
+        this.broadcast(
+            {
+                peersRequests: [
+                    {
+                        playerId: player.id,
+                        chatRequest: { message },
+                    }
+                ]
+            },
+            this.players.values()
+        )
+    }
+    private handleChatResponse(player: GamePlayer, res: LobbyNotificationMessage.ChatRequest){
+        const { message } = res
+        this.safeDispatchEvent('chat', { detail: { player, message } })
+    }
+
     public encode(): PBPeer.AdditionalData.GameInfo {
         return {
             id: 0,
@@ -643,6 +672,9 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         if(req.leaveRequest && (player = this.players.get(playerId))){
             this.handleLeaveRequest(player)
         }
+        if(req.chatRequest && (player = this.players.get(playerId))){
+            this.handleChatRequest(player, req.chatRequest)
+        }
     }
     protected handleResponse(ress: LobbyNotificationMessage){
         if(ress.peersRequests.length){
@@ -667,6 +699,9 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 }
                 if(res.leaveRequest && (player = this.players.get(playerId))){
                     this.handleLeaveResponse(player)
+                }
+                if(res.chatRequest && (player = this.players.get(playerId))){
+                    this.handleChatResponse(player, res.chatRequest)
                 }
             }
             this.safeDispatchEvent('update')

@@ -66,9 +66,7 @@ export async function lobby_pick(ctx: Context){
     )
 
     //HACK:
-    const timeout = setTimeout(() => {
-        game.set('talents', page.talents)
-    }, 300)
+    game.set('talents', page.talents)
 
     const view = render('ChampionSelect', form({
         Team1: list(),
@@ -81,7 +79,6 @@ export async function lobby_pick(ctx: Context){
         Pages: option_pages((index) => {
             const page = pages.get(index)!
             game.set('talents', page.talents)
-            clearTimeout(timeout)
         })
     }), ctx, [
         {

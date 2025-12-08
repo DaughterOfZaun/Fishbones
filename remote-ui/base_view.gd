@@ -1,22 +1,24 @@
 class_name BaseView extends ShowableView
 
 func bind_child(child: Control) -> void:
+    var err: int
     
     if (child is CheckBox || child is CheckButton):
-        var err := (child as BaseButton).toggled.connect(on_button_toggled.bind(child)); assert(err == OK)
+        err = (child as BaseButton).toggled.connect(on_button_toggled.bind(child)); assert(err == OK)
     elif child is OptionButton:
-        var err := (child as OptionButton).item_selected.connect(on_item_selected.bind(child)); assert(err == OK)
+        err = (child as OptionButton).item_selected.connect(on_item_selected.bind(child)); assert(err == OK)
     elif child is BaseButton \
     && !(child is ColorPickerButton) \
     && !(child is MenuButton):
-        #var err := (child as BaseButton).pressed.connect(on_button_pressed.bind(child)); assert(err == OK)
-        var err := (child as BaseButton).gui_input.connect(on_button_gui_input.bind(child)); assert(err == OK)
+        #err = (child as BaseButton).pressed.connect(on_button_pressed.bind(child)); assert(err == OK)
+        err = (child as BaseButton).gui_input.connect(on_button_gui_input.bind(child)); assert(err == OK)
     
     if child is LineEdit:
-        var err := (child as LineEdit).text_changed.connect(on_line_changed.bind(child)); assert(err == OK)
+        err = (child as LineEdit).text_changed.connect(on_line_changed.bind(child)); assert(err == OK)
+        err = (child as LineEdit).text_submitted.connect(on_line_submitted.bind(child)); assert(err == OK)
     
     if child is TextEdit:
-        var err := (child as TextEdit).text_changed.connect(on_text_changed.bind(child)); assert(err == OK)
+        err = (child as TextEdit).text_changed.connect(on_text_changed.bind(child)); assert(err == OK)
         err = (child as TextEdit).text_set.connect(on_text_changed.bind(child)); assert(err == OK)
 
 func on_button_pressed(child: Control) -> void:
@@ -48,6 +50,10 @@ func on_item_selected(index: int, child: OptionButton) -> void:
 func on_line_changed(new_text: String, child: LineEdit) -> void:
     var path: String = child.get_meta('path')
     callback.call('call', path, 'changed', new_text)
+    
+func on_line_submitted(new_text: String, child: LineEdit) -> void:
+    var path: String = child.get_meta('path')
+    callback.call('call', path, 'submitted', new_text)
     
 func on_text_changed(child: TextEdit) -> void:
     var new_text := child.text

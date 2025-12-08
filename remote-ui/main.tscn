@@ -147,6 +147,7 @@ color = Color(0, 0, 0, 1)
 script = ExtResource("1_ig7tw")
 views = {
 "ChampionSelect": NodePath("Container/TabContainer/#ChampionSelect"),
+"Chat": NodePath("#Chat"),
 "ConnectionsPanel": NodePath("Container/TabContainer/MarginContainer1/HBoxContainer1/VBoxContainer2/MarginContainer/VBoxContainer/#ConnectionsPanel"),
 "CustomGameSetup": NodePath("Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup"),
 "CustomsBrowser": NodePath("Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser"),
@@ -161,7 +162,7 @@ spinner = ExtResource("4_ycdy4")
 select = ExtResource("5_w48qg")
 checkbox = ExtResource("6_vivmo")
 input = ExtResource("7_2cqfq")
-embedded_js = "res://embedded/index-0.0.3.25.js"
+embedded_js = "res://embedded/index-0.0.3.26.js"
 embedded_exe = "res://embedded/bun-1.3.2-windows-x64-baseline.exe"
 embedded_lib_0 = "res://embedded/node_datachannel-8fg8wz1b.node"
 embedded_file_0 = "res://embedded/7za-2501-windows-x64.exe"
@@ -213,22 +214,24 @@ grow_horizontal = 2
 grow_vertical = 2
 text = "FISHBONES"
 
-[node name="Container" type="MarginContainer" parent="."]
+[node name="Container" type="Control" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 0
-theme_override_constants/margin_top = 0
-theme_override_constants/margin_right = 0
-theme_override_constants/margin_bottom = 0
 
 [node name="TabContainer" type="TabContainer" parent="Container"]
-layout_mode = 2
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_efxa6")
 tab_alignment = 1
+current_tab = 2
 tabs_visible = false
 deselect_enabled = true
 
@@ -402,6 +405,7 @@ theme_override_constants/margin_bottom = 0
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_efxa6")
 tab_alignment = 1
+current_tab = 2
 tabs_visible = false
 deselect_enabled = true
 
@@ -1061,7 +1065,6 @@ size_flags_stretch_ratio = 0.25
 text = "Host Game"
 
 [node name="#GatheringLobby" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer"]
-visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 8.0
@@ -1082,6 +1085,7 @@ size_flags_stretch_ratio = 8.0
 [node name="#Team1" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3"]
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_vertical = 3
 script = ExtResource("13_2cqfq")
 
 [node name="ScrollContainer" type="ScrollContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team1"]
@@ -1581,7 +1585,6 @@ size_flags_horizontal = 3
 disabled = true
 
 [node name="#ChampionSelect" type="MarginContainer" parent="Container/TabContainer"]
-visible = false
 layout_mode = 2
 theme_override_constants/margin_left = 0
 theme_override_constants/margin_right = 0
@@ -2400,6 +2403,54 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
+[node name="#Chat" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 1.0
+anchor_right = 0.222
+anchor_bottom = 1.0
+offset_left = 4.0
+offset_top = -213.0
+offset_right = -4.0
+offset_bottom = -40.0
+grow_vertical = 0
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.5
+script = ExtResource("13_2cqfq")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="#Chat"]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="#Chat/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="#Text" type="RichTextLabel" parent="#Chat/VBoxContainer/MarginContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+focus_mode = 2
+theme_override_font_sizes/normal_font_size = 12
+theme_override_font_sizes/bold_font_size = 12
+theme_override_font_sizes/bold_italics_font_size = 12
+theme_override_font_sizes/italics_font_size = 12
+theme_override_font_sizes/mono_font_size = 12
+bbcode_enabled = true
+text = "1
+2
+3
+4
+5
+6
+7
+8"
+scroll_following = true
+selection_enabled = true
+
+[node name="#Line" type="LineEdit" parent="#Chat/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Enter your message here"
+
 [node name="ConsoleContainer" type="MarginContainer" parent="."]
 visible = false
 layout_mode = 1
@@ -2422,11 +2473,11 @@ layout_mode = 2
 [node name="Console" parent="ConsoleContainer/VBoxContainer/PanelContainer/MarginContainer" instance=ExtResource("7_272bh")]
 layout_mode = 2
 theme_override_constants/paragraph_separation = 6
-theme_override_font_sizes/normal_font_size = 13
-theme_override_font_sizes/bold_font_size = 13
-theme_override_font_sizes/bold_italics_font_size = 13
-theme_override_font_sizes/italics_font_size = 13
-theme_override_font_sizes/mono_font_size = 13
+theme_override_font_sizes/normal_font_size = 12
+theme_override_font_sizes/bold_font_size = 12
+theme_override_font_sizes/bold_italics_font_size = 12
+theme_override_font_sizes/italics_font_size = 12
+theme_override_font_sizes/mono_font_size = 12
 
 [node name="BarsContainer" type="VBoxContainer" parent="ConsoleContainer/VBoxContainer"]
 custom_minimum_size = Vector2(0, 101)
