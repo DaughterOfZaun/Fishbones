@@ -2,7 +2,7 @@ import { createNode, stop } from './node/node'
 import { main } from './tui/tui'
 import { TITLE } from './utils/constants-build'
 import { logger } from './utils/log'
-import { checkbox, console_log, ExitPromptError, input } from './ui/remote/remote'
+import { console_log, ExitPromptError, input } from './ui/remote/remote'
 import { registerShutdownHandler, setInsideUI, shutdown, shutdownOptions, unwrapAbortError } from './utils/process/process'
 import { repair } from './utils/data/repair'
 //import * as umplex from './network/umplex'
@@ -13,6 +13,7 @@ import { button, form, label, list } from './ui/remote/types'
 import { gsPkg } from './utils/data/packages'
 import { loadSkins } from './utils/data/constants/champions'
 import * as pages from './tui/masteries/pages'
+import { startup } from './tui/startup'
 
 logger.log(`${'-'.repeat(35)} ${TITLE} started ${'-'.repeat(35)}`)
 
@@ -33,13 +34,9 @@ namespace GitLab {
 async function index(opts: Required<AbortOptions>){
     
     if(args.setup.enabled){
-        const optionsEnabled = await checkbox({
-            message: 'Select the desired options',
-            choices: args.customizable.map(({ desc: name, enabled: checked }, value) => ({ name, value, checked }))
-        })
-        for(let i = 0; i < args.customizable.length; i++)
-            args.customizable[i]!.enabled = optionsEnabled.includes(i)
         
+        await startup(opts)
+
         if(args.port.enabled){ //TODO: Rework.
             const passed = await input({
                 message: `Enter ${args.port.desc}`,
@@ -49,6 +46,7 @@ async function index(opts: Required<AbortOptions>){
             if(isFinite(parsed) && parsed > 0)
                 args.port.value = parsed
         }
+
         if(args.mr.enabled){
             args.mr.enabled = false
 

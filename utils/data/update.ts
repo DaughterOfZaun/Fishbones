@@ -41,23 +41,29 @@ export async function update(pkg: PkgInfoGit, opts: Required<AbortOptions>){
         await fs_ensureDir(pkg.dir, opts)
         if(!await fs_exists(path.join(pkg.dir, '.git'), opts)){
             await git([ 'init' ], pkg, opts)
-            await git([ 'remote', 'add', 'origin', pkg.gitOrigin ], pkg, opts)
-            await git([ 'fetch', 'origin' ], pkg, opts)
-            await git([ 'checkout', pkg.gitBranch, '--force' ], pkg, opts)
+            
+            await git([ 'remote', 'add', pkg.gitRemoteName, pkg.gitOriginURL ], pkg, opts)
+            await git([ 'fetch', pkg.gitRemoteName ], pkg, opts)
+            await git([ 'checkout', '-b', `${pkg.gitRemoteName}-${pkg.gitBranchName}`, `${pkg.gitRemoteName}/${pkg.gitBranchName}`, '--force' ], pkg, opts)
             updated = true
         } else {
             const prevHash = await getHeadCommitHash(pkg, opts)
             if(args.mr.enabled){
-                const newBranchName = `mr-${'origin'}-${args.mr.value}`
+                const newBranchName = `mr-${pkg.gitRemoteName}-${args.mr.value}`
                 console_log(`Switching the branch to ${newBranchName}...`)
 
-                await git([ 'fetch', 'origin', `merge-requests/${args.mr.value}/head:${newBranchName}`], pkg, opts)
+                await git([ 'remote', 'add', pkg.gitRemoteName, pkg.gitOriginURL ], pkg, opts, true)
+                await git([ 'fetch', pkg.gitRemoteName, `merge-requests/${args.mr.value}/head:${newBranchName}`], pkg, opts)
                 await git([ 'checkout',  newBranchName ], pkg, opts)
             } else {
-                console_log(`Switching the branch to ${pkg.gitBranch}...`)
+                const newBranchName = `${pkg.gitRemoteName}-${pkg.gitBranchName}`
+                console_log(`Switching the branch to ${newBranchName}...`)
 
-                await git([ 'checkout', pkg.gitBranch ], pkg, opts)
-                await git([ 'pull' ], pkg, opts)
+                await git([ 'remote', 'add', pkg.gitRemoteName, pkg.gitOriginURL ], pkg, opts, true)
+                await git([ 'fetch', pkg.gitRemoteName ], pkg, opts)
+                await git([ 'checkout', '-b', newBranchName, `${pkg.gitRemoteName}/${pkg.gitBranchName}` ], pkg, opts, true)
+                await git([ 'checkout', newBranchName], pkg, opts)
+                await git([ 'merge', `${pkg.gitRemoteName}/${pkg.gitBranchName}` ], pkg, opts)
             }
             const currHash = await getHeadCommitHash(pkg, opts)
             updated = prevHash != currHash
@@ -82,13 +88,14 @@ export async function getHeadCommitHash(pkg: PkgInfoGit, opts: Required<AbortOpt
 const logPrefix = "GIT"
 const gitExe = os.platform() === 'win32' ? gitPkg.exe : 'git'
 
-async function git(args: string[], pkg: PkgInfoGit, opts: Required<AbortOptions>){
+async function git(args: string[], pkg: PkgInfoGit, opts: Required<AbortOptions>, quiet = false){
     const { signal } = opts
     const proc = spawn(gitExe, args, {
         log: true, logPrefix,
         cwd: pkg.dir,
         signal,
     })
+    if(!quiet)
     proc.stderr.setEncoding('utf8').on('data', (chunk: string) => {
         //if(chunk.includes('error:') && chunk.includes('files would be overwritten by merge'));
         for(const match of chunk.matchAll(/(error|fatal): (.*)/g))
@@ -97,6 +104,10 @@ async function git(args: string[], pkg: PkgInfoGit, opts: Required<AbortOptions>
     let stdout = '', stderr = ''
     proc.stdout.setEncoding('utf8').on('data', (chunk) => stdout += chunk)
     proc.stderr.setEncoding('utf8').on('data', (chunk) => stderr += chunk)
-    await successfulTermination(logPrefix, proc, opts)
+    try {
+        await successfulTermination(logPrefix, proc, opts)
+    } catch(err) {
+        if(!quiet) throw err
+    }
     return { stdout, stderr }
 }

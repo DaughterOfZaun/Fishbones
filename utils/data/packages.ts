@@ -274,11 +274,12 @@ export const gs420Pkg = new class extends PkgInfoCSProj {
 
 export interface PkgInfoGit extends PkgInfo {
     gitRevision: string
-    gitOrigin: string
-    gitBranch: string
+    gitOriginURL: string
+    gitBranchName: string
+    gitRemoteName: string
 }
 
-export const gsPkg = new class extends PkgInfoCSProj {
+export const gsPkg = new class extends PkgInfoCSProj implements PkgInfoGit {
     name = 'Game Server'
     dirName = 'ChildrenOfTheGrave-Gameserver'
     makeDir = false
@@ -298,8 +299,9 @@ export const gsPkg = new class extends PkgInfoCSProj {
 
     gitRevision = '4592f1379ddaa972ce0b5dc6cebb9caf09c812ab'
     gitLabMRs = 'https://gitgud.io/api/v4/projects/40035/merge_requests?state=opened'
-    gitOrigin = 'https://gitgud.io/skelsoft/brokenwings.git'
-    gitBranch = 'master'
+    gitOriginURL = 'https://gitgud.io/skelsoft/brokenwings.git'
+    gitBranchName = 'master'
+    gitRemoteName = 'skelsoft'
 
     projName = 'ChildrenOfTheGraveServerConsole'
     csProjDir = path.join(this.dir, this.projName)

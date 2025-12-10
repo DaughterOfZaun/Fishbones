@@ -155,14 +155,15 @@ views = {
 "GatheringLobby": NodePath("Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby"),
 "Masteries": NodePath("Container/TabContainer/#Masteries"),
 "MergeRequests": NodePath("Container/TabContainer/#MergeRequests"),
-"ProfilePanel": NodePath("Container/TabContainer/MarginContainer1/HBoxContainer1/VBoxContainer2/MarginContainer/VBoxContainer/#ProfilePanel")
+"ProfilePanel": NodePath("Container/TabContainer/MarginContainer1/HBoxContainer1/VBoxContainer2/MarginContainer/VBoxContainer/#ProfilePanel"),
+"Startup": NodePath("Container/TabContainer/#Startup")
 }
 bar = ExtResource("3_h2yge")
 spinner = ExtResource("4_ycdy4")
 select = ExtResource("5_w48qg")
 checkbox = ExtResource("6_vivmo")
 input = ExtResource("7_2cqfq")
-embedded_js = "res://embedded/index-0.0.3.26.js"
+embedded_js = "res://embedded/index-0.0.3.27.js"
 embedded_exe = "res://embedded/bun-1.3.2-windows-x64-baseline.exe"
 embedded_lib_0 = "res://embedded/node_datachannel-8fg8wz1b.node"
 embedded_file_0 = "res://embedded/7za-2501-windows-x64.exe"
@@ -231,9 +232,105 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_efxa6")
 tab_alignment = 1
-current_tab = 2
+current_tab = 0
 tabs_visible = false
 deselect_enabled = true
+
+[node name="#Startup" type="Control" parent="Container/TabContainer"]
+layout_mode = 2
+script = ExtResource("13_2cqfq")
+metadata/_tab_index = 0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Container/TabContainer/#Startup"]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -40.0
+offset_right = 40.0
+grow_vertical = 0
+theme_override_constants/separation = 0
+
+[node name="#EnableInternet" type="CheckBox" parent="Container/TabContainer/#Startup/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+button_pressed = true
+text = "Search for other players on the Internet"
+
+[node name="#UpdateLauncher" type="CheckBox" parent="Container/TabContainer/#Startup/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+button_pressed = true
+text = "Check and download launcher updates"
+
+[node name="HBoxContainer1" type="HBoxContainer" parent="Container/TabContainer/#Startup/VBoxContainer"]
+layout_mode = 2
+
+[node name="CheckBox" type="CheckBox" parent="Container/TabContainer/#Startup/VBoxContainer/HBoxContainer1"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+disabled = true
+button_pressed = true
+text = "Download files from"
+
+[node name="#DownloadSource" type="OptionButton" parent="Container/TabContainer/#Startup/VBoxContainer/HBoxContainer1"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+selected = 0
+item_count = 3
+popup/item_0/text = "torrent + mega.nz"
+popup/item_0/id = 0
+popup/item_1/text = "torrent"
+popup/item_1/id = 1
+popup/item_2/text = "mega.nz"
+popup/item_2/id = 2
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="Container/TabContainer/#Startup/VBoxContainer"]
+layout_mode = 2
+
+[node name="#UpdateServer" type="CheckBox" parent="Container/TabContainer/#Startup/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+button_pressed = true
+text = "Download game server updates from"
+
+[node name="#ServerOrigin" type="OptionButton" parent="Container/TabContainer/#Startup/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+item_count = 2
+popup/item_0/text = "skelsoft"
+popup/item_0/id = 0
+popup/item_1/text = "icm"
+popup/item_1/id = 1
+
+[node name="#EditServerOrigins" type="Button" parent="Container/TabContainer/#Startup/VBoxContainer/HBoxContainer2"]
+visible = false
+custom_minimum_size = Vector2(28, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "✍"
+
+[node name="CenterContainer" type="CenterContainer" parent="Container/TabContainer/#Startup"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="HBoxContainer" type="VBoxContainer" parent="Container/TabContainer/#Startup/CenterContainer"]
+layout_mode = 2
+
+[node name="#Play" type="Button" parent="Container/TabContainer/#Startup/CenterContainer/HBoxContainer"]
+custom_minimum_size = Vector2(132, 53)
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "PLAY"
+
+[node name="#Test" type="Button" parent="Container/TabContainer/#Startup/CenterContainer/HBoxContainer"]
+layout_mode = 2
+text = "TEST"
 
 [node name="#DirectConnect" type="MarginContainer" parent="Container/TabContainer"]
 visible = false
@@ -243,7 +340,7 @@ theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 12
 script = ExtResource("13_2cqfq")
-metadata/_tab_index = 0
+metadata/_tab_index = 1
 
 [node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/#DirectConnect"]
 layout_mode = 2
@@ -385,7 +482,7 @@ text = "Connect"
 [node name="MarginContainer1" type="MarginContainer" parent="Container/TabContainer"]
 visible = false
 layout_mode = 2
-metadata/_tab_index = 1
+metadata/_tab_index = 2
 
 [node name="HBoxContainer1" type="HBoxContainer" parent="Container/TabContainer/MarginContainer1"]
 layout_mode = 2
@@ -1585,11 +1682,12 @@ size_flags_horizontal = 3
 disabled = true
 
 [node name="#ChampionSelect" type="MarginContainer" parent="Container/TabContainer"]
+visible = false
 layout_mode = 2
 theme_override_constants/margin_left = 0
 theme_override_constants/margin_right = 0
 script = ExtResource("13_2cqfq")
-metadata/_tab_index = 2
+metadata/_tab_index = 3
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="Container/TabContainer/#ChampionSelect"]
 layout_mode = 2
@@ -1979,7 +2077,7 @@ theme_override_constants/margin_top = 0
 theme_override_constants/margin_right = 0
 theme_override_constants/margin_bottom = 0
 script = ExtResource("13_2cqfq")
-metadata/_tab_index = 3
+metadata/_tab_index = 4
 
 [node name="HBoxContainer" type="HBoxContainer" parent="Container/TabContainer/#MergeRequests"]
 layout_mode = 2
@@ -2099,7 +2197,7 @@ size_flags_horizontal = 3
 visible = false
 layout_mode = 2
 script = ExtResource("13_2cqfq")
-metadata/_tab_index = 4
+metadata/_tab_index = 5
 
 [node name="VBoxContainer" type="VBoxContainer" parent="Container/TabContainer/#Masteries"]
 layout_mode = 2
@@ -2404,6 +2502,7 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="#Chat" type="PanelContainer" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = -1
 anchor_top = 1.0

@@ -8,6 +8,7 @@ export class Args {
     upgrade = new Option('upgrade', true, 'Download launcher updates')
     port = new Parameter<number>('port', false, 5119, 'Set custom UDP port number to use')
     mr = new Parameter<number>('mr', false, 0, 'Select a merge request to test')
+    //origin = new Parameter<string>('origin', false, '', 'Set a repository origin')
 
     repair = new Option('repair', true, '(Debug) Download+Unpack+Build missing files')
     download = new Option('download', true, '(Debug) Download missing files')
