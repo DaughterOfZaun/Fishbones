@@ -8,33 +8,18 @@ import { repair } from './utils/data/repair'
 //import * as umplex from './network/umplex'
 import type { AbortOptions } from '@libp2p/interface'
 import { args } from './utils/args'
-import { render } from './ui/remote/view'
-import { button, form, label, list } from './ui/remote/types'
-import { gsPkg } from './utils/data/packages'
 import { loadSkins } from './utils/data/constants/champions'
 import * as pages from './tui/masteries/pages'
-import { startup } from './tui/startup'
+import { loadConfig, startup } from './tui/startup'
+import { mrs } from './tui/mrs'
 
 logger.log(`${'-'.repeat(35)} ${TITLE} started ${'-'.repeat(35)}`)
-
-// eslint-disable-next-line @typescript-eslint/no-namespace
-namespace GitLab {
-    export type MergeRequest = {
-        iid: number
-        title: string
-        description: string
-        reference: string
-        author: {
-            username: string
-            name: string
-        }
-    }
-}
 
 async function index(opts: Required<AbortOptions>){
     
     if(args.setup.enabled){
         
+        await loadConfig(opts)
         await startup(opts)
 
         if(args.port.enabled){ //TODO: Rework.
@@ -49,45 +34,10 @@ async function index(opts: Required<AbortOptions>){
 
         if(args.mr.enabled){
             args.mr.enabled = false
-
-            const view = render<number | null>('MergeRequests', form({
-                Cancel: button(() => view.resolve(null)),
-                List: list(),
-            }), opts, [
-                {
-                    regex: /List\/(?<iid>\d+)\/Button:pressed/,
-                    listener(m){
-                        const iid = parseInt(m.groups!.iid!)
-                        view.resolve(iid)
-                    },
-                }
-            ])
-
-            let mrs: GitLab.MergeRequest[] | undefined
-            try {
-                mrs = await (await fetch(gsPkg.gitLabMRs)).json() as never
-            } catch(err) {
-                console_log('Fetching a list of open requests failed:', Bun.inspect(err))
-            }
-            
-            if(mrs){
-                view.get('List').setItems(
-                    Object.fromEntries(
-                        mrs.map(mr => {
-                            const mrForm = form({
-                                Button: button(),
-                                Title: label(mr.title),
-                                Info: label(`${mr.reference} · created by ${mr.author.name}`) //TODO: ${'20 hours ago'}
-                            })
-                            return [ mr.iid, mrForm ]
-                        })
-                    )
-                )
-                const selected = await view.promise
-                if(selected){
-                    args.mr.enabled = true
-                    args.mr.value = selected
-                }
+            const selected = await mrs(opts)
+            if(selected){
+                args.mr.enabled = true
+                args.mr.value = selected
             }
         }
     }

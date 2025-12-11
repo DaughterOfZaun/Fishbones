@@ -78,9 +78,11 @@ export async function repair(opts: Required<AbortOptions>){
     let updated = false
     const gsExeIsMissing = !await fs_exists(gsPkg.dll, opts)
     results = await Promise.allSettled([
-        
-        repairSelfPackage(opts),
-
+        (async () => {
+            if(args.torrentDownload.enabled){
+                await repairSelfPackage(opts)
+            }
+        })(),
         Promise.allSettled([
             repairArchived(sdkPkg, opts),
             (async () => {

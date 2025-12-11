@@ -232,11 +232,11 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_efxa6")
 tab_alignment = 1
-current_tab = 0
 tabs_visible = false
 deselect_enabled = true
 
 [node name="#Startup" type="Control" parent="Container/TabContainer"]
+visible = false
 layout_mode = 2
 script = ExtResource("13_2cqfq")
 metadata/_tab_index = 0
@@ -277,6 +277,7 @@ text = "Download files from"
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 selected = 0
+fit_to_longest_item = false
 item_count = 3
 popup/item_0/text = "torrent + mega.nz"
 popup/item_0/id = 0
@@ -297,11 +298,17 @@ text = "Download game server updates from"
 [node name="#ServerOrigin" type="OptionButton" parent="Container/TabContainer/#Startup/VBoxContainer/HBoxContainer2"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
+selected = 0
+fit_to_longest_item = false
 item_count = 2
 popup/item_0/text = "skelsoft"
 popup/item_0/id = 0
-popup/item_1/text = "icm"
+popup/item_1/text = "ice-cream-man"
 popup/item_1/id = 1
+
+[node name="Label" type="Label" parent="Container/TabContainer/#Startup/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+text = "repo"
 
 [node name="#EditServerOrigins" type="Button" parent="Container/TabContainer/#Startup/VBoxContainer/HBoxContainer2"]
 visible = false
@@ -502,7 +509,6 @@ theme_override_constants/margin_bottom = 0
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_efxa6")
 tab_alignment = 1
-current_tab = 2
 tabs_visible = false
 deselect_enabled = true
 
@@ -1162,6 +1168,7 @@ size_flags_stretch_ratio = 0.25
 text = "Host Game"
 
 [node name="#GatheringLobby" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer"]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 8.0
@@ -2099,53 +2106,76 @@ size_flags_vertical = 6
 [node name="VBoxContainer" type="VBoxContainer" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer"]
 layout_mode = 2
 
-[node name="Placeholder" type="PanelContainer" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer"]
+[node name="#Placeholder" type="PanelContainer" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer"]
 custom_minimum_size = Vector2(0, 55)
 layout_mode = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/Placeholder"]
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/#Placeholder"]
 layout_mode = 2
 theme_override_constants/margin_left = 12
 theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 12
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/Placeholder/MarginContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/#Placeholder/MarginContainer"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/Placeholder/MarginContainer/HBoxContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/#Placeholder/MarginContainer/HBoxContainer"]
 layout_mode = 2
 
-[node name="CheckBox1" type="CheckBox" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/Placeholder/MarginContainer/HBoxContainer/MarginContainer"]
+[node name="CheckBox1" type="CheckBox" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/#Placeholder/MarginContainer/HBoxContainer/MarginContainer"]
 layout_mode = 2
 disabled = true
 button_group = SubResource("ButtonGroup_cegan")
 
-[node name="CheckBox2" type="CheckBox" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/Placeholder/MarginContainer/HBoxContainer/MarginContainer"]
+[node name="CheckBox2" type="CheckBox" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/#Placeholder/MarginContainer/HBoxContainer/MarginContainer"]
 layout_mode = 2
 disabled = true
 button_pressed = true
 button_group = SubResource("ButtonGroup_cegan")
 
-[node name="AnimationPlayer" type="AnimationPlayer" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/Placeholder/MarginContainer/HBoxContainer/MarginContainer/CheckBox2"]
+[node name="AnimationPlayer" type="AnimationPlayer" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/#Placeholder/MarginContainer/HBoxContainer/MarginContainer/CheckBox2"]
 libraries = {
 &"": SubResource("AnimationLibrary_egw64")
 }
 autoplay = "slow_flicker"
 speed_scale = 0.5
 
-[node name="Label" type="Label" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/Placeholder/MarginContainer/HBoxContainer"]
+[node name="Label" type="Label" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/#Placeholder/MarginContainer/HBoxContainer"]
 layout_mode = 2
 text = "Loading data..."
+
+[node name="#NoMRs" type="PanelContainer" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 55)
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/#NoMRs"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/#NoMRs/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Control" type="Control" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/#NoMRs/MarginContainer/HBoxContainer"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/#NoMRs/MarginContainer/HBoxContainer"]
+layout_mode = 2
+text = "There are no merge requests for testing"
 
 [node name="#List" type="VBoxContainer" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer" node_paths=PackedStringArray("placeholder_container", "placeholder_label")]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 4
 script = ExtResource("14_yaehf")
-placeholder_container = NodePath("../Placeholder")
-placeholder_label = NodePath("../Placeholder/MarginContainer/HBoxContainer/Label")
+placeholder_container = NodePath("../#Placeholder")
+placeholder_label = NodePath("../#Placeholder/MarginContainer/HBoxContainer/Label")
 
 [node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#MergeRequests/HBoxContainer/ScrollContainer/MarginContainer/VBoxContainer/#List"]
 layout_mode = 2
