@@ -4,6 +4,7 @@ enum State {
     UNDEFINED = 0;
     STOPPED = 1;
     STARTED = 2;
+    UNUSED = 3;
     LAUNCHED = 4;
 }
 
@@ -12,6 +13,7 @@ enum KickReason {
     MAX_PLAYERS = 1;
     WRONG_PASSWORD = 2;
     MAKER_DECISION = 3;
+    UNUSED = 4;
     STARTED = 5;
     OLD_VERSION = 6;
 }
@@ -43,7 +45,7 @@ message LobbyNotificationMessage {
     }
     repeated PeerRequests peers_requests = 3;
     message PeerRequests {
-        uint32 playerId = 1;
+        uint32 player_id = 1;
         optional bool leave_request = 2;
         optional JoinRequest join_request = 3;
         optional PickRequest pick_request = 4;
@@ -54,7 +56,7 @@ message LobbyNotificationMessage {
         optional bool is_me = 2;
         optional PeerInfo info = 3;
         message PeerInfo {
-            bytes publicKey = 1;
+            bytes public_key = 1;
             repeated bytes addrs = 2;
         }
     }
@@ -70,9 +72,9 @@ message PickRequest {
     optional uint32 spell1 = 3;
     optional uint32 spell2 = 4;
     optional uint32 lock = 5;
-    optional bool serverStarted = 9;
-    optional float maxPingObserved = 10;
     optional uint32 difficulty = 6;
     optional uint32 skin = 7;
     map<uint32, uint32> talents = 8;
+    optional bool server_started = 9;
+    optional float max_ping_observed = 10;
 }

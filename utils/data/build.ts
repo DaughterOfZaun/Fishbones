@@ -30,6 +30,8 @@ export async function build(pkg: PkgInfoCSProj, opts: Required<AbortOptions>){
     //console_log(`Building ${pkg.dllName}...`)
     const bar = createBar('Building', pkg.dllName)
     
+    let csproj: string | undefined
+    let csprojWasPatched = false
     let program: string | undefined
     let programWasPatched = false
     let nugetConfigWasPlaced = false
@@ -39,10 +41,20 @@ export async function build(pkg: PkgInfoCSProj, opts: Required<AbortOptions>){
     try {
         
         program = (await fs_readFile(pkg.program, fs_opts))!
-        const patched = program.replace(/(?<!\/\/)(Console\.SetWindowSize)/, '//$1')
-        if(patched != program){
-            await fs_writeFile(pkg.program, patched, fs_opts)
+        const patchedProgram = program.replace(/(?<!\/\/)(Console\.SetWindowSize)/, '//$1')
+        if(patchedProgram != program){
+            await fs_writeFile(pkg.program, patchedProgram, fs_opts)
             programWasPatched = true
+        }
+
+        csproj = (await fs_readFile(pkg.csProj, fs_opts))!
+        const patchedCSProj = csproj.replace(
+            /(<PackageReference Include="MoonSharp\.Debugger" Version="2\.0\.0" \/>)/,
+            '<!-- $1 -->'
+        )
+        if(patchedCSProj != csproj){
+            await fs_writeFile(pkg.csProj, patchedCSProj, fs_opts)
+            csprojWasPatched = true
         }
 
         if(!(await fs_exists(nugetConfig, fs_opts))){
@@ -50,7 +62,11 @@ export async function build(pkg: PkgInfoCSProj, opts: Required<AbortOptions>){
             nugetConfigWasPlaced = true
         }
 
-        sdkSubprocess = spawn(sdkPkg.exe, ['build', '.' /*pkg.csProj*/], {
+        sdkSubprocess = spawn(sdkPkg.exe, [
+            'build',
+            ...'--nologo -v q /p:WarningLevel=0 /clp:ErrorsOnly'.split(' '),
+            '.' /*pkg.csProj*/
+        ], {
             env: Object.assign(process.env, { 'DOTNET_CLI_TELEMETRY_OPTOUT': '1' }),
             //env: { 'DOTNET_CLI_TELEMETRY_OPTOUT': '1' },
             stdio: [ null, 'pipe', 'pipe' ],
@@ -70,6 +86,9 @@ export async function build(pkg: PkgInfoCSProj, opts: Required<AbortOptions>){
         // Revert patch.
         if(program && programWasPatched)
             await fs_writeFile(pkg.program, program, fs_opts)
+
+        if(csproj && csprojWasPatched)
+            await fs_writeFile(pkg.csProj, csproj, fs_opts)
 
         if(nugetConfigWasPlaced)
             await fs_removeFile(nugetConfig, fs_opts)

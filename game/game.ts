@@ -49,6 +49,8 @@ enum State {
 }
 */
 
+const MAX_PING_MULTIPLIER = 0.5
+
 export abstract class Game extends TypedEventEmitter<GameEvents> {
     
     public readonly node: LibP2PNode
@@ -177,7 +179,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             const i = player.team.value
             if(i != undefined) playerCounts[i]!++
         })
-        const minPlayers = playerCounts.reduce((a, c) => Math.min(a, c))
+        const minPlayers = playerCounts.sort().at(0) ?? 0
         const team = playerCounts.indexOf(minPlayers)
 
         player.team.value = team
@@ -307,10 +309,11 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     private broadcastLaunchRequests(){
         const players = this.getPlayers()
         
-        const maxPingObserved = players.filter(player => !!player.peerId).reduce((v, player) => {
-            return Math.max(v, player.maxPingObserved.value ?? 0)
-        }, 0)
-        const delay = Math.ceil(maxPingObserved * 0.5) // It's very naive of me.
+        const maxPingObserved = players
+            .filter(player => !!player.peerId)
+            .map(player => player.maxPingObserved.value ?? 0)
+            .sort().at(0) ?? 0
+        const delay = Math.ceil(maxPingObserved * MAX_PING_MULTIPLIER) // It's very naive of me.
 
         console_log(`An input delay of ${delay}ms is set.`)
 
@@ -394,9 +397,9 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
 
                         this.proxyClientServer.afterStart(proc.port)
 
-                        const maxPingObserved = peerIds.reduce((v, peerId) => {
-                            return Math.max(v, this.node.services.ping.getMaxPing(peerId))
-                        }, 0)
+                        const maxPingObserved = peerIds
+                            .map(peerId => this.node.services.ping.getMaxPing(peerId))
+                            .sort().at(0) ?? 0
                         this.set('maxPingObserved', maxPingObserved)
 
                         this.set('serverStarted', true)

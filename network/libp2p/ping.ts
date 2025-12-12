@@ -5,6 +5,7 @@ import { PeerMap } from '@libp2p/peer-collections'
 
 //const HISTORY_DURATION = 10 * 60 * 1000
 const HISTORY_LENGTH = 50
+const MAX_PING_PERCENT = 0.9
 
 export type PingResult = {
     peerId: PeerId
@@ -115,9 +116,8 @@ class CustomPing extends TypedEventEmitter<PingEvents> implements PingService {
 
     public getMaxPing(peerId: PeerId): number {
         const entries = this.history_get(peerId)
-        return entries.reduce((v, entry) => {
-            return Math.max(v, entry.ms)
-        }, 0)
+        const pingsObserved = entries.map(entry => entry.ms).sort()
+        return pingsObserved.at(Math.floor(pingsObserved.length * MAX_PING_PERCENT) - 1) ?? 0
     }
 }
 

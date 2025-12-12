@@ -113,6 +113,11 @@ async function startAria2(opts: Required<AbortOptions>){
             //signal: opts.signal,
             cwd: downloads,
             log: true,
+            logFilter: (chunk) => {
+                return chunk
+                    .replace(/\*\*\* Download Progress Summary as of .*? \*\*\* ?\n=+(?:\n|$)/g, '')
+                    .replace(/\[.*\]\nFILE: .*\n-+(?:\n|$)/g, '')
+            }
         }) //TODO: Handle start fail. Maybe?
 
         aria2procPromise = startProcess(LOG_PREFIX, aria2proc, 'stdout', (chunk) => {

@@ -42,7 +42,7 @@ function setRemoteByIndex(index: number){
 type Config = typeof defaultConfig
 const REMOTE_IDX = 'game-server-git-remote-index'
 const defaultConfig = {
-    [REMOTE_IDX]: 1,
+    [REMOTE_IDX]: 0,
 }
 
 let config = Object.assign({}, defaultConfig)

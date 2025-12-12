@@ -142,10 +142,12 @@ export class UseExistingLibP2PConnection extends ConnectionStrategy {
         }
         if((relativeRole & Role.Client) != 0){
             const connections = this.node.getConnections(id)
+                .filter(connection => connection.status === 'open' && !connection.limits)
             const connection =
                 connections.find(connection => connection.direction === 'outbound') ??
                 connections.at(0) ?? await this.node.dial(id, { ...opts, force: false })
-            const streams = connection.streams.filter(stream => stream.protocol === PROXY_PROTOCOL)
+            const streams = connection.streams
+                .filter(stream => stream.status === 'open' && stream.protocol === PROXY_PROTOCOL)
             const stream =
                 streams.find(stream => stream.direction === 'outbound') ??
                 streams.at(0) ?? await connection.newStream(PROXY_PROTOCOL, opts)

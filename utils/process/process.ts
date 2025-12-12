@@ -261,7 +261,7 @@ export function unwrapAbortError(err: unknown){
 export { originalSpawn }
 const activeProcesses = new Set<ChildProcess>()
 const detachedProcesses = new Set<ChildProcess>()
-type SpawnOptions = SpawnOptionsWithoutStdio & { log: boolean, logPrefix: string }
+type SpawnOptions = SpawnOptionsWithoutStdio & { log: boolean, logPrefix: string, logFilter?: (chunk: string) => string }
 export function spawn(cmd: string, args: readonly string[], opts: SpawnOptions){
     logger.log('spawn', cmd, ...args)
 
@@ -282,7 +282,9 @@ export function spawn(cmd: string, args: readonly string[], opts: SpawnOptions){
         proc.stderr.setEncoding('utf8').on('data', (chunk: string) => onData('[STDERR]', chunk))
         function onData(src: string, chunk: string){
             chunk = chunk.trim()
-            if(chunk) //TODO: [#e69e0c 0B/20MiB(0%) CN:1 SD:0 DL:0B]
+            if(chunk && opts.logFilter)
+                chunk = opts.logFilter(chunk)
+            if(chunk)
                 logger.log(opts.logPrefix, `[${proc.pid}]`, src, chunk)
         }
     }
