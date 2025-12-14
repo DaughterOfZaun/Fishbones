@@ -23,6 +23,7 @@ message LobbyRequestMessage {
     optional PickRequest pick_request = 2;
     optional bool leave_request = 3;
     optional ChatRequest chat_request = 4;
+    optional ConnectedToRequest connected_to = 5;
     message JoinRequest {
         string name = 1;
         optional string password = 2;
@@ -30,6 +31,9 @@ message LobbyRequestMessage {
     }
     message ChatRequest {
         string message = 1;
+    }
+    message ConnectedToRequest {
+        uint32 player_id = 1;
     }
 }
 
@@ -77,4 +81,5 @@ message PickRequest {
     map<uint32, uint32> talents = 8;
     optional bool server_started = 9;
     optional float max_ping_observed = 10;
+    optional bool fully_connected = 11;
 }

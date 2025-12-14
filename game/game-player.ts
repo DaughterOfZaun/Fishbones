@@ -9,7 +9,7 @@ import type { WriteonlyMessageStream } from '../utils/pb-stream'
 
 export type PlayerId = number & { readonly brand: unique symbol }
 
-const pickableKeys = ["team", "champion", "spell1", "spell2", "lock", "difficulty", "skin", "name", "talents"] as const
+const pickableKeys = ["team", "champion", "spell1", "spell2", "lock", "difficulty", "skin", "talents", "fullyConnected"] as const
 export type KeysByValue<T, V> = Exclude<{ [K in keyof T]: T[K] extends V ? K : undefined }[keyof T], undefined>
 export type PPP = KeysByValue<GamePlayer, ValueDesc<unknown, unknown>>
 export class GamePlayer {
@@ -27,16 +27,18 @@ export class GamePlayer {
         this.peerId = peerId
     }
     
-    public readonly team = new Team() //TODO: disallow uinput & decodeInplace
+    public readonly team = new Team()
     public readonly champion = new Champion(undefined, () => this.game.server.champions)
     public readonly spell1 = new SummonerSpell(undefined, () => this.game.server.spells)
     public readonly spell2 = new SummonerSpell(undefined, () => this.game.server.spells)
-    public readonly lock = new Lock() //TODO: Hide in test
-    public readonly serverStarted = new BooleanValue()
-    public readonly maxPingObserved = new FloatValue()
+    public readonly lock = new Lock(+false)
+    public readonly serverStarted = new BooleanValue(false)
+    public readonly maxPingObserved = new FloatValue(0)
     public readonly difficulty = new AIDifficulty()
-    public readonly skin = new Skin()
+    public readonly skin = new Skin(0)
     public readonly talents = new Talents()
+    public readonly fullyConnected = new BooleanValue(false)
+    public readonly connectedTo = new Set<PlayerId>()
 
     public get isBot(){ return this.difficulty.value !== undefined }
 
@@ -49,6 +51,7 @@ export class GamePlayer {
             )
     }
     public decodeInplace(prs: PickRequest): boolean {
+        console.log(JSON.stringify({ method: 'console.log', params: [ JSON.stringify(prs) ] }))
         return Object.entries(prs).reduce((a, [key, value]) => {
             let success = false
             if(/*pickableKeys.includes(key as PPP) &&*/ value !== undefined)

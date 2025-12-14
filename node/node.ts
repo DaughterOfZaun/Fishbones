@@ -138,7 +138,7 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
             listen: [
                 `/ip4/0.0.0.0/udp/0/webrtc-direct`,
                 ...Array<string>(3).fill('/p2p-circuit'),
-                `/ip4/0.0.0.0/tcp/0`,
+                //`/ip4/0.0.0.0/tcp/0`,
                 '/webrtc',
             ]
         },

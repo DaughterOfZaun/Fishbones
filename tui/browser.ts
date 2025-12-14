@@ -122,7 +122,7 @@ async function hostLocal(node: LibP2PNode, name: string, lobby: Lobby, setup: Se
     
     try {
         await game.startListening(opts)
-        game.join(name, undefined)
+        await game.join(name, undefined, opts)
         await lobby(game, opts)
     } finally {
         game.stopListening()
@@ -146,7 +146,7 @@ async function hostRemote(node: LibP2PNode, name: string, lobby: Lobby, setup: S
     let prevPlayerCount = 0
     try {
         await game.startListening(opts)
-        game.join(name, undefined)
+        await game.join(name, undefined, opts)
         data = {
             name: name,
             serverSettings: server.encode(),
@@ -202,12 +202,15 @@ async function deadlyRace(cbs: ((opts: Required<AbortOptions>) => Promise<unknow
 async function joinRemote(game: RemoteGame, name: string, lobby: Lobby, opts: Required<AbortOptions>){
     try {
         await deadlyRace([
-            async (opts) => spinner({ message: 'Joining the game...' }, opts),
+            async (opts) => spinner({ message: 'Connecting to host...' }, opts),
             async (opts) => game.connect(opts),
         ], opts)
         if(game.password.isSet)
             await game.password.uinput(opts)
-        game.join(name, game.password.encode())
+        await deadlyRace([
+            async (opts) => spinner({ message: 'Joining the game...' }, opts),
+            async (opts) => game.join(name, game.password.encode(), opts)
+        ], opts)
         await lobby(game, opts)
     } catch(err) {
         if(err instanceof AbortPromptError){ /* Ignore. */ }

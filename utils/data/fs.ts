@@ -163,6 +163,19 @@ export async function fs_removeFile(path: string, opts: RmOptions & Required<Abo
     return result
 }
 
+export async function fs_truncate(path: string, len: number, opts: Required<AbortOptions>, log = true){
+    let result = false
+    try {
+        await fs.truncate(path, len)
+        result = true
+    } catch(err){
+        if(log)
+            console_log_fs_err('Resizing file', path, err)
+    }
+    opts.signal.throwIfAborted()
+    return result
+}
+
 const FS_ERR_CODES: Record<string, string> = {
     ENOENT: 'File not found',
 }

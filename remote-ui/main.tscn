@@ -163,7 +163,7 @@ spinner = ExtResource("4_ycdy4")
 select = ExtResource("5_w48qg")
 checkbox = ExtResource("6_vivmo")
 input = ExtResource("7_2cqfq")
-embedded_js = "res://embedded/index-0.0.3.27.js"
+embedded_js = "res://embedded/index-0.0.3.28.js"
 embedded_exe = "res://embedded/bun-1.3.2-windows-x64-baseline.exe"
 embedded_lib_0 = "res://embedded/node_datachannel-8fg8wz1b.node"
 embedded_file_0 = "res://embedded/7za-2501-windows-x64.exe"
@@ -232,6 +232,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_efxa6")
 tab_alignment = 1
+current_tab = 2
 tabs_visible = false
 deselect_enabled = true
 
@@ -487,7 +488,6 @@ disabled = true
 text = "Connect"
 
 [node name="MarginContainer1" type="MarginContainer" parent="Container/TabContainer"]
-visible = false
 layout_mode = 2
 metadata/_tab_index = 2
 
@@ -509,6 +509,7 @@ theme_override_constants/margin_bottom = 0
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_efxa6")
 tab_alignment = 1
+current_tab = 2
 tabs_visible = false
 deselect_enabled = true
 
@@ -1168,7 +1169,6 @@ size_flags_stretch_ratio = 0.25
 text = "Host Game"
 
 [node name="#GatheringLobby" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer"]
-visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 8.0
@@ -1211,7 +1211,10 @@ script = ExtResource("14_yaehf")
 layout_mode = 2
 script = ExtResource("13_2cqfq")
 
-[node name="#Icon" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team1/ScrollContainer/VBoxContainer1/#Players/HBoxContainer"]
+[node name="MarginContainer1" type="MarginContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team1/ScrollContainer/VBoxContainer1/#Players/HBoxContainer"]
+layout_mode = 2
+
+[node name="#Icon" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team1/ScrollContainer/VBoxContainer1/#Players/HBoxContainer/MarginContainer1"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 mouse_filter = 2
@@ -1219,14 +1222,30 @@ theme = SubResource("Theme_dg77c")
 icon_alignment = 1
 expand_icon = true
 
-[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team1/ScrollContainer/VBoxContainer1/#Players/HBoxContainer"]
+[node name="Control" type="Control" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team1/ScrollContainer/VBoxContainer1/#Players/HBoxContainer/MarginContainer1"]
+layout_mode = 2
+
+[node name="#Online" type="CheckBox" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team1/ScrollContainer/VBoxContainer1/#Players/HBoxContainer/MarginContainer1/Control"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -24.0
+offset_top = -24.0
+grow_horizontal = 0
+grow_vertical = 0
+disabled = true
+
+[node name="MarginContainer2" type="MarginContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team1/ScrollContainer/VBoxContainer1/#Players/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team1/ScrollContainer/VBoxContainer1/#Players/HBoxContainer/MarginContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team1/ScrollContainer/VBoxContainer1/#Players/HBoxContainer/MarginContainer2"]
 layout_mode = 2
 
-[node name="#Name" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team1/ScrollContainer/VBoxContainer1/#Players/HBoxContainer/MarginContainer/HBoxContainer"]
+[node name="#Name" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team1/ScrollContainer/VBoxContainer1/#Players/HBoxContainer/MarginContainer2/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 6
@@ -1234,7 +1253,7 @@ text = "Summoner's Name"
 clip_text = true
 text_overrun_behavior = 3
 
-[node name="#Kick" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team1/ScrollContainer/VBoxContainer1/#Players/HBoxContainer/MarginContainer/HBoxContainer"]
+[node name="#Kick" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team1/ScrollContainer/VBoxContainer1/#Players/HBoxContainer/MarginContainer2/HBoxContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -1352,7 +1371,10 @@ script = ExtResource("14_yaehf")
 layout_mode = 2
 script = ExtResource("13_2cqfq")
 
-[node name="#Icon" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team2/ScrollContainer/VBoxContainer1/#Players/HBoxContainer"]
+[node name="MarginContainer1" type="MarginContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team2/ScrollContainer/VBoxContainer1/#Players/HBoxContainer"]
+layout_mode = 2
+
+[node name="#Icon" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team2/ScrollContainer/VBoxContainer1/#Players/HBoxContainer/MarginContainer1"]
 custom_minimum_size = Vector2(58, 58)
 layout_mode = 2
 mouse_filter = 2
@@ -1360,14 +1382,30 @@ theme = SubResource("Theme_dg77c")
 icon_alignment = 1
 expand_icon = true
 
-[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team2/ScrollContainer/VBoxContainer1/#Players/HBoxContainer"]
+[node name="Control" type="Control" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team2/ScrollContainer/VBoxContainer1/#Players/HBoxContainer/MarginContainer1"]
+layout_mode = 2
+
+[node name="#Online" type="CheckBox" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team2/ScrollContainer/VBoxContainer1/#Players/HBoxContainer/MarginContainer1/Control"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -24.0
+offset_top = -24.0
+grow_horizontal = 0
+grow_vertical = 0
+disabled = true
+
+[node name="MarginContainer2" type="MarginContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team2/ScrollContainer/VBoxContainer1/#Players/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team2/ScrollContainer/VBoxContainer1/#Players/HBoxContainer/MarginContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team2/ScrollContainer/VBoxContainer1/#Players/HBoxContainer/MarginContainer2"]
 layout_mode = 2
 
-[node name="#Name" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team2/ScrollContainer/VBoxContainer1/#Players/HBoxContainer/MarginContainer/HBoxContainer"]
+[node name="#Name" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team2/ScrollContainer/VBoxContainer1/#Players/HBoxContainer/MarginContainer2/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 6
@@ -1375,7 +1413,7 @@ text = "Summoner's Name"
 clip_text = true
 text_overrun_behavior = 3
 
-[node name="#Kick" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team2/ScrollContainer/VBoxContainer1/#Players/HBoxContainer/MarginContainer/HBoxContainer"]
+[node name="#Kick" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team2/ScrollContainer/VBoxContainer1/#Players/HBoxContainer/MarginContainer2/HBoxContainer"]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -1503,6 +1541,24 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 0.25
 text = "Start Game"
+
+[node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/HBoxContainer/#Start"]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+offset_top = -23.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/HBoxContainer/#Start/PanelContainer"]
+layout_mode = 2
+
+[node name="#Explanation" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/HBoxContainer/#Start/PanelContainer/MarginContainer"]
+custom_minimum_size = Vector2(1, 0)
+layout_mode = 2
+text = "You cannot start the game until all players are fully connected (☑)"
+horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="VBoxContainer2" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1"]
 layout_mode = 2

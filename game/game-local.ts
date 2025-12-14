@@ -11,6 +11,7 @@ import type { GamePlayer, PlayerId, PPP } from './game-player'
 import { PeerMap } from '@libp2p/peer-collections'
 import { pbStream } from '../utils/pb-stream'
 import { mapsById } from '../utils/data/constants/maps'
+//import { logger as myLogger } from '../utils/log'
 
 export class LocalGame extends Game {
     protected log = logger('launcher:game-local')
@@ -164,10 +165,12 @@ export class LocalGame extends Game {
     }
 
     protected stream_write(req: LobbyRequestMessage): boolean {
+        //myLogger.log(Bun.inspect({ method: 'stream_write', from: this.player?.id, req }))
         this.handleRequest(this.playerId, req, undefined, this.peerId)
         return true
     }
     protected broadcast(msg: LobbyNotificationMessage, to: Iterable<GamePlayer>, ignore?: GamePlayer): void {
+        //myLogger.log(Bun.inspect({ method: 'broadcast', from: this.player?.id, to: [...to].map(player => player.id), ignore: ignore?.id, msg }))
         for(const player of to){
             if(player === ignore) continue
             if(player.id === this.playerId){

@@ -2,7 +2,7 @@ import { LocalGame } from "../../game/game-local";
 import type { GamePlayer, PlayerId, PPP } from "../../game/game-player";
 import { SwitchViewError } from "../tui";
 import { BOTS, players, PLAYERS, Team, type Context } from "./lobby";
-import { button, form, icon, inq2gd, label, option, type Form } from "../../ui/remote/types";
+import { button, checkbox, form, icon, inq2gd, label, option, type Form } from "../../ui/remote/types";
 import { render } from "../../ui/remote/view";
 import { champions, AIChampion, AIDifficulty } from "../../utils/data/constants/champions";
 import { getName } from "../../utils/namegen/namegen";
@@ -30,6 +30,7 @@ export async function lobby_gather(ctx: Context){
                 Name: label(playerId),
                 Icon: icon(iconPath, championName),
                 Kick: button(undefined, !localGame || isMe),
+                Online: checkbox(player.fullyConnected.value),
             })
         } else {
             return form({
@@ -50,7 +51,8 @@ export async function lobby_gather(ctx: Context){
 
     const view = render('GatheringLobby', form({
         Quit: button(() => view.reject(new SwitchViewError({ cause: null }))),
-        Start: button(() => localGame.start(), !localGame),
+        Start: button(() => localGame.start(), !localGame || !game.areAllPlayersFullyConnected()),
+        Explanation: { $type: 'base', visible: false },
         Autofill: button(autofill, !localGame),
         Team1: team(0),
         Team2: team(1),
@@ -80,12 +82,15 @@ export async function lobby_gather(ctx: Context){
     updateDynamicElements()
     view.addEventListener(game, 'update', updateDynamicElements)
     function updateDynamicElements(){
+        const allPlayersAreFullyConnected = !game.areAllPlayersFullyConnected()
         view.get('Team1/Players').setItems(players(game, Team.Blue, PLAYERS, makePlayerForm))
         view.get('Team2/Players').setItems(players(game, Team.Purple, PLAYERS, makePlayerForm))
         view.get('Team1/Bots').setItems(players(game, Team.Blue, BOTS, makePlayerForm))
         view.get('Team2/Bots').setItems(players(game, Team.Purple, BOTS, makePlayerForm))
         view.get('Team1/Join').update(button(undefined, game.getPlayer()?.team.value == Team.Blue))
         view.get('Team2/Join').update(button(undefined, game.getPlayer()?.team.value == Team.Purple))
+        view.get('Start').update(button(undefined, !localGame || allPlayersAreFullyConnected))
+        view.get('Explanation').update({ $type: 'base', visible: allPlayersAreFullyConnected },)
     }
 
     view.addEventListener(game, 'joined', notifyPlayerJoined)

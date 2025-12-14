@@ -25,11 +25,14 @@ export class TerminationError extends Error implements TerminationErrorOptions {
         this.cause = options?.cause
     }
 }
-export function logTerminationMsg(prefix: string, action: string, code: null|number, signal: null|string){
+function getTerminationMsg(prefix: string, action: string, code: null|number, signal: null|string){
     let msg = `Process ${action} with code ${code}`
     if(signal) msg += ` by signal ${signal}`
-    logger.log(prefix, msg)
     return msg
+}
+function logTerminationMsg(prefix: string, action: string, code: null|number, signal: null|string){
+    const msg = getTerminationMsg(prefix, action, code, signal)
+    logger.log(prefix, msg)
 }
 
 type ProcessEventHandler = (code: number | null, signal: NodeJS.Signals | null) => void
@@ -108,7 +111,7 @@ export async function startProcess(
     })
     deferred.addListener(proc, 'error', (err: Error) => deferred.reject(err))
     deferred.addListener(proc, 'exit', <ProcessEventHandler>((code, signal) => {
-        const msg = logTerminationMsg(logPrefix, 'died', code, signal)
+        const msg = getTerminationMsg(logPrefix, 'died', code, signal)
         deferred.reject(new TerminationError(msg, { cause: { code, signal } }))
     }))
     if(isFinite(timeoutMs))
@@ -124,7 +127,7 @@ export async function successfulTermination(loggerPrefix: string, proc: ChildPro
     const deferred = new Deferred<void>(opts)
     deferred.addListener(proc, 'error', (err: Error) => deferred.reject(err))
     deferred.addListener(proc, 'exit', <ProcessEventHandler>((code, signal) => {
-        const msg = logTerminationMsg(loggerPrefix, 'exited', code, signal)
+        const msg = getTerminationMsg(loggerPrefix, 'exited', code, signal)
         if(!allowedExitCodes.includes(code!))
             deferred.reject(new TerminationError(msg, { cause: { code, signal } }))
         else deferred.resolve()
@@ -136,8 +139,8 @@ export async function killSubprocess(loggerPrefix: string, proc: ChildProcess, o
     const timeoutMs = PROCESS_EXIT_TIMEOUT
 
     const deferred = new Deferred<void>(opts)
-    deferred.addListener(proc, 'exit', <ProcessEventHandler>((code, signal) => {
-        logTerminationMsg(loggerPrefix, 'exited', code, signal)
+    deferred.addListener(proc, 'exit', <ProcessEventHandler>((/*code, signal*/) => {
+        //logTerminationMsg(loggerPrefix, 'exited', code, signal)
         deferred.resolve()
     }))
     deferred.setTimeout(() => {
@@ -271,21 +274,21 @@ export function spawn(cmd: string, args: readonly string[], opts: SpawnOptions){
     if(opts.detached)
     detachedProcesses.add(proc)
     activeProcesses.add(proc)
-    proc.on('exit', (code, signal) => {
-        logTerminationMsg(opts.logPrefix, 'exited', code, signal)
+    proc.on('exit', on.bind('exited'))
+    proc.on('error', on.bind('died'))
+    function on(event: string, code: number, signal: string){
+        logTerminationMsg(opts.logPrefix, event, code, signal)
         detachedProcesses.delete(proc)
         activeProcesses.delete(proc)
-    })
+    }
 
     if(opts.log){
         proc.stdout.setEncoding('utf8').on('data', (chunk: string) => onData('[STDOUT]', chunk))
         proc.stderr.setEncoding('utf8').on('data', (chunk: string) => onData('[STDERR]', chunk))
         function onData(src: string, chunk: string){
-            chunk = chunk.trim()
-            if(chunk && opts.logFilter)
-                chunk = opts.logFilter(chunk)
-            if(chunk)
-                logger.log(opts.logPrefix, `[${proc.pid}]`, src, chunk)
+            if(chunk && opts.logFilter) chunk = opts.logFilter(chunk)
+            if(chunk) chunk = chunk.replace(/^\s*\n/gm, '')
+            if(chunk) logger.log(opts.logPrefix, `[${proc.pid}]`, src, chunk)
         }
     }
 

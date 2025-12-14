@@ -14,14 +14,15 @@ import { ClientServerProxy, ProxyClient, ProxyServer } from '../utils/proxy/prox
 import type { WriteonlyMessageStream } from '../utils/pb-stream'
 import { launchClient, relaunchClient, stopClient } from '../utils/process/client'
 import { launchServer, stopServer } from '../utils/process/server'
-import { safeOptions, shutdownOptions } from '../utils/process/process'
+import { Deferred, safeOptions, shutdownOptions } from '../utils/process/process'
 import { logger } from '../utils/log'
-import { getBotName } from '../utils/namegen/namegen'
+import { getBotName, getName } from '../utils/namegen/namegen'
 import { GameMap } from '../utils/data/constants/maps'
 import { GameMode } from '../utils/data/constants/modes'
 import { runes } from '../utils/data/constants/runes'
 import { VERSION, versionFromString } from '../utils/constants-build'
 import { console_log } from '../ui/remote/remote'
+
 export const versionNumber = versionFromString(VERSION)
 
 interface GameEvents {
@@ -164,14 +165,18 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         throw new Error("Method not implemented")
     }
 
-    public join(name: string, password: u|string): boolean {
+    private joiningPromise: Deferred<boolean> | null = null
+    public async join(name: string, password: u|string, opts: Required<AbortOptions>){
 
         //if(!this.connected) return false
         if(this.joined) return true
 
-        return this.stream_write({
+        this.stream_write({
             joinRequest: { name, password, version: versionNumber },
         })
+
+        this.joiningPromise = new Deferred<boolean>(opts)
+        return this.joiningPromise.promise
     }
     protected assignTeamTo(player: GamePlayer){
         const playerCounts = Array<number>(Team.count).fill(0)
@@ -179,7 +184,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             const i = player.team.value
             if(i != undefined) playerCounts[i]!++
         })
-        const minPlayers = playerCounts.sort().at(0) ?? 0
+        const minPlayers = playerCounts.reduce((v, count) => Math.min(v, count), Infinity)
         const team = playerCounts.indexOf(minPlayers)
 
         player.team.value = team
@@ -192,6 +197,25 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         player.name.decodeInplace(name)
         this.assignTeamTo(player)
 
+        if(!this.features.isHalfPingEnabled){
+            player.fullyConnected.value = true
+        } else {
+            const fullyConnectedPlayers = [...this.players.values()]
+                .filter(player => player.fullyConnected.value)
+            if(fullyConnectedPlayers.length < 2){
+                console.assert(
+                    fullyConnectedPlayers.length === 0 && this.ownerId === player.peerId ||
+                    fullyConnectedPlayers.length === 1 && this.ownerId === fullyConnectedPlayers[0]!.peerId
+                )
+                player.fullyConnected.value = true
+            }
+            //player.connectedTo.add(player.id)
+            //player.connectedTo.add(this.player!.id)
+            //this.player!.connectedTo.add(player.id)
+        }
+
+        //console_log(`player[${player.id}].fullyConnected.value = ${player.fullyConnected.value}`)
+
         this.broadcast(
             {
                 peersRequests: [{
@@ -200,7 +224,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                         name: player.name.encode(),
                         info: await this.getPeerInfo(player, opts),
                     },
-                    pickRequest: player.encode('team'),
+                    pickRequest: player.encode(),
                 }]
             },
             this.players.values(),
@@ -211,15 +235,19 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         this.broadcast(
             {
                 peersRequests: await Promise.all(
-                    [...this.players.values()].map(async player => ({
-                        playerId: player.id,
-                        joinRequest: {
-                            name: player.name.encode(),
-                            isMe: player == newPlayer,
-                            info: await this.getPeerInfo(player, opts),
-                        },
-                        pickRequest: player.encode(),
-                    }))
+                    [...this.players.values()].map(async player => {
+                        const isMe = player === newPlayer
+                        const info = (!isMe) ? await this.getPeerInfo(player, opts) : undefined
+                        return {
+                            playerId: player.id,
+                            joinRequest: {
+                                name: player.name.encode(),
+                                isMe,
+                                info,
+                            },
+                            pickRequest: player.encode(),
+                        }
+                    })
                 )
             },
             [ player ],
@@ -228,7 +256,11 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     private async getPeerInfo(player: GamePlayer, opts: Required<AbortOptions>){
         const peerId = player.peerId
         const { peerStore } = this.node.components
-        if(peerId /*&& !peerId.equals(this.node.peerId)*/ && this.features.isHalfPingEnabled){
+        if(
+            peerId
+            //TODO: && player !== this.player
+            && this.features.isHalfPingEnabled
+        ){
             const { multiaddrs } = await peerStore.getInfo(peerId, opts)
             return {
                 publicKey: publicKeyToProtobuf(peerId.publicKey!),
@@ -241,19 +273,63 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         void this.handleJoinResponseAsync(player, res, shutdownOptions)
     }
     private async handleJoinResponseAsync(player: GamePlayer, res: LobbyNotificationMessage.JoinRequest, opts: Required<AbortOptions>){
-        const { peerStore } = this.node.components
-
+        
         player.name.decodeInplace(res.name)
 
         if(res.isMe){
             this.player = player
+            this.joiningPromise!.resolve(true)
+            this.joiningPromise = null
             this.joined = true
-        } else if(!player.stream && player.peerId && res.info){
-            const peerId = player.peerId
-            const multiaddrs = res.info.addrs.map(addr => multiaddr(addr))
-            await peerStore.patch(peerId, { multiaddrs }, opts)
-            await this.node.dial(peerId, opts)
+        } else if(
+            player.stream === undefined // We are not the game owner
+            //TODO: && this.player?.fullyConnected.value === true
+            && player.peerId && (res.info?.addrs.length ?? 0) > 0
+            && await this.tryConnectTo(player.peerId, res.info!.addrs, opts)
+        ){
+            //console_log(`connectedTo: { playerId: ${player.id} }`)
+            this.stream_write({
+                connectedTo: { playerId: player.id },
+            })
         }
+    }
+    private async tryConnectTo(peerId: PeerId, addrs: Uint8Array[], opts: Required<AbortOptions>){
+        const { peerStore } = this.node.components
+        const multiaddrs = addrs.map(addr => multiaddr(addr))
+        await peerStore.patch(peerId, { multiaddrs }, opts)
+        await this.node.dial(peerId, opts)
+        return true
+    }
+
+    private handleConnectedToRequest(playerFrom: GamePlayer, req: LobbyRequestMessage.ConnectedToRequest){
+        const playerTo = this.players.get(req.playerId as PlayerId)
+        if(!playerTo) return
+        playerFrom.connectedTo.add(playerTo.id)
+        const players = [...this.players.values()].filter(player => player.peerId)
+        if(!playerTo.fullyConnected.value && players.every(playerFrom => {
+            return playerFrom === this.player // Always connected to game owner
+                || playerFrom === playerTo // Always connected to self
+                || playerFrom.fullyConnected.value // Connected ...
+                && playerFrom.connectedTo.has(playerTo.id) // ... to fully connected peer
+        })){
+            console.log(JSON.stringify({ method: 'console.log', params: [ `playerTo[${playerTo.id}].fullyConnected.value = true` ] }))
+            playerTo.fullyConnected.value = true
+            this.broadcast(
+                {
+                    peersRequests: [{
+                        playerId: playerTo.id,
+                        pickRequest: {
+                            fullyConnected: playerTo.fullyConnected.encode(),
+                        }
+                    }]
+                },
+                players,
+            )
+        }
+    }
+
+    public areAllPlayersFullyConnected(){
+        return this.players.values().every(player => !player.peerId || player.fullyConnected.value)
     }
 
     public start(){
@@ -668,15 +744,20 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             player = this.players_add(playerId, peerId)
             if(stream) player.stream = stream
             this.handleJoinRequest(player, req.joinRequest)
+        } else {
+            player = this.players.get(playerId)
         }
-        if(req.pickRequest && (player = this.players.get(playerId))){
+        if(player && req.pickRequest){
             this.handlePickRequest(player, req.pickRequest)
         }
-        if(req.leaveRequest && (player = this.players.get(playerId))){
-            this.handleLeaveRequest(player)
-        }
-        if(req.chatRequest && (player = this.players.get(playerId))){
+        if(player && req.chatRequest){
             this.handleChatRequest(player, req.chatRequest)
+        }
+        if(player && req.connectedTo){
+            this.handleConnectedToRequest(player, req.connectedTo)
+        }
+        if(player && req.leaveRequest){
+            this.handleLeaveRequest(player)
         }
     }
     protected handleResponse(ress: LobbyNotificationMessage){
@@ -688,23 +769,27 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 const playerId = res.playerId as PlayerId
                 if(res.joinRequest){
                     let peerId: PeerId | undefined
-                    if(res.joinRequest.info){
+                    if(res.joinRequest.isMe){
+                        peerId = this.node.peerId
+                        joinedSelf = true
+                    } else if(res.joinRequest.info){
                         const publicKey = publicKeyFromProtobuf(res.joinRequest.info.publicKey)
                         peerId = peerIdFromPublicKey(publicKey)
                     }
                     player = this.players_add(playerId, peerId)
                     this.handleJoinResponse(player, res.joinRequest)
-                    joinedSelf ||= !!res.joinRequest.isMe
                     joinedPlayers.push(player)
+                } else {
+                    player = this.players.get(playerId)
                 }
-                if(res.pickRequest && (player = this.players.get(playerId))){
+                if(player && res.pickRequest){
                     this.handlePickResponse(player, res.pickRequest)
                 }
-                if(res.leaveRequest && (player = this.players.get(playerId))){
-                    this.handleLeaveResponse(player)
-                }
-                if(res.chatRequest && (player = this.players.get(playerId))){
+                if(player && res.chatRequest){
                     this.handleChatResponse(player, res.chatRequest)
+                }
+                if(player && res.leaveRequest){
+                    this.handleLeaveResponse(player)
                 }
             }
             this.safeDispatchEvent('update')
@@ -779,7 +864,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 AIDifficulty: player.isBot ? (player.difficulty.value ?? 0) : undefined,
                 blowfishKey, //TODO: Unhardcode. Security
                 rank: /*Rank.random() ??*/ "DIAMOND",
-                name: player.isBot ? getBotName(player.champion.toString()) : (player.name.value ?? `Player ${i + 1}`),
+                name: player.isBot ? getBotName(player.champion.toString()) : getName(player, false),
                 champion: player.champion.toString(), //TODO: Fix
                 team: player.team.toString().toUpperCase(),
                 skin: player.skin.value ?? 0,

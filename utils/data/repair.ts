@@ -2,7 +2,7 @@ import { build } from "./build"
 import { download, appendPartialDownloadFileExt, repairAria2, seed } from "./download/download"
 import { gcPkg, gitPkg, gsPkg, PkgInfo, repairTorrents, sdkPkg } from "./packages"
 import { console_log, createBar, currentExe, extractFile } from "../../ui/remote/remote"
-import { console_log_fs_err, cwd, downloads, fs_chmod, fs_copyFile, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_rmdir, rwx_rx_rx } from './fs'
+import { console_log_fs_err, cwd, downloads, fs_chmod, fs_copyFile, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_rmdir, fs_truncate, rwx_rx_rx } from './fs'
 import { readTrackersTxt } from "./download/trackers"
 import { appendPartialUnpackFileExt, DataError, repair7z, unpack } from "./unpack"
 import { TerminationError, unwrapAbortError } from "../process/process"
@@ -51,6 +51,7 @@ export async function repair(opts: Required<AbortOptions>){
         if(await fs.exists(prev_fbPkg.zip) && !await fs.exists(fbPkg.zip)){
             const bar = createBar('Copying', prev_fbPkg.zip)
             await fs_copyFile(prev_fbPkg.zip, fbPkg.zip, opts)
+            await fs_truncate(fbPkg.zip, fbPkg.zipSize, opts)
             bar.stop()
         }
         await download(fbPkg, opts)

@@ -6,6 +6,9 @@ export abstract class ValueDesc<I, E> {
     public value?: I
     abstract encode(): E
     abstract decodeInplace(v: E): boolean
+    constructor(value?: I){
+        this.value = value
+    }
 
     //TODO: Deprecate uinput.
     // eslint-disable-next-line @typescript-eslint/promise-function-async, @typescript-eslint/no-unused-vars

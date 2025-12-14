@@ -9,6 +9,7 @@ import { LobbyRequestMessage, LobbyNotificationMessage } from '../message/lobby'
 import { Game } from './game'
 import type { Server } from './server'
 import { logger } from '@libp2p/logger'
+//import { logger as myLogger } from '../utils/log'
 
 export class RemoteGame extends Game {
     protected log = logger('launcher:game-remote')
@@ -38,6 +39,7 @@ export class RemoteGame extends Game {
 
     private stream?: MessageStream<LobbyNotificationMessage, LobbyRequestMessage, Stream>
     protected stream_write(req: LobbyRequestMessage){
+        //myLogger.log(Bun.inspect({ method: 'stream_write', from: this.player?.id, req }))
         this.stream?.write(req).catch(err => this.log.error(err))
         return true
     }
