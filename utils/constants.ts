@@ -59,6 +59,16 @@ export class FloatValue extends ValueDesc<number, number>{
     }
 }
 
+export class HexStringValue extends ValueDesc<string, Uint8Array> {
+    encode(): Uint8Array {
+        return Uint8Array.fromHex(this.value!)
+    }
+    decodeInplace(v: Uint8Array): boolean {
+        this.value = v.toHex()
+        return true
+    }
+}
+
 export class PlayerCount extends PickableValue {
     public static readonly name = 'Player Count'
     //public static values = Array(6).fill(0).map((v, i) => `${i + 1}v${i + 1}`)

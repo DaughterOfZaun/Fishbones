@@ -1,6 +1,6 @@
 import { TypedEventEmitter, type AbortOptions } from "@libp2p/interface";
 import { type DeferredView, render } from "../ui/remote/view";
-import type { Deferred } from "../utils/process/process";
+import type { Deferred } from '../utils/promises'
 import type { ChatEventDetail, Game } from "../game/game";
 import { getName } from "../utils/namegen/namegen";
 import { form, line, text } from "../ui/remote/types";

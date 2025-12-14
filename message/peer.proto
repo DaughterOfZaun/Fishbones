@@ -1,21 +1,21 @@
 syntax = "proto3";
 
 message Peer {
-    bytes publicKey = 1;
+    bytes public_key = 1;
     repeated bytes addrs = 2;
     optional AdditionalData data = 3;
     message AdditionalData {
         string name = 1;
-        ServerSettings serverSettings = 2;
+        ServerSettings server_settings = 2;
         message ServerSettings {
            string name = 1;
            repeated uint32 maps = 2;
            repeated uint32 modes = 3;
-           uint32 tickRate = 4;
+           uint32 tick_rate = 4;
            repeated int32 champions = 5;
            repeated int32 spells = 6;
         }
-        repeated GameInfo gameInfos = 3;
+        repeated GameInfo game_infos = 3;
         message GameInfo {
             uint32 id = 1;
             string name = 2;
@@ -24,7 +24,7 @@ message Peer {
             uint32 players = 5;
             uint32 players_max = 6;
             repeated uint32 features = 7;
-            bool passwordProtected = 8;
+            bool password_protected = 8;
             //repeated int32 champions = 9;
             //repeated int32 spells = 10;
             //repeated int32 items = 11;

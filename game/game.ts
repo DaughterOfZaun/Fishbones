@@ -1,5 +1,5 @@
-import { blowfishKey, FeaturesEnabled, GameType, LOCALHOST, Name, Password, PlayerCount, Team, type u } from '../utils/constants'
-import { TypedEventEmitter, type AbortOptions, type PeerId, type Stream } from '@libp2p/interface'
+import { blowfishKey, FeaturesEnabled, GameType, HexStringValue, LOCALHOST, Name, Password, PlayerCount, Team, type u } from '../utils/constants'
+import { TypedEventEmitter, type AbortOptions, type Connection, type PeerId, type Stream } from '@libp2p/interface'
 import { publicKeyFromProtobuf, publicKeyToProtobuf } from '@libp2p/crypto/keys'
 import { peerIdFromPublicKey } from '@libp2p/peer-id'
 import { multiaddr } from '@multiformats/multiaddr'
@@ -14,7 +14,8 @@ import { ClientServerProxy, ProxyClient, ProxyServer } from '../utils/proxy/prox
 import type { WriteonlyMessageStream } from '../utils/pb-stream'
 import { launchClient, relaunchClient, stopClient } from '../utils/process/client'
 import { launchServer, stopServer } from '../utils/process/server'
-import { Deferred, safeOptions, shutdownOptions } from '../utils/process/process'
+import { safeOptions, shutdownOptions } from '../utils/process/process'
+import { deadlyRace, Deferred } from '../utils/promises'
 import { logger } from '../utils/log'
 import { getBotName, getName } from '../utils/namegen/namegen'
 import { GameMap } from '../utils/data/constants/maps'
@@ -65,6 +66,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     public readonly playersMax = new PlayerCount(5)
     public readonly password = new Password()
     public readonly features = new FeaturesEnabled()
+    public readonly commit = new HexStringValue()
 
     protected player?: GamePlayer
     public getPlayer(id?: PlayerId){
@@ -285,20 +287,42 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             player.stream === undefined // We are not the game owner
             //TODO: && this.player?.fullyConnected.value === true
             && player.peerId && (res.info?.addrs.length ?? 0) > 0
-            && await this.tryConnectTo(player.peerId, res.info!.addrs, opts)
         ){
+            if(!this.getExistingConnection(player.peerId)){
+                await deadlyRace([
+                    async (opts) => this.tryConnectTo(player.peerId!, res.info!.addrs, opts),
+                    async (opts) => this.waitForConnection(player.peerId!, opts),
+                ], opts)
+            }
             //console_log(`connectedTo: { playerId: ${player.id} }`)
             this.stream_write({
                 connectedTo: { playerId: player.id },
             })
         }
     }
+
+    private getExistingConnection(peerId: PeerId){
+        //TODO: This code block is copied from UseExistingLibP2PConnection (extends ConnectionStrategy)
+        const connections = this.node.getConnections(peerId)
+            .filter(connection => connection.status === 'open' && !connection.limits)
+        return connections.at(0)
+    }
+
     private async tryConnectTo(peerId: PeerId, addrs: Uint8Array[], opts: Required<AbortOptions>){
         const { peerStore } = this.node.components
         const multiaddrs = addrs.map(addr => multiaddr(addr))
         await peerStore.patch(peerId, { multiaddrs }, opts)
-        await this.node.dial(peerId, opts)
-        return true
+        const connection = await this.node.dial(peerId, opts)
+        return connection
+    }
+
+    private async waitForConnection(peerId: PeerId, opts: Required<AbortOptions>){
+        const deferred = new Deferred(opts)
+        deferred.addEventListener(this.node, 'connection:open', (event: CustomEvent<Connection>) => {
+            const connection = event.detail
+            deferred.resolve(connection)
+        })
+        return deferred.promise
     }
 
     private handleConnectedToRequest(playerFrom: GamePlayer, req: LobbyRequestMessage.ConnectedToRequest){
@@ -312,7 +336,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 || playerFrom.fullyConnected.value // Connected ...
                 && playerFrom.connectedTo.has(playerTo.id) // ... to fully connected peer
         })){
-            console.log(JSON.stringify({ method: 'console.log', params: [ `playerTo[${playerTo.id}].fullyConnected.value = true` ] }))
+            //console.log(JSON.stringify({ method: 'console.log', params: [ `playerTo[${playerTo.id}].fullyConnected.value = true` ] }))
             playerTo.fullyConnected.value = true
             this.broadcast(
                 {
@@ -388,7 +412,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         const maxPingObserved = players
             .filter(player => !!player.peerId)
             .map(player => player.maxPingObserved.value ?? 0)
-            .sort().at(0) ?? 0
+            .sort().at(-1) ?? 0
         const delay = Math.ceil(maxPingObserved * MAX_PING_MULTIPLIER) // It's very naive of me.
 
         console_log(`An input delay of ${delay}ms is set.`)
@@ -475,7 +499,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
 
                         const maxPingObserved = peerIds
                             .map(peerId => this.node.services.ping.getMaxPing(peerId))
-                            .sort().at(0) ?? 0
+                            .sort().at(-1) ?? 0
                         this.set('maxPingObserved', maxPingObserved)
 
                         this.set('serverStarted', true)
@@ -723,6 +747,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             playersMax: this.playersMax.encode(),
             features: this.features.encode(),
             passwordProtected: this.password.isSet,
+            commit: this.commit.encode(),
         }
     }
     public decodeInplace(gi: PBPeer.AdditionalData.GameInfo): boolean {
@@ -734,6 +759,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             this.players_count = gi.players
             ret &&= this.playersMax.decodeInplace(gi.playersMax)
             ret &&= this.features.decodeInplace(gi.features)
+            ret &&= !gi.commit || this.commit.decodeInplace(gi.commit)
         this.password.value = gi.passwordProtected ? 'non-empty' : undefined
         return ret
     }
@@ -864,7 +890,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 AIDifficulty: player.isBot ? (player.difficulty.value ?? 0) : undefined,
                 blowfishKey, //TODO: Unhardcode. Security
                 rank: /*Rank.random() ??*/ "DIAMOND",
-                name: player.isBot ? getBotName(player.champion.toString()) : getName(player, false),
+                name: player.isBot ? getBotName(player.champion.toString()) : getName(player, false, true),
                 champion: player.champion.toString(), //TODO: Fix
                 team: player.team.toString().toUpperCase(),
                 skin: player.skin.value ?? 0,

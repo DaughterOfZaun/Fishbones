@@ -1,5 +1,5 @@
 import type { AbortOptions } from "@libp2p/interface"
-import { Deferred } from "../../utils/process/process"
+import { Deferred } from '../../utils/promises'
 import { handlers, sendCall, sendFollowupNotification, type JSONDict, type JSONValue } from "./jrpc"
 import type { Config, View as IView } from "./types"
 

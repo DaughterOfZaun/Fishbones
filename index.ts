@@ -38,6 +38,7 @@ async function index(opts: Required<AbortOptions>){
             if(selected){
                 args.mr.enabled = true
                 args.mr.value = selected
+                args.update.enabled = true
             }
         }
     }

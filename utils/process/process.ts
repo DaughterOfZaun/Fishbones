@@ -3,7 +3,7 @@ import type { AbortOptions } from '@libp2p/interface'
 import { logger } from '../log'
 import { console_log, ExitPromptError } from '../../ui/remote/remote'
 import { spawn as originalSpawn } from 'child_process'
-import defer from 'p-defer'
+import { Deferred } from '../promises'
 //import { downloads } from './data-fs'
 
 export const ABORT_STAGE_TIMEOUT = 3_000
@@ -36,65 +36,6 @@ function logTerminationMsg(prefix: string, action: string, code: null|number, si
 }
 
 type ProcessEventHandler = (code: number | null, signal: NodeJS.Signals | null) => void
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type EventCallback = (...args: any[]) => void
-interface Emitter {
-    addListener: (event: string, callback: EventCallback) => void
-    removeListener: (event: string, callback: EventCallback) => void
-}
-
-interface EventEmitter<T extends string> {
-    addEventListener: (event: T, callback: EventCallback) => void
-    removeEventListener: (event: T, callback: EventCallback) => void
-}
-
-export class Deferred<T> {
-    public readonly promise: Promise<T>
-    public readonly resolve: (value: T) => void
-    public readonly reject: (err?: Error) => void
-    constructor(opts?: AbortOptions){
-        const { promise, resolve, reject } = defer<T>()
-        this.promise = promise
-        this.resolve = (value) => { this.cleanup(); resolve(value) }
-        this.reject = (err) => { this.cleanup(); reject(err) }
-        if(opts && opts.signal){
-            this.addEventListener(opts.signal, 'abort', () => {
-                this.reject(opts.signal?.reason as Error)
-            })
-        }
-    }
-    private listeners: [ Emitter, string, EventCallback ][] = []
-    public addListener<T extends string>(obj: Emitter, event: T, callback: EventCallback){
-        this.listeners.push([ obj, event, callback ])
-        obj.addListener(event, callback)
-    }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private eventListeners: [ EventEmitter<any>, string, EventCallback ][] = []
-    public addEventListener<T extends string>(obj: EventEmitter<T>, event: T, callback: EventCallback){
-        this.eventListeners.push([ obj, event, callback ])
-        obj.addEventListener(event, callback)
-    }
-    private timeouts: ReturnType<typeof setTimeout>[] = []
-    public setTimeout(callback: () => void, ms: number){
-        const timeout = setTimeout(callback, ms)
-        this.timeouts.push(timeout)
-    }
-    private callbacks: (() => void)[] = []
-    public addCleanupCallback(callback: () => void){
-        this.callbacks.push(callback)
-    }
-    private cleanup(){
-        for(const [ obj, event, callback ] of this.listeners)
-            obj.removeListener(event, callback)
-        for(const [ obj, event, callback ] of this.eventListeners)
-            obj.removeEventListener(event, callback)
-        for(const timeout of this.timeouts)
-            clearTimeout(timeout)
-        for(const callback of this.callbacks)
-            callback()
-    }
-}
 
 export async function startProcess(
     logPrefix: string,
@@ -286,9 +227,10 @@ export function spawn(cmd: string, args: readonly string[], opts: SpawnOptions){
         proc.stdout.setEncoding('utf8').on('data', (chunk: string) => onData('[STDOUT]', chunk))
         proc.stderr.setEncoding('utf8').on('data', (chunk: string) => onData('[STDERR]', chunk))
         function onData(src: string, chunk: string){
-            if(chunk && opts.logFilter) chunk = opts.logFilter(chunk)
-            if(chunk) chunk = chunk.replace(/^\s*\n/gm, '')
-            if(chunk) logger.log(opts.logPrefix, `[${proc.pid}]`, src, chunk)
+            if(chunk.length > 0 && opts.logFilter) chunk = opts.logFilter(chunk)
+            //if(chunk.length > 0) chunk = chunk.replace(/^\s*\n/gm, '')
+            if(chunk.length > 0) chunk = chunk.split('\n').map(line => line.trim()).filter(line => line.length > 0).join('\n')
+            if(chunk.length > 0) logger.log(opts.logPrefix, `[${proc.pid}]`, src, chunk)
         }
     }
 

@@ -11,6 +11,7 @@ import type { GamePlayer, PlayerId, PPP } from './game-player'
 import { PeerMap } from '@libp2p/peer-collections'
 import { pbStream } from '../utils/pb-stream'
 import { mapsById } from '../utils/data/constants/maps'
+import { gsPkg } from '../utils/data/packages'
 //import { logger as myLogger } from '../utils/log'
 
 export class LocalGame extends Game {
@@ -23,6 +24,7 @@ export class LocalGame extends Game {
     public constructor(node: LibP2PNode, server: Server){
         super(node, node.peerId, server)
         this.playerId = this.peerIdToPlayerId(node.peerId)
+        this.commit.value = gsPkg.gitRevision
         this.peerId = node.peerId
     }
 

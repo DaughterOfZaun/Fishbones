@@ -24,7 +24,7 @@ for(const [i, peerIdString] of officialServers.entries()){
     cache.set(peerId, `Official Server #${i + 1}`)
 }
 
-export function getUsername(peerId: PeerId){
+export function getUsername(peerId: PeerId, short = false){
     let name = cache.get(peerId)
     if(!name){
         let j = 4
@@ -46,22 +46,23 @@ export function getUsername(peerId: PeerId){
         }
         cache.set(peerId, name)
     }
+    if(short) return name.replace(/ #.*/, '') //HACK:
     return name
 }
 
-export function getPseudonym(playerId: number, isMe: boolean){
+export function getPseudonym(playerId: number, isMe: boolean, short = false){
     let name = 'Anonymous '
     //name += sampleSpecies[Math.floor((playerId / (2 ** 31)) * sampleSpecies.length)]
-    name += ' #' + formatUInt32(playerId)
-    if(isMe) name += ' (You)'
+    if(!short) name += ' #' + formatUInt32(playerId)
+    if(!short && isMe) name += ' (You)'
     return name
 }
 
 type GamePlayer = { id: number, peerId?: PeerId }
-export function getName(player: GamePlayer, isMe: boolean){
+export function getName(player: GamePlayer, isMe: boolean, short = false){
     return player.peerId ?
-        getUsername(player.peerId) :
-        getPseudonym(player.id, isMe)
+        getUsername(player.peerId, short) :
+        getPseudonym(player.id, isMe, short)
 }
 
 function formatUInt32(i: number){

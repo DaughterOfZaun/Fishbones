@@ -78,10 +78,14 @@ export async function update(pkg: PkgInfoGit, opts: Required<AbortOptions>){
     return updated
 }
 
+export let cachedHeadCommitHash: string | undefined
 export async function getHeadCommitHash(pkg: PkgInfoGit, opts: Required<AbortOptions>) {
     let { stdout } = await git([ 'rev-parse', 'HEAD' ], pkg, opts)
     stdout = stdout.trim()
-    if(/^\w{40}$/.test(stdout)) return stdout
+    if(/^\w{40}$/.test(stdout)){
+        cachedHeadCommitHash = stdout
+        return stdout
+    }
     //else throw new Error('Failed to get the head commit hash')
 }
 

@@ -1,4 +1,4 @@
-[gd_scene load_steps=40 format=3 uid="uid://c88cdpgvxg8v2"]
+[gd_scene load_steps=41 format=3 uid="uid://c88cdpgvxg8v2"]
 
 [ext_resource type="Theme" uid="uid://heyv1rjynqwi" path="res://main_theme.tres" id="1_efxa6"]
 [ext_resource type="Script" uid="uid://dys8mpxtgwbfe" path="res://server_node.gd" id="1_ig7tw"]
@@ -12,6 +12,7 @@
 [ext_resource type="Shader" uid="uid://c4ougvurpqa1d" path="res://components/background/simple_blur.gdshader" id="7_kek77"]
 [ext_resource type="Script" uid="uid://daigcqlxjwp5f" path="res://copy_paste_button.gd" id="11_ycdy4"]
 [ext_resource type="Script" uid="uid://c1341hmee22s6" path="res://dictionary_view.gd" id="13_2cqfq"]
+[ext_resource type="FontFile" uid="uid://delgr4grjpybo" path="res://fonts/NotoEmoji-Regular.ttf" id="13_getpj"]
 [ext_resource type="Texture2D" uid="uid://cxy05krshktbp" path="res://images/discord-icon-circle.png" id="14_82xsv"]
 [ext_resource type="Script" uid="uid://ssnirlom0p0n" path="res://popup_panel.gd" id="14_vivmo"]
 [ext_resource type="Script" uid="uid://co8q1vt1vwjgu" path="res://array_view.gd" id="14_yaehf"]
@@ -232,7 +233,6 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_efxa6")
 tab_alignment = 1
-current_tab = 2
 tabs_visible = false
 deselect_enabled = true
 
@@ -488,6 +488,7 @@ disabled = true
 text = "Connect"
 
 [node name="MarginContainer1" type="MarginContainer" parent="Container/TabContainer"]
+visible = false
 layout_mode = 2
 metadata/_tab_index = 2
 
@@ -509,7 +510,6 @@ theme_override_constants/margin_bottom = 0
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_efxa6")
 tab_alignment = 1
-current_tab = 2
 tabs_visible = false
 deselect_enabled = true
 
@@ -522,9 +522,8 @@ metadata/_tab_index = 0
 
 [node name="MarginContainer1" type="MarginContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser"]
 layout_mode = 2
-theme_override_constants/margin_left = 0
 theme_override_constants/margin_top = 0
-theme_override_constants/margin_right = 9
+theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 0
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/MarginContainer1"]
@@ -750,34 +749,112 @@ text_overrun_behavior = 3
 show_behind_parent = true
 layout_mode = 2
 
+[node name="#Explanation" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/#Join"]
+custom_minimum_size = Vector2(31, 31)
+layout_mode = 1
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -15.0
+grow_horizontal = 0
+grow_vertical = 2
+size_flags_vertical = 1
+tooltip_text = "The commit (version) of the remote server does not match the commit (version) of your local server"
+mouse_filter = 0
+theme_override_fonts/font = ExtResource("13_getpj")
+text = "⚠"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="HBoxContainer2" type="HBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3"]
 layout_mode = 2
 size_flags_horizontal = 0
 
-[node name="#Password" type="CheckBox" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer2"]
+[node name="Password" type="CheckBox" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer2"]
 layout_mode = 2
 tooltip_text = "Password"
 disabled = true
 
-[node name="#Manacosts" type="CheckBox" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer2"]
+[node name="#Password" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer2/Password"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("13_getpj")
+text = "🔒"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Manacosts" type="CheckBox" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer2"]
 layout_mode = 2
 tooltip_text = "Manacosts"
 disabled = true
 
-[node name="#Cooldowns" type="CheckBox" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer2"]
+[node name="#Manacosts" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer2/Manacosts"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("13_getpj")
+text = "💧"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Cooldowns" type="CheckBox" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer2"]
 layout_mode = 2
 tooltip_text = "Cooldowns"
 disabled = true
 
-[node name="#Minions" type="CheckBox" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer2"]
+[node name="#Cooldowns" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer2/Cooldowns"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("13_getpj")
+text = "⏳"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Minions" type="CheckBox" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer2"]
 layout_mode = 2
 tooltip_text = "Minions"
 disabled = true
 
-[node name="#Cheats" type="CheckBox" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer2"]
+[node name="#Minions" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer2/Minions"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("13_getpj")
+text = "♟️"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Cheats" type="CheckBox" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer2"]
 layout_mode = 2
 tooltip_text = "Cheats"
 disabled = true
+
+[node name="#Cheats" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer2/Cheats"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("13_getpj")
+text = "🪄"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="#HalfPing" type="CheckBox" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer2"]
 visible = false
@@ -1169,6 +1246,7 @@ size_flags_stretch_ratio = 0.25
 text = "Host Game"
 
 [node name="#GatheringLobby" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer"]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 8.0
@@ -1543,6 +1621,7 @@ size_flags_stretch_ratio = 0.25
 text = "Start Game"
 
 [node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/HBoxContainer/#Start"]
+visible = false
 layout_mode = 1
 anchors_preset = -1
 anchor_right = 1.0
@@ -1553,12 +1632,29 @@ grow_vertical = 0
 [node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/HBoxContainer/#Start/PanelContainer"]
 layout_mode = 2
 
-[node name="#Explanation" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/HBoxContainer/#Start/PanelContainer/MarginContainer"]
+[node name="Label" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/HBoxContainer/#Start/PanelContainer/MarginContainer"]
 custom_minimum_size = Vector2(1, 0)
 layout_mode = 2
 text = "You cannot start the game until all players are fully connected (☑)"
 horizontal_alignment = 1
 autowrap_mode = 3
+
+[node name="#Explanation" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/HBoxContainer/#Start"]
+custom_minimum_size = Vector2(31, 31)
+layout_mode = 1
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -1.0
+grow_horizontal = 0
+grow_vertical = 2
+tooltip_text = "You cannot start the game until all players are fully connected and marked by ✅"
+mouse_filter = 0
+theme_override_fonts/font = ExtResource("13_getpj")
+text = "⚠"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="VBoxContainer2" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1"]
 layout_mode = 2

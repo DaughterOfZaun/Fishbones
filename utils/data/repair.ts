@@ -11,7 +11,7 @@ import { promises as fs } from 'fs'
 import path from 'node:path'
 import embedded from './embedded/embedded'
 import os from 'os'
-import { runPostInstall, update } from "./update"
+import { cachedHeadCommitHash, runPostInstall, update } from "./update"
 //import { ensureSymlink } from "./data-client"
 import { args } from "../args"
 import { checkForUpdates, fbPkg, isNewVersionAvailable, prev_fbPkg, repairSelfPackage } from "./upgrade"
@@ -87,17 +87,16 @@ export async function repair(opts: Required<AbortOptions>){
         Promise.allSettled([
             repairArchived(sdkPkg, opts),
             (async () => {
-                if(args.update.enabled){
+                if(args.update.enabled || args.mr.enabled){
+                    if(os.platform() === 'win32'){
+                        await repairArchived(gitPkg, opts)
+                        if(await fs_exists(gitPkg.postInstall, opts, false))
+                            await runPostInstall(opts)
+                    }
                     updated = await update(gsPkg, opts)
+                    gsPkg.gitRevision = cachedHeadCommitHash!
                 } else {
                     await repairArchived(gsPkg, opts)
-                }
-            })(),
-            (async () => {
-                if(os.platform() === 'win32' && args.update.enabled){
-                    await repairArchived(gitPkg, opts)
-                    if(await fs_exists(gitPkg.postInstall, opts, false))
-                        await runPostInstall(opts)
                 }
             })(),
         ]).then(async (results) => {

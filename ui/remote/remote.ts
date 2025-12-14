@@ -11,7 +11,8 @@ import { logger } from '../../utils/log'
 import { args } from '../../utils/args'
 
 //import { fs_copyFile } from '../../utils/data/fs'
-import { Deferred, registerShutdownHandler, shutdown } from '../../utils/process/process'
+import { registerShutdownHandler, shutdown } from '../../utils/process/process'
+import { Deferred } from '../../utils/promises'
 import { listeners, sendCall, sendFollowupNotification, sendNotification, type JSONValue } from './jrpc'
 import * as jrpc from './jrpc'
 

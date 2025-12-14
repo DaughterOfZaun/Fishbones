@@ -3,7 +3,7 @@
     <br>
     <br>
     <br>
-    <big><a width="100%" href="https://github.com/DaughterOfZaun/Fishbones/releases/download/v0.0.4/Fishbones-0.0.3.27-Windows-x64.zip">> DOWNLOAD <</a></big>
+    <big><a width="100%" href="https://github.com/DaughterOfZaun/Fishbones/releases/download/v0.0.4/Fishbones-0.0.3.28-Windows-x64.zip">> DOWNLOAD <</a></big>
     <br>
     <br>
     <br>

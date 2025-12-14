@@ -10,9 +10,9 @@ config_version=5
 
 [application]
 
-config/name="Fishbones v0.0.3.27"
+config/name="Fishbones v0.0.3.28"
 config/description="Yet another LeagueSandbox launcher with a twist"
-config/version="0.0.3.27"
+config/version="0.0.3.28"
 run/main_scene="uid://c88cdpgvxg8v2"
 run/print_header=false
 config/use_custom_user_dir=true

@@ -26,6 +26,8 @@ func on_button_pressed(child: Control) -> void:
     callback.call('call', path, 'pressed')
 
 func on_button_gui_input(unk_event: InputEvent, child: BaseButton) -> void:
+    if child.disabled: return
+    
     if !(unk_event is InputEventMouseButton): return
     var event := unk_event as InputEventMouseButton
 

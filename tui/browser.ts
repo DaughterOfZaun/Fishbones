@@ -1,7 +1,7 @@
 import { RemoteGame } from '../game/game-remote'
 import { LocalServer, RemoteServer } from '../game/server'
 import { type LibP2PNode } from '../node/node'
-import { AbortError, type AbortOptions } from '@libp2p/interface'
+import { type AbortOptions } from '@libp2p/interface'
 import { args } from '../utils/args'
 import { PeerMap } from '@libp2p/peer-collections'
 import type { PeerIdWithData } from '../network/libp2p/discovery/pubsub-discovery'
@@ -9,10 +9,12 @@ import type { Peer } from '../message/peer'
 import { LocalGame } from '../game/game-local'
 import type { Game } from '../game/game'
 import { render } from '../ui/remote/view'
-import { button, checkbox, form, label, list, type Checkbox, type Form, type Label } from '../ui/remote/types'
+import { button, form, label, list, type Base, type Button, type Checkbox, type Form, type Label } from '../ui/remote/types'
 import { getUsername } from '../utils/namegen/namegen'
 import type { PingResult } from '../network/libp2p/ping'
 import { spinner, AbortPromptError, popup } from '../ui/remote/remote'
+import { deadlyRace } from '../utils/promises'
+import { gsPkg } from '../utils/data/packages'
 
 interface CacheEntry {
     server: RemoteServer
@@ -182,23 +184,6 @@ async function hostRemote(node: LibP2PNode, name: string, lobby: Lobby, setup: S
     function stop(){ pspd.setData(game.isJoinable() ? data : null) }
 }
 
-async function deadlyRace(cbs: ((opts: Required<AbortOptions>) => Promise<unknown>)[], opts: Required<AbortOptions>){
-    return new Promise((resolve, reject) => {
-        const controller = new AbortController()
-        const signal = AbortSignal.any([ controller.signal, opts.signal ])
-        void Promise.race(cbs.map(async cb => {
-            return cb({ signal }).catch((reason: Error) => {
-                if(controller.signal.aborted) return // Ignore.
-                controller.abort(reason)
-                reject(reason)
-            })
-        })).then((result) => {
-            controller.abort(new AbortError())
-            resolve(result)
-        })
-    })
-}
-
 async function joinRemote(game: RemoteGame, name: string, lobby: Lobby, opts: Required<AbortOptions>){
     try {
         await deadlyRace([
@@ -274,13 +259,14 @@ function gameInfoToChoice(
             Mode: label(),
             Map: label(),
 
-            Password: checkbox(),
-            Manacosts: checkbox(),
-            Cooldowns: checkbox(),
-            Minions: checkbox(),
-            Cheats: checkbox(),
+            Password: label(),
+            Manacosts: label(),
+            Cooldowns: label(),
+            Minions: label(),
+            Cheats: label(),
 
             Join: button(),
+            Explanation: label(),
         })
         cacheEntry = { game, choice }
         games.set(gameInfo.id, cacheEntry)
@@ -307,11 +293,17 @@ function gameInfoToChoice(
     (choice.fields!.Mode as Label).text = game.mode.toString();
     (choice.fields!.Map as Label).text = game.map.toString();
     
-    (choice.fields!.Password as Checkbox).button_pressed = game.password.isSet;
-    (choice.fields!.Manacosts as Checkbox).button_pressed = game.features.isManacostsEnabled;
-    (choice.fields!.Cooldowns as Checkbox).button_pressed = game.features.isCooldownsEnabled;
-    (choice.fields!.Minions as Checkbox).button_pressed = game.features.isMinionsEnabled;
-    (choice.fields!.Cheats as Checkbox).button_pressed = game.features.isCheatsEnabled;
+    (choice.fields!.Password as Checkbox).visible = game.password.isSet;
+    (choice.fields!.Manacosts as Checkbox).visible = game.features.isManacostsEnabled;
+    (choice.fields!.Cooldowns as Checkbox).visible = game.features.isCooldownsEnabled;
+    (choice.fields!.Minions as Checkbox).visible = game.features.isMinionsEnabled;
+    (choice.fields!.Cheats as Checkbox).visible = game.features.isCheatsEnabled;
+
+    const commitHashMismatch =
+        game.features.isHalfPingEnabled &&
+        game.commit.value != gsPkg.gitRevision;
+    (choice.fields!.Explanation as Base).visible = commitHashMismatch;
+    (choice.fields!.Join as Button).disabled = commitHashMismatch;
 
     //TODO: (choice.fields!.Join as Button).disabled = !localClientMaps.includes(game.map.value!);
 

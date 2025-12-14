@@ -51,7 +51,7 @@ export class GamePlayer {
             )
     }
     public decodeInplace(prs: PickRequest): boolean {
-        console.log(JSON.stringify({ method: 'console.log', params: [ JSON.stringify(prs) ] }))
+        //console.log(JSON.stringify({ method: 'console.log', params: [ JSON.stringify(prs) ] }))
         return Object.entries(prs).reduce((a, [key, value]) => {
             let success = false
             if(/*pickableKeys.includes(key as PPP) &&*/ value !== undefined)
