@@ -12,13 +12,27 @@ node_modules
 /node_modules_linux_npm
 /node_modules_linux_deno
 /node_modules_bak
-
 /thirdparty
 
 # output
 out
 dist
 *.tgz
+*.exe
+
+# media
+*.jpg
+*.jpg.import
+*.ttf
+*.ttf.import
+*.ico
+*.xcf
+*.png
+*.png.import
+*.svg
+*.svg.import
+*.mp3
+*.mp3.import
 
 # code coverage
 coverage

@@ -1,6 +1,6 @@
 import { build } from "./build"
 import { download, appendPartialDownloadFileExt, repairAria2, seed } from "./download/download"
-import { gcPkg, gitPkg, gsPkg, PkgInfo, repairTorrents, sdkPkg } from "./packages"
+import { gcPkg, gitPkg, gsPkg, modPck1, type PkgInfo, repairTorrents, sdkPkg } from "./packages"
 import { console_log, createBar, currentExe, extractFile } from "../../ui/remote/remote"
 import { console_log_fs_err, cwd, downloads, fs_chmod, fs_copyFile, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_rmdir, fs_truncate, rwx_rx_rx } from './fs'
 import { readTrackersTxt } from "./download/trackers"
@@ -78,6 +78,7 @@ export async function repair(opts: Required<AbortOptions>){
 
     let updated = false
     const gsExeIsMissing = !await fs_exists(gsPkg.dll, opts)
+    const modFileIsMissing = !await fs_exists(modPck1.lockFile, opts, false)
     results = await Promise.allSettled([
         (async () => {
             if(args.torrentDownload.enabled){
@@ -114,7 +115,7 @@ export async function repair(opts: Required<AbortOptions>){
                         const exitCode = err.cause?.code ?? 0
                         if(DOTNET_INSTALL_CORRUPT_EXIT_CODES.includes(exitCode)){
                             console_log(`SDK installation is probably corrupted (exit code is ${exitCode})`)
-                            await repairArchived(sdkPkg, opts, true)
+                            await repairArchived(sdkPkg, { ...opts, ignoreUnpacked: true })
                             await build(gsPkg, opts)
                         } else throw err
                     } else throw err
@@ -122,18 +123,35 @@ export async function repair(opts: Required<AbortOptions>){
             }
             await fs_ensureDir(gsPkg.infoDir, opts)
         }),
-        repairArchived(gcPkg, opts).then(async () => {
-            //await fs_ensureDir(gcPkg.exeDir, opts)
-            
-            const d3dx9_39_dll_name = 'd3dx9_39.dll'
-            const d3dx9_39_dll_src = path.join(downloads, d3dx9_39_dll_name)
-            const d3dx9_39_dll_dst = path.join(gcPkg.exeDir, d3dx9_39_dll_name)
-            if(!await fs_exists(d3dx9_39_dll_dst, opts, true)){
-                await extractFile(embedded.d3dx9_39_dll, d3dx9_39_dll_src, opts)
-                await fs_copyFile(d3dx9_39_dll_src, d3dx9_39_dll_dst, opts) //HACK: To bypass "Access denied" error.
-            }
+        Promise.allSettled([
+            repairArchived(gcPkg, opts).then(async () => {
+                //await fs_ensureDir(gcPkg.exeDir, opts)
+                
+                const d3dx9_39_dll_name = 'd3dx9_39.dll'
+                const d3dx9_39_dll_src = path.join(downloads, d3dx9_39_dll_name)
+                const d3dx9_39_dll_dst = path.join(gcPkg.exeDir, d3dx9_39_dll_name)
+                if(!await fs_exists(d3dx9_39_dll_dst, opts, true)){
+                    await extractFile(embedded.d3dx9_39_dll, d3dx9_39_dll_src, opts)
+                    await fs_copyFile(d3dx9_39_dll_src, d3dx9_39_dll_dst, opts) //HACK: To bypass "Access denied" error.
+                }
 
-            //await ensureSymlink()
+                //await ensureSymlink()
+            }),
+            (async () => {
+                if(args.installModPack.enabled && modFileIsMissing){
+                    await repairArchived(modPck1, { ...opts, ignoreUnpacked: true, doNotUnpack: true })
+                }
+            })(),
+        ]).then(async (results) => {
+
+            throwAnyRejection(results)
+
+            if(args.installModPack.enabled && modFileIsMissing){
+                await unpack(modPck1, opts)
+                await Bun.$`mv -f ${modPck1.dir}/* ${gcPkg.dir}`
+                await Bun.$`rm -rf ${modPck1.dir}`
+                await Bun.$`touch ${modPck1.lockFile}`
+            }
         }),
     ])
     throwAnyRejection(results)
@@ -291,9 +309,9 @@ async function findPackageZip(pkg: PkgInfo, opts: Required<AbortOptions>){
     return undefined
 }
 
-export async function repairArchived(pkg: PkgInfo, opts: Required<AbortOptions>, ignoreUnpacked = false){
+export async function repairArchived(pkg: PkgInfo, opts: Required<AbortOptions> & { ignoreUnpacked?: boolean, doNotUnpack?: boolean }){
 
-    if(!ignoreUnpacked)
+    if(!opts.ignoreUnpacked)
     if(await fs_exists(pkg.checkUnpackBy, opts)){
         const lockfile = appendPartialUnpackFileExt(pkg.zip)
         if(await fs_exists(lockfile, opts, false)){
@@ -347,7 +365,10 @@ export async function repairArchived(pkg: PkgInfo, opts: Required<AbortOptions>,
     } else {
         await download(pkg, opts)
     }
-    await unpack(pkg, opts)
+
+    if(!opts.doNotUnpack){
+        await unpack(pkg, opts)
+    }
 }
 
 //TODO: Modify `unpack` to return boolean instead of throwning?
