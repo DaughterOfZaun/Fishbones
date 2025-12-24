@@ -113,6 +113,33 @@ const hardcodedMaps = [
         modes: [ 'ODIN' ],
         bots: [],
     },
+
+    // Additional content
+    {
+        id: 6,
+        client: true,
+        server: true,
+        modes: [ 'CLASSIC' ],
+        bots: [
+            'Soraka',
+            'Sivir',
+            'Shen',
+            'Ryze',
+            'Nasus',
+            'MasterYi',
+            'Malphite',
+            'Garen',
+            'Annie',
+            'Alistar',
+        ],
+    },
+    {
+        id: 10,
+        client: true,
+        server: true,
+        modes: [ 'CLASSIC' ],
+        bots: [],
+    },
 ]
 
 export const maps: MapInfo[] = hardcodedMaps.map(map => {

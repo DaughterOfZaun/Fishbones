@@ -18,7 +18,7 @@ export async function lobby_gather(ctx: Context){
     const mapInfo = mapsById.get(game.map.value!)!
 
     const makePlayerForm = (player: GamePlayer): Form => {
-        
+
         const { name: championName, icon: iconPath } =
             (player.champion.value !== undefined) ?
                 champions[player.champion.value]! : {}
@@ -41,7 +41,7 @@ export async function lobby_gather(ctx: Context){
             })
         }
     }
-    
+
     const team = (team: Team) => form({
         Join: button(() => game.set('team', team), game.getPlayer()?.team.value == team),
         AddBot: button(() => localGame.addBot(team), !localGame || mapInfo.bots.length === 0),
@@ -53,7 +53,7 @@ export async function lobby_gather(ctx: Context){
         Quit: button(() => view.reject(new SwitchViewError({ cause: null }))),
         Start: button(() => localGame.start(), !localGame || !game.areAllPlayersFullyConnected()),
         Explanation: { $type: 'base', visible: false },
-        Autofill: button(autofill, !localGame),
+        Autofill: button(autofill, !localGame || mapInfo.bots.length === 0),
         Team1: team(0),
         Team2: team(1),
     }), ctx, [

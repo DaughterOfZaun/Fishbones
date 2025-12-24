@@ -55,7 +55,7 @@ export async function loadConfig(opts: Required<AbortOptions>){
     }
 
     setRemoteByIndex(config[REMOTE_IDX])
-    
+
     return config
 }
 
@@ -65,10 +65,11 @@ async function saveConfig(config: Config, opts: Required<AbortOptions>){
 }
 
 export async function startup(opts: Required<AbortOptions>){
-    
+
     const view = render('Startup', form({
         EnableInternet: checkbox(args.allowInternet.enabled, (on) => args.allowInternet.enabled = on),
         UpdateLauncher: checkbox(args.upgrade.enabled, (on) => args.upgrade.enabled = on),
+        InstallModPack: checkbox(args.installModPack.enabled, (on) => args.installModPack.enabled = on),
         DownloadSource: option(
             [
                 { id: DownloadSource.Torrents_and_Mega, text: 'torrents + mega.nz' },

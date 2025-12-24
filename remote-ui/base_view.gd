@@ -2,7 +2,7 @@ class_name BaseView extends ShowableView
 
 func bind_child(child: Control) -> void:
     var err: int
-    
+
     if (child is CheckBox || child is CheckButton):
         err = (child as BaseButton).toggled.connect(on_button_toggled.bind(child)); assert(err == OK)
     elif child is OptionButton:
@@ -12,11 +12,11 @@ func bind_child(child: Control) -> void:
     && !(child is MenuButton):
         #err = (child as BaseButton).pressed.connect(on_button_pressed.bind(child)); assert(err == OK)
         err = (child as BaseButton).gui_input.connect(on_button_gui_input.bind(child)); assert(err == OK)
-    
+
     if child is LineEdit:
         err = (child as LineEdit).text_changed.connect(on_line_changed.bind(child)); assert(err == OK)
         err = (child as LineEdit).text_submitted.connect(on_line_submitted.bind(child)); assert(err == OK)
-    
+
     if child is TextEdit:
         err = (child as TextEdit).text_changed.connect(on_text_changed.bind(child)); assert(err == OK)
         err = (child as TextEdit).text_set.connect(on_text_changed.bind(child)); assert(err == OK)
@@ -27,7 +27,7 @@ func on_button_pressed(child: Control) -> void:
 
 func on_button_gui_input(unk_event: InputEvent, child: BaseButton) -> void:
     if child.disabled: return
-    
+
     if !(unk_event is InputEventMouseButton): return
     var event := unk_event as InputEventMouseButton
 
@@ -39,7 +39,7 @@ func on_button_gui_input(unk_event: InputEvent, child: BaseButton) -> void:
             var path: String = child.get_meta('path')
             #print('CALL ', callback.hash(), ' ', get_path(), ':pressed')
             callback.call('call', path, 'pressed', event.button_index)
-    
+
 func on_button_toggled(on: bool, child: Control) -> void:
     var path: String = child.get_meta('path')
     callback.call('call', path, 'toggled', on)
@@ -52,11 +52,11 @@ func on_item_selected(index: int, child: OptionButton) -> void:
 func on_line_changed(new_text: String, child: LineEdit) -> void:
     var path: String = child.get_meta('path')
     callback.call('call', path, 'changed', new_text)
-    
+
 func on_line_submitted(new_text: String, child: LineEdit) -> void:
     var path: String = child.get_meta('path')
     callback.call('call', path, 'submitted', new_text)
-    
+
 func on_text_changed(child: TextEdit) -> void:
     var new_text := child.text
     var path: String = child.get_meta('path')

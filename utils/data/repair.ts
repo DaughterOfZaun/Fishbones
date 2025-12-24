@@ -2,7 +2,7 @@ import { build } from "./build"
 import { download, appendPartialDownloadFileExt, repairAria2, seed } from "./download/download"
 import { gcPkg, gitPkg, gsPkg, modPck1, type PkgInfo, repairTorrents, sdkPkg } from "./packages"
 import { console_log, createBar, currentExe, extractFile } from "../../ui/remote/remote"
-import { console_log_fs_err, cwd, downloads, fs_chmod, fs_copyFile, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_rmdir, fs_truncate, rwx_rx_rx } from './fs'
+import { console_log_fs_err, cwd, downloads, fs_chmod, fs_copyFile, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_overwrite, fs_rmdir, fs_truncate, rwx_rx_rx } from './fs'
 import { readTrackersTxt } from "./download/trackers"
 import { appendPartialUnpackFileExt, DataError, repair7z, unpack } from "./unpack"
 import { TerminationError, unwrapAbortError } from "../process/process"
@@ -44,9 +44,9 @@ export async function repair(opts: Required<AbortOptions>){
         })(),
     ])
     throwAnyRejection(results)
-    
+
     if(prev_fbPkg && isNewVersionAvailable()){
-    
+
         // A hack to speed up download.
         if(await fs.exists(prev_fbPkg.zip) && !await fs.exists(fbPkg.zip)){
             const bar = createBar('Copying', prev_fbPkg.zip)
@@ -56,12 +56,12 @@ export async function repair(opts: Required<AbortOptions>){
         }
         await download(fbPkg, opts)
         await unpack(fbPkg, opts)
-        
+
         const now = new Date()
         // Fix file after unpacking.
         await fs.utimes(fbPkg.exe, now, now)
         await fs_chmod(fbPkg.exe, rwx_rx_rx, opts)
-        
+
         console.assert(fbPkg.dir === prev_fbPkg.dir)
         const oldExe = path.join(prev_fbPkg.dir, `Fishbones.${prev_fbPkg.version}.exe`)
         await fs_moveFile(currentExe, oldExe, opts, true)
@@ -106,7 +106,7 @@ export async function repair(opts: Required<AbortOptions>){
 
             // Allow packages to contain already built exe.
             //gsExeIsMissing = !await fs_exists(gsPkg.dll, opts)
-            
+
             if(gsExeIsMissing || updated){
                 try {
                     await build(gsPkg, opts)
@@ -126,7 +126,7 @@ export async function repair(opts: Required<AbortOptions>){
         Promise.allSettled([
             repairArchived(gcPkg, opts).then(async () => {
                 //await fs_ensureDir(gcPkg.exeDir, opts)
-                
+
                 const d3dx9_39_dll_name = 'd3dx9_39.dll'
                 const d3dx9_39_dll_src = path.join(downloads, d3dx9_39_dll_name)
                 const d3dx9_39_dll_dst = path.join(gcPkg.exeDir, d3dx9_39_dll_name)
@@ -139,18 +139,24 @@ export async function repair(opts: Required<AbortOptions>){
             }),
             (async () => {
                 if(args.installModPack.enabled && modFileIsMissing){
-                    await repairArchived(modPck1, { ...opts, ignoreUnpacked: true, doNotUnpack: true })
+                    await repairArchived(modPck1, { ...opts, ignoreUnpacked: true })
                 }
             })(),
         ]).then(async (results) => {
 
             throwAnyRejection(results)
 
-            if(args.installModPack.enabled && modFileIsMissing){
-                await unpack(modPck1, opts)
-                await Bun.$`mv -f ${modPck1.dir}/* ${gcPkg.dir}`
-                await Bun.$`rm -rf ${modPck1.dir}`
-                await Bun.$`touch ${modPck1.lockFile}`
+            if (args.installModPack.enabled && modFileIsMissing){
+                const bar = createBar('Moving', modPck1.name)
+                try {
+                    await fs_overwrite(modPck1.dir, gcPkg.dir, opts)
+                } finally {
+                    bar.stop()
+                }
+                await fs.rm(modPck1.dir, { recursive: true, force: true })
+                //const fs_opts = { ...opts, recursive: true }
+                await fs_ensureDir(path.dirname(modPck1.lockFile), opts)
+                await fs.writeFile(modPck1.lockFile, '', 'utf8')
             }
         }),
     ])
@@ -194,19 +200,19 @@ export async function repair(opts: Required<AbortOptions>){
 
 //TODO: Cache?
 async function getPotentialRoots(opts: Required<AbortOptions>){
-    
+
     const dirents = await Promise.all([
         fs.readdir(downloads, { withFileTypes: true }), // Z:/Fishbones_Data/Foo
         fs.readdir(cwd, { withFileTypes: true }), // Z:/Foo
     ])
-    
+
     opts.signal.throwIfAborted()
 
     return [
         ...dirents.flat()
         .filter(dirent => dirent.isDirectory() || dirent.isSymbolicLink())
         .map(dirent => path.join(dirent.parentPath, dirent.name)),
-        
+
         downloads, // Z:/Fishbones_Data
         cwd, // Z:
     ]
@@ -225,7 +231,7 @@ async function findPackageDir(pkg: PkgInfo, opts: Required<AbortOptions>){
         ...await getPotentialRoots(opts),
         path.join(path.dirname(pkg.dir), pkg.dirName),
     ])
-    
+
     potentialRoots.delete(pkg.dir)
 
     for(const root of potentialRoots){
@@ -235,7 +241,7 @@ async function findPackageDir(pkg: PkgInfo, opts: Required<AbortOptions>){
             //path.join(root, zipNameWithoutExt),
             //path.join(root, zipNameWithoutExt, pkgDirName),
         ])
-        
+
         pathsToTest.delete(pkg.dir)
 
         for(const pathToTest of pathsToTest){
@@ -280,7 +286,7 @@ async function moveFoundFilesToDir(foundPkgDir: string, pkg: PkgInfo, opts: Requ
 
     // Try to delete the folder if it is empty.
     await fs_rmdir(foundPkgDir, opts, false)
-    
+
     return successfullyMovedRequiredFiles
 }
 

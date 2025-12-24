@@ -17,14 +17,14 @@ func show_view(view: ShowableView) -> void:
     visible_views_stack.erase(view)
     visible_views_stack.append(view)
     just_show_view(view)
-    
+
 func hide_view(view: ShowableView) -> void:
     if !view.is_top_level: return
     visible_views_stack.erase(view)
     if visible_views_stack.size() > 0:
         just_show_view(visible_views_stack[-1])
     view.visible = false
-    
+
 func just_show_view(view: Control) -> void:
     var current_node: Control = view
     while current_node != null && current_node != container:
@@ -120,7 +120,7 @@ const rwx = \
 
 func _ready() -> void:
     var err: Error
-    
+
     #printerr('Godot Engine started')
 
     var exe_args := []
@@ -130,12 +130,12 @@ func _ready() -> void:
     #var exe_args := JSON.parse_string(exe_args_str) as Array
     #if exe_args == null: exe_args = []
     #var exe := exe_args[0]; exe_args.remove_at(0); if !exe: exe = '../Fishbones.exe'
-    
+
     err = DirAccess.make_dir_absolute(downloads); assert(err in [ OK, ERR_ALREADY_EXISTS ])
-    
+
     var fb_dir := downloads.path_join('Fishbones')
     err = DirAccess.make_dir_absolute(fb_dir); assert(err in [ OK, ERR_ALREADY_EXISTS ])
-    
+
     #var copied_exe := fb_dir.path_join('Fishbones.exe')
     #var current_exe_mod_time := FileAccess.get_modified_time(current_exe)
     #var copied_exe_mod_time := FileAccess.get_modified_time(copied_exe)
@@ -161,7 +161,7 @@ func _ready() -> void:
     exe_args.append_array([ extracted_js ])
     exe_args.append_array(OS.get_cmdline_user_args())
     exe_args.append_array([ JSONRPC_GUI_ARG, current_exe ])
-    
+
     var dict := OS.execute_with_pipe(extracted_exe, exe_args, false)
     stdio = dict["stdio"]
     stderr = dict["stderr"]
@@ -177,7 +177,7 @@ func _ready() -> void:
     for view_name in views:
         var view := views[view_name]
         view.visible = false
-    
+
     get_tree().set_auto_accept_quit(false)
 
 func _notification(what: int) -> void:
@@ -205,23 +205,23 @@ func _init() -> void:
 
         var err := OK
         var id: Variant = last_call_id
-        
+
         from = embedded_files_by_name.get(from.get_file(), "")
         if from.is_empty():
             err = ERR_FILE_NOT_FOUND
             reject(id, err, error_string(err))
             return
-        
+
         #console.append_text('downloads: ' + downloads + '\n')
         #console.append_text('to: ' + to + '\n')
 
         #to = downloads.path_join(to.get_file())
-        #if !to.begins_with(downloads) || to.contains('..'): 
+        #if !to.begins_with(downloads) || to.contains('..'):
         if !to.contains(downloads_dir_name) || to.contains('..'):
             err = ERR_FILE_NO_PERMISSION
             reject(id, err, error_string(err))
             return
-        
+
         err = DirAccess.copy_absolute(from, to)
         if err != OK:
             reject(id, err, error_string(err))
@@ -237,31 +237,31 @@ func _init() -> void:
         #print('bar.create', ' ', last_call_id, ' ', config)
         create_element('bar', bar, config, bars_container)
         inc_active_bars_count(+1)
-    
+
     methods["bar.update"] = func(value: float) -> void:
         #print('bar.update', ' ', last_call_id, ' ', value)
         var instance: Bar = handlers[last_call_id]
         instance.update(value)
-    
+
     methods["bar.stop"] = func() -> void:
         #print('bar.stop', ' ', last_call_id)
         handlers[last_call_id].abort()
         inc_active_bars_count(-1)
-    
+
     methods["spinner"] = func(config: Dictionary) -> void:
         create_element('spinner', spinner, config)
-    
+
     methods["select"] = func(config: Dictionary) -> void:
         create_element('select', select, config)
-    
+
     methods["select.update"] = func(choices: Array) -> void:
         #print('select.update', ' ', last_call_id, ' ', choices)
         var instance: Select = handlers[last_call_id]
         instance.update(choices)
-    
+
     methods["checkbox"] = func(config: Dictionary) -> void:
         create_element('checkbox', checkbox, config)
-    
+
     methods["input"] = func(config: Dictionary) -> void:
         create_element('input', input, config)
 
@@ -287,14 +287,14 @@ func _init() -> void:
         #print('exit')
         #get_tree().quit()
         waiting_for_exit = true
-        
+
     methods["popup"] = func(title: String, message: String, sound: String) -> void:
         popup.pop(title, message, sound)
 
 var waiting_for_exit := false
 
 func create_view(config: Dictionary) -> InputHandler:
-    
+
     var path: String = config['path']
     var scene: PackedScene = load(path)
     var instance: InputHandler = scene.instantiate()
@@ -354,11 +354,11 @@ func _process(_delta: float) -> void:
         return
 
 func on_process_exit() -> void:
-    
+
     if waiting_for_exit:
         get_tree().quit()
         return
-        
+
     console.append_text(
         '[color=light_coral]Process exited with code {code}[/color]\n'
         .format({ 'code': OS.get_process_exit_code(pid) })
@@ -378,7 +378,7 @@ func _process_packet(packet_string: String) -> void:
 func _process_string(input: String) -> String:
     if input.is_empty(): return ""
 
-    var ret: Variant    
+    var ret: Variant
     if json.parse(input) == OK:
         ret = await _process_action(json.get_data())
     else:
@@ -395,7 +395,7 @@ func _process_action(action: Variant) -> Variant:
     var dict := action as Dictionary
     if dict == null:
         return jrpc.make_response_error(JSONRPC.INVALID_REQUEST, "Invalid Request")
-    
+
     var var_method: Variant = dict.get("method", null) as String
     if var_method == null:
         return jrpc.make_response_error(JSONRPC.INVALID_REQUEST, "Invalid Request")
@@ -450,7 +450,7 @@ func callback(id: Variant, method: String, ...params: Array[Variant]) -> void:
     if method == 'resolve' || method == 'reject':
         abort_handler(id)
     stdio.flush()
-    
+
 func notify(method: String, ...params: Array[Variant]) -> void:
     var response_string := JSON.stringify(jrpc.make_notification(method, params))
     print('notify', ' ', response_string)

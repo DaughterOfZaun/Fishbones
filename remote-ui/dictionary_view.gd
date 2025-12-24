@@ -3,19 +3,19 @@ class_name DictionaryView extends BaseView
 var fields: Dictionary[String, Control]
 
 func _ready() -> void:
-    
+
     var children_to_process: Array[Node] = get_children()
     children_to_process.reverse()
     while true:
         var nullable_child: Variant = children_to_process.pop_back()
         if nullable_child == null: break
         var child: Node = nullable_child
-        
+
         if child.name.begins_with('#'):
             var key := child.name.substr(1)
             #key = key.substr(0, 1).to_lower() + child.name.substr(1)
             fields[key] = child
-        
+
         if child is Control:
             bind_child(child as Control)
 
@@ -31,7 +31,7 @@ func init(config: Dictionary, cb: Callable) -> void:
 
 func update(config: Dictionary, strict: bool = false) -> void:
     if len(config) == 0: return #HACK:
-    
+
     var field_configs: Dictionary = config.get('fields', {})
     for field_name: String in field_configs:
         var field_config: Dictionary = field_configs[field_name]

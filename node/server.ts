@@ -9,7 +9,7 @@ import { patchedCrypto } from '../utils/crypto'
 import { defaultLogger } from '@libp2p/logger'
 import { GossipSub, gossipsub, type GossipSubComponents } from '@chainsafe/libp2p-gossipsub'
 import { appDiscoveryTopic, rtcConfiguration } from '../utils/constants-build'
-import { rendezvousServer } from "@canvas-js/libp2p-rendezvous/server"
+//import { rendezvousServer } from "@canvas-js/libp2p-rendezvous/server"
 import { circuitRelayServer } from '@libp2p/circuit-relay-v2'
 import fs from 'node:fs/promises'
 import { generateKeyPair, privateKeyFromRaw } from '@libp2p/crypto/keys'
@@ -72,7 +72,7 @@ const node = await createLibp2p({
         ping: ping(),
 
         relay: circuitRelayServer(),
-        rendezvous: rendezvousServer({}),
+        //rendezvous: rendezvousServer({}),
         pubsub: gossipsub({
             allowedTopics: [ appDiscoveryTopic ],
             doPX: true,

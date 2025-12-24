@@ -4,6 +4,7 @@ import type { AbortOptions } from '@libp2p/interface'
 import { console_log } from '../../ui/remote/remote'
 import { cwd, downloads } from '../log'
 export { cwd, downloads }
+import path from 'node:path'
 
 export const rwx_rx_rx =
     fs.constants.S_IRUSR | fs.constants.S_IWUSR | fs.constants.S_IXUSR |
@@ -208,4 +209,49 @@ export async function fs_stat(path: string, opts: Required<AbortOptions>, log = 
     }
     opts.signal.throwIfAborted()
     return result
+}
+
+export async function fs_stat_if_exists(dest: string){
+    let destStats: Stats | undefined = undefined
+    try {
+        destStats = await fs.stat(dest)
+    } catch(unk_err) {
+        const err = unk_err as ErrnoException
+        if(err.code != 'ENOENT')
+            throw err
+    }
+    return destStats
+}
+
+export async function fs_readdir_if_is_dir(src: string){
+    let entries: string[] | undefined = undefined
+    try {
+       entries = await fs.readdir(src)
+    } catch(unk_err) {
+        const err = unk_err as ErrnoException
+        if(err.code != 'ENOTDIR')
+            throw err
+    }
+    return entries
+}
+
+//TODO: Optimize number of syscalls.
+export async function fs_overwrite(src: string, dest: string, opts: Required<AbortOptions>){
+
+    const destStats = await fs_stat_if_exists(dest)
+    const srcEntries = await fs_readdir_if_is_dir(src)
+
+    const srcIsDir = srcEntries !== undefined
+    const destExists = destStats !== undefined
+    const destIsDir = destStats?.isDirectory() ?? false
+
+    if(!destExists || !srcIsDir && !destIsDir){
+        await fs.rename(src, dest)
+    } else if(srcIsDir && destIsDir){
+        await Promise.all(srcEntries.map(async entry => {
+            return fs_overwrite(path.join(src, entry), path.join(dest, entry), opts)
+        }))
+    } else {
+        throw new Error('An attempt to overwrite a file with a dir or a dir with a file.')
+    }
 }

@@ -6,6 +6,8 @@ import path from 'node:path'
 import { NAME, OUTDIR, OUTFILE, VERSION_REGEX } from './utils/constants-build'
 import { config, type Config } from './utils/data/embedded/config'
 
+const GODOT_EXE = './dist/Godot_v4.5.1-stable_linux.x86_64'
+
 const release = process.argv.includes('release') ? 'release' : 'debug'
 
 const version = process.argv.find(arg => VERSION_REGEX.test(arg))
@@ -19,7 +21,7 @@ const platform =
     undefined!
 if(platform === undefined)
     throw new Error('Platform not specified or not supported')
-    
+
 const target: Bun.Build.Target =
     (platform === 'linux') ? `bun-linux-x64-baseline` as Bun.Build.Target :
     (platform === 'windows') ? `bun-windows-x64-baseline` :
@@ -36,7 +38,7 @@ async function build_embeds(){
         let from =
             (typeof keyConfig === 'string') ? keyConfig :
             (platform in keyConfig) ? keyConfig[platform]! : ''
-        
+
         if(from){
             from = path.resolve(from)
             let fileName = path.basename(from)
@@ -121,7 +123,7 @@ async function build_godot_exe(){
         windows: 'Windows Desktop',
         linux: 'Linux Desktop',
     } as const)[platform]
-    await $`/home/user/Programs/Godot/Godot_v4.5-stable_linux.x86_64 \
+    await $`${GODOT_EXE} \
     --export-${{ raw: release }} ${preset} ${path.join('..', OUTDIR, OUTFILE)} \
     --path ./remote-ui \
     --headless\
@@ -129,7 +131,7 @@ async function build_godot_exe(){
 }
 
 async function build_godot_pck(){
-    await $`/home/user/Programs/Godot/Godot_v4.5-stable_linux.x86_64 \
+    await $`${GODOT_EXE} \
     --export-pack 'Windows Desktop' ../dist/RemoteUI.pck \
     --path ./remote-ui \
     --headless`

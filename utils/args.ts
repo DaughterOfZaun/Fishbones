@@ -9,7 +9,7 @@ export class Args {
     port = new Parameter<number>('port', false, 5119, 'Set custom UDP port number to use')
     mr = new Parameter<number>('mr', false, 0, 'Select a merge request to test')
     //origin = new Parameter<string>('origin', false, '', 'Set a repository origin')
-    installModPack = new Option('install-modpack', false, 'Install the package with additional levels')
+    installModPack = new Option('install-modpack', true, 'Install the package with additional levels')
 
     repair = new Option('repair', true, '(Debug) Download+Unpack+Build missing files')
     download = new Option('download', true, '(Debug) Download missing files')

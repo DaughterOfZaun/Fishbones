@@ -1,4 +1,4 @@
-import { gcPkg } from "../data/packages"
+import { gcPkg, winePkg } from "../data/packages"
 import { sanitize_bfkey } from "../constants"
 import { killSubprocess, spawn, startProcess, type ChildProcess } from "../process/process"
 import type { AbortOptions } from "@libp2p/interface"
@@ -20,7 +20,7 @@ export async function launchClient(ip: string, port: number, key: string, client
 export async function relaunchClient(opts: Required<AbortOptions>){
     const [ip, port, key, clientId] = launchArgs!
 
-    const gcArgs = ['', '', '', ([ip, port.toString(), sanitize_bfkey(key), clientId.toString()]).join(' ')]
+    const gcArgs = ['8394', 'LoLLauncher.exe', 'unknown', ([ip, port.toString(), sanitize_bfkey(key), clientId.toString()]).join(' ')]
     const gcArgsStr = gcArgs.map(a => `"${a}"`).join(' ')
     //console.log('%s %s', gcPkg.exe, gcArgsStr)
     //logger.log('%s %s', gcPkg.exe, gcArgsStr)
@@ -40,11 +40,11 @@ export async function relaunchClient(opts: Required<AbortOptions>){
         //exe = path.join(deployDir, gcPkg.exeName)
         clientSubprocess = spawn(exe, gcArgs, spawnOpts)
     } else if(process.platform == 'linux'){
-        //console.log('flatpak', 'run', '--command=bottles-cli', 'com.usebottles.bottles', 'run', '-b', 'DeusEx', '-e', gcPkg.exe, gcArgsStr)
         clientSubprocess = spawn(
             'flatpak', [ 'run', '--command=bottles-cli', 'com.usebottles.bottles',
                 'run', '-b', 'DeusEx', '-e', exe, gcArgsStr ], spawnOpts) //TODO: cwd
         //clientSubprocess = spawn('bottles-cli', ['run', '-b', 'DeusEx', '-p', 'League of Legends', '--args-replace', gcArgs], spawnOpts)
+        //clientSubprocess = spawn(winePkg.exe, [ exe, ...gcArgs ], spawnOpts)
     } else throw new Error(`Unsupported platform: ${process.platform}`)
 
     await startProcess(LOG_PREFIX, clientSubprocess, 'stderr', (chunk) => {

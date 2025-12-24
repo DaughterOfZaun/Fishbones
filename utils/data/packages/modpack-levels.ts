@@ -5,6 +5,7 @@ import { magnet, PkgInfo } from "./shared"
 import path from 'node:path'
 
 export const modPck1 = new class ModPackOne extends PkgInfo {
+    id = 'modded_levels_1'
     name = 'Additional Maps Modpack'
     dirName = 'modded_levels_paste_on_client'
     makeDir = false
@@ -25,7 +26,7 @@ export const modPck1 = new class ModPackOne extends PkgInfo {
 
     //TODO: Set meaningful value.
     checkUnpackBy = path.join(this.dir, 'LEVELS', 'Map6', 'Scene', 'room.nvr')
-    lockFile = path.join(gcPkg.dir, 'MODS', 'modded_levels_1.installed')
+    lockFile = path.join(gcPkg.dir, 'MODS', `${this.id}.installed`)
 
     topLevelEntries = []
     topLevelEntriesOptional = []

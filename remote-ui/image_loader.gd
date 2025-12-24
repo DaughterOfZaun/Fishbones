@@ -38,12 +38,12 @@ static func get_texture(path: String) -> ImageTexture:
                 path_to_load = path.replace('%DATA%', client_data_absolute_path)
             else:
                 path_to_load = downloads.path_join(path)
-            
+
             var bytes := FileAccess.get_file_as_bytes(path_to_load)
             image = Image.new()
             var err := image.load_dds_from_buffer(bytes); assert(err == OK)
 
         texture = ImageTexture.create_from_image(image)
         var result := texture_cache.set(path, texture); assert(result == true)
-    
+
     return texture

@@ -7,9 +7,10 @@ import { gcPkg } from './packages/game-client'
 import { sdkPkg } from './packages/sdk'
 import { gitPkg } from './packages/git'
 import { modPck1 } from './packages/modpack-levels'
+import { winePkg } from './packages/wine'
 
 export type { PkgInfo, PkgInfoCSProj, PkgInfoGit } from './packages/shared'
-export { gsPkg, gcPkg, sdkPkg, gitPkg, modPck1 }
+export { gsPkg, gcPkg, sdkPkg, gitPkg, modPck1, winePkg }
 
 export const packages = [ gsPkg, gcPkg, sdkPkg, gitPkg ]
 

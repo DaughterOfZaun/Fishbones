@@ -894,14 +894,8 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 champion: player.champion.toString(), //TODO: Fix
                 team: player.team.toString().toUpperCase(),
                 skin: player.skin.value ?? 0,
-                summoner1:
-                    player.isBot ? `SummonerHeal` :
-                    (player.spell1.value !== undefined) ? `Summoner${player.spell1.toString()}` :
-                    '',
-                summoner2:
-                    player.isBot ? `SummonerFlash` :
-                    (player.spell1.value !== undefined) ? `Summoner${player.spell2.toString()}` :
-                    '',
+                summoner1: (player.spell1.value !== undefined) ? `Summoner${player.spell1.toString()}` : '',
+                summoner2: (player.spell1.value !== undefined) ? `Summoner${player.spell2.toString()}` : '',
                 ribbon: 2, // Unused
                 useDoomSpells: false,
                 icon: 0, //Math.floor(Math.random() * 29),

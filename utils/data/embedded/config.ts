@@ -10,7 +10,7 @@ export const config = {
     //    windows: './thirdparty/Motrix/extra/win32/x64/engine/aria2.conf',
     //    linux: './thirdparty/Motrix/extra/linux/x64/engine/aria2.conf',
     //},
-    
+
     s7zExe: {
         windows: './thirdparty/7z/7za-2501-windows-x64.exe',
         linux: './thirdparty/7z/7zzs-2501-linux-x64.exe',
@@ -41,17 +41,17 @@ export const config = {
     godotPck: '', //'./dist/RemoteUI.pck',
 
     gitZipTorrent: {
-        windows: './Fishbones_Data/PortableGit-2.51.0.2-64-bit.7z.exe.torrent',
+        windows: './Fishbones_Data/PortableGit-2.52.0-64-bit.7z.exe.torrent',
     },
     gitZip: {
-        //windows: './thirdparty/git/PortableGit-2.51.0.2-64-bit.7z.exe'
+        //windows: './thirdparty/git/PortableGit-2.52.0-64-bit.7z.exe'
     },
 
     //icon: './remote-ui/icons/icon.png',
 
     bunExe: {
-        windows: './thirdparty/bun/bun-1.3.2-windows-x64-baseline.exe',
-        linux: './thirdparty/bun/bun-1.3.2-linux-x64-baseline.exe',
+        windows: './thirdparty/bun/bun-1.3.5-windows-x64-baseline.exe',
+        linux: './thirdparty/bun/bun-1.3.5-linux-x64-baseline.exe',
     },
 
     indexJS: './dist/index.js',

@@ -7,7 +7,7 @@ import { patchedCrypto } from '../utils/crypto'
 import { noise } from '@chainsafe/libp2p-noise'
 import { yamux } from '@chainsafe/libp2p-yamux'
 
-import { rendezvousClient } from "@canvas-js/libp2p-rendezvous/client"
+//import { rendezvousClient } from "@canvas-js/libp2p-rendezvous/client"
 import { GossipSub, gossipsub, type GossipSubComponents } from '@chainsafe/libp2p-gossipsub'
 import { bootstrap } from '@libp2p/bootstrap'
 import { identify, identifyPush } from '@libp2p/identify'
@@ -103,11 +103,11 @@ export const serverPeerMultiddrStrings = [
 ]
 
 async function createNodeInternal(port: number, opts: Required<AbortOptions>){
-    
+
     opts?.signal?.throwIfAborted()
 
     const keychainInit = { pass: 'yes-i-know-its-very-secure' } //TODO: Password.
-    
+
     let datastore: LevelDatastore | undefined
         //datastore = new LevelDatastore(path.join(downloads, 'datastore'))
     try {
@@ -169,13 +169,13 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
                     protocol: '/ipfs/kad/1.0.0',
                     peerInfoMapper: removePrivateAddressesMapper
                 }),
-                rendezvous: rendezvousClient({
-                    autoDiscover: true,
-                    autoRegister: {
-                        namespaces: [ appDiscoveryTopic ],
-                        multiaddrs: serverPeerMultiddrStrings,
-                    },
-                }),
+                //rendezvous: rendezvousClient({
+                //    autoDiscover: true,
+                //    autoRegister: {
+                //        namespaces: [ appDiscoveryTopic ],
+                //        multiaddrs: serverPeerMultiddrStrings,
+                //    },
+                //}),
                 bootstrap: bootstrap({
                     list: [
                         //TODO: Unhardcode.
@@ -195,7 +195,7 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
                 autoNATv2: autoNATv2(),
                 uPnPNAT: uPnPNAT(),
             } : {}),
-            
+
             //logger: customLogger,
 
             pubsub: gossipsub({
@@ -245,7 +245,7 @@ async function setup(node: LibP2PNode, opts: Required<AbortOptions>){
     const peersDiscoveredByNode = new Set<string>()
     const peersDiscoveredByMechanism = new Set<string>()
     node.services.mdns?.addEventListener('peer', onPeerDiscoveredByMechanism)
-    node.services.rendezvous?.addEventListener('peer', onPeerDiscoveredByMechanism)
+    //node.services.rendezvous?.addEventListener('peer', onPeerDiscoveredByMechanism)
     node.services.pubsubPeerDiscovery?.addEventListener('peer', onPeerDiscoveredByMechanism)
     function onPeerDiscoveredByMechanism(event: CustomEvent<PeerInfo>){
         const peer = event.detail
@@ -299,7 +299,7 @@ async function setup(node: LibP2PNode, opts: Required<AbortOptions>){
     const cm = node.components.connectionManager
     const cm_openConnection = cm.openConnection.bind(cm)
     cm.openConnection = async (peer, options) => {
-        
+
         if(!isPeerId(peer))
             return cm_openConnection(peer, options)
 
@@ -341,15 +341,15 @@ export async function stop(node: LibP2PNode){
             await pubSubPeerDiscovery?.beforeStop()
             pubSubPeerDiscovery.stop()
         })(),
-        (async () => {
-            const rendezvous = node.services.rendezvous
-            await rendezvous?.connect(serverPeerID, async (point) => {
-                //await point.register(appDiscoveryTopic, { ttl: 1 })
-                await point.unregister(appDiscoveryTopic)
-            })
-            rendezvous?.beforeStop()
-            rendezvous?.stop()
-        })(),
+        //(async () => {
+        //    const rendezvous = node.services.rendezvous
+        //    await rendezvous?.connect(serverPeerID, async (point) => {
+        //        //await point.register(appDiscoveryTopic, { ttl: 1 })
+        //        await point.unregister(appDiscoveryTopic)
+        //    })
+        //    rendezvous?.beforeStop()
+        //    rendezvous?.stop()
+        //})(),
     ])
     const connectionManager = node.components.connectionManager as unknown as Startable
     await connectionManager.stop()
@@ -374,7 +374,7 @@ function filterDiableMultiaddrs(node: LibP2PNode, multiaddrs: Multiaddr[]){
 }
 
 export async function getPeerInfoString(node: LibP2PNode, opts: Required<AbortOptions>): Promise<string> {
-    
+
     const multiaddrs = node.getMultiaddrs()
     if(multiaddrs.length === 0) return ''
 
