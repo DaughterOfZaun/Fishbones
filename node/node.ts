@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { createLibp2p } from 'libp2p'
-import { tiePubSubWithPeerDiscovery } from '../node/hacks'
+import { pinning } from '../node/hacks'
 import { patchedCrypto } from '../utils/crypto'
 
 import { noise } from '@chainsafe/libp2p-noise'
@@ -12,7 +12,7 @@ import { GossipSub, gossipsub, type GossipSubComponents } from '@chainsafe/libp2
 import { bootstrap } from '@libp2p/bootstrap'
 import { identify, identifyPush } from '@libp2p/identify'
 import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
-import { mdns } from '@libp2p/mdns'
+//import { mdns } from '@libp2p/mdns'
 import { uPnPNAT } from '@libp2p/upnp-nat'
 import { autoNATv2 } from '@libp2p/autonat-v2'
 import { pubsubPeerDiscovery } from '../network/libp2p/discovery/pubsub-discovery'
@@ -211,9 +211,10 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
             pubsubPeerDiscovery: pubsubPeerDiscovery({
                 topic: appDiscoveryTopic,
             }),
-
-            mdns: mdns(),
-
+            pinning: pinning(),
+            
+            //mdns: mdns(),
+            
             proxy: proxy(),
             time: time(),
         },
@@ -244,7 +245,7 @@ async function setup(node: LibP2PNode, opts: Required<AbortOptions>){
     //TODO: Reintroduce Autodial.
     const peersDiscoveredByNode = new Set<string>()
     const peersDiscoveredByMechanism = new Set<string>()
-    node.services.mdns?.addEventListener('peer', onPeerDiscoveredByMechanism)
+    //node.services.mdns?.addEventListener('peer', onPeerDiscoveredByMechanism)
     //node.services.rendezvous?.addEventListener('peer', onPeerDiscoveredByMechanism)
     node.services.pubsubPeerDiscovery?.addEventListener('peer', onPeerDiscoveredByMechanism)
     function onPeerDiscoveredByMechanism(event: CustomEvent<PeerInfo>){
@@ -262,9 +263,12 @@ async function setup(node: LibP2PNode, opts: Required<AbortOptions>){
     function onPeerDiscoveredByNode(event: CustomEvent<PeerInfo>){
         const peer = event.detail
         //console_log('discovery:peer', peer.id.toString())
-        peersDiscoveredByNode.add(peer.id.toString())
-        if(peersDiscoveredByMechanism.has(peer.id.toString())){
-            patchAndDial(peer.id).catch((/*err*/) => { /* Ignore */ })
+        if(!peersDiscoveredByNode.has(peer.id.toString())){
+            peersDiscoveredByNode.add(peer.id.toString())
+            if(peersDiscoveredByMechanism.has(peer.id.toString())){
+                node.safeDispatchEvent('same-program-peer:discovery', { detail: peer.id })
+                patchAndDial(peer.id).catch((/*err*/) => { /* Ignore */ })
+            }
         }
     }
     const patchedPeers = new PeerSet()
@@ -328,8 +332,6 @@ async function setup(node: LibP2PNode, opts: Required<AbortOptions>){
         if(error) throw error
         return connection!
     }
-
-    tiePubSubWithPeerDiscovery(node)
 
     await node.start()
 }

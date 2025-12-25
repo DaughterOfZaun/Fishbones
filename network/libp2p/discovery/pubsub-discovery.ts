@@ -6,6 +6,8 @@ import { Peer as PBPeer } from '../../../message/peer'
 import type { PeerDiscovery, PeerDiscoveryEvents, PeerId, PeerInfo, Startable, ComponentLogger, Logger, PeerStore, PublishResult, TypedEventTarget, Libp2pEvents } from '@libp2p/interface'
 import type { AddressManager } from '@libp2p/interface-internal'
 import type { GossipSub, GossipsubMessage, GossipsubOpts } from '@chainsafe/libp2p-gossipsub'
+import type { PinningService } from '../../../node/hacks'
+//import { console_log } from '../../../ui/remote/remote'
 
 export const TOPIC = '_peer-discovery._p2p._pubsub'
 
@@ -28,6 +30,7 @@ export interface PubSubPeerDiscoveryComponents {
     logger: ComponentLogger
     peerStore: PeerStore
     events: TypedEventTarget<Libp2pEvents>
+    pinning: PinningService
 }
 
 export interface PubSubPeerDiscoveryEvents {
@@ -46,10 +49,7 @@ interface PeerIdWithDataAndMessage {
     id: PeerId
     data?: PBPeer.AdditionalData
     timeout?: ReturnType<typeof setTimeout>
-    iwantCounts: Map<string, number>
     msgIdStr: string
-    msgId: Uint8Array
-    msg: RPCMessage
 }
 
 export function pubsubPeerDiscovery (init: PubsubPeerDiscoveryInit = {}): (components: PubSubPeerDiscoveryComponents) => PubSubPeerDiscovery {
@@ -57,7 +57,7 @@ export function pubsubPeerDiscovery (init: PubsubPeerDiscoveryInit = {}): (compo
 }
 
 export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents & PubSubPeerDiscoveryEvents> implements PeerDiscovery, Startable {
-    public readonly [peerDiscoverySymbol] = true
+    public readonly [peerDiscoverySymbol] = this
     public readonly [Symbol.toStringTag] = '@libp2p/pubsub-peer-discovery'
 
     private peers = new Map<string, PeerIdWithDataAndMessage>()
@@ -150,7 +150,7 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
         const encodedPeer = PBPeer.encode({
             publicKey: publicKeyToProtobuf(peerId.publicKey),
             addrs: announce ? am.getAddresses().map(ma => ma.bytes) : [],
-            data: announce ? this.data ? this.data : undefined : undefined,
+            data: announce && this.data ? this.data : undefined,
         })
         
         //if (pubsub.getSubscribers(topic).length === 0) {
@@ -169,30 +169,12 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
         }
     }
 
-    getGossipIDs (topics: Set<string>): Map<string, Uint8Array[]> {
-        const msgIdsByTopic = new Map<string, Uint8Array[]>()
-        if(topics.has(this.topic)){
-            const msgIds = [...this.peers.values().map(pwd => pwd.msgId)]
-            msgIdsByTopic.set(this.topic, msgIds)
-        }
-        return msgIdsByTopic
-    }
-
-    getWithIWantCount(msgIdStr: string, p: string){
-        const pwd = this.peers.values().find(pwd => pwd.msgIdStr === msgIdStr)
-        if(pwd){
-            const count = (pwd.iwantCounts.get(p) ?? 0) + 1
-            pwd.iwantCounts.set(p, count)
-            return { msg: pwd.msg, count }
-        }
-        return null
-    }
-
     onMessage = (event: CustomEvent<GossipsubMessage>): void => {
+
+        //console_log('PUBSUB', 'onMessage', event.detail.msgId)
+        
         const msg = event.detail.msg
         const msgIdStr = event.detail.msgId
-
-        const mcache = this.components.pubsub!['mcache'] as MemoryCache
         
         if (this.topic !== msg.topic) return
 
@@ -201,23 +183,30 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
             const publicKey = publicKeyFromProtobuf(peer.publicKey)
             const peerId = peerIdFromPublicKey(publicKey)
 
+            //console_log('PUBSUB', 'onMessage', event.detail.msgId, peerId.toString())
+
             const oldPWD = this.peers.get(peerId.toString())
-            clearTimeout(oldPWD?.timeout)
+            if(oldPWD){
+                clearTimeout(oldPWD.timeout)
+                this.components.pinning.unpin(oldPWD.msgIdStr)
+            }
 
             if (peer.addrs && peer.addrs.length > 0){
-                const msg = mcache.msgs.get(msgIdStr)!.message
-                const msgId = mcache.history[0]!.find(entry => entry.msgIdStr === msgIdStr)!.msgId
-                const newPWD = {
+                
+                const newPWD: PeerIdWithDataAndMessage = {
                     id: peerId,
                     data: peer.data,
-                    msg, msgId, msgIdStr,
-                    iwantCounts: new Map(),
+                    msgIdStr,
                     timeout: setTimeout(() => {
                         this.peers.delete(peerId.toString())
+                        this.components.pinning.unpin(msgIdStr)
                         if(peer.data) this.safeDispatchEvent('update')
                     }, RECORD_LIFETIME)
                 }
+                this.components.pinning.pin(msgIdStr)
+
                 this.peers.set(peerId.toString(), newPWD)
+
                 if(!oldPWD?.data && newPWD.data) this.safeDispatchEvent('add', { detail: newPWD })
                 if(oldPWD?.data || newPWD.data) this.safeDispatchEvent('update')
             } else {
@@ -230,10 +219,13 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
 
             if(peer.addrs.length > 0){
                 const multiaddrs = peer.addrs.map(b => multiaddr(b))
+
+                //for(const ma of multiaddrs)
+                //    console_log('onMessage', event.detail.msgId, ma.toString())
+
                 //this.components.peerStore.merge(peerId, { multiaddrs })
-                this.safeDispatchEvent<PeerInfo>('peer', {
-                    detail: { id: peerId, multiaddrs, }
-                })
+                const detail: PeerInfo = { id: peerId, multiaddrs, }
+                this.safeDispatchEvent<PeerInfo>('peer', { detail })
             }
         } catch (err) {
             this.log.error('error handling incoming message', err)
