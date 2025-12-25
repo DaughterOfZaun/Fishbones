@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { createLibp2p } from 'libp2p'
-import { pinning } from '../node/hacks'
+import { pinning } from '../network/libp2p/pinning'
 import { patchedCrypto } from '../utils/crypto'
 
 import { noise } from '@chainsafe/libp2p-noise'

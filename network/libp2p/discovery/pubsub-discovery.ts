@@ -6,7 +6,7 @@ import { Peer as PBPeer } from '../../../message/peer'
 import type { PeerDiscovery, PeerDiscoveryEvents, PeerId, PeerInfo, Startable, ComponentLogger, Logger, PeerStore, PublishResult, TypedEventTarget, Libp2pEvents } from '@libp2p/interface'
 import type { AddressManager } from '@libp2p/interface-internal'
 import type { GossipSub, GossipsubMessage, GossipsubOpts } from '@chainsafe/libp2p-gossipsub'
-import type { PinningService } from '../../../node/hacks'
+import type { PinningService } from '../../../network/libp2p/pinning'
 //import { console_log } from '../../../ui/remote/remote'
 
 export const TOPIC = '_peer-discovery._p2p._pubsub'

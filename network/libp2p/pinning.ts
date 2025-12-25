@@ -1,5 +1,5 @@
-import { createGossipRpc } from '../node_modules/@chainsafe/libp2p-gossipsub/src/utils/create-gossip-rpc.ts'
-import type { RPC } from '../node_modules/@chainsafe/libp2p-gossipsub/src/message/rpc.ts'
+import { createGossipRpc } from '../../node_modules/@chainsafe/libp2p-gossipsub/src/utils/create-gossip-rpc.ts'
+import type { RPC } from '../../node_modules/@chainsafe/libp2p-gossipsub/src/message/rpc.ts'
 import type { GossipSub, GossipsubOpts } from "@chainsafe/libp2p-gossipsub"
 import type { MsgIdStr } from '@chainsafe/libp2p-gossipsub/types'
 import type { ComponentLogger, Logger, PeerId } from "@libp2p/interface"

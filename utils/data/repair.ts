@@ -11,7 +11,7 @@ import { promises as fs } from 'fs'
 import path from 'node:path'
 import embedded from './embedded/embedded'
 import os from 'os'
-import { cachedHeadCommitHash, runPostInstall, update } from "./update"
+import { runPostInstall, update } from "./update"
 //import { ensureSymlink } from "./data-client"
 import { args } from "../args"
 import { checkForUpdates, fbPkg, isNewVersionAvailable, prev_fbPkg, repairSelfPackage } from "./upgrade"
@@ -95,7 +95,6 @@ export async function repair(opts: Required<AbortOptions>){
                             await runPostInstall(opts)
                     }
                     updated = await update(gsPkg, opts)
-                    gsPkg.gitRevision = cachedHeadCommitHash!
                 } else {
                     await repairArchived(gsPkg, opts)
                 }

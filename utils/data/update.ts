@@ -46,6 +46,8 @@ export async function update(pkg: PkgInfoGit, opts: Required<AbortOptions>){
             await git([ 'remote', 'add', pkg.gitRemoteName, pkg.gitOriginURL ], pkg, opts)
             await git([ 'fetch', pkg.gitRemoteName ], pkg, opts)
             await git([ 'checkout', '-b', `${pkg.gitRemoteName}-${pkg.gitBranchName}`, `${pkg.gitRemoteName}/${pkg.gitBranchName}`, '--force' ], pkg, opts)
+            
+            await getHeadCommitHash(pkg, opts)
             updated = true
         } else {
             const prevHash = await getHeadCommitHash(pkg, opts)
@@ -79,12 +81,11 @@ export async function update(pkg: PkgInfoGit, opts: Required<AbortOptions>){
     return updated
 }
 
-export let cachedHeadCommitHash: string | undefined
 export async function getHeadCommitHash(pkg: PkgInfoGit, opts: Required<AbortOptions>) {
     let { stdout } = await git([ 'rev-parse', 'HEAD' ], pkg, opts)
     stdout = stdout.trim()
     if(/^\w{40}$/.test(stdout)){
-        cachedHeadCommitHash = stdout
+        pkg.gitRevision = stdout
         return stdout
     }
     //else throw new Error('Failed to get the head commit hash')
