@@ -12,7 +12,7 @@ import { winePkg } from './packages/wine'
 export type { PkgInfo, PkgInfoCSProj, PkgInfoGit } from './packages/shared'
 export { gsPkg, gcPkg, sdkPkg, gitPkg, modPck1, winePkg }
 
-export const packages = [ gsPkg, gcPkg, sdkPkg, gitPkg ]
+export const packages = [ gsPkg, gcPkg, sdkPkg, gitPkg, modPck1 ]
 
 for(const a of packages)
     for(const b of packages)

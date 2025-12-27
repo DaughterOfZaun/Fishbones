@@ -3,7 +3,7 @@ import { champions } from "./champions"
 import { modes } from "./modes"
 import { enabled } from "./values/enabled"
 
-type MapInfo = {
+export type MapInfo = {
     i: number
     id: number
     name: string
@@ -12,6 +12,14 @@ type MapInfo = {
     enabled: boolean
     modes: number[]
     bots: number[]
+}
+
+export type HardcodedMapInfo = {
+    id: number
+    client: boolean
+    server: boolean
+    modes: string[]
+    bots: string[]
 }
 
 // short, name, enabled by default
@@ -42,7 +50,7 @@ const mapsTable: [number, string, boolean][] = [
     [35, `The Bandlewood`, false],
 ]
 
-const hardcodedMaps = [
+export const hardcodedMaps: HardcodedMapInfo[] = [
     {
         id: 1,
         client: true,
@@ -63,15 +71,6 @@ const hardcodedMaps = [
     },
     {
         id: 2,
-        client: true,
-        server: true,
-        modes: [ 'CLASSIC' ],
-        bots: [
-            'Alistar',
-        ],
-    },
-    {
-        id: 4,
         client: true,
         server: true,
         modes: [ 'CLASSIC' ],
@@ -113,36 +112,10 @@ const hardcodedMaps = [
         modes: [ 'ODIN' ],
         bots: [],
     },
-
-    // Additional content
-    {
-        id: 6,
-        client: true,
-        server: true,
-        modes: [ 'CLASSIC' ],
-        bots: [
-            'Soraka',
-            'Sivir',
-            'Shen',
-            'Ryze',
-            'Nasus',
-            'MasterYi',
-            'Malphite',
-            'Garen',
-            'Annie',
-            'Alistar',
-        ],
-    },
-    {
-        id: 10,
-        client: true,
-        server: true,
-        modes: [ 'CLASSIC' ],
-        bots: [],
-    },
 ]
 
-export const maps: MapInfo[] = hardcodedMaps.map(map => {
+export let maps: MapInfo[]
+const unhardcode = (map: HardcodedMapInfo) => {
     const [, name, ] = mapsTable.find(([ i ]) => i === map.id)!
     return {
         i: map.id,
@@ -154,14 +127,24 @@ export const maps: MapInfo[] = hardcodedMaps.map(map => {
         modes: map.modes.map(short => modes.find(mode => mode.short == short)!.i),
         bots: map.bots.map(short => champions.find(champion => champion.short === short)!.i),
     }
-})
+}
 
-export const mapsById = new Map(maps.map(map => [ map.id, map ]))
-export const mapsEnabled = maps.filter(map => map.enabled).map(map => map.id)
+export let mapsById: Map<number, MapInfo>
+export let mapsEnabled: number[]
 
 export class GameMap extends PickableValue {
     public static readonly name = 'Game Map'
-    public static readonly values = Object.fromEntries(maps.map(({ i, name }) => ([i, name])))
-    public static readonly choices = PickableValue.normalize(GameMap.values)
+    public static values: { [k: string]: string }
+    public static choices: { value: number, name: string }[]
 }
 export const GameMapsEnabled = enabled(GameMap)
+
+export function init(){
+    maps = hardcodedMaps.map(unhardcode)
+    mapsById = new Map(maps.map(map => [ map.id, map ]))
+    mapsEnabled = maps.filter(map => map.enabled).map(map => map.id)
+    GameMap.values = Object.fromEntries(maps.map(({ i, name }) => ([i, name])))
+    GameMap.choices = PickableValue.normalize(GameMap.values)
+}
+
+init()

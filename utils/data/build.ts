@@ -1,7 +1,7 @@
 import { sdkPkg, type PkgInfoCSProj } from "./packages"
 import { createBar } from "../../ui/remote/remote"
 import type { AbortOptions } from "@libp2p/interface"
-import { fs_exists, fs_readFile, fs_removeFile, fs_writeFile, type ReadWriteFileOpts } from "./fs"
+import { fs_exists, fs_readdir, fs_readFile, fs_removeFile, fs_writeFile, type ReadWriteFileOpts } from "./fs"
 import { killIfActive, spawn, successfulTermination, type ChildProcess } from "../process/process"
 import { args } from "../args"
 import path from 'node:path'
@@ -35,6 +35,7 @@ export async function build(pkg: PkgInfoCSProj, opts: Required<AbortOptions>){
     let program: string | undefined
     let programWasPatched = false
     let nugetConfigWasPlaced = false
+    const filesToRemove: string[] = []
     
     const nugetConfig = path.join(pkg.dir, 'NuGet.Config')
 
@@ -57,10 +58,31 @@ export async function build(pkg: PkgInfoCSProj, opts: Required<AbortOptions>){
             csprojWasPatched = true
         }
 
-        if(!(await fs_exists(nugetConfig, fs_opts))){
+        if(!(await fs_exists(nugetConfig, fs_opts, false))){
             await fs_writeFile(nugetConfig, nugetConfigContent, fs_opts)
             nugetConfigWasPlaced = true
         }
+
+        const maps = path.join(pkg.dir, 'Content', 'AvCsharp-Scripts', 'Maps')
+        const map1bts = path.join(maps, 'Map1', 'BehaviourTrees')
+        const map2bts = path.join(maps, 'Map2', 'BehaviourTrees')
+        await Promise.all(
+            (await fs_readdir(map1bts, opts)).map(async (fileName) => {
+                const srcBT = path.join(map1bts, fileName)
+                const dstBT = path.join(map2bts, fileName)
+                if(!(await fs_exists(dstBT, opts, false))){
+                    let content = await fs_readFile(srcBT, { ...opts, encoding: 'utf8' })
+                    if(content){
+                        content = content.replace(
+                            'namespace BehaviourTrees.Map1;',
+                            'namespace BehaviourTrees.Map2;'
+                        )
+                        await fs_writeFile(dstBT, content, { ...opts, encoding: 'utf8' })
+                        filesToRemove.push(dstBT)
+                    }
+                }
+            })
+        )
 
         sdkSubprocess = spawn(sdkPkg.exe, [
             'build',
@@ -92,6 +114,12 @@ export async function build(pkg: PkgInfoCSProj, opts: Required<AbortOptions>){
 
         if(nugetConfigWasPlaced)
             await fs_removeFile(nugetConfig, fs_opts)
+
+        await Promise.all(
+            filesToRemove.map(async filePath => {
+                return fs_removeFile(filePath, opts)
+            })
+        )
     }
 
     if(!await fs_exists(pkg.dll, opts))

@@ -16,6 +16,7 @@ import { runPostInstall, update } from "./update"
 import { args } from "../args"
 import { checkForUpdates, fbPkg, isNewVersionAvailable, prev_fbPkg, repairSelfPackage } from "./upgrade"
 import { spawn } from "node:child_process"
+import * as maps from './constants/maps'
 
 const DOTNET_INSTALL_CORRUPT_EXIT_CODES = [ 130, 131, 142, ]
 
@@ -78,7 +79,7 @@ export async function repair(opts: Required<AbortOptions>){
 
     let updated = false
     const gsExeIsMissing = !await fs_exists(gsPkg.dll, opts)
-    const modFileIsMissing = !await fs_exists(modPck1.lockFile, opts, false)
+    let modFileIsMissing = !await fs_exists(modPck1.lockFile, opts, false)
     results = await Promise.allSettled([
         (async () => {
             if(args.torrentDownload.enabled){
@@ -156,16 +157,22 @@ export async function repair(opts: Required<AbortOptions>){
                 //const fs_opts = { ...opts, recursive: true }
                 await fs_ensureDir(path.dirname(modPck1.lockFile), opts)
                 await fs.writeFile(modPck1.lockFile, '', 'utf8')
+                modFileIsMissing = false
             }
         }),
     ])
     throwAnyRejection(results)
 
+    if(!modFileIsMissing){
+        maps.hardcodedMaps.push(...modPck1.hardcodedMaps)
+        maps.init()
+    }
+
     //TODO: await fs.cp(gsPkg.gcDir, gcPkg.exeDir, { recursive: true })
 
     if(args.torrentDownload.enabled){
         //TODO: Seed all downloaded packages.
-        const packages = [ gcPkg, sdkPkg, fbPkg ]
+        const packages = [ gcPkg, gitPkg, modPck1, sdkPkg, fbPkg ]
         void Promise.allSettled(
             packages.map(async pkg => seed(pkg, opts))
         ).then((results) => {

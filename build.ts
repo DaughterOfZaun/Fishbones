@@ -27,6 +27,21 @@ const target: Bun.Build.Target =
     (platform === 'windows') ? `bun-windows-x64-baseline` :
     undefined!
 
+if(process.argv.includes('server')){
+    await Bun.build({
+        entrypoints: [ './node/server.ts' ],
+        sourcemap: 'inline',
+        outdir: OUTDIR,
+        env: 'disable',
+        target: 'bun',
+        minify: false,
+        compile: {
+            target,
+        },
+    })
+    process.exit()
+}
+
 async function build_embeds(){
 
     await $`rm ./remote-ui/embedded/*`
@@ -163,6 +178,7 @@ async function patch_npm_modules(){
         patch_node_datachannel_again(),
         patch_ipshipyard_node_datachannel(),
         patch_simple_peer(),
+        patch_rendezvous(),
     ])
 }
 
@@ -232,6 +248,24 @@ async function patch_simple_peer(){
     js = js.replace(
         /import (.*) from 'webrtc-polyfill'/,
         "import $1 from '@ipshipyard/node-datachannel/polyfill'"
+    )
+    await fs.writeFile(file, js, 'utf8')
+}
+
+async function patch_rendezvous(){
+    const file = './node_modules/@canvas-js/libp2p-rendezvous/lib/server/RegistrationStore.js'
+    let js = await fs.readFile(file, 'utf8')
+    js = js.replace(
+        'import Database from "better-sqlite3";',
+        'import Database from "bun:sqlite";',
+    )
+    js = js.replace(
+        'this.db = new Database(path ?? ":memory:");',
+        'this.db = new Database(path ?? ":memory:", { strict: true, safeIntegers: true });',
+    )
+    js = js.replace(
+        'this.db.defaultSafeIntegers(true);',
+        '',
     )
     await fs.writeFile(file, js, 'utf8')
 }

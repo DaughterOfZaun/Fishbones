@@ -1,22 +1,9 @@
 import path from 'node:path'
 import { gsPkg, sdkPkg } from '../data/packages'
-import { killSubprocess, spawn, startProcess, type ChildProcess } from './process'
+import { getFreePort, killSubprocess, spawn, startProcess, type ChildProcess } from './process'
 import { fs_writeFile } from '../data/fs'
 import type { GameInfo } from '../../game/game-info'
 import type { AbortOptions } from '@libp2p/interface'
-
-import net from "net"
-
-//src: https://stackoverflow.com/a/71178451/30724074
-async function getFreePort(){
-    return new Promise<number>((resolve, reject) => {
-        const server = net.createServer()
-        server.listen(0, () => {
-            const { port } = server.address() as net.AddressInfo
-            server.close((err) => err ? reject(err) : resolve(port))
-        });
-    })
-}
 
 const LOG_PREFIX = 'SERVER'
 

@@ -9,14 +9,14 @@ import { patchedCrypto } from '../utils/crypto'
 import { defaultLogger } from '@libp2p/logger'
 import { GossipSub, gossipsub, type GossipSubComponents } from '@chainsafe/libp2p-gossipsub'
 import { appDiscoveryTopic, rtcConfiguration } from '../utils/constants-build'
-//import { rendezvousServer } from "@canvas-js/libp2p-rendezvous/server"
+import { rendezvousServer } from "@canvas-js/libp2p-rendezvous/server"
 import { circuitRelayServer } from '@libp2p/circuit-relay-v2'
 import fs from 'node:fs/promises'
 import { generateKeyPair, privateKeyFromRaw } from '@libp2p/crypto/keys'
 import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string'
 import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
 import { pubsubPeerDiscovery } from '../network/libp2p/discovery/pubsub-discovery'
-import { tiePubSubWithPeerDiscovery } from './hacks'
+import { pinning } from '../network/libp2p/pinning'
 //import { peerIdFromPrivateKey } from '@libp2p/peer-id'
 
 const UDP_PORT = 42451
@@ -72,7 +72,9 @@ const node = await createLibp2p({
         ping: ping(),
 
         relay: circuitRelayServer(),
-        //rendezvous: rendezvousServer({}),
+        
+        rendezvous: rendezvousServer({}),
+
         pubsub: gossipsub({
             allowedTopics: [ appDiscoveryTopic ],
             doPX: true,
@@ -80,9 +82,8 @@ const node = await createLibp2p({
         pubsubPeerDiscovery: pubsubPeerDiscovery({
             topic: appDiscoveryTopic,
         }),
+        pinning: pinning(),
     }
 })
-
-tiePubSubWithPeerDiscovery(node)
 
 console.log(node.getMultiaddrs().map(ma => ma.toString()))

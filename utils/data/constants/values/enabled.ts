@@ -6,8 +6,8 @@ import type { PickableValueStatics } from "./pickable"
 export function enabled(wrapped: PickableValueStatics){
     return class EnabledSubclass extends Enabled {
         public static readonly name = `${wrapped.name}s Enabled`
-        public static readonly values = wrapped.values
-        public static readonly choices: CheckboxChoice<number>[] = wrapped.choices
+        public static get values(){ return wrapped.values }
+        public static get choices(){ return wrapped.choices }
     }
 }
 

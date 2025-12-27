@@ -1,3 +1,4 @@
+import type { HardcodedMapInfo } from "../constants/maps"
 import embedded from "../embedded/embedded"
 import { downloads } from "../fs"
 import { gcPkg } from "./game-client"
@@ -30,4 +31,32 @@ export const modPck1 = new class ModPackOne extends PkgInfo {
 
     topLevelEntries = []
     topLevelEntriesOptional = []
+
+    hardcodedMaps: HardcodedMapInfo[] = [
+        {
+            id: 6,
+            client: true,
+            server: true,
+            modes: [ 'CLASSIC' ],
+            bots: [
+                'Soraka',
+                'Sivir',
+                'Shen',
+                'Ryze',
+                'Nasus',
+                'MasterYi',
+                'Malphite',
+                'Garen',
+                'Annie',
+                'Alistar',
+            ],
+        },
+        {
+            id: 10,
+            client: true,
+            server: true,
+            modes: [ 'CLASSIC' ],
+            bots: [],
+        },
+    ]
 }

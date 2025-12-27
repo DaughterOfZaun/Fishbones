@@ -3,7 +3,7 @@ import { aria2, open, createWebSocket, type Conn } from 'maria2/dist/index.js'
 import { randomBytes } from '@libp2p/crypto'
 import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
 import { createBar, extractFile } from '../../../ui/remote/remote'
-import { killSubprocess, spawn, startProcess, type ChildProcess } from '../../process/process'
+import { getFreePort, killSubprocess, spawn, startProcess, type ChildProcess } from '../../process/process'
 import { rwx_rx_rx, downloads, fs_chmod, fs_exists, fs_exists_and_size_eq, fs_readFile, fs_removeFile } from '../../data/fs'
 import type { AbortOptions } from '@libp2p/interface'
 import { getAnnounceAddrs } from './trackers'
@@ -32,23 +32,31 @@ export async function repairAria2(opts: Required<AbortOptions>){
     ])
 }
 
+//TODO: Refactor.
 let aria2proc: ChildProcess | undefined
 let aria2procPromise: Promise<void> | undefined
 let aria2conn: Conn //| undefined
 let aria2connPromise: Promise<Conn> | undefined
 let aria2secret: string | undefined
 let aria2port: number | undefined = 6800
+let aria2portPromise: Promise<number> | undefined
 
 async function startAria2(opts: Required<AbortOptions>){
 
     const trackers = await getAnnounceAddrs(opts)
     
+    if(!aria2portPromise){
+        aria2portPromise = getFreePort()
+        aria2port = await aria2portPromise
+    } else
+        await aria2portPromise
+
     if(!aria2procPromise){
         aria2secret = uint8ArrayToString(randomBytes(8), 'base32')
         aria2proc = spawn(ariaExe, [
 
             `--enable-rpc=${true}`,
-            //`--rpc-listen-port=${6800}`,
+            `--rpc-listen-port=${aria2port}`,
             `--rpc-listen-all=${false}`,
             `--rpc-allow-origin-all=${false}`,
             `--rpc-secret=${aria2secret}`,

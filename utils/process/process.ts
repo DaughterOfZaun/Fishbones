@@ -5,6 +5,7 @@ import { console_log, ExitPromptError } from '../../ui/remote/remote'
 import { spawn as originalSpawn } from 'child_process'
 import { Deferred } from '../promises'
 //import { downloads } from './data-fs'
+import net from "net"
 
 export const ABORT_STAGE_TIMEOUT = 3_000
 export const TERMINATE_STAGE_TIMEOUT = 3_000
@@ -257,4 +258,15 @@ export function killIfActive(proc?: ChildProcess){
     if(proc && activeProcesses.has(proc))
         return proc.kill()
     return false
+}
+
+//src: https://stackoverflow.com/a/71178451/30724074
+export async function getFreePort(){
+    return new Promise<number>((resolve, reject) => {
+        const server = net.createServer()
+        server.listen(0, () => {
+            const { port } = server.address() as net.AddressInfo
+            server.close((err) => err ? reject(err) : resolve(port))
+        });
+    })
 }
