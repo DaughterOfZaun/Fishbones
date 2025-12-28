@@ -77,6 +77,8 @@ const node = await createLibp2p({
 
         pubsub: gossipsub({
             allowedTopics: [ appDiscoveryTopic ],
+            allowPublishToZeroTopicPeers: true,
+            emitSelf: true,
             doPX: true,
         }) as (components: GossipSubComponents) => GossipSub,
         pubsubPeerDiscovery: pubsubPeerDiscovery({

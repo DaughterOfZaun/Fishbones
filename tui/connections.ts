@@ -54,13 +54,12 @@ function updatePeerStatus(view: DeferredView<void>, peerId: PeerId, status: Peer
         getPing(peerId)?.toFixed()?.concat(' ms') ?? '' :
         ''
 
-    //if(info.status == PeerStatus.Disconnected){
-    //    if(info.shownInUI){
-    //        info.shownInUI = false
-    //        view.get('Connections').remove(peerId.toString())
-    //    }
-    //} else
-    if(!info.shownInUI){
+    if(info.status == PeerStatus.Disconnected){
+        if(info.shownInUI){
+            info.shownInUI = false
+            view.get('Connections').remove(peerId.toString())
+        }
+    } else if(!info.shownInUI){
         info.shownInUI = true
         view.get('Connections').add(peerId.toString(), form({
             Name: label(getUsername(peerId)),
