@@ -3,6 +3,7 @@ import embedded from "../embedded/embedded"
 import { downloads } from "../fs"
 import { gcPkg } from "./game-client"
 import { magnet, PkgInfo } from "./shared"
+import { HARDCODED_HTTP_SERVER_URL } from '../../constants-build'
 import path from 'node:path'
 
 export const modPck1 = new class ModPackOne extends PkgInfo {
@@ -24,6 +25,7 @@ export const modPck1 = new class ModPackOne extends PkgInfo {
     zipTorrent = `${this.zip}.torrent`
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
     zipMega = 'https://mega.nz/file/ruZDDKTB#XNxrd3gr2GdxhqYPdgAWG2dT4sxBv9Q1mzMT1M-rjLc'
+    zipWebSeed = `${HARDCODED_HTTP_SERVER_URL}/${this.zipName}`
 
     //TODO: Set meaningful value.
     checkUnpackBy = path.join(this.dir, 'LEVELS', 'Map6', 'Scene', 'room.nvr')
@@ -51,12 +53,26 @@ export const modPck1 = new class ModPackOne extends PkgInfo {
                 'Alistar',
             ],
         },
+        //{
+        //    id: 10,
+        //    client: true,
+        //    server: true,
+        //    modes: [ 'CLASSIC' ],
+        //    bots: [],
+        //},
         {
-            id: 10,
+            id: 30,
             client: true,
             server: true,
             modes: [ 'CLASSIC' ],
             bots: [],
         },
+        //{
+        //    id: 22,
+        //    client: true,
+        //    server: true,
+        //    modes: [ 'CLASSIC' ],
+        //    bots: [],
+        //},
     ]
 }

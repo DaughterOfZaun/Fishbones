@@ -44,7 +44,8 @@ export async function relaunchClient(opts: Required<AbortOptions>){
         //    'flatpak', [ 'run', '--command=bottles-cli', 'com.usebottles.bottles',
         //        'run', '-b', 'DeusEx', '-e', exe, gcArgsStr ], spawnOpts) //TODO: cwd
         //clientSubprocess = spawn('bottles-cli', ['run', '-b', 'DeusEx', '-p', 'League of Legends', '--args-replace', gcArgs], spawnOpts)
-        clientSubprocess = spawn(winePkg.exe, [ exe, ...gcArgs ], spawnOpts)
+        //clientSubprocess = spawn(winePkg.exe, [ exe, ...gcArgs ], spawnOpts)
+        clientSubprocess = spawn('wine', [ exe, ...gcArgs ], spawnOpts)
     } else throw new Error(`Unsupported platform: ${process.platform}`)
 
     await startProcess(LOG_PREFIX, clientSubprocess, 'stderr', (chunk) => {

@@ -216,8 +216,8 @@ export function spawn(cmd: string, args: readonly string[], opts: SpawnOptions){
     if(opts.detached)
     detachedProcesses.add(proc)
     activeProcesses.add(proc)
-    proc.on('exit', on.bind('exited'))
-    proc.on('error', on.bind('died'))
+    proc.on('exit', on.bind(undefined, 'exited'))
+    proc.on('error', on.bind(undefined, 'died'))
     function on(event: string, code: number, signal: string){
         logTerminationMsg(opts.logPrefix, event, code, signal)
         detachedProcesses.delete(proc)

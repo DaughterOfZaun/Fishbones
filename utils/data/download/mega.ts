@@ -134,14 +134,14 @@ function requestListener(req: IncomingMessage, res: ServerResponse){
     let start = 0, end = file.size - 1
     const rangeHeader = req.headers['range']
     if(typeof rangeHeader === 'string'){
-        const parts = rangeHeader.split('=').at(-1)?.split('-').map(Number)
+        const parts = rangeHeader.split('=').at(-1)?.split('-').map(n => parseInt(n))
         if(parts?.[0]) start = parts[0]
         if(parts?.[1]) end = parts[1]
         ranged = true
     }
 
     const stream = file.download({
-        start, end,
+        start, end: end + 1,
         //forceHttps: true,
         maxConnections: 1,
         returnCiphertext: false,

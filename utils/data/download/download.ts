@@ -106,9 +106,9 @@ async function startAria2(opts: Required<AbortOptions>){
             `--human-readable=${false}`,
 
             // Stability tweaks.
-            //`--allow-piece-length-change=${true}`,
+            `--allow-piece-length-change=${true}`,
             //`--auto-file-renaming=${true}`,
-            //`--allow-overwrite=${true}`,
+            `--allow-overwrite=${true}`,
             //`--retry-wait=${60}`,
             //`--max-tries=${5}`,
 

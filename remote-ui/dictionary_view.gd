@@ -37,3 +37,8 @@ func update(config: Dictionary, strict: bool = false) -> void:
         var field_config: Dictionary = field_configs[field_name]
         var field: Control = self.fields[field_name]
         update_child(field, field_config, strict)
+    
+    #TODO:
+    for key: String in config:
+        if key != 'fields':
+            self[key] = config[key]

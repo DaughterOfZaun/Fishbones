@@ -16,6 +16,12 @@ export interface Form extends Id {
     fields?: Record<string, Config>
 }
 
+export interface Tabs extends Id {
+    $type: 'tabs'
+    //fields?: Record<string, Config>
+    current_tab?: number
+}
+
 export interface List extends Id {
     $type: 'list'
     placeholderText?: string
@@ -79,7 +85,7 @@ export interface Texture extends Id {
     texture?: string,
 }
 
-export type Config = Base | Form | List | Label | LineEdit | TextEdit | Button | Checkbox | Option | Texture
+export type Config = Base | Form | Tabs | List | Label | LineEdit | TextEdit | Button | Checkbox | Option | Texture
 
 export interface View {
     //path: string
@@ -99,7 +105,7 @@ export const inq2gd = (choices: { value: number, name: string }[], enabled?: num
         .map(({ value: id, name: text }) => ({ id, text }))
 }
 
-export const form = (fields?: Record<string, Config>) => ({ $type: 'form' as const, fields })
+export const form = (fields?: Record<string, Config>, props?: Omit<Tabs, '$type' | 'fields'>) => ({ $type: 'form' as const, fields })
 export const list = (items?: Record<string, Config>, placeholderText?: string) => ({ $type: 'list' as const, items, placeholderText })
 export const label = (text?: string) => ({ $type: 'label' as const, text })
 export const line = (text?: string, changed?: (text: string) => void) => ({ $type: 'line' as const, text, $listeners: { changed } })

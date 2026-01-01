@@ -11,6 +11,7 @@ enum DownloadSource {
     Torrents_and_Mega = 3,
     Torrents = 2,
     Mega = 1,
+    Web = 4,
 }
 
 const remotes = [
@@ -72,9 +73,10 @@ export async function startup(opts: Required<AbortOptions>){
         InstallModPack: checkbox(args.installModPack.enabled, (on) => args.installModPack.enabled = on),
         DownloadSource: option(
             [
-                { id: DownloadSource.Torrents_and_Mega, text: 'torrents + mega.nz' },
-                { id: DownloadSource.Torrents, text: 'torrents' },
-                { id: DownloadSource.Mega, text: 'mega.nz' },
+                { id: DownloadSource.Torrents_and_Mega, text: 'web + torrents + mega.nz' },
+                { id: DownloadSource.Torrents, text: 'web + torrents' },
+                { id: DownloadSource.Mega, text: 'web + mega.nz' },
+                { id: DownloadSource.Web, text: 'web' },
             ],
             (+args.torrentDownload.enabled << 1) | (+args.megaDownload.enabled),
             (index) => {

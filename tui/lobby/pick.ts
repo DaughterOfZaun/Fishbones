@@ -1,6 +1,6 @@
 import type { GamePlayer } from "../../game/game-player";
 import { PLAYERS, BOTS, Team, type Context, players } from "./lobby";
-import { button, form, icon, label, list, texture, type Form } from "../../ui/remote/types";
+import { button, form, icon, label, list, texture, type Button, type Form } from "../../ui/remote/types";
 import { render } from "../../ui/remote/view";
 import { Champion, champions } from "../../utils/data/constants/champions";
 import { spells, SummonerSpell } from "../../utils/data/constants/spells";
@@ -71,23 +71,35 @@ export async function lobby_pick(ctx: Context){
     const view = render('ChampionSelect', form({
         Team1: list(),
         Team2: list(),
-        LockIn: button(() => game.set('lock', +true)),
-        Champions: list(championsItems),
-        Skins: list({}),
+        TabContainer: form({
+            Champions: list(championsItems),
+            ChampionsDisabled: { $type: 'base', visible: false },
+            Skins: list({}),
+        }, {
+            current_tab: 0,
+        }),
+        LockIn: button(() => {
+            view.get('TabContainer').update(form({
+                ChampionsDisabled: { $type: 'base', visible: true },
+            }, {
+                current_tab: 1,
+            }))
+            game.set('lock', +true)
+        }),
         SummonerSpell1: list(summonerSpellsItems),
         SummonerSpell2: list(summonerSpellsItems),
         Pages: option_pages((index) => {
             const page = pages.get(index)!
             game.set('talents', page.talents)
-        })
+        }),
     }), ctx, [
         {
-            regex: /\.\/Champions\/(?<championIndex>\d+):pressed/,
+            regex: /\.\/TabContainer\/Champions\/(?<championIndex>\d+):pressed/,
             listener: (m) => {
                 const championIndex = parseInt(m.groups!.championIndex!)
                 game.set('champion', championIndex)
 
-                view.get('Skins').setItems(
+                view.get('TabContainer/Skins').setItems(
                     Object.fromEntries(
                         champions[championIndex]!.skins
                         .map(({ i, image }) => {
@@ -110,7 +122,7 @@ export async function lobby_pick(ctx: Context){
             }
         },
         {
-            regex: /\.\/Skins\/(?<skinIndex>\d+)\/Button:pressed/,
+            regex: /\.\/TabContainer\/Skins\/(?<skinIndex>\d+)\/Button:pressed/,
             listener: (m) => {
                 const skinIndex = parseInt(m.groups!.skinIndex!)
                 game.set('skin', skinIndex)
@@ -121,10 +133,34 @@ export async function lobby_pick(ctx: Context){
     updateDynamicElements()
     view.addEventListener(game, 'update', updateDynamicElements)
     function updateDynamicElements(){
+        const locked = !!game.getPlayer()!.lock.value
         view.get('Team1').setItems(players(game, Team.Blue, PLAYERS | BOTS, makePlayerForm))
         view.get('Team2').setItems(players(game, Team.Purple, PLAYERS | BOTS, makePlayerForm))
-        view.get('LockIn').update(button(undefined, !!game.getPlayer()!.lock.value))
+        view.update(form({
+            TabContainer: form({
+                ChampionsDisabled: { $type: 'base', visible: locked },
+            }),
+            LockIn: button(undefined, locked),
+        }))
     }
+
+    view.addCleanupCallback(() => {
+        const player = game.getPlayer()
+        const championIndex = player?.champion.value ?? 0
+        const spellIndex1 = player?.spell1.value ?? 0
+        const spellIndex2 = player?.spell2.value ?? 0
+        const unpressed: Button = { $type: 'button', button_pressed: false }
+        view.update(form({
+            TabContainer: form({
+                ChampionsDisabled: { $type: 'base', visible: false },
+                Champions: list({ [championIndex]: unpressed }),
+            }, {
+                current_tab: 0,
+            }),
+            SummonerSpell1: list({ [spellIndex1]: unpressed }),
+            SummonerSpell2: list({ [spellIndex2]: unpressed }),
+        }))
+    })
 
     return view.promise
 }

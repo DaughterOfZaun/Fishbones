@@ -46,7 +46,9 @@ const mapsTable: [number, string, boolean][] = [
     [19, `Substructure 43`, false],
     [20, `Crash Site`, false],
     [21, `Temple of Lily and Lotus`, false],
-    [30, `Arena: Rings of Wrath`, false],
+    //[22, `Magma Chamber (recreated in Minecraft)`, false],
+    //[30, `Arena: Rings of Wrath`, false],
+    [30, `New Proving Grounds`, false],
     [35, `The Bandlewood`, false],
 ]
 
@@ -86,6 +88,13 @@ export const hardcodedMaps: HardcodedMapInfo[] = [
             'Annie',
             'Alistar',
         ],
+    },
+    {
+        id: 3,
+        client: true,
+        server: true,
+        modes: [ 'TUTORIAL' ],
+        bots: [],
     },
     {
         id: 4,

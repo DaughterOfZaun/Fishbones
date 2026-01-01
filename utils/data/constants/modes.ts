@@ -6,6 +6,7 @@ const modesTable: [string, string, boolean][] = [
     ['CLASSIC', 'Classic', true],
     ['ARAM', 'ARAM', false],
     ['ODIN', 'ODIN', true],
+    ['TUTORIAL', 'Tutorial', false],
 ]
 export const modes = modesTable.map(([ short, name, enabled ], i) => ({ i, short, name, enabled }))
 export class GameMode extends PickableValue {

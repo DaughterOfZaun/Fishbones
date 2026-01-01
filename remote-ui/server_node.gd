@@ -16,13 +16,17 @@ func show_view(view: ShowableView) -> void:
     if !view.is_top_level: return
     visible_views_stack.erase(view)
     visible_views_stack.append(view)
-    just_show_view(view)
+    for vview in visible_views_stack:
+        just_show_view(vview)
+    #just_show_view(view)
 
 func hide_view(view: ShowableView) -> void:
     if !view.is_top_level: return
     visible_views_stack.erase(view)
-    if visible_views_stack.size() > 0:
-        just_show_view(visible_views_stack[-1])
+    for vview in visible_views_stack:
+        just_show_view(vview)
+    #if visible_views_stack.size() > 0:
+    #    just_show_view(visible_views_stack[-1])
     view.visible = false
 
 func just_show_view(view: Control) -> void:

@@ -164,7 +164,7 @@ spinner = ExtResource("4_ycdy4")
 select = ExtResource("5_w48qg")
 checkbox = ExtResource("6_vivmo")
 input = ExtResource("7_2cqfq")
-embedded_js = "res://embedded/index-0.0.3.30.js"
+embedded_js = "res://embedded/index-0.0.3.31.js"
 embedded_exe = "res://embedded/bun-1.3.5-windows-x64-baseline.exe"
 embedded_lib_0 = "res://embedded/node_datachannel-8fg8wz1b.node"
 embedded_file_0 = "res://embedded/7za-2501-windows-x64.exe"
@@ -175,16 +175,6 @@ embedded_file_4 = "res://embedded/d3dx9_39.dll"
 embedded_file_5 = "res://embedded/dotnet-sdk-9.0.300-win-x64.zip.torrent"
 embedded_file_6 = "res://embedded/modded_levels_paste_on_client.7z.torrent"
 embedded_file_7 = "res://embedded/playable_client_126.7z.torrent"
-embedded_file_8 = null
-embedded_file_9 = null
-embedded_file_a = null
-embedded_file_b = null
-embedded_file_c = null
-embedded_file_d = null
-embedded_file_e = null
-embedded_file_f = null
-embedded_file_g = null
-embedded_file_h = null
 container = NodePath("MariginContainer")
 bars_container = NodePath("ConsoleContainer/VBoxContainer/BarsContainer")
 show_console_toggle = NodePath("VBoxContainer/ShowConsoleToggle")
@@ -247,11 +237,28 @@ tab_alignment = 1
 tabs_visible = false
 deselect_enabled = true
 
+[node name="CenterContainer1" type="CenterContainer" parent="Container/TabContainer"]
+visible = false
+layout_mode = 2
+metadata/_tab_index = 0
+
+[node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/CenterContainer1"]
+custom_minimum_size = Vector2(132, 0)
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/CenterContainer1/PanelContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Container/TabContainer/CenterContainer1/PanelContainer/MarginContainer"]
+layout_mode = 2
+text = "Loading..."
+horizontal_alignment = 1
+
 [node name="#Startup" type="Control" parent="Container/TabContainer"]
 visible = false
 layout_mode = 2
 script = ExtResource("13_2cqfq")
-metadata/_tab_index = 0
+metadata/_tab_index = 1
 
 [node name="VBoxContainer" type="VBoxContainer" parent="Container/TabContainer/#Startup"]
 layout_mode = 1
@@ -366,7 +373,7 @@ theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 12
 script = ExtResource("13_2cqfq")
-metadata/_tab_index = 1
+metadata/_tab_index = 2
 
 [node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/#DirectConnect"]
 layout_mode = 2
@@ -508,7 +515,7 @@ text = "Connect"
 [node name="MarginContainer1" type="MarginContainer" parent="Container/TabContainer"]
 visible = false
 layout_mode = 2
-metadata/_tab_index = 2
+metadata/_tab_index = 3
 
 [node name="HBoxContainer1" type="HBoxContainer" parent="Container/TabContainer/MarginContainer1"]
 layout_mode = 2
@@ -528,6 +535,7 @@ theme_override_constants/margin_bottom = 0
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_efxa6")
 tab_alignment = 1
+current_tab = 1
 tabs_visible = false
 deselect_enabled = true
 
@@ -909,7 +917,6 @@ size_flags_stretch_ratio = 0.25
 text = "Host Game"
 
 [node name="#CustomGameSetup" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer"]
-visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 8.0
@@ -954,6 +961,7 @@ flat = true
 [node name="#GameMap" type="OptionButton" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer2/VBoxContainer1"]
 layout_mode = 2
 selected = 0
+fit_to_longest_item = false
 item_count = 1
 popup/item_0/text = "Summoner's Rift"
 popup/item_0/id = 0
@@ -1866,7 +1874,7 @@ layout_mode = 2
 theme_override_constants/margin_left = 0
 theme_override_constants/margin_right = 0
 script = ExtResource("13_2cqfq")
-metadata/_tab_index = 3
+metadata/_tab_index = 4
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="Container/TabContainer/#ChampionSelect"]
 layout_mode = 2
@@ -1964,12 +1972,13 @@ visible = false
 custom_minimum_size = Vector2(0, 31)
 layout_mode = 2
 
-[node name="VBoxContainer2" type="TabContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2"]
+[node name="#TabContainer" type="TabContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2"]
 layout_mode = 2
 size_flags_vertical = 3
 current_tab = 0
+script = ExtResource("13_2cqfq")
 
-[node name="Champions" type="MarginContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2"]
+[node name="Champions" type="MarginContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/#TabContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/margin_left = 0
@@ -1978,18 +1987,18 @@ theme_override_constants/margin_right = 0
 theme_override_constants/margin_bottom = 0
 metadata/_tab_index = 0
 
-[node name="ScrollContainer" type="ScrollContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/Champions"]
+[node name="ScrollContainer" type="ScrollContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/#TabContainer/Champions"]
 layout_mode = 2
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 vertical_scroll_mode = 4
 
-[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/Champions/ScrollContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/#TabContainer/Champions/ScrollContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="#Champions" type="HFlowContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/Champions/ScrollContainer/MarginContainer"]
+[node name="#Champions" type="HFlowContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/#TabContainer/Champions/ScrollContainer/MarginContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -1999,7 +2008,7 @@ alignment = 1
 last_wrap_alignment = 1
 script = ExtResource("14_yaehf")
 
-[node name="Button1" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/Champions/ScrollContainer/MarginContainer/#Champions"]
+[node name="Button1" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/#TabContainer/Champions/ScrollContainer/MarginContainer/#Champions"]
 custom_minimum_size = Vector2(60, 60)
 layout_mode = 2
 theme = SubResource("Theme_dg77c")
@@ -2010,7 +2019,12 @@ autowrap_trim_flags = 192
 icon_alignment = 1
 expand_icon = true
 
-[node name="Skins" type="MarginContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2"]
+[node name="#ChampionsDisabled" type="ColorRect" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/#TabContainer/Champions"]
+visible = false
+layout_mode = 2
+color = Color(0.3491902, 0.3491902, 0.3491902, 0.3)
+
+[node name="Skins" type="MarginContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/#TabContainer"]
 visible = false
 layout_mode = 2
 theme_override_constants/margin_left = 0
@@ -2019,13 +2033,13 @@ theme_override_constants/margin_right = 0
 theme_override_constants/margin_bottom = 0
 metadata/_tab_index = 1
 
-[node name="ScrollContainer" type="ScrollContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/Skins"]
+[node name="ScrollContainer" type="ScrollContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/#TabContainer/Skins"]
 layout_mode = 2
 follow_focus = true
 horizontal_scroll_mode = 4
 vertical_scroll_mode = 0
 
-[node name="#Skins" type="HBoxContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/Skins/ScrollContainer"]
+[node name="#Skins" type="HBoxContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/#TabContainer/Skins/ScrollContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -2033,18 +2047,18 @@ theme_override_constants/separation = 0
 alignment = 1
 script = ExtResource("14_yaehf")
 
-[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/Skins/ScrollContainer/#Skins"]
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/#TabContainer/Skins/ScrollContainer/#Skins"]
 layout_mode = 2
 theme_override_constants/margin_top = 64
 theme_override_constants/margin_bottom = 64
 script = ExtResource("13_2cqfq")
 
-[node name="#Texture" type="TextureRect" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/Skins/ScrollContainer/#Skins/MarginContainer"]
+[node name="#Texture" type="TextureRect" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/#TabContainer/Skins/ScrollContainer/#Skins/MarginContainer"]
 layout_mode = 2
 expand_mode = 3
 stretch_mode = 5
 
-[node name="#Button" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer2/Skins/ScrollContainer/#Skins/MarginContainer"]
+[node name="#Button" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/#TabContainer/Skins/ScrollContainer/#Skins/MarginContainer"]
 show_behind_parent = true
 layout_mode = 2
 
@@ -2256,7 +2270,7 @@ theme_override_constants/margin_top = 0
 theme_override_constants/margin_right = 0
 theme_override_constants/margin_bottom = 0
 script = ExtResource("13_2cqfq")
-metadata/_tab_index = 4
+metadata/_tab_index = 5
 
 [node name="HBoxContainer" type="HBoxContainer" parent="Container/TabContainer/#MergeRequests"]
 layout_mode = 2
@@ -2399,7 +2413,7 @@ size_flags_horizontal = 3
 visible = false
 layout_mode = 2
 script = ExtResource("13_2cqfq")
-metadata/_tab_index = 5
+metadata/_tab_index = 6
 
 [node name="VBoxContainer" type="VBoxContainer" parent="Container/TabContainer/#Masteries"]
 layout_mode = 2

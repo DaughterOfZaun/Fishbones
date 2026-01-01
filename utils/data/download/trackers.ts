@@ -4,6 +4,7 @@ import { downloads, fs_readFile, fs_writeFile } from '../fs'
 import type { AbortOptions } from '@libp2p/interface'
 import { logger } from '../../log'
 import embeddedTrackersTxt from '../../../Fishbones_Data/trackers.txt'
+import { HARDCODED_ANNOUNCE_URLS } from '../../constants-build'
 
 const trackersTxtName = 'trackers.txt'
 const trackersTxt = path.join(downloads, trackersTxtName)
@@ -15,19 +16,28 @@ const trackerListsURLS = [
 
 let trackers: undefined | string[]
 function setTrackers(txt: string){
-    return trackers = (txt || '').split('\n').filter(l => !!l)
+    trackers = (txt || '').split('\n').filter(l => !!l)
+    trackers.unshift(...HARDCODED_ANNOUNCE_URLS)
+    return trackers
 }
 
 let trackersPromise: undefined | Promise<string[]>
 export async function getAnnounceAddrs(opts: Required<AbortOptions>): Promise<string[]> {
-    return trackersPromise ||= (trackers !== undefined) ?
+    return trackersPromise ??= (trackers !== undefined) ?
         Promise.resolve(trackers) :
         readTrackersTxt(opts)
 }
 
 export async function readTrackersTxt(opts: Required<AbortOptions>){
-    const txt = await fs_readFile(trackersTxt, { ...opts, encoding: 'utf8' })
-    return txt ? setTrackers(txt) : await downloadTrackersTxt(opts)
+    let txt = await fs_readFile(trackersTxt, { ...opts, encoding: 'utf8' })
+    if(!txt){
+        txt = await downloadTrackersTxt(opts)
+    }
+    if(!txt){
+        console_log('Using built-in list of torrent-trackers')
+        txt = embeddedTrackersTxt
+    }
+    return setTrackers(txt)
 }
 
 export async function downloadTrackersTxt(opts: Required<AbortOptions>){
@@ -54,12 +64,9 @@ export async function downloadTrackersTxt(opts: Required<AbortOptions>){
     }
     if(txt){
         await fs_writeFile(trackersTxt, txt, { ...opts, encoding: 'utf8' })
-        return setTrackers(txt)
-    } else {
-        if(lastError)
-            console_log('Downloading torrent-tracker list failed:\n', Bun.inspect(lastError))
-        console_log('Using built-in list of torrent-trackers')
-        txt = embeddedTrackersTxt
-        return setTrackers(txt)
+        return txt
+    }
+    if(lastError){
+        console_log('Downloading torrent-tracker list failed:\n', Bun.inspect(lastError))
     }
 }
