@@ -1,9 +1,8 @@
 import { blowfishKey, FeaturesEnabled, GameType, HexStringValue, LOCALHOST, Name, Password, PlayerCount, Team, type u } from '../utils/constants'
-import { TypedEventEmitter, type AbortOptions, type Connection, type PeerId, type Stream } from '@libp2p/interface'
+import { TypedEventEmitter, type AbortOptions, type PeerId, type Stream } from '@libp2p/interface'
 import { publicKeyFromProtobuf, publicKeyToProtobuf } from '@libp2p/crypto/keys'
 import { peerIdFromPublicKey } from '@libp2p/peer-id'
-import { multiaddr } from '@multiformats/multiaddr'
-import type { LibP2PNode } from '../node/node'
+import { obtainConnection, type LibP2PNode } from '../node/node'
 import { GamePlayer, type PlayerId, type PPP } from './game-player'
 import type { Peer as PBPeer } from '../message/peer'
 import type { Server } from './server'
@@ -15,7 +14,7 @@ import type { WriteonlyMessageStream } from '../utils/pb-stream'
 import { launchClient, relaunchClient, stopClient } from '../utils/process/client'
 import { launchServer, stopServer } from '../utils/process/server'
 import { safeOptions, shutdownOptions } from '../utils/process/process'
-import { deadlyRace, Deferred } from '../utils/promises'
+import { Deferred } from '../utils/promises'
 import { logger } from '../utils/log'
 import { getBotName, getName } from '../utils/namegen/namegen'
 import { GameMap } from '../utils/data/constants/maps'
@@ -23,6 +22,7 @@ import { GameMode } from '../utils/data/constants/modes'
 import { runes } from '../utils/data/constants/runes'
 import { VERSION, versionFromString } from '../utils/constants-build'
 import { console_log } from '../ui/remote/remote'
+import { tr } from '../utils/translation'
 
 export const versionNumber = versionFromString(VERSION)
 
@@ -59,7 +59,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     public readonly server: Server
     public readonly ownerId: PeerId
     
-    public readonly name = new Name(`Game`)
+    public readonly name = new Name(tr(`Game`))
     public readonly map = new GameMap(1, () => this.server.maps)
     public readonly mode = new GameMode(0, () => this.server.modes)
     public readonly type = new GameType(0)
@@ -111,13 +111,13 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
 
     protected cleanup(){
         stopClient(safeOptions).catch(err => {
-            logger.log('An error occurred when stopping the client:', Bun.inspect(err))
+            logger.log(tr('An error occurred when stopping the client:'), Bun.inspect(err))
         })
         this.proxyClient?.disconnect()
         this.proxyClient = undefined
 
         stopServer(safeOptions).catch(err => {
-            logger.log('An error occurred when stopping the server:', Bun.inspect(err))
+            logger.log(tr('An error occurred when stopping the server:'), Bun.inspect(err))
         })
         this.proxyServer?.stop()
         this.proxyServer = undefined
@@ -288,41 +288,12 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             //TODO: && this.player?.fullyConnected.value === true
             && player.peerId && (res.info?.addrs.length ?? 0) > 0
         ){
-            if(!this.getExistingConnection(player.peerId)){
-                await deadlyRace([
-                    async (opts) => this.tryConnectTo(player.peerId!, res.info!.addrs, opts),
-                    async (opts) => this.waitForConnection(player.peerId!, opts),
-                ], opts)
-            }
+            await obtainConnection(this.node, player.peerId!, opts, res.info!.addrs)
             //console_log(`connectedTo: { playerId: ${player.id} }`)
             this.stream_write({
                 connectedTo: { playerId: player.id },
             })
         }
-    }
-
-    private getExistingConnection(peerId: PeerId){
-        //TODO: This code block is copied from UseExistingLibP2PConnection (extends ConnectionStrategy)
-        const connections = this.node.getConnections(peerId)
-            .filter(connection => connection.status === 'open' && !connection.limits)
-        return connections.at(0)
-    }
-
-    private async tryConnectTo(peerId: PeerId, addrs: Uint8Array[], opts: Required<AbortOptions>){
-        const { peerStore } = this.node.components
-        const multiaddrs = addrs.map(addr => multiaddr(addr))
-        await peerStore.patch(peerId, { multiaddrs }, opts)
-        const connection = await this.node.dial(peerId, opts)
-        return connection
-    }
-
-    private async waitForConnection(peerId: PeerId, opts: Required<AbortOptions>){
-        const deferred = new Deferred(opts)
-        deferred.addEventListener(this.node, 'connection:open', (event: CustomEvent<Connection>) => {
-            const connection = event.detail
-            deferred.resolve(connection)
-        })
-        return deferred.promise
     }
 
     private handleConnectedToRequest(playerFrom: GamePlayer, req: LobbyRequestMessage.ConnectedToRequest){
@@ -413,9 +384,9 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             .filter(player => !!player.peerId)
             .map(player => player.maxPingObserved.value ?? 0)
             .sort().at(-1) ?? 0
-        const delay = Math.ceil(maxPingObserved * MAX_PING_MULTIPLIER) // It's very naive of me.
+        const delay = Math.ceil(maxPingObserved * MAX_PING_MULTIPLIER) // Its very naive of me.
 
-        console_log(`An input delay of ${delay}ms is set.`)
+        console_log(tr(`An input delay of {delay}ms is set.`, { delay }))
 
         let i = 1
         for(const player of players)

@@ -12,6 +12,7 @@ import { loadSkins } from './utils/data/constants/champions'
 import * as pages from './tui/masteries/pages'
 import { loadConfig, startup } from './tui/startup'
 import { mrs } from './tui/mrs'
+import { tr } from './utils/translation'
 
 logger.log(`${'-'.repeat(35)} ${TITLE} started ${'-'.repeat(35)}`)
 
@@ -47,7 +48,7 @@ async function index(opts: Required<AbortOptions>){
         const result = await repair(opts)
         if(result?.mustExit) return
     } catch(err) {
-        console_log('Repairing of some critical component has failed.')
+        console_log(tr('Repairing of some critical component has failed.'))
         throw err
     }
 
@@ -82,7 +83,7 @@ try {
     if(err instanceof ExitPromptError){
         shutdown('timeout')
     } else {
-        console_log('A fatal error occurred:', Bun.inspect(err))
+        console_log(tr('A fatal error occurred:'), Bun.inspect(err))
         shutdown('exception')
     }
 }

@@ -2,6 +2,7 @@ import path from 'node:path'
 import { downloads } from '../fs'
 import embedded from '../embedded/embedded'
 import { magnet, PkgInfoExe } from './shared'
+import { tr } from '../../translation'
 
 const sdkVer = '9.0.300'
 
@@ -43,7 +44,7 @@ if(!sdkZipInfo)
     throw new Error(`Unsupported dotnet-sdk-version-platform-arch.ext combination: ${sdkZipName}`)
 
 export const sdkPkg = new class extends PkgInfoExe {
-    name = '.NET SDK'
+    name = tr('.NET SDK')
     dirName = sdkName
     makeDir = true
     zipExt = sdkZipExt

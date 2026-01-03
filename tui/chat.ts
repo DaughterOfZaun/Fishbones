@@ -5,6 +5,7 @@ import type { ChatEventDetail, Game } from "../game/game";
 import { getName } from "../utils/namegen/namegen";
 import { form, line, text } from "../ui/remote/types";
 import type { GamePlayer } from "../game/game-player";
+import { tr } from "../utils/translation";
 
 type ChatEvents = {
     line: CustomEvent<string>
@@ -53,7 +54,7 @@ export const chat = new class Chat extends TypedEventEmitter<ChatEvents> {
             const player = event.detail
             const isMe = game.getPlayer() === player
             const name = getName(player, isMe)
-            chat.append(`[color=gray]${name} joined the lobby[/color]`)
+            chat.append((`[color=gray]${tr(`{name} joined the lobby`, { name })}[/color]`))
         })
         view.addEventListener(game, 'chat', (event: CustomEvent<ChatEventDetail>) => {
             const { player, message } = event.detail

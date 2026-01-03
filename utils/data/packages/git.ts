@@ -2,9 +2,10 @@ import path from 'node:path'
 import { downloads } from '../fs'
 import embedded from '../embedded/embedded'
 import { magnet, PkgInfoExe } from './shared'
+import { tr } from '../../translation'
 
 export const gitPkg = new class extends PkgInfoExe {
-    name = 'Git'
+    name = tr('Git')
     dirName = 'PortableGit'
 
     zipExt = '7z.exe'

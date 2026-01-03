@@ -2,10 +2,11 @@ import { checkbox, type CheckboxChoice } from "../../../../ui/remote/remote"
 import type { AbortOptions } from "@libp2p/interface"
 import { ValueDesc } from "./desc"
 import type { PickableValueStatics } from "./pickable"
+import { tr } from "../../../translation"
 
 export function enabled(wrapped: PickableValueStatics){
     return class EnabledSubclass extends Enabled {
-        public static readonly name = `${wrapped.name}s Enabled`
+        public static readonly name = tr(`{wrapped_name}s Enabled`, { wrapped_name: wrapped.name })
         public static get values(){ return wrapped.values }
         public static get choices(){ return wrapped.choices }
     }
@@ -37,7 +38,7 @@ export class Enabled extends ValueDesc<number[], number[]>{
             choice.checked = this.value.includes(choice.value)
 
         this.value = await checkbox({
-            message: `Check ${this.name}`,
+            message: tr(`Check {this_name}`, { this_name: this.name }),
             choices: this.choices,
             pageSize: 20,
         }, {
@@ -50,7 +51,10 @@ export class Enabled extends ValueDesc<number[], number[]>{
         //return this.toString()
     }
     toString(): string {
-        return `${this.value.length} of ${this.choices.length} checked`
+        return tr(`{this_value_length} of {this_choices_length} checked`, {
+            this_value_length: this.value.length,
+            this_choices_length: this.choices.length,
+        })
     }
     public set(num: number, enabled: boolean){
         const i = this.value.indexOf(num)

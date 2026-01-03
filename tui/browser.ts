@@ -15,6 +15,7 @@ import type { PingResult } from '../network/libp2p/ping'
 import { spinner, AbortPromptError, popup } from '../ui/remote/remote'
 import { deadlyRace } from '../utils/promises'
 import { gsPkg } from '../utils/data/packages'
+import { tr } from '../utils/translation'
 
 interface CacheEntry {
     server: RemoteServer
@@ -48,7 +49,7 @@ export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts
             //const game = objs.get(objId)
             popup({
                 message: (choice.fields!.Map as Label).text!,
-                title: 'New game found',
+                title: tr('New game found'),
                 sound: 'air_event_invited_1',
             })
         }
@@ -61,8 +62,8 @@ export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts
             Rooms: list(
                 {}, //getChoices(node),
                 args.allowInternet.enabled ?
-                    'No games\nWait longer or host your own' :
-                    'No games on local network\nWait longer or host your own',
+                    tr('No games\nWait longer or host your own') :
+                    tr('No games on local network\nWait longer or host your own'),
             ),
             Host: button(() => view.resolve(['host'])),
             Quit: button(() => view.resolve(['quit'])),
@@ -187,13 +188,13 @@ async function hostRemote(node: LibP2PNode, name: string, lobby: Lobby, setup: S
 async function joinRemote(game: RemoteGame, name: string, lobby: Lobby, opts: Required<AbortOptions>){
     try {
         await deadlyRace([
-            async (opts) => spinner({ message: 'Connecting to host...' }, opts),
+            async (opts) => spinner({ message: tr('Connecting to host...') }, opts),
             async (opts) => game.connect(opts),
         ], opts)
         if(game.password.isSet)
             await game.password.uinput(opts)
         await deadlyRace([
-            async (opts) => spinner({ message: 'Joining the game...' }, opts),
+            async (opts) => spinner({ message: tr('Joining the game...') }, opts),
             async (opts) => game.join(name, game.password.encode(), opts)
         ], opts)
         await lobby(game, opts)
@@ -287,7 +288,7 @@ function gameInfoToChoice(
     const getPing = game.node.services.ping.getPing.bind(game.node.services.ping);
 
     (choice.fields!.Owner as Label).text = getUsername(pwd.id);
-    (choice.fields!.Ping as Label).text = (getPing(pwd.id)?.toFixed()?.concat(' ms') ?? '');
+    (choice.fields!.Ping as Label).text = (getPing(pwd.id)?.toFixed()?.concat(' ' + tr('ms')) ?? '');
     (choice.fields!.Name as Label).text = game.name.toString();
     (choice.fields!.Slots as Label).text = `${players}/${playersMax}`;
     (choice.fields!.Mode as Label).text = game.mode.toString();

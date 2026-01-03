@@ -1,5 +1,6 @@
 import { select, type Choice } from "../../../../ui/remote/remote"
 import type { AbortOptions } from "@libp2p/interface"
+import { tr } from "../../../translation"
 import type { Enabled } from "./enabled"
 import { ValueDesc } from "./desc"
 
@@ -45,7 +46,7 @@ export class PickableValue extends ValueDesc<number, number> {
         }
         try {
             this.value = await select({
-                message: `Select ${this.name}`,
+                message: tr(`Select {this_name}`, { this_name: this.name }),
                 choices: this.choices,
                 pageSize: 20,
             }, {
@@ -63,7 +64,7 @@ export class PickableValue extends ValueDesc<number, number> {
         //return this.toString()
     }
     public toString(): string {
-        return (this.value != undefined) ? this.values[this.value]! : 'undefined'
+        return (this.value != undefined) ? this.values[this.value]! : tr('undefined')
     }
     public static normalize(values: Record<number, string>)/*: Choice<number>[]*/{
         return Object.entries(values).map(([k, v]) => ({ value: Number(k), name: v }))

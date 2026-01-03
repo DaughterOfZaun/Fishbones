@@ -17,6 +17,7 @@ import { args } from "../args"
 import { checkForUpdates, fbPkg, isNewVersionAvailable, prev_fbPkg, repairSelfPackage } from "./upgrade"
 import { spawn } from "node:child_process"
 import * as maps from './constants/maps'
+import { tr } from "../translation"
 
 const DOTNET_INSTALL_CORRUPT_EXIT_CODES = [ 130, 131, 142, ]
 
@@ -35,13 +36,13 @@ export async function repair(opts: Required<AbortOptions>){
 
     let results: PromiseSettledResult<unknown>[]
     results = await Promise.allSettled([
-        readTrackersTxt(opts).catch((err) => { console_log('Restoring torrent trackers list failed:', Bun.inspect(err)) }),
-        repairTorrents(opts).catch((err) => { console_log('Restoring torrent files failed:', Bun.inspect(err)) }),
-        repair7z(opts), //.catch((err) => { console_log('Restoring 7z archiver executable failed:', Bun.inspect(err)); throw err }),
-        repairAria2(opts), //.catch((err) => { console_log('Restoring Aria2 downloader executable failed:', Bun.inspect(err)); throw err }),
+        readTrackersTxt(opts).catch((err) => { console_log(tr('Restoring torrent trackers list failed:'), Bun.inspect(err)) }),
+        repairTorrents(opts).catch((err) => { console_log(tr('Restoring torrent files failed:'), Bun.inspect(err)) }),
+        repair7z(opts), //.catch((err) => { console_log(tr('Restoring 7z archiver executable failed:'), Bun.inspect(err)); throw err }),
+        repairAria2(opts), //.catch((err) => { console_log(tr('Restoring Aria2 downloader executable failed:'), Bun.inspect(err)); throw err }),
         (async () => {
             if(args.upgrade.enabled)
-                return checkForUpdates(opts).catch(err => { console_log('Update check failed:', Bun.inspect(err)) })
+                return checkForUpdates(opts).catch(err => { console_log(tr('Update check failed:'), Bun.inspect(err)) })
         })(),
     ])
     throwAnyRejection(results)
@@ -50,7 +51,7 @@ export async function repair(opts: Required<AbortOptions>){
 
         // A hack to speed up download.
         if(await fs.exists(prev_fbPkg.zip) && !await fs.exists(fbPkg.zip)){
-            const bar = createBar('Copying', prev_fbPkg.zip)
+            const bar = createBar(tr('Copying'), prev_fbPkg.zip)
             await fs_copyFile(prev_fbPkg.zip, fbPkg.zip, opts)
             await fs_truncate(fbPkg.zip, fbPkg.zipSize, opts)
             bar.stop()
@@ -114,7 +115,7 @@ export async function repair(opts: Required<AbortOptions>){
                     if(err instanceof TerminationError){
                         const exitCode = err.cause?.code ?? 0
                         if(DOTNET_INSTALL_CORRUPT_EXIT_CODES.includes(exitCode)){
-                            console_log(`SDK installation is probably corrupted (exit code is ${exitCode})`)
+                            console_log(tr(`SDK installation is probably corrupted (exit code is {exitCode})`, { exitCode }))
                             await repairArchived(sdkPkg, { ...opts, ignoreUnpacked: true })
                             await build(gsPkg, opts)
                         } else throw err
@@ -147,7 +148,7 @@ export async function repair(opts: Required<AbortOptions>){
             throwAnyRejection(results)
 
             if (args.installModPack.enabled && modFileIsMissing){
-                const bar = createBar('Moving', modPck1.name)
+                const bar = createBar(tr('Moving'), modPck1.name)
                 try {
                     await fs_overwrite(modPck1.dir, gcPkg.dir, opts)
                 } finally {
@@ -182,7 +183,7 @@ export async function repair(opts: Required<AbortOptions>){
                 const pkg = packages[i]!
                 if(result.status === 'rejected'){
                     const err = result.reason as Error
-                    console_log(`Failed to seed ${pkg.zipName}:`, Bun.inspect(err))
+                    console_log(tr(`Failed to seed {pkg_zipName}:`, { pkg_zipName: pkg.zipName }), Bun.inspect(err))
                 }
             }
         })
@@ -269,7 +270,7 @@ async function moveFoundFilesToDir(foundPkgDir: string, pkg: PkgInfo, opts: Requ
             try {
                 await moveToPkgDir(fileName)
             } catch(err) {
-                console_log_fs_err('Moving required file', fileName, err)
+                console_log_fs_err(tr('Moving required file failed'), fileName, err)
                 successfullyMovedRequiredFiles = false
             }
         }),
@@ -278,7 +279,7 @@ async function moveFoundFilesToDir(foundPkgDir: string, pkg: PkgInfo, opts: Requ
             try {
                 await moveToPkgDir(fileName)
             } catch(err) {
-                console_log_fs_err('Moving optional file', fileName, err)
+                console_log_fs_err(tr('Moving optional file failed'), fileName, err)
             }
         }),
     ])
@@ -327,7 +328,7 @@ export async function repairArchived(pkg: PkgInfo, opts: Required<AbortOptions> 
     if(await fs_exists(pkg.checkUnpackBy, opts)){
         const lockfile = appendPartialUnpackFileExt(pkg.zip)
         if(await fs_exists(lockfile, opts, false)){
-            console_log('Found temporary unpacker file:', lockfile)
+            console_log(tr('Found temporary unpacker file:'), lockfile)
         } else
             return // OK
     } else {
@@ -338,19 +339,19 @@ export async function repairArchived(pkg: PkgInfo, opts: Required<AbortOptions> 
             const optionalEntries = new Set(pkg.topLevelEntriesOptional)
             if(foundEntries.isSupersetOf(requiredEntres)){
                 if(foundEntries.isSubsetOf(requiredEntres.union(optionalEntries))){
-                    console_log(`Moving "${foundPkgDir}" to "${pkg.dir}"...`)
+                    console_log(tr(`Moving "{foundPkgDir}" to "{pkg_dir}"...`, { foundPkgDir, pkg_dir: pkg.dir }))
                     if(await fs_moveFile(foundPkgDir, pkg.dir, opts)){
                         //TODO: await fs_rmdir(path.dirname(foundPkgDir), opts)
                         return // OK
                     }
                 } else {
-                    console_log(`Moving files from "${foundPkgDir}" to "${pkg.dir}"...`)
+                    console_log(tr(`Moving files from "{foundPkgDir}" to "{pkg_dir}"...`, { foundPkgDir, pkg_dir: pkg.dir }))
                     if(await moveFoundFilesToDir(foundPkgDir, pkg, opts))
                         return // OK
                 }
             } else {
                 const missingEntries = [...requiredEntres.difference(foundEntries)].join(', ')
-                console_log(`Skipping "${foundPkgDir}" because it does not contain some files: ${missingEntries}`)
+                console_log(tr(`Skipping "{foundPkgDir}" because it does not contain some files: {missingEntries}`, { foundPkgDir, missingEntries }))
             }
         }
     }
@@ -359,13 +360,13 @@ export async function repairArchived(pkg: PkgInfo, opts: Required<AbortOptions> 
     if(await fs_exists_and_size_eq(pkg.zip, pkg.zipSize, opts)){
         const lockfile = appendPartialDownloadFileExt(pkg.zip)
         if(await fs_exists(lockfile, opts, false)){
-            console_log('Found temporary downloader file:', lockfile)
+            console_log(tr('Found temporary downloader file:'), lockfile)
         } else if(await tryToUnpack(pkg, opts))
             return // OK
     } else {
         const foundPkgZip = await findPackageZip(pkg, opts)
         if(foundPkgZip){
-            console_log(`Moving "${foundPkgZip}" to "${pkg.zip}"`)
+            console_log(tr(`Moving "{foundPkgZip}" to "{pkg_zip}"`, { foundPkgZip, pkg_zip: pkg.zip }))
             if(await fs_moveFile(foundPkgZip, pkg.zip, opts)
             && await tryToUnpack(pkg, opts))
                 return // OK
@@ -391,7 +392,7 @@ async function tryToUnpack(pkg: PkgInfo, opts: Required<AbortOptions>){
     } catch(unk_err) {
         const err = unwrapAbortError(unk_err)
         if(err instanceof DataError){
-            console_log_fs_err('Unpacking', pkg.zip, err)
+            console_log_fs_err(tr('Unpacking failed'), pkg.zip, err)
             return false
         } else {
             throw err

@@ -5,6 +5,7 @@ import { args } from "../utils/args";
 import { gsPkg } from "../utils/data/packages";
 import { downloads, fs_readFile, fs_writeFile } from "../utils/data/fs";
 import { safeOptions } from "../utils/process/process";
+import { tr } from "../utils/translation";
 import path from 'node:path'
 
 enum DownloadSource {
@@ -73,10 +74,10 @@ export async function startup(opts: Required<AbortOptions>){
         InstallModPack: checkbox(args.installModPack.enabled, (on) => args.installModPack.enabled = on),
         DownloadSource: option(
             [
-                { id: DownloadSource.Torrents_and_Mega, text: 'web + torrents + mega.nz' },
-                { id: DownloadSource.Torrents, text: 'web + torrents' },
-                { id: DownloadSource.Mega, text: 'web + mega.nz' },
-                { id: DownloadSource.Web, text: 'web' },
+                { id: DownloadSource.Torrents_and_Mega, text: tr('web + torrents + mega.nz') },
+                { id: DownloadSource.Torrents, text: tr('web + torrents') },
+                { id: DownloadSource.Mega, text: tr('web + mega.nz') },
+                { id: DownloadSource.Web, text: tr('web') },
             ],
             (+args.torrentDownload.enabled << 1) | (+args.megaDownload.enabled),
             (index) => {

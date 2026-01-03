@@ -164,7 +164,7 @@ spinner = ExtResource("4_ycdy4")
 select = ExtResource("5_w48qg")
 checkbox = ExtResource("6_vivmo")
 input = ExtResource("7_2cqfq")
-embedded_js = "res://embedded/index-0.0.3.31.js"
+embedded_js = "res://embedded/index-0.0.3.32.js"
 embedded_exe = "res://embedded/bun-1.3.5-windows-x64-baseline.exe"
 embedded_lib_0 = "res://embedded/node_datachannel-8fg8wz1b.node"
 embedded_file_0 = "res://embedded/7za-2501-windows-x64.exe"
@@ -234,11 +234,11 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_efxa6")
 tab_alignment = 1
+current_tab = 0
 tabs_visible = false
 deselect_enabled = true
 
 [node name="CenterContainer1" type="CenterContainer" parent="Container/TabContainer"]
-visible = false
 layout_mode = 2
 metadata/_tab_index = 0
 
@@ -385,24 +385,36 @@ theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 12
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer"]
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_constants/separation = 6
-
-[node name="VBoxContainer1" type="VBoxContainer" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/HBoxContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 12
 
-[node name="Label" type="Label" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/HBoxContainer/VBoxContainer1"]
+[node name="GridContainer" type="GridContainer" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
-text = "Copy the text below
-and send it to players you trust
-so they can connect"
-horizontal_alignment = 1
+size_flags_vertical = 3
+columns = 3
 
-[node name="#TextToCopy" type="TextEdit" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/HBoxContainer/VBoxContainer1"]
+[node name="Label1" type="Label" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer"]
+custom_minimum_size = Vector2(1, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Copy the text below and send it to players you trust so they can connect"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="VSeparator1" type="VSeparator" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer"]
+layout_mode = 2
+
+[node name="Label2" type="Label" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer"]
+custom_minimum_size = Vector2(1, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Paste the text you received from someone you trust and click connect"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="#TextToCopy" type="TextEdit" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 placeholder_text = "Please wait for the text to appear"
@@ -410,7 +422,7 @@ editable = false
 wrap_mode = 1
 autowrap_mode = 1
 
-[node name="#Warning" type="Label" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/HBoxContainer/VBoxContainer1/#TextToCopy"]
+[node name="#Warning" type="Label" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer/#TextToCopy"]
 visible = false
 layout_mode = 1
 anchors_preset = 12
@@ -424,7 +436,7 @@ theme_override_colors/font_color = Color(0.85882354, 0.81960785, 0.4627451, 1)
 text = "WARNING"
 horizontal_alignment = 1
 
-[node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/HBoxContainer/VBoxContainer1/#TextToCopy/#Warning"]
+[node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer/#TextToCopy/#Warning"]
 show_behind_parent = true
 layout_mode = 1
 anchors_preset = 15
@@ -433,44 +445,16 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/HBoxContainer/VBoxContainer1"]
+[node name="VSeparator2" type="VSeparator" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer"]
 layout_mode = 2
 
-[node name="#Cancel" type="Button" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/HBoxContainer/VBoxContainer1/HBoxContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Cancel"
-
-[node name="#Copy" type="Button" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/HBoxContainer/VBoxContainer1/HBoxContainer" node_paths=PackedStringArray("textarea")]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Copy"
-script = ExtResource("11_ycdy4")
-action = 1
-textarea = NodePath("../../#TextToCopy")
-
-[node name="VSeparator" type="VSeparator" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/HBoxContainer"]
-layout_mode = 2
-
-[node name="VBoxContainer2" type="VBoxContainer" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/HBoxContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_constants/separation = 12
-
-[node name="Label" type="Label" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/HBoxContainer/VBoxContainer2"]
-layout_mode = 2
-text = "Paste the text you received
-from someone you trust
-and click connect"
-horizontal_alignment = 1
-
-[node name="#PastedText" type="TextEdit" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/HBoxContainer/VBoxContainer2"]
+[node name="#PastedText" type="TextEdit" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 wrap_mode = 1
 autowrap_mode = 1
 
-[node name="#Error" type="Label" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/HBoxContainer/VBoxContainer2/#PastedText"]
+[node name="#Error" type="Label" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer/#PastedText"]
 visible = false
 layout_mode = 1
 anchors_preset = 12
@@ -484,7 +468,7 @@ theme_override_colors/font_color = Color(0.8627451, 0.46666667, 0.827451, 1)
 text = "ERROR"
 horizontal_alignment = 1
 
-[node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/HBoxContainer/VBoxContainer2/#PastedText/#Error"]
+[node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer/#PastedText/#Error"]
 show_behind_parent = true
 layout_mode = 1
 anchors_preset = 15
@@ -493,11 +477,30 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/HBoxContainer/VBoxContainer2"]
+[node name="HBoxContainer1" type="HBoxContainer" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer"]
+layout_mode = 2
+
+[node name="#Cancel" type="Button" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer/HBoxContainer1"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Cancel"
+
+[node name="#Copy" type="Button" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer/HBoxContainer1" node_paths=PackedStringArray("textarea")]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Copy"
+script = ExtResource("11_ycdy4")
+action = 1
+textarea = NodePath("../../#TextToCopy")
+
+[node name="VSeparator3" type="VSeparator" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer"]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="#Paste" type="Button" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/HBoxContainer/VBoxContainer2/HBoxContainer" node_paths=PackedStringArray("textarea")]
+[node name="#Paste" type="Button" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer/HBoxContainer2" node_paths=PackedStringArray("textarea")]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Paste"
@@ -505,7 +508,7 @@ script = ExtResource("11_ycdy4")
 action = 2
 textarea = NodePath("../../#PastedText")
 
-[node name="#Connect" type="Button" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/HBoxContainer/VBoxContainer2/HBoxContainer"]
+[node name="#Connect" type="Button" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer/HBoxContainer2"]
 modulate = Color(0, 1, 0, 1)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -535,7 +538,6 @@ theme_override_constants/margin_bottom = 0
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_efxa6")
 tab_alignment = 1
-current_tab = 1
 tabs_visible = false
 deselect_enabled = true
 
@@ -917,6 +919,7 @@ size_flags_stretch_ratio = 0.25
 text = "Host Game"
 
 [node name="#CustomGameSetup" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer"]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 8.0
@@ -998,6 +1001,7 @@ flat = true
 [node name="#GameMode" type="OptionButton" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1/VBoxContainer/HBoxContainer2/VBoxContainer2"]
 layout_mode = 2
 selected = 0
+fit_to_longest_item = false
 item_count = 1
 popup/item_0/text = "Classic"
 popup/item_0/id = 0
@@ -1030,6 +1034,7 @@ flat = true
 layout_mode = 2
 disabled = true
 selected = 0
+fit_to_longest_item = false
 item_count = 1
 popup/item_0/text = "Blind Pick"
 popup/item_0/id = 0
@@ -2127,14 +2132,16 @@ layout_mode = 2
 [node name="VBoxContainer" type="HBoxContainer" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2"]
 layout_mode = 2
 
-[node name="Control1" type="Control" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer"]
+[node name="#Quit" type="Button" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
+text = "Quit"
 
-[node name="Control2" type="Control" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer"]
+[node name="Control" type="Control" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer"]
 visible = false
 layout_mode = 2
 size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.75
 
 [node name="#Pages" type="OptionButton" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/VBoxContainer"]
 custom_minimum_size = Vector2(0, 32)
@@ -2765,6 +2772,7 @@ selection_enabled = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "Enter your message here"
+keep_editing_on_text_submit = true
 
 [node name="ConsoleContainer" type="MarginContainer" parent="."]
 visible = false

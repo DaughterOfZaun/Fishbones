@@ -3,12 +3,13 @@ import { spawn, successfulTermination, TerminationError } from "../process/proce
 import { gitPkg, type PkgInfoGit } from "./packages"
 import { console_log, createBar } from "../../ui/remote/remote"
 import { fs_ensureDir, fs_exists } from "./fs"
+import { tr } from "../translation"
 import { args } from "../args"
 import path from "node:path"
 import os from "node:os"
 
 export async function runPostInstall(opts: Required<AbortOptions>){
-    const bar = createBar('Installing', gitPkg.postInstallRelative)
+    const bar = createBar(tr('Installing'), gitPkg.postInstallRelative)
     try {
         const logPrefix = "GIT POST-INSTALL CMD"
         const proc = spawn(
@@ -35,7 +36,7 @@ export async function update(pkg: PkgInfoGit, opts: Required<AbortOptions>){
         return false
     }
 
-    const bar = createBar('Updating', pkg.name)
+    const bar = createBar(tr('Updating'), pkg.name)
     let updated = false
     try {
         await fs_ensureDir(pkg.dir, opts)
@@ -53,14 +54,14 @@ export async function update(pkg: PkgInfoGit, opts: Required<AbortOptions>){
             const prevHash = await getHeadCommitHash(pkg, opts)
             if(args.mr.enabled){
                 const newBranchName = `mr-${pkg.gitRemoteName}-${args.mr.value}`
-                console_log(`Switching the branch to ${newBranchName}...`)
+                console_log(tr(`Switching the branch to {newBranchName}...`, { newBranchName }))
 
                 await git([ 'remote', 'add', pkg.gitRemoteName, pkg.gitOriginURL ], pkg, opts, true)
                 await git([ 'fetch', pkg.gitRemoteName, `merge-requests/${args.mr.value}/head:${newBranchName}`], pkg, opts)
                 await git([ 'checkout',  newBranchName ], pkg, opts)
             } else {
                 const newBranchName = `${pkg.gitRemoteName}-${pkg.gitBranchName}`
-                console_log(`Switching the branch to ${newBranchName}...`)
+                console_log(tr(`Switching the branch to {newBranchName}...`, { newBranchName }))
 
                 await git([ 'remote', 'add', pkg.gitRemoteName, pkg.gitOriginURL ], pkg, opts, true)
                 await git([ 'fetch', pkg.gitRemoteName ], pkg, opts)
@@ -72,7 +73,7 @@ export async function update(pkg: PkgInfoGit, opts: Required<AbortOptions>){
             updated = prevHash != currHash
         }
     } catch(err){
-        console_log('The update failed, see the log for details.')
+        console_log(tr('The update failed, see the log for details.'))
         if(err instanceof TerminationError){ /* Ignore */ }
         else throw err
     } finally {

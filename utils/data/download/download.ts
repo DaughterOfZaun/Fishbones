@@ -12,6 +12,7 @@ import * as MegaProxy from './mega'
 import { args } from '../../args'
 import defer from 'p-defer'
 import embedded from '../../data/embedded/embedded'
+import { tr } from '../../translation'
 
 const LOG_PREFIX = 'ARIA2C'
 
@@ -167,7 +168,7 @@ export async function download(pkg: PkgInfo, opts: Required<AbortOptions>){
     }
 
     //console.log(`Downloading ${pkg.zipName}...`)
-    const bar = createBar('Downloading', pkg.zipName, pkg.zipSize)
+    const bar = createBar(tr('Downloading'), pkg.zipName, pkg.zipSize)
     try {
     
         const webSeeds = []

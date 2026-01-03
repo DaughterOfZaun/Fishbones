@@ -1,6 +1,7 @@
 class_name ServerNode extends Control
 
 const JSONRPC_GUI_ARG = "--jrpc-ui"
+const LOCALE_ARG = '--locale'
 
 var stdio: FileAccess
 var stderr: FileAccess
@@ -165,6 +166,15 @@ func _ready() -> void:
     exe_args.append_array([ extracted_js ])
     exe_args.append_array(OS.get_cmdline_user_args())
     exe_args.append_array([ JSONRPC_GUI_ARG, current_exe ])
+    
+    #var locale := OS.get_locale_language().to_lower()
+    var locale := "ru"
+    if locale == "en": locale = "en_US"
+    elif locale == "zh": locale = "zh_CN"
+    else: locale = locale + '_' + locale.to_upper()
+    TranslationServer.set_locale(locale)
+    
+    exe_args.append_array([ LOCALE_ARG, locale ])
 
     var dict := OS.execute_with_pipe(extracted_exe, exe_args, false)
     stdio = dict["stdio"]

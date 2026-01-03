@@ -41,6 +41,8 @@ import type { ConnectionManager, TransportManager } from '@libp2p/interface-inte
 import { console_log } from '../ui/remote/remote'
 import { args } from '../utils/args'
 import { appDiscoveryTopic, NAME, rtcConfiguration, VERSION } from '../utils/constants-build'
+import { deadlyRace, Deferred } from '../utils/promises'
+import { tr } from '../utils/translation'
 
 export type LibP2PNode = Awaited<ReturnType<typeof createNodeInternal>> & {
     components: {
@@ -113,7 +115,7 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
     try {
         await datastore?.open()
     } catch(err) {
-        console_log('Failed to open data store', Bun.inspect(err))
+        console_log(tr('Failed to open data store:'), Bun.inspect(err))
         datastore = undefined
     }
 
@@ -123,7 +125,7 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
     if(datastore) try {
         privateKey = await loadOrCreateSelfKey(datastore, keychainInit)
     } catch(err) {
-        console_log('Failed to load private key', Bun.inspect(err))
+        console_log(tr('Failed to load private key:'), Bun.inspect(err))
     }
 
     opts?.signal?.throwIfAborted()
@@ -403,13 +405,13 @@ export async function validatePeerInfoString(node: LibP2PNode, str: string, opts
         const { peerId, envelope } = parsePeerInfoString(str)
         const valid = await envelope.validate(PeerRecord.DOMAIN, opts)
         if(!valid)
-            return 'Envelope signature is not valid'
+            return tr('Envelope signature is not valid')
         if(peerId.toString() === node.peerId.toString())
-            return 'Can not dial self'
+            return tr('Can not dial self')
         if(node.getConnections(peerId).length)
-            return 'Already connected'
+            return tr('Already connected')
         if(node.components.connectionManager.getDialQueue().some(job => job.peerId === peerId))
-            return 'Already in dial queue'
+            return tr('Already in dial queue')
     } catch(unk_err) {
         const err = unk_err as Error
         return err.message
@@ -510,4 +512,42 @@ export async function createUUStream(connection: Connection, ...newStreamArgs: P
     const stream = await connection.newStream(...newStreamArgs)
     peerConnection.createDataChannel = peerConnection_createDataChannel
     return stream
+}
+
+export async function obtainConnection(node: LibP2PNode, peerId: PeerId, opts: Required<AbortOptions>, addrs?: Uint8Array[]){
+    let connection = getExistingConnection(node, peerId)
+    if(!connection){
+        connection = await deadlyRace([
+            async (opts) => tryConnectTo(node, peerId, opts, addrs),
+            async (opts) => waitForConnectionFrom(node, peerId, opts),
+        ], opts)
+    }
+    return connection
+}
+
+function getExistingConnection(node: LibP2PNode, peerId: PeerId){
+    //TODO: This code block is copied from UseExistingLibP2PConnection (extends ConnectionStrategy)
+    const connections = node.getConnections(peerId)
+        .filter(connection => connection.status === 'open' && !connection.limits)
+    return connections.at(0)
+}
+
+async function tryConnectTo(node: LibP2PNode, peerId: PeerId, opts: Required<AbortOptions>, addrs?: Uint8Array[]){
+    if(addrs){
+        const { peerStore } = node.components
+        const multiaddrs = addrs.map(addr => multiaddr(addr))
+        await peerStore.patch(peerId, { multiaddrs }, opts)
+    }
+    const connection = await node.dial(peerId, opts)
+    return connection
+}
+
+async function waitForConnectionFrom(node: LibP2PNode, peerId: PeerId, opts: Required<AbortOptions>){
+    const deferred = new Deferred<Connection>(opts)
+    deferred.addEventListener(node, 'connection:open', (event: CustomEvent<Connection>) => {
+        const connection = event.detail
+        if(connection.remotePeer.toString() === peerId.toString())
+            deferred.resolve(connection)
+    })
+    return deferred.promise
 }

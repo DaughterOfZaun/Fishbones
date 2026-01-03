@@ -2,6 +2,7 @@ import type { AbortOptions } from "@libp2p/interface";
 import { downloads, fs_readFile, fs_writeFile } from "../../utils/data/fs";
 import type { PageInfo, RuntimeMasteryInfo, RuntimePageInfo, RuntimeTreeInfo } from "./types";
 //import { talents } from "../../utils/data/constants/talents";
+import { tr } from "../../utils/translation";
 import { byId, byPos } from "./trees";
 import path from 'node:path'
 
@@ -31,7 +32,7 @@ export function set_page(to: RuntimePageInfo){
 
 function createPage(){
     const page: RuntimePageInfo = {
-        name: 'New Page',
+        name: tr('New Page'),
         index: nextPageIndex++,
         points: MAX_POINTS,
         pointsPerTree: [0, 0, 0],

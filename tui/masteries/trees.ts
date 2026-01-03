@@ -1,5 +1,6 @@
 import type { RuntimeMasteryInfo, RuntimeTreeInfo } from "../masteries/types";
 import { data } from "../../utils/data/constants/masteries";
+import { tr } from "../../utils/translation";
 
 export const byId = new Map<number, RuntimeMasteryInfo>()
 export const byPos: RuntimeTreeInfo[] = data.map((staticTree, index) => {
@@ -7,9 +8,9 @@ export const byPos: RuntimeTreeInfo[] = data.map((staticTree, index) => {
     return { index, name: '', grid, points: 0 }
 })
 
-byPos[0]!.name = 'Offense'
-byPos[1]!.name = 'Defense'
-byPos[2]!.name = 'Utility'
+byPos[0]!.name = tr('Offense')
+byPos[1]!.name = tr('Defense')
+byPos[2]!.name = tr('Utility')
 
 let infoIndex = 0
 let treeIndex = 0

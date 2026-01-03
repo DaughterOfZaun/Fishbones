@@ -1,6 +1,6 @@
 import { gcPkg, winePkg } from "../data/packages"
 import { sanitize_bfkey } from "../constants"
-import { killSubprocess, spawn, startProcess, type ChildProcess } from "../process/process"
+import { killSubprocess, spawn, startProcess, type ChildProcess, type SpawnOptions } from "../process/process"
 import type { AbortOptions } from "@libp2p/interface"
 import fs from 'node:fs/promises'
 import path from 'node:path'
@@ -29,7 +29,7 @@ export async function relaunchClient(opts: Required<AbortOptions>){
 
     // eslint-disable-next-line prefer-const
     let exe = gcPkg.exe
-    const spawnOpts = {
+    const spawnOpts: SpawnOptions = {
         logPrefix: LOG_PREFIX,
         //signal: opts.signal,
         cwd: gcPkg.exeDir,
@@ -45,6 +45,7 @@ export async function relaunchClient(opts: Required<AbortOptions>){
         //        'run', '-b', 'DeusEx', '-e', exe, gcArgsStr ], spawnOpts) //TODO: cwd
         //clientSubprocess = spawn('bottles-cli', ['run', '-b', 'DeusEx', '-p', 'League of Legends', '--args-replace', gcArgs], spawnOpts)
         //clientSubprocess = spawn(winePkg.exe, [ exe, ...gcArgs ], spawnOpts)
+        process.env['WINEDEBUG'] = '-all'
         clientSubprocess = spawn('wine', [ exe, ...gcArgs ], spawnOpts)
     } else throw new Error(`Unsupported platform: ${process.platform}`)
 

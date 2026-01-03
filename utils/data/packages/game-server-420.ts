@@ -2,9 +2,10 @@ import path from 'node:path'
 import { downloads } from '../fs'
 import embedded from '../embedded/embedded'
 import { magnet, PkgInfoCSProj } from './shared'
+import { tr } from '../../translation'
 
 export const gs420Pkg = new class extends PkgInfoCSProj {
-    name = 'Game Server'
+    name = tr('Game Server')
     dirName = 'GameServer'
     makeDir = false
     zipExt = '7z'

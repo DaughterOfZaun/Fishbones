@@ -9,6 +9,7 @@ import sampleNames from './names.json'
 import type { PeerId } from '@libp2p/interface'
 import { PeerMap } from '@libp2p/peer-collections'
 import { peerIdFromString } from '@libp2p/peer-id'
+import { tr } from '../translation'
 
 const chain = new Foswig(2, sampleNames)
 const cache = new PeerMap<string>()
@@ -21,7 +22,7 @@ const officialServers = [
 ]
 for(const [i, peerIdString] of officialServers.entries()){
     const peerId = peerIdFromString(peerIdString)
-    cache.set(peerId, `Official Server #${i + 1}`)
+    cache.set(peerId, tr(`Official Server #{i_plus_one}`, { i_plus_one: i + 1 }))
 }
 
 export function getUsername(peerId: PeerId, short = false){
@@ -42,7 +43,7 @@ export function getUsername(peerId: PeerId, short = false){
                 bytes_at(3) << 8 * 3
             )
         } else {
-            name = 'Unknown #ERROR'
+            name = `${tr('Unknown')} #${tr('ERROR')}`
         }
         cache.set(peerId, name)
     }
@@ -51,10 +52,10 @@ export function getUsername(peerId: PeerId, short = false){
 }
 
 export function getPseudonym(playerId: number, isMe: boolean, short = false){
-    let name = 'Anonymous '
+    let name = tr('Anonymous')
     //name += sampleSpecies[Math.floor((playerId / (2 ** 31)) * sampleSpecies.length)]
     if(!short) name += ' #' + formatUInt32(playerId)
-    if(!short && isMe) name += ' (You)'
+    if(!short && isMe) name += ' (' + tr('You') + ')'
     return name
 }
 
@@ -70,5 +71,6 @@ function formatUInt32(i: number){
 }
 
 export function getBotName(championName: string){
-    return `${championName} (Bot)`
+    //return tr(`{championName} (Bot)`, { championName })
+    return `${championName} (${tr(`Bot`)})`
 }

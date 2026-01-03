@@ -6,6 +6,7 @@ import { type PeerId, type Stream } from '@libp2p/interface'
 import { LobbyNotificationMessage, PickRequest } from '../message/lobby'
 import type { Game } from './game'
 import type { WriteonlyMessageStream } from '../utils/pb-stream'
+import { tr } from '../utils/translation'
 
 export type PlayerId = number & { readonly brand: unique symbol }
 
@@ -17,7 +18,7 @@ export class GamePlayer {
     public readonly id: PlayerId
     public readonly peerId?: PeerId
     
-    public readonly name = new Name('Player')
+    public readonly name = new Name(tr('Player'))
 
     stream?: WriteonlyMessageStream<LobbyNotificationMessage, Stream>
     

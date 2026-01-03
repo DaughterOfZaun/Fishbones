@@ -1,5 +1,6 @@
 import { input } from "../../../../ui/remote/remote"
 import type { AbortOptions } from "@libp2p/interface"
+import { tr } from "../../../translation"
 import { ValueDesc } from "./desc"
 
 export function sanitize_str(v: string){
@@ -23,7 +24,7 @@ export class InputableValue extends ValueDesc<string, string> {
     }
     public async uinput(opts: Required<AbortOptions>) {
         this.value = await input({
-            message: `Enter ${this.name}`,
+            message: tr(`Enter {this_name}`, { this_name: this.name }),
             //transformer: (v, /*{ isFinal }*/) => sanitize_str(v),
             validate: v => v == sanitize_str(v),
             default: this.value,
@@ -37,6 +38,6 @@ export class InputableValue extends ValueDesc<string, string> {
         //return this.toString()
     }
     public toString(): string {
-        return this.value?.replace(/./g, '*') ?? 'undefined'
+        return this.value?.replace(/./g, '*') ?? tr('undefined')
     }
 }

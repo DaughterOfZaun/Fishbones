@@ -6,6 +6,7 @@ import { fs_exists } from "./fs"
 import { appendPartialPackFileExt, pack } from "./unpack"
 import createTorrent from 'create-torrent'
 import fs from 'node:fs/promises'
+import { tr } from "../translation"
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 namespace GitHub {
@@ -36,7 +37,7 @@ export async function checkForUpdates(opts: Required<AbortOptions>){
     //    return
     //}
 
-    const bar = createBar('Checking', 'updates')
+    const bar = createBar(tr('Checking for updates'), '')
     try {
         const releasesJSON = await fetch(fbPkg.releasesURL, opts)
         const releases = await releasesJSON.json() as GitHub.Release[]
@@ -45,18 +46,18 @@ export async function checkForUpdates(opts: Required<AbortOptions>){
         const zip = assets.find(asset => asset.name.includes(platform) && asset.name.endsWith('.' + fbPkg.zipExt))
 
         if(!zip){
-            console_log('No suitable launcher update archive found.')
+            console_log(tr('No suitable launcher update archive found.'))
             return
         }
         
         const zipVersion = version(zip.name)
         const fbVersion = version(fbPkg.version)
         console_log(
-            `Latest available version: ${zip.name} (${zipVersion})\n` +
-            `Currently running version: ${fbPkg.zipName} (${fbVersion})`
+            tr('Latest available version') + `: ${zip.name} (${zipVersion})\n` +
+            tr('Currently running version') + `: ${fbPkg.zipName} (${fbVersion})`
         )
         if(zipVersion <= fbVersion){
-            console_log('Already using the latest launcher version.')
+            console_log(tr('Already using the latest launcher version.'))
         } else {
 
             _isNewVersionAvailable = true
@@ -73,7 +74,7 @@ export async function checkForUpdates(opts: Required<AbortOptions>){
             if(torrent){
                 try {
                     if(await fs_exists(fbPkg.zipTorrent, opts)){
-                        console_log(`${fbPkg.zipTorrent} exists already`)
+                        console_log(tr(`{fbPkg_zipTorrent} exists already`, { fbPkg_zipTorrent: fbPkg.zipTorrent }))
                     } else {
                         const zipTorrentURL = torrent.browser_download_url
                         const zipTorrentResponse = await fetch(zipTorrentURL, opts)
@@ -83,7 +84,7 @@ export async function checkForUpdates(opts: Required<AbortOptions>){
                         await fs.rename(zipTorrentPartial, fbPkg.zipTorrent)
                     }
                 } catch(err) {
-                    console_log(`${fbPkg.zipTorrent} download failed:`, Bun.inspect(err))
+                    console_log(tr(`{fbPkg_zipTorrent} download failed:`, { fbPkg_zipTorrent: fbPkg.zipTorrent }), Bun.inspect(err))
                     fbPkg.zipTorrent = ''
                 }
             } else {
@@ -92,7 +93,7 @@ export async function checkForUpdates(opts: Required<AbortOptions>){
         }
         
     } catch(err) {
-        console_log('Update check failed:', Bun.inspect(err))
+        console_log(tr('Update check failed:'), Bun.inspect(err))
     } finally {
         bar.stop()
     }

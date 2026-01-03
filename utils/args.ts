@@ -1,24 +1,28 @@
+//import { tr } from "./translation"
+const tr = (str: string) => str
+
 export class Args {
-    megaDownload = new Option('mega-download', true, 'Download files from mega.nz')
-    torrentDownload = new Option('torrent-download', true, 'Download and Seed files via BitTorrent')
-    allowInternet = new Option('allow-internet', true, 'Сonnect to other players via Internet')
-    globalDiscovery = new Option('global-discovery', false, '(Experimental) Search for servers on the global Internet')
-    torrentDiscovery = new Option('torrent-discovery', false, '(Experimental) Search for servers on the global Internet via BitTorrent')
-    update = new Option('update', true, 'Download game server updates')
-    upgrade = new Option('upgrade', true, 'Download launcher updates')
-    port = new Parameter<number>('port', false, 5119, 'Set custom UDP port number to use')
-    mr = new Parameter<number>('mr', false, 0, 'Select a merge request to test')
-    //origin = new Parameter<string>('origin', false, '', 'Set a repository origin')
-    installModPack = new Option('install-modpack', true, 'Install the package with additional levels')
+    megaDownload = new Option('mega-download', true, tr('Download files from mega.nz'))
+    torrentDownload = new Option('torrent-download', true, tr('Download and Seed files via BitTorrent'))
+    allowInternet = new Option('allow-internet', true, tr('Connect to other players via Internet'))
+    globalDiscovery = new Option('global-discovery', false, tr('(Experimental) Search for servers on the global Internet'))
+    torrentDiscovery = new Option('torrent-discovery', false, tr('(Experimental) Search for servers on the global Internet via BitTorrent'))
+    update = new Option('update', true, tr('Download game server updates'))
+    upgrade = new Option('upgrade', true, tr('Download launcher updates'))
+    port = new Parameter<number>('port', false, 5119, tr('Set custom UDP port number to use'))
+    mr = new Parameter<number>('mr', false, 0, tr('Select a merge request to test'))
+    //origin = new Parameter<string>('origin', false, '', tr('Set a repository origin'))
+    installModPack = new Option('install-modpack', true, tr('Install the package with additional levels'))
 
-    repair = new Option('repair', true, '(Debug) Download+Unpack+Build missing files')
-    download = new Option('download', true, '(Debug) Download missing files')
-    unpack = new Option('unpack', true, '(Debug) Unpack missing files')
-    build = new Option('build', true, '(Debug) Build missing files')
+    repair = new Option('repair', true, tr('(Debug) Download+Unpack+Build missing files'))
+    download = new Option('download', true, tr('(Debug) Download missing files'))
+    unpack = new Option('unpack', true, tr('(Debug) Unpack missing files'))
+    build = new Option('build', true, tr('(Debug) Build missing files'))
 
-    setup = new Option('setup', true, 'Ask about custom arguments at startup')
+    setup = new Option('setup', true, tr('Ask about custom arguments at startup'))
 
-    jRPCUI = new Parameter<string>('jrpc-ui', false, '', '(Internal) Use JSON RPC for I/O')
+    jRPCUI = new Parameter<string>('jrpc-ui', false, '', tr('(Internal) Use JSON RPC for I/O'))
+    locale = new Parameter<string>('locale', false, 'en_US', tr('(Internal) Specify the locale used'))
 
     customizable = [
         this.megaDownload,
@@ -64,7 +68,7 @@ class Parameter<T extends (string | number)> extends Option {
     public value: T
     constructor(name: string, enabledByDefault: boolean, value: T, desc?: string){
         super(name, enabledByDefault, desc)
-        const passed = getNamedArg(`--${name}`, '')
+        const passed = getNamedArg(`--${name}`, value.toString())
         if(typeof value === 'number'){
             const parsed = parseInt(passed)
             const valid = isFinite(parsed) && parsed >= 0

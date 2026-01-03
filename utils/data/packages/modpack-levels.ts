@@ -4,11 +4,12 @@ import { downloads } from "../fs"
 import { gcPkg } from "./game-client"
 import { magnet, PkgInfo } from "./shared"
 import { HARDCODED_HTTP_SERVER_URL } from '../../constants-build'
+import { tr } from "../../translation"
 import path from 'node:path'
 
 export const modPck1 = new class ModPackOne extends PkgInfo {
     id = 'modded_levels_1'
-    name = 'Additional Maps Modpack'
+    name = tr('Additional Maps Modpack')
     dirName = 'modded_levels_paste_on_client'
     makeDir = false
 

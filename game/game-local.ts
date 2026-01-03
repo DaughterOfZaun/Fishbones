@@ -13,6 +13,7 @@ import { pbStream } from '../utils/pb-stream'
 import { mapsById } from '../utils/data/constants/maps'
 import { gsPkg } from '../utils/data/packages'
 //import { logger as myLogger } from '../utils/log'
+import { tr } from '../utils/translation'
 
 export class LocalGame extends Game {
     protected log = logger('launcher:game-local')
@@ -61,7 +62,7 @@ export class LocalGame extends Game {
                     bots.splice(Math.floor(Math.random() * bots.length), 1)[0] :
                     undefined
 
-                bot.name.value = 'Bot'
+                bot.name.value = tr('Bot')
                 bot.team.value = team
                 //this.assignTeamTo(bot)
                 bot.champion.value = champion
@@ -189,7 +190,7 @@ export class LocalGame extends Game {
         this.connected = false
         
         this.node.unhandle(LOBBY_PROTOCOL).catch(err => {
-            this.log.error('An error occurred while unhandling the protocol: %e', err)
+            this.log.error(tr('An error occurred while unhandling the protocol: %e'), err)
         })
         for(const player of this.players.values()){
             player.stream?.unwrap().unwrap().close()

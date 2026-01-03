@@ -3,6 +3,7 @@ import { button, form, label, list } from '../ui/remote/types'
 import { console_log } from '../ui/remote/remote'
 import { gsPkg } from '../utils/data/packages'
 import { render } from '../ui/remote/view'
+import { tr } from '../utils/translation'
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 namespace GitLab {
@@ -38,7 +39,7 @@ export async function mrs(opts: Required<AbortOptions>){
     try {
         mrs = await (await fetch(gsPkg.gitLabMRs)).json() as never
     } catch(err) {
-        console_log('Fetching a list of open requests failed:', Bun.inspect(err))
+        console_log(tr('Fetching a list of open requests failed:'), Bun.inspect(err))
     }
     
     if(mrs && mrs.length > 0){
@@ -48,7 +49,10 @@ export async function mrs(opts: Required<AbortOptions>){
                     const mrForm = form({
                         Button: button(),
                         Title: label(mr.title),
-                        Info: label(`${mr.reference} · created by ${mr.author.name}`) //TODO: ${'20 hours ago'}
+                        Info: label(tr(`{mr_reference} · created by {mr_author_name}`, {
+                            mr_reference: mr.reference,
+                            mr_author_name: mr.author.name,
+                        })) //TODO: ${'20 hours ago'}
                     })
                     return [ mr.iid, mrForm ]
                 })

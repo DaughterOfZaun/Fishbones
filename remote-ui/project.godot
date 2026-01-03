@@ -10,9 +10,9 @@ config_version=5
 
 [application]
 
-config/name="Fishbones v0.0.3.31"
+config/name="Fishbones v0.0.3.32"
 config/description="Yet another LeagueSandbox launcher with a twist"
-config/version="0.0.3.31"
+config/version="0.0.3.32"
 run/main_scene="uid://c88cdpgvxg8v2"
 run/print_header=false
 config/use_custom_user_dir=true
@@ -45,6 +45,10 @@ window/stretch/aspect="expand"
 [editor]
 
 export/convert_text_resources_to_binary=false
+
+[internationalization]
+
+locale/translations=PackedStringArray("res://translation/translation.de_DE.translation", "res://translation/translation.en_US.translation", "res://translation/translation.es_ES.translation", "res://translation/translation.fr_FR.translation", "res://translation/translation.pt_PT.translation", "res://translation/translation.ru_RU.translation", "res://translation/translation.zh_CN.translation")
 
 [rendering]
 

@@ -8,6 +8,7 @@ import { args } from '../args'
 import path from 'node:path'
 import embedded from './embedded/embedded'
 import { createReadStream as fs_createReadStream } from "node:fs"
+import { tr } from '../translation'
 
 const s7zExe = path.join(downloads, path.basename(embedded.s7zExe))
 //const s7zDll = path.join(downloads, embedded.s7zDll)
@@ -39,7 +40,7 @@ const s7zDataErrorMsgs = new RegExp(
         /\bData Error\b/,
         /\bCRC Failed\b/,
         /\bIs not archive\b/,
-        /\bCan(?: ?not|'?t) open (?:(?:the )?file )?as (?:\[\w+\] )?archive\b/,
+        /\bCan(?: ?not|'?t) open (?:(?:the )?file )?as (?:\[\w+\] )?archive\b/, //'
         /\bUnexpected end of (?:data|archive|(?:input )?stream)\b/,
         /\bSystem ERROR\b/,
         //TODO: ...
@@ -72,7 +73,7 @@ export async function unpack(pkg: PkgInfo, opts: Required<AbortOptions>){
     }
     
     //console.log(`Unpacking ${pkg.zipName}...`)
-    const bar = createBar('Unpacking', pkg.zipName, 100)
+    const bar = createBar(tr('Unpacking'), pkg.zipName, 100)
     
     const s7zs: (ChildProcess & { logPrefix: string })[] = []
 
@@ -177,7 +178,7 @@ export function appendPartialPackFileExt(path: string){
 
 //TODO: The file name in the archive must be Fishbones.exe
 export async function pack(pkg: { exe: string, exeName: string, zip: string, zipName: string }, opts: Required<AbortOptions>){
-    const bar = createBar('Packing', pkg.zipName, 100)
+    const bar = createBar(tr('Packing'), pkg.zipName, 100)
     const logPrefix = `7Z ${pid} ${0}`
 
     let archiveSize = 0

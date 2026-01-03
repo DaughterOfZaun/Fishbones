@@ -1,4 +1,5 @@
 import { arch, platform } from "../../constants-build"
+import { tr } from "../../translation"
 import { downloads } from "../fs"
 import { PkgInfo } from "./shared"
 import path from 'node:path'
@@ -7,7 +8,7 @@ export class FBPkgInfo extends PkgInfo {
     
     readonly releasesURL = 'https://api.github.com/repos/DaughterOfZaun/Fishbones/releases'
 
-    readonly name = 'Launcher'
+    readonly name = tr('Launcher')
     readonly dirName = 'Fishbones'
     readonly exeName =
         platform === 'Windows' ? 'Fishbones.exe' :

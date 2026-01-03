@@ -9,6 +9,7 @@ import { getUsername } from "../utils/namegen/namegen";
 import { PeerMap } from "@libp2p/peer-collections";
 import type { PingResult } from "../network/libp2p/ping";
 import { args } from "../utils/args";
+import { tr } from "../utils/translation";
 
 //enum PeerType { Undetermined, Player, Server }
 enum PeerStatus { Disconnected, Connecting, Connected, ConnectionFailed }
@@ -34,10 +35,10 @@ export async function profilePanel(node: LibP2PNode, masteries: MasteriesPage, o
 }
 
 const peerStatusToString = {
-    [PeerStatus.Disconnected]: 'Disconnected',
-    [PeerStatus.Connecting]: 'Connecting...',
-    [PeerStatus.Connected]: 'Connected',
-    [PeerStatus.ConnectionFailed]: 'Connection failed',
+    [PeerStatus.Disconnected]: tr('Disconnected'),
+    [PeerStatus.Connecting]: tr('Connecting...'),
+    [PeerStatus.Connected]: tr('Connected'),
+    [PeerStatus.ConnectionFailed]: tr('Connection failed'),
 }
 
 function updatePeerStatus(view: DeferredView<void>, peerId: PeerId, status: PeerStatus, getPing: (peerId: PeerId) => number | undefined){
@@ -51,7 +52,7 @@ function updatePeerStatus(view: DeferredView<void>, peerId: PeerId, status: Peer
     info.status = status
 
     const pingString = (info.status !== prevStatus && info.status == PeerStatus.Connected) ?
-        getPing(peerId)?.toFixed()?.concat(' ms') ?? '' :
+        getPing(peerId)?.toFixed()?.concat('' + tr('ms')) ?? '' :
         ''
 
     if(info.status == PeerStatus.Disconnected){
@@ -77,7 +78,7 @@ function updatePeerStatus(view: DeferredView<void>, peerId: PeerId, status: Peer
 export async function connections(node: LibP2PNode, opts: Required<AbortOptions>){
     
     const view = render('ConnectionsPanel', form({
-        Connections: list(undefined, 'No connections'),
+        Connections: list(undefined, tr('No connections')),
         DirectConnect: button(() => {
             void directConnect(node, opts)
             .then(async str => {
@@ -144,7 +145,7 @@ export async function connections(node: LibP2PNode, opts: Required<AbortOptions>
         const info = fbPeers.get(peerId)
         if(info && info.shownInUI){
             view.get(`Connections/${peerId.toString()}/Ping`)
-                .update(label(ms?.toFixed()?.concat(' ms') ?? ''))
+                .update(label(ms?.toFixed()?.concat(' ' + tr('ms')) ?? ''))
         }
     })
 
@@ -192,7 +193,7 @@ async function connectByPeerInfoString(node: LibP2PNode, view: DeferredView<void
     try {
         peerId = await consumePeerInfoString(node, str, opts)
     } catch(err) {
-        console_log('Parsing the key failed:', Bun.inspect(err))
+        console_log(tr('Parsing the key failed:'), Bun.inspect(err))
     }
     if(!peerId) return
     
@@ -204,7 +205,7 @@ async function connectByPeerInfoString(node: LibP2PNode, view: DeferredView<void
         await node.dial(peerId, opts)
         updatePeerStatus(view, peerId, PeerStatus.Connected, getPing)
     } catch(err) {
-        console_log('Connecting via key failed:', Bun.inspect(err))
+        console_log(tr('Connecting via key failed:'), Bun.inspect(err))
         updatePeerStatus(view, peerId, PeerStatus.ConnectionFailed, getPing)
     }
 }

@@ -4,6 +4,7 @@ import type { AbortOptions } from '@libp2p/interface'
 import { console_log } from '../../ui/remote/remote'
 import { cwd, downloads } from '../log'
 export { cwd, downloads }
+import { tr } from "../translation"
 import path from 'node:path'
 
 export const rwx_rx_rx =
@@ -21,7 +22,7 @@ export async function fs_exists(path: string, opts: Required<AbortOptions>, log 
         result = true
     } catch(err) {
         if(log)
-            console_log_fs_err('Checking file existance', path, err)
+            console_log_fs_err(tr('Checking file existance failed'), path, err)
     }
     opts.signal.throwIfAborted()
     return result
@@ -33,11 +34,11 @@ export async function fs_exists_and_size_eq(path: string, size: number, opts: Re
         const stat = await fs.stat(path)
         result = stat.size == size
         if(!result && log){
-            console_log(`File size mismatch (${stat.size} vs ${size}):\n${path}`)
+            console_log(tr(`File size mismatch`) + ` (${stat.size} vs ${size}):\n${path}`)
         }
     } catch (err) {
         if(log)
-            console_log_fs_err('Checking file size', path, err)
+            console_log_fs_err(tr('Checking file size failed'), path, err)
     }
     opts.signal.throwIfAborted()
     return result
@@ -74,7 +75,7 @@ export async function fs_copyFile(src: string, dest: string, opts: Required<Abor
         result = true
     } catch(err) {
         if(log)
-            console_log_fs_err('Copying file', `${src} -> ${dest}`, err)
+            console_log_fs_err(tr('Copying file failed'), `${src} -> ${dest}`, err)
     }
     opts.signal.throwIfAborted()
     return result
@@ -88,7 +89,7 @@ export async function fs_readFile(path: string, opts: ReadWriteFileOpts, log = t
         result = await fs.readFile(path, opts.encoding)
     } catch(err) {
         if(log)
-            console_log_fs_err('Opening file', path, err)
+            console_log_fs_err(tr('Opening file failed'), path, err)
         if(opts.rethrow)
             throw err
     }
@@ -103,7 +104,7 @@ export async function fs_writeFile(path: string, data: string, opts: ReadWriteFi
         result = true
     } catch(err) {
         if(log)
-            console_log_fs_err('Saving file', path, err)
+            console_log_fs_err(tr('Saving file failed'), path, err)
         if(opts.rethrow)
             throw err
     }
@@ -118,7 +119,7 @@ export async function fs_chmod(path: string, mode: number | string, opts: Requir
         result = true
     } catch(err) {
         if(log)
-            console_log_fs_err('Changing file mode', path, err)
+            console_log_fs_err(tr('Changing file mode failed'), path, err)
     }
     opts.signal.throwIfAborted()
     return result
@@ -132,7 +133,7 @@ export async function fs_moveFile(src: string, dest: string, opts: Required<Abor
         result = true
     } catch(err) {
         if(log)
-            console_log_fs_err('Moving file', `${src} -> ${dest}`, err)
+            console_log_fs_err(tr('Moving file failed'), `${src} -> ${dest}`, err)
     }
     opts.signal.throwIfAborted()
     return result
@@ -145,7 +146,7 @@ export async function fs_rmdir(path: string, opts: RmDirOptions & Required<Abort
         result = true
     } catch(err){
         if(log)
-            console_log_fs_err('Removing folder', path, err)
+            console_log_fs_err(tr('Removing folder failed'), path, err)
     }
     opts.signal.throwIfAborted()
     return result
@@ -158,7 +159,7 @@ export async function fs_removeFile(path: string, opts: RmOptions & Required<Abo
         result = true
     } catch(err){
         if(log)
-            console_log_fs_err('Removing file', path, err)
+            console_log_fs_err(tr('Removing file failed'), path, err)
     }
     opts.signal.throwIfAborted()
     return result
@@ -171,19 +172,19 @@ export async function fs_truncate(path: string, len: number, opts: Required<Abor
         result = true
     } catch(err){
         if(log)
-            console_log_fs_err('Resizing file', path, err)
+            console_log_fs_err(tr('Resizing file failed'), path, err)
     }
     opts.signal.throwIfAborted()
     return result
 }
 
 const FS_ERR_CODES: Record<string, string> = {
-    ENOENT: 'File not found',
+    ENOENT: tr('File not found'),
 }
-export function console_log_fs_err(operation: string, path: string, unk_err: unknown){
+export function console_log_fs_err(operationFailed: string, path: string, unk_err: unknown){
     const err = unk_err as ErrnoException
-    const desc = err.code ? (FS_ERR_CODES[err.code] ?? `Code: ${err.code}`) : 'Unknown'
-    console_log(`${operation} failed. ${desc}:\n${path}`)
+    const desc = err.code ? (FS_ERR_CODES[err.code] ?? tr('Code') + `: ${err.code}`) : tr('Unknown')
+    console_log(`${operationFailed}. ${desc}:\n${path}`)
 }
 
 export type ReadDirOpts = { withFileTypes?: true } & Required<AbortOptions>
@@ -193,7 +194,7 @@ export async function fs_readdir(path: string, opts: ReadDirOpts, log = true){
         result = await fs.readdir(path)
     } catch(err){
         if(log)
-            console_log_fs_err('Reading directory', path, err)
+            console_log_fs_err(tr('Reading directory failed'), path, err)
     }
     opts.signal.throwIfAborted()
     return result
@@ -205,7 +206,7 @@ export async function fs_stat(path: string, opts: Required<AbortOptions>, log = 
         result = await fs.stat(path)
     } catch(err){
         if(log)
-            console_log_fs_err('Reading file stats', path, err)
+            console_log_fs_err(tr('Reading file stats failed'), path, err)
     }
     opts.signal.throwIfAborted()
     return result

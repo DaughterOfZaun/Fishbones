@@ -2,6 +2,7 @@ import { PickableValue } from "./values/pickable"
 import { champions } from "./champions"
 import { modes } from "./modes"
 import { enabled } from "./values/enabled"
+import { tr } from "../../translation"
 
 export type MapInfo = {
     i: number
@@ -24,32 +25,32 @@ export type HardcodedMapInfo = {
 
 // short, name, enabled by default
 const mapsTable: [number, string, boolean][] = [
-    [0, `Test`, false],
-    [1, `Old Summoner's Rift`, true],
-    [2, `Old Summoner's Rift Autumn`, true],
-    [3, `Proving Grounds`, false],
-    [4, `Twisted Treeline`, true],
-    [5, `Unknown (5)`, false],
-    [6, `Summoner's Rift Winter (2011)`, false],
-    [7, `Summoner's Rift Winter (2009)`, false],
-    [8, `Crystal Scar`, true],
-    [9, `Dominion Test`, false],
-    [10, `New Twisted Treeline`, false],
-    [11, `New Summoner's Rift`, false],
-    [12, `Howling Abyss`, false],
-    [13, `Magma Chamber`, false],
-    [14, `Butcher's Bridge`, false],
-    [15, `Unknown (15)`, false],
-    [16, `Cosmic Ruins`, false],
-    [17, `Unknown (17)`, false],
-    [18, `Valoran City Park`, false],
-    [19, `Substructure 43`, false],
-    [20, `Crash Site`, false],
-    [21, `Temple of Lily and Lotus`, false],
-    //[22, `Magma Chamber (recreated in Minecraft)`, false],
-    //[30, `Arena: Rings of Wrath`, false],
-    [30, `New Proving Grounds`, false],
-    [35, `The Bandlewood`, false],
+    [0, tr(`Test`), false],
+    [1, tr(`Old Summoner's Rift`), true],
+    [2, tr(`Old Summoner's Rift Autumn`), true],
+    [3, tr(`Proving Grounds`), false],
+    [4, tr(`Twisted Treeline`), true],
+    [5, tr(`Unknown (5)`), false],
+    [6, tr(`Summoner's Rift Winter (2011)`), false],
+    [7, tr(`Summoner's Rift Winter (2009)`), false],
+    [8, tr(`Crystal Scar`), true],
+    [9, tr(`Dominion Test`), false],
+    [10, tr(`New Twisted Treeline`), false],
+    [11, tr(`New Summoner's Rift`), false],
+    [12, tr(`Howling Abyss`), false],
+    [13, tr(`Magma Chamber`), false],
+    [14, tr(`Butcher's Bridge`), false],
+    [15, tr(`Unknown (15)`), false],
+    [16, tr(`Cosmic Ruins`), false],
+    [17, tr(`Unknown (17)`), false],
+    [18, tr(`Valoran City Park`), false],
+    [19, tr(`Substructure 43`), false],
+    [20, tr(`Crash Site`), false],
+    [21, tr(`Temple of Lily and Lotus`), false],
+    //[22, tr(`Magma Chamber (recreated in Minecraft)`), false],
+    //[30, tr(`Arena: Rings of Wrath`), false],
+    [30, tr(`New Proving Grounds`), false],
+    [35, tr(`The Bandlewood`), false],
 ]
 
 export const hardcodedMaps: HardcodedMapInfo[] = [
@@ -89,13 +90,13 @@ export const hardcodedMaps: HardcodedMapInfo[] = [
             'Alistar',
         ],
     },
-    {
-        id: 3,
-        client: true,
-        server: true,
-        modes: [ 'TUTORIAL' ],
-        bots: [],
-    },
+    //{
+    //    id: 3,
+    //    client: true,
+    //    server: true,
+    //    modes: [ 'TUTORIAL' ],
+    //    bots: [],
+    //},
     {
         id: 4,
         client: true,

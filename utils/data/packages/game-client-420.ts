@@ -2,9 +2,10 @@ import path from 'node:path'
 import { downloads } from '../fs'
 import embedded from '../embedded/embedded'
 import { magnet, PkgInfoExe } from './shared'
+import { tr } from '../../translation'
 
 export const gc420Pkg = new class extends PkgInfoExe {
-    name = 'Game Client'
+    name = tr('Game Client')
     dirName = 'League of Legends_UNPACKED'
     makeDir = false
     zipExt = '7z'

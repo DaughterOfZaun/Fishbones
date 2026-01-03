@@ -3,9 +3,10 @@ import { downloads } from '../fs'
 import embedded from '../embedded/embedded'
 import { magnet, PkgInfoCSProj, type PkgInfoGit } from './shared'
 import { HARDCODED_HTTP_SERVER_URL } from '../../constants-build'
+import { tr } from '../../translation'
 
 export const gsPkg = new class extends PkgInfoCSProj implements PkgInfoGit {
-    name = 'Game Server'
+    name = tr('Game Server')
     dirName = 'ChildrenOfTheGrave-Gameserver'
     makeDir = false
     zipExt = '7z'

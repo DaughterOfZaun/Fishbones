@@ -1,7 +1,7 @@
 import { LOBBY_PROTOCOL } from '../utils/constants'
 import { Peer as PBPeer } from '../message/peer'
 import { type AbortOptions, type IncomingStreamData, type Stream } from '@libp2p/interface'
-import type { LibP2PNode } from '../node/node'
+import { obtainConnection, type LibP2PNode } from '../node/node'
 import * as lp from 'it-length-prefixed'
 import { pbStream, type MessageStream } from '../utils/pb-stream'
 import { pipe } from 'it-pipe'
@@ -25,7 +25,7 @@ export class RemoteGame extends Game {
     public async connect(opts: Required<AbortOptions>){
         if(this.connected) return true
         try {
-            const connection = await this.node.dial(this.ownerId, opts) //TODO: Switch to cm.openConnection?
+            const connection = await obtainConnection(this.node, this.ownerId, opts)
             const stream = await connection.newStream([ LOBBY_PROTOCOL ], opts)
             this.stream = pbStream(stream).pb(LobbyNotificationMessage, LobbyRequestMessage)
             this.handleOutgoingStream({ stream, connection })

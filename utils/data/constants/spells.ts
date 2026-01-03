@@ -2,37 +2,38 @@
 import { PickableValue } from "./values/pickable"
 import { enabled } from "./values/enabled"
 import path from 'node:path'
+import { tr } from "../../translation"
 
 // short, name, enabled by default
 const spellsTable: [string, string, boolean][] = [
-    ["", "Heal", true],
-    ["", "Ghost", false],
-    ["", "Barrier", false],
-    ["", "Exhaust", true],
-    ["", "Mark", false],
-    ["", "Dash", false],
-    ["", "Clarity", false],
-    ["", "Flash", true],
-    ["", "Teleport", true],
-    ["", "Smite", true],
-    ["", "Cleanse", false],
-    ["", "Ignite", false],
-    ["", "BattleCry", false],
-    ["", "Boost", true],
-    ["", "Clairvoyance", true],
-    ["", "Dot", true],
-    ["", "Fortify", true],
-    ["", "Haste", true],
-    ["", "Mana", true],
-    ["", "Rally", true],
-    ["", "Revive", true],
-    ["", "Promote", false],
-    ["", "OdinPromote", false],
-    ["", "OdinSabotage", false],
-    ["", "OdinGarrison", false],
-    ["", "PromoteSR", false],
-    ["", "Observer", false],
-    ["", "ReviveSpeedBoost", false],
+    ["Heal", tr("Heal"), true],
+    ["Ghost", tr("Ghost"), false],
+    ["Barrier", tr("Barrier"), false],
+    ["Exhaust", tr("Exhaust"), true],
+    ["Mark", tr("Mark"), false],
+    ["Dash", tr("Dash"), false],
+    ["Clarity", tr("Clarity"), false],
+    ["Flash", tr("Flash"), true],
+    ["Teleport", tr("Teleport"), true],
+    ["Smite", tr("Smite"), true],
+    ["Cleanse", tr("Cleanse"), false],
+    ["Ignite", tr("Ignite"), false],
+    ["BattleCry", tr("BattleCry"), false],
+    ["Boost", tr("Boost"), true],
+    ["Clairvoyance", tr("Clairvoyance"), true],
+    ["Dot", tr("Dot"), true],
+    ["Fortify", tr("Fortify"), true],
+    ["Haste", tr("Haste"), true],
+    ["Mana", tr("Mana"), true],
+    ["Rally", tr("Rally"), true],
+    ["Revive", tr("Revive"), true],
+    ["Promote", tr("Promote"), false],
+    ["OdinPromote", tr("OdinPromote"), false],
+    ["OdinSabotage", tr("OdinSabotage"), false],
+    ["OdinGarrison", tr("OdinGarrison"), false],
+    ["PromoteSR", tr("PromoteSR"), false],
+    ["Observer", tr("Observer"), false],
+    ["ReviveSpeedBoost", tr("ReviveSpeedBoost"), false],
 ]
 
 const spellIcons = [
@@ -68,14 +69,14 @@ const spellsIconsCache = Object.fromEntries(
     })
 )
 
-export const spells = spellsTable.map(([ , name, enabled ], i) => {
-    const icon = spellsIconsCache[name.toLowerCase()]
-    return { i, name, enabled, icon }
+export const spells = spellsTable.map(([ short, name, enabled ], i) => {
+    const icon = spellsIconsCache[short.toLowerCase()]
+    return { i, short, name, enabled, icon }
 })
 
 export class SummonerSpell extends PickableValue {
-    public static readonly name = 'Summoner Spell'
-    public static readonly values = spells.map(({ name }) => name)
-    public static readonly choices = PickableValue.normalize(SummonerSpell.values)
+    public static readonly name = tr('Summoner Spell')
+    public static readonly values = spells.map(({ short }) => short)
+    public static readonly choices = spells.map(({ i, short, name }) => ({ value: i, short, name }))
 }
 export const SummonerSpellsEnabled = enabled(SummonerSpell)

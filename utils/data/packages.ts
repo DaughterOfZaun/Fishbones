@@ -8,6 +8,7 @@ import { sdkPkg } from './packages/sdk'
 import { gitPkg } from './packages/git'
 import { modPck1 } from './packages/modpack-levels'
 import { winePkg } from './packages/wine'
+import { tr } from '../translation'
 
 export type { PkgInfo, PkgInfoCSProj, PkgInfoGit } from './packages/shared'
 export { gsPkg, gcPkg, sdkPkg, gitPkg, modPck1, winePkg }
@@ -30,7 +31,7 @@ export async function repairTorrents(opts: Required<AbortOptions>){
         if(!await fs_exists(pkg.zipTorrent, opts)) try {
             await extractFile(pkg.zipTorrentEmbedded, pkg.zipTorrent, opts)
         } catch(err) {
-            console_log_fs_err('Extracting embedded torrent file', `${pkg.zipTorrentEmbedded} -> ${pkg.zipTorrent}`, err)
+            console_log_fs_err(tr('Extracting embedded torrent file failed'), `${pkg.zipTorrentEmbedded} -> ${pkg.zipTorrent}`, err)
         }
         await fs_moveFile(path.join(downloads, `${pkg.zipInfoHashV1}.torrent`), pkg.zipTorrent, opts, false)
     }))

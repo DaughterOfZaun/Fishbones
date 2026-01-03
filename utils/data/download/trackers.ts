@@ -5,6 +5,7 @@ import type { AbortOptions } from '@libp2p/interface'
 import { logger } from '../../log'
 import embeddedTrackersTxt from '../../../Fishbones_Data/trackers.txt'
 import { HARDCODED_ANNOUNCE_URLS } from '../../constants-build'
+import { tr } from '../../translation'
 
 const trackersTxtName = 'trackers.txt'
 const trackersTxt = path.join(downloads, trackersTxtName)
@@ -34,7 +35,7 @@ export async function readTrackersTxt(opts: Required<AbortOptions>){
         txt = await downloadTrackersTxt(opts)
     }
     if(!txt){
-        console_log('Using built-in list of torrent-trackers')
+        console_log(tr('Using built-in list of torrent-trackers'))
         txt = embeddedTrackersTxt
     }
     return setTrackers(txt)
@@ -42,7 +43,7 @@ export async function readTrackersTxt(opts: Required<AbortOptions>){
 
 export async function downloadTrackersTxt(opts: Required<AbortOptions>){
     //console.log(`Downloading ${trackersTxtName}...`)
-    const bar = createBar('Downloading', trackersTxtName)
+    const bar = createBar(tr('Downloading'), trackersTxtName)
     
     let txt: string = ''
     let lastError: Error | undefined
@@ -67,6 +68,6 @@ export async function downloadTrackersTxt(opts: Required<AbortOptions>){
         return txt
     }
     if(lastError){
-        console_log('Downloading torrent-tracker list failed:\n', Bun.inspect(lastError))
+        console_log(tr('Downloading torrent-tracker list failed:\n'), Bun.inspect(lastError))
     }
 }

@@ -8,6 +8,7 @@ import { getBotName, getName } from "../../utils/namegen/namegen";
 import { option_pages } from "../masteries";
 import { page, pages } from "../masteries/pages";
 import type { Game } from "../../game/game";
+import { SwitchViewError } from "../tui";
 
 function makePlayerForm(player: GamePlayer, game: Game): Form {
         
@@ -43,7 +44,7 @@ export async function lobby_pick(ctx: Context){
         Champion.choices
         .map(({ name, value }, i) => {
             const relativeIconPath = champions[value]?.icon
-            const disabled = (!game.server.champions.value.includes(i)) ? true : undefined
+            const disabled = !game.server.champions.value.includes(i)
             return { i, name, relativeIconPath, disabled }
         })
         .filter(info => info.relativeIconPath)
@@ -56,7 +57,7 @@ export async function lobby_pick(ctx: Context){
         SummonerSpell.choices
         .map(({ name, value }, i) => {
             const relativeIconPath = spells[value]?.icon
-            const disabled = (!game.server.spells.value.includes(i)) ? true : undefined
+            const disabled = !game.server.spells.value.includes(i)
             return { i, name, relativeIconPath, disabled }
         })
         .filter((info) => info.relativeIconPath)
@@ -91,6 +92,9 @@ export async function lobby_pick(ctx: Context){
         Pages: option_pages((index) => {
             const page = pages.get(index)!
             game.set('talents', page.talents)
+        }),
+        Quit: button(() => {
+            view.reject(new SwitchViewError({ cause: null }))
         }),
     }), ctx, [
         {

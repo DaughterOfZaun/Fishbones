@@ -13,6 +13,7 @@ import { lobby_gather } from './lobby/gather'
 import { lobby_pick } from './lobby/pick'
 import * as masteries from './masteries'
 import { chat } from './chat'
+import { tr } from '../utils/translation'
 
 export async function main(node: LibP2PNode, opts: Required<AbortOptions>){
     process.title = TITLE
@@ -93,11 +94,11 @@ async function lobby(game: Game, opts: Required<AbortOptions>){
 }
 
 async function lobby_wait_for_start(ctx: Context){
-    return abortableSpinner('Waiting for the server to start...', ctx)
+    return abortableSpinner(tr('Waiting for the server to start...'), ctx)
 }
 
 async function lobby_wait_for_end(ctx: Context){
-    return abortableSpinner('Waiting for the end of the game...', ctx)
+    return abortableSpinner(tr('Waiting for the end of the game...'), ctx)
 }
 
 async function abortableSpinner(message: string, ctx: Context){
@@ -124,11 +125,11 @@ async function lobby_crash_report(ctx: Context){
     
     while(true){
         const [action] = await select({
-            message: 'The client exited unexpectedly',
+            message: tr('The client exited unexpectedly'),
             choices: [
-                { value: ['show_cmd'] as Action, name: 'Show command to run manually' },
-                { value: ['relaunch'] as Action, name: 'Restart the client' },
-                { value: ['exit'] as Action, name: 'Leave' },
+                { value: ['show_cmd'] as Action, name: tr('Show command to run manually') },
+                { value: ['relaunch'] as Action, name: tr('Restart the client') },
+                { value: ['exit'] as Action, name: tr('Leave') },
             ],
             pageSize: 20,
         }, ctx)
@@ -140,7 +141,7 @@ async function lobby_crash_report(ctx: Context){
             throw new SwitchViewError({ cause: null })
         } else if(action === 'show_cmd'){
             await input({
-                message: 'Run the command in the terminal or paste it into a bat file',
+                message: tr('Run the command in the terminal or paste it into a bat file'),
                 default: getLastLaunchCmd(),
             })
         }

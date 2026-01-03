@@ -8,6 +8,7 @@ import { champions, AIChampion, AIDifficulty } from "../../utils/data/constants/
 import { getName } from "../../utils/namegen/namegen";
 import { popup } from "../../ui/remote/remote";
 import { mapsById } from "../../utils/data/constants/maps";
+import { tr } from "../../utils/translation";
 
 //export async function lobby(game: Game, opts: Required<AbortOptions>){}
 
@@ -98,7 +99,7 @@ export async function lobby_gather(ctx: Context){
         const player = event.detail
         popup({
             message: getName(player, false),
-            title: 'New player joined',
+            title: tr('New player joined'),
             sound: 'join_chat',
         })
     }

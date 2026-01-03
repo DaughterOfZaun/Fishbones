@@ -3,9 +3,10 @@ import { downloads } from '../fs'
 import embedded from '../embedded/embedded'
 import { magnet, PkgInfoExe } from './shared'
 import { HARDCODED_HTTP_SERVER_URL } from '../../constants-build'
+import { tr } from '../../translation'
 
 export const gcPkg = new class extends PkgInfoExe {
-    name = 'Game Client'
+    name = tr('Game Client')
     dirName = 'playable_client_126'
     makeDir = false
     zipExt = '7z'

@@ -7,13 +7,14 @@ import { GameModesEnabled, modes } from "../utils/data/constants/modes"
 import { champions, ChampionsEnabled } from "../utils/data/constants/champions"
 import { spells, SummonerSpellsEnabled } from "../utils/data/constants/spells"
 import type { Peer } from "../message/peer"
+import { tr } from "../utils/translation"
 
 export abstract class Server {
 
     protected node: Libp2p
     public id: PeerId
 
-    public readonly name = new Name('Server')
+    public readonly name = new Name(tr('Server'))
     public readonly tickRate = new TickRate(30)
     public readonly maps = new GameMapsEnabled()
     public readonly modes = new GameModesEnabled()
@@ -50,7 +51,7 @@ export abstract class Server {
         return true
             //&& this.maps.value.length > 0
             //&& this.modes.value.length > 0
-            && this.champions.value.length > 0
+            //&& this.champions.value.length > 0
             //&& this.spells.value.length > 0
     }
 }
