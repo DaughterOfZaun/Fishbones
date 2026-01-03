@@ -115,7 +115,7 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
     try {
         await datastore?.open()
     } catch(err) {
-        console_log(tr('Failed to open data store:'), Bun.inspect(err))
+        console_log(tr('Failed to open data store:', {}), Bun.inspect(err))
         datastore = undefined
     }
 
@@ -125,7 +125,7 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
     if(datastore) try {
         privateKey = await loadOrCreateSelfKey(datastore, keychainInit)
     } catch(err) {
-        console_log(tr('Failed to load private key:'), Bun.inspect(err))
+        console_log(tr('Failed to load private key:', {}), Bun.inspect(err))
     }
 
     opts?.signal?.throwIfAborted()

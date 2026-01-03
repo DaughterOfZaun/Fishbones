@@ -35,7 +35,7 @@ export async function readTrackersTxt(opts: Required<AbortOptions>){
         txt = await downloadTrackersTxt(opts)
     }
     if(!txt){
-        console_log(tr('Using built-in list of torrent-trackers'))
+        console_log(tr('Using built-in list of torrent-trackers', {}))
         txt = embeddedTrackersTxt
     }
     return setTrackers(txt)
@@ -68,6 +68,6 @@ export async function downloadTrackersTxt(opts: Required<AbortOptions>){
         return txt
     }
     if(lastError){
-        console_log(tr('Downloading torrent-tracker list failed:\n'), Bun.inspect(lastError))
+        console_log(tr('Downloading torrent-tracker list failed:\n', {}), Bun.inspect(lastError))
     }
 }

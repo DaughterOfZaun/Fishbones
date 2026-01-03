@@ -188,3 +188,7 @@ export const console_log: typeof localLog = (...args) => {
     sendNotification('console.log', ...args)
     logger.log(...args)
 }
+
+export function setLocale(to: string){
+    sendNotification('set_locale', to)
+}

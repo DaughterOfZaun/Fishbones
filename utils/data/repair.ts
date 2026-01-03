@@ -36,13 +36,13 @@ export async function repair(opts: Required<AbortOptions>){
 
     let results: PromiseSettledResult<unknown>[]
     results = await Promise.allSettled([
-        readTrackersTxt(opts).catch((err) => { console_log(tr('Restoring torrent trackers list failed:'), Bun.inspect(err)) }),
-        repairTorrents(opts).catch((err) => { console_log(tr('Restoring torrent files failed:'), Bun.inspect(err)) }),
-        repair7z(opts), //.catch((err) => { console_log(tr('Restoring 7z archiver executable failed:'), Bun.inspect(err)); throw err }),
-        repairAria2(opts), //.catch((err) => { console_log(tr('Restoring Aria2 downloader executable failed:'), Bun.inspect(err)); throw err }),
+        readTrackersTxt(opts).catch((err) => { console_log(tr('Restoring torrent trackers list failed:', {}), Bun.inspect(err)) }),
+        repairTorrents(opts).catch((err) => { console_log(tr('Restoring torrent files failed:', {}), Bun.inspect(err)) }),
+        repair7z(opts), //.catch((err) => { console_log(tr('Restoring 7z archiver executable failed:', {}), Bun.inspect(err)); throw err }),
+        repairAria2(opts), //.catch((err) => { console_log(tr('Restoring Aria2 downloader executable failed:', {}), Bun.inspect(err)); throw err }),
         (async () => {
             if(args.upgrade.enabled)
-                return checkForUpdates(opts).catch(err => { console_log(tr('Update check failed:'), Bun.inspect(err)) })
+                return checkForUpdates(opts).catch(err => { console_log(tr('Update check failed:', {}), Bun.inspect(err)) })
         })(),
     ])
     throwAnyRejection(results)
@@ -270,7 +270,7 @@ async function moveFoundFilesToDir(foundPkgDir: string, pkg: PkgInfo, opts: Requ
             try {
                 await moveToPkgDir(fileName)
             } catch(err) {
-                console_log_fs_err(tr('Moving required file failed'), fileName, err)
+                console_log_fs_err(tr('Moving required file failed', {}), fileName, err)
                 successfullyMovedRequiredFiles = false
             }
         }),
@@ -279,7 +279,7 @@ async function moveFoundFilesToDir(foundPkgDir: string, pkg: PkgInfo, opts: Requ
             try {
                 await moveToPkgDir(fileName)
             } catch(err) {
-                console_log_fs_err(tr('Moving optional file failed'), fileName, err)
+                console_log_fs_err(tr('Moving optional file failed', {}), fileName, err)
             }
         }),
     ])
@@ -328,7 +328,7 @@ export async function repairArchived(pkg: PkgInfo, opts: Required<AbortOptions> 
     if(await fs_exists(pkg.checkUnpackBy, opts)){
         const lockfile = appendPartialUnpackFileExt(pkg.zip)
         if(await fs_exists(lockfile, opts, false)){
-            console_log(tr('Found temporary unpacker file:'), lockfile)
+            console_log(tr('Found temporary unpacker file:', {}), lockfile)
         } else
             return // OK
     } else {
@@ -360,7 +360,7 @@ export async function repairArchived(pkg: PkgInfo, opts: Required<AbortOptions> 
     if(await fs_exists_and_size_eq(pkg.zip, pkg.zipSize, opts)){
         const lockfile = appendPartialDownloadFileExt(pkg.zip)
         if(await fs_exists(lockfile, opts, false)){
-            console_log(tr('Found temporary downloader file:'), lockfile)
+            console_log(tr('Found temporary downloader file:', {}), lockfile)
         } else if(await tryToUnpack(pkg, opts))
             return // OK
     } else {
@@ -392,7 +392,7 @@ async function tryToUnpack(pkg: PkgInfo, opts: Required<AbortOptions>){
     } catch(unk_err) {
         const err = unwrapAbortError(unk_err)
         if(err instanceof DataError){
-            console_log_fs_err(tr('Unpacking failed'), pkg.zip, err)
+            console_log_fs_err(tr('Unpacking failed', {}), pkg.zip, err)
             return false
         } else {
             throw err

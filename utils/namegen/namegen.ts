@@ -43,7 +43,7 @@ export function getUsername(peerId: PeerId, short = false){
                 bytes_at(3) << 8 * 3
             )
         } else {
-            name = `${tr('Unknown')} #${tr('ERROR')}`
+            name = tr('Unknown #ERROR')
         }
         cache.set(peerId, name)
     }
@@ -52,11 +52,12 @@ export function getUsername(peerId: PeerId, short = false){
 }
 
 export function getPseudonym(playerId: number, isMe: boolean, short = false){
-    let name = tr('Anonymous')
-    //name += sampleSpecies[Math.floor((playerId / (2 ** 31)) * sampleSpecies.length)]
-    if(!short) name += ' #' + formatUInt32(playerId)
-    if(!short && isMe) name += ' (' + tr('You') + ')'
-    return name
+    if(!short) {
+        const hashtag = formatUInt32(playerId)
+        if(isMe) return tr('Anonymous #{hashtag} (You)', { hashtag })
+        else return tr('Anonymous #{hashtag}', { hashtag })
+    }
+    return tr('Anonymous')
 }
 
 type GamePlayer = { id: number, peerId?: PeerId }
@@ -71,6 +72,5 @@ function formatUInt32(i: number){
 }
 
 export function getBotName(championName: string){
-    //return tr(`{championName} (Bot)`, { championName })
-    return `${championName} (${tr(`Bot`)})`
+    return tr(`{championName} (Bot)`, { championName })
 }

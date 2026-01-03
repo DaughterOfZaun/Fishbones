@@ -39,7 +39,7 @@ export async function mrs(opts: Required<AbortOptions>){
     try {
         mrs = await (await fetch(gsPkg.gitLabMRs)).json() as never
     } catch(err) {
-        console_log(tr('Fetching a list of open requests failed:'), Bun.inspect(err))
+        console_log(tr('Fetching a list of open requests failed:', {}), Bun.inspect(err))
     }
     
     if(mrs && mrs.length > 0){

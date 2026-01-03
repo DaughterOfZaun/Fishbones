@@ -46,18 +46,18 @@ export async function checkForUpdates(opts: Required<AbortOptions>){
         const zip = assets.find(asset => asset.name.includes(platform) && asset.name.endsWith('.' + fbPkg.zipExt))
 
         if(!zip){
-            console_log(tr('No suitable launcher update archive found.'))
+            console_log(tr('No suitable launcher update archive found.', {}))
             return
         }
         
         const zipVersion = version(zip.name)
         const fbVersion = version(fbPkg.version)
         console_log(
-            tr('Latest available version') + `: ${zip.name} (${zipVersion})\n` +
-            tr('Currently running version') + `: ${fbPkg.zipName} (${fbVersion})`
+            tr('Latest available version', {}) + `: ${zip.name} (${zipVersion})\n` +
+            tr('Currently running version', {}) + `: ${fbPkg.zipName} (${fbVersion})`
         )
         if(zipVersion <= fbVersion){
-            console_log(tr('Already using the latest launcher version.'))
+            console_log(tr('Already using the latest launcher version.', {}))
         } else {
 
             _isNewVersionAvailable = true
@@ -93,7 +93,7 @@ export async function checkForUpdates(opts: Required<AbortOptions>){
         }
         
     } catch(err) {
-        console_log(tr('Update check failed:'), Bun.inspect(err))
+        console_log(tr('Update check failed:', {}), Bun.inspect(err))
     } finally {
         bar.stop()
     }

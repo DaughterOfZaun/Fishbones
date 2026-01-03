@@ -332,6 +332,7 @@ popup/item_1/text = "ice-cream-man"
 popup/item_1/id = 1
 
 [node name="Label" type="Label" parent="Container/TabContainer/#Startup/VBoxContainer/HBoxContainer2"]
+visible = false
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "repo"
@@ -342,6 +343,11 @@ custom_minimum_size = Vector2(28, 0)
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "✍"
+
+[node name="#ForceEnglish" type="CheckBox" parent="Container/TabContainer/#Startup/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Force the use of English, ignoring the system settings"
 
 [node name="CenterContainer" type="CenterContainer" parent="Container/TabContainer/#Startup"]
 layout_mode = 1

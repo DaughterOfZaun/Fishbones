@@ -40,7 +40,7 @@ export async function update(pkg: PkgInfoGit, opts: Required<AbortOptions>){
     let updated = false
     try {
         await fs_ensureDir(pkg.dir, opts)
-        await git(['config', '--global', 'core.longpaths', 'true'], pkg, opts)
+        await git(['config', /*'--global',*/ 'core.longpaths', 'true'], pkg, opts)
         if(!await fs_exists(path.join(pkg.dir, '.git'), opts)){
             await git([ 'init' ], pkg, opts)
             
@@ -73,7 +73,7 @@ export async function update(pkg: PkgInfoGit, opts: Required<AbortOptions>){
             updated = prevHash != currHash
         }
     } catch(err){
-        console_log(tr('The update failed, see the log for details.'))
+        console_log(tr('The update failed, see the log for details.', {}))
         if(err instanceof TerminationError){ /* Ignore */ }
         else throw err
     } finally {

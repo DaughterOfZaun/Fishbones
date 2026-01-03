@@ -193,7 +193,7 @@ async function connectByPeerInfoString(node: LibP2PNode, view: DeferredView<void
     try {
         peerId = await consumePeerInfoString(node, str, opts)
     } catch(err) {
-        console_log(tr('Parsing the key failed:'), Bun.inspect(err))
+        console_log(tr('Parsing the key failed:', {}), Bun.inspect(err))
     }
     if(!peerId) return
     
@@ -205,7 +205,7 @@ async function connectByPeerInfoString(node: LibP2PNode, view: DeferredView<void
         await node.dial(peerId, opts)
         updatePeerStatus(view, peerId, PeerStatus.Connected, getPing)
     } catch(err) {
-        console_log(tr('Connecting via key failed:'), Bun.inspect(err))
+        console_log(tr('Connecting via key failed:', {}), Bun.inspect(err))
         updatePeerStatus(view, peerId, PeerStatus.ConnectionFailed, getPing)
     }
 }

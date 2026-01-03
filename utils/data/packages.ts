@@ -31,7 +31,7 @@ export async function repairTorrents(opts: Required<AbortOptions>){
         if(!await fs_exists(pkg.zipTorrent, opts)) try {
             await extractFile(pkg.zipTorrentEmbedded, pkg.zipTorrent, opts)
         } catch(err) {
-            console_log_fs_err(tr('Extracting embedded torrent file failed'), `${pkg.zipTorrentEmbedded} -> ${pkg.zipTorrent}`, err)
+            console_log_fs_err(tr('Extracting embedded torrent file failed', {}), `${pkg.zipTorrentEmbedded} -> ${pkg.zipTorrent}`, err)
         }
         await fs_moveFile(path.join(downloads, `${pkg.zipInfoHashV1}.torrent`), pkg.zipTorrent, opts, false)
     }))

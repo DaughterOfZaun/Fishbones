@@ -322,14 +322,14 @@ export class Champion extends PickableValue {
 }
 export const ChampionsEnabled = enabled(Champion)
 
+const bots = champions.filter(({ hasBT }) => hasBT)
 export class AIChampion extends PickableValue {
     public static readonly name = tr('AI Champions')
+    public static readonly choices =
+        bots.map(({ i, short, name }) => ({ value: i, short, name }))
     public static readonly values = Object.fromEntries(
-        champions
-            .filter(({ hasBT }) => hasBT)
-            .map(({ i, short }) => [ i, short ])
+        bots.map(({ i, short }) => [ i, short ])
     )
-    public static readonly choices = PickableValue.normalize(AIChampion.values)
 }
 export const BotsEnabled = enabled(AIChampion)
 

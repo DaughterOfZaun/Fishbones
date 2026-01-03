@@ -70,4 +70,31 @@ export const gsPkg = new class extends PkgInfoCSProj implements PkgInfoGit {
         'LICENSE',
         'FAQ.md',
     ]
+
+    remotes = [
+        {
+            name: 'skelsoft',
+            remoteName: 'origin',
+            originURL: 'https://gitgud.io/skelsoft/brokenwings.git',
+            gitLabMRs: 'https://gitgud.io/api/v4/projects/40035/merge_requests?state=opened',
+            gitBranchName: 'master',
+        },
+        {
+            name: 'ice-cream-man',
+            remoteName: 'ice-cream-man',
+            originURL: 'https://gitgud.io/IceCreamMan/CoTG.git',
+            gitLabMRs: 'https://gitgud.io/api/v4/projects/43500/merge_requests?state=opened',
+            gitBranchName: 'master',
+        },
+    ]
+
+    setRemoteByIndex(index: number){
+        const remote = this.remotes[index]
+        if(remote){
+            this.gitLabMRs = remote.gitLabMRs
+            this.gitOriginURL = remote.originURL
+            this.gitRemoteName = remote.remoteName
+            this.gitBranchName = remote.gitBranchName
+        }
+    }
 }()

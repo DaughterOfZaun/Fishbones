@@ -104,16 +104,16 @@ export class Name extends InputableValue {
     }
 }
 
+const ranks = [
+    { i: 0, short: 'BRONZE', name: tr('BRONZE') },
+    { i: 1, short: 'GOLD', name: tr('GOLD') },
+    { i: 2, short: 'PLATINUM', name: tr('PLATINUM') },
+    { i: 3, short: 'SILVER', name: tr('SILVER') },
+    { i: 4, short: 'UNRANKED', name: tr('UNRANKED') },
+]
 export class Rank extends PickableValue {
     public static readonly name = tr('Rank')
-    public static readonly values = [
-        //"",
-        tr("BRONZE"),
-        tr("GOLD"),
-        tr("PLATINUM"),
-        tr("SILVER"),
-        tr("UNRANKED"),
-    ]
+    public static readonly values = ranks.map(({ short }) => short)
     public static random(){
         return this.values[Math.floor(Math.random() * this.values.length)]!
     }

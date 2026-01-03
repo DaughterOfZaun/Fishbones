@@ -1,5 +1,7 @@
 //import { tr } from "./translation"
 const tr = (str: string) => str
+const DEFAULT_LOCALE = 'en_US'
+const AUTO_LOCALE = 'auto'
 
 export class Args {
     megaDownload = new Option('mega-download', true, tr('Download files from mega.nz'))
@@ -22,7 +24,9 @@ export class Args {
     setup = new Option('setup', true, tr('Ask about custom arguments at startup'))
 
     jRPCUI = new Parameter<string>('jrpc-ui', false, '', tr('(Internal) Use JSON RPC for I/O'))
-    locale = new Parameter<string>('locale', false, 'en_US', tr('(Internal) Specify the locale used'))
+    systemLocale = new Parameter<string>('system-locale', false, DEFAULT_LOCALE, tr('(Internal) Specify the system locale'))
+    autoLocale = new Parameter<string>('auto-locale', false, DEFAULT_LOCALE, tr('(Internal) Specify the auto-suggested locale to use'))
+    usedLocale = new Parameter<string>('used-locale', false, DEFAULT_LOCALE, tr('(Internal) Specify the locale to use'))
 
     customizable = [
         this.megaDownload,

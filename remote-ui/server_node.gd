@@ -1,7 +1,9 @@
 class_name ServerNode extends Control
 
 const JSONRPC_GUI_ARG = "--jrpc-ui"
-const LOCALE_ARG = '--locale'
+const USED_LOCALE_ARG = '--used-locale'
+const AUTO_LOCALE_ARG = '--auto-locale'
+const SYSTEM_LOCALE_ARG = '--system-locale'
 
 var stdio: FileAccess
 var stderr: FileAccess
@@ -167,14 +169,48 @@ func _ready() -> void:
     exe_args.append_array(OS.get_cmdline_user_args())
     exe_args.append_array([ JSONRPC_GUI_ARG, current_exe ])
     
-    #var locale := OS.get_locale_language().to_lower()
-    var locale := "ru"
-    if locale == "en": locale = "en_US"
-    elif locale == "zh": locale = "zh_CN"
-    else: locale = locale + '_' + locale.to_upper()
-    TranslationServer.set_locale(locale)
+    var supported_locales := TranslationServer.get_loaded_locales()
+    #var supported_locales: Array[String] = [ "en_US", "pt_BR" ]
+    var default_locale := "en_US"
+    var locale_str := "locale"
+    var auto_str := "auto"
     
-    exe_args.append_array([ LOCALE_ARG, locale ])
+    var system_locale := OS.get_locale()
+    var system_lang := OS.get_locale_language()
+    #var system_locale := "pt_BR"
+    #var system_lang := "pt"
+
+    var auto_locale: String = default_locale
+    if supported_locales.has(system_locale):
+        auto_locale = system_locale
+    else:
+        for locale in supported_locales:
+            if locale.begins_with(system_lang):
+                auto_locale = locale
+                break
+
+    var config_locale: String = auto_str
+    var config_file := downloads.path_join('config.json')
+    if FileAccess.file_exists(config_file):
+        var config_string := FileAccess.get_file_as_string(config_file)
+        if !config_string.is_empty():
+            var config_obj: Variant = JSON.parse_string(config_string)
+            if config_obj != null && config_obj is Dictionary:
+                var config_dict := config_obj as Dictionary
+                if locale_str in config_dict:
+                    config_locale = config_dict[locale_str]
+    
+    var used_locale: String
+    if config_locale != auto_str && supported_locales.has(config_locale):
+        used_locale = config_locale
+    else:
+        used_locale = auto_locale
+    
+    TranslationServer.set_locale(used_locale)
+    
+    exe_args.append_array([ SYSTEM_LOCALE_ARG, system_locale ])
+    exe_args.append_array([ AUTO_LOCALE_ARG, auto_locale ])
+    exe_args.append_array([ USED_LOCALE_ARG, used_locale ])
 
     var dict := OS.execute_with_pipe(extracted_exe, exe_args, false)
     stdio = dict["stdio"]
@@ -304,6 +340,9 @@ func _init() -> void:
 
     methods["popup"] = func(title: String, message: String, sound: String) -> void:
         popup.pop(title, message, sound)
+        
+    methods["set_locale"] = func(used_locale: String) -> void:
+        TranslationServer.set_locale(used_locale)
 
 var waiting_for_exit := false
 

@@ -3,67 +3,15 @@ import { render } from "../ui/remote/view";
 import { button, checkbox, form, option } from "../ui/remote/types";
 import { args } from "../utils/args";
 import { gsPkg } from "../utils/data/packages";
-import { downloads, fs_readFile, fs_writeFile } from "../utils/data/fs";
 import { safeOptions } from "../utils/process/process";
-import { tr } from "../utils/translation";
-import path from 'node:path'
+import { AUTO_LOCALE, DEFAULT_LOCALE, setUsedLocale, systemLocale, systemLocaleSupported, tr, usedLocale } from "../utils/translation";
+import { config, LOCALE_STR, REMOTE_IDX, saveConfig } from "../utils/config";
 
 enum DownloadSource {
     Torrents_and_Mega = 3,
     Torrents = 2,
     Mega = 1,
     Web = 4,
-}
-
-const remotes = [
-    {
-        name: 'skelsoft',
-        remoteName: 'origin',
-        originURL: 'https://gitgud.io/skelsoft/brokenwings.git',
-        gitLabMRs: 'https://gitgud.io/api/v4/projects/40035/merge_requests?state=opened',
-        gitBranchName: 'master',
-    },
-    {
-        name: 'ice-cream-man',
-        remoteName: 'ice-cream-man',
-        originURL: 'https://gitgud.io/IceCreamMan/CoTG.git',
-        gitLabMRs: 'https://gitgud.io/api/v4/projects/43500/merge_requests?state=opened',
-        gitBranchName: 'master',
-    },
-]
-function setRemoteByIndex(index: number){
-    const remote = remotes[index]
-    if(remote){
-        gsPkg.gitLabMRs = remote.gitLabMRs
-        gsPkg.gitOriginURL = remote.originURL
-        gsPkg.gitRemoteName = remote.remoteName
-        gsPkg.gitBranchName = remote.gitBranchName
-    }
-}
-
-type Config = typeof defaultConfig
-const REMOTE_IDX = 'game-server-git-remote-index'
-const defaultConfig = {
-    [REMOTE_IDX]: 0,
-}
-
-let config = Object.assign({}, defaultConfig)
-export async function loadConfig(opts: Required<AbortOptions>){
-    const configJSON = await fs_readFile(configFile, { ...opts, encoding: 'utf8' })
-    if(configJSON){
-        config = JSON.parse(configJSON) as Config
-    } else {
-        await saveConfig(defaultConfig, opts)
-    }
-
-    setRemoteByIndex(config[REMOTE_IDX])
-
-    return config
-}
-
-const configFile = path.join(downloads, 'config.json')
-async function saveConfig(config: Config, opts: Required<AbortOptions>){
-    return fs_writeFile(configFile, JSON.stringify(config, null, 4), { ...opts, encoding: 'utf8' })
 }
 
 export async function startup(opts: Required<AbortOptions>){
@@ -87,15 +35,28 @@ export async function startup(opts: Required<AbortOptions>){
         ),
         UpdateServer: checkbox(args.update.enabled, (on) => args.update.enabled = on),
         ServerOrigin: option(
-            remotes.map((origin, id) => ({ id, text: origin.name })),
+            gsPkg.remotes.map((origin, id) => ({ id, text: origin.name })),
             config[REMOTE_IDX],
             (index) => {
-                setRemoteByIndex(index)
+                gsPkg.setRemoteByIndex(index)
                 config[REMOTE_IDX] = index
                 void saveConfig(config, safeOptions)
             }
         ),
         //EditServerOrigins: button(),
+        ForceEnglish: {
+            $type: 'checkbox',
+            button_pressed: !systemLocaleSupported || usedLocale != systemLocale && usedLocale == DEFAULT_LOCALE,
+            disabled: !systemLocaleSupported || systemLocale === DEFAULT_LOCALE,
+            $listeners: {
+                toggled(on){
+                    const locale = on ? DEFAULT_LOCALE : AUTO_LOCALE
+                    setUsedLocale(locale)
+                    config[LOCALE_STR] = locale
+                    void saveConfig(config, safeOptions)
+                },
+            }
+        },
         Play: button(() => view.resolve()),
         Test: button(() => {
             args.mr.enabled = true

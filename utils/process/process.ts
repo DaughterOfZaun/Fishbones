@@ -5,6 +5,7 @@ import { console_log, ExitPromptError } from '../../ui/remote/remote'
 import { spawn as originalSpawn } from 'child_process'
 import { Deferred } from '../promises'
 //import { downloads } from './data-fs'
+import { tr } from '../translation'
 import net from "net"
 
 export const ABORT_STAGE_TIMEOUT = 3_000
@@ -130,7 +131,7 @@ process.on('uncaughtException', (err: Error & { code?: string, context?: Error &
             //TODO: Investigate.
         //    shutdown('exception')
         //} else {
-            console_log('An unexpected exception occurred:', Bun.inspect(err))
+            console_log(tr('An unexpected exception occurred:', {}), Bun.inspect(err))
             shutdown('exception')
         //}
     }
