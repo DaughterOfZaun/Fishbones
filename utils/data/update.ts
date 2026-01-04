@@ -40,17 +40,22 @@ export async function update(pkg: PkgInfoGit, opts: Required<AbortOptions>){
     let updated = false
     try {
         await fs_ensureDir(pkg.dir, opts)
-        await git(['config', /*'--global',*/ 'core.longpaths', 'true'], pkg, opts)
+        //await git(['config', /*'--global',*/ 'core.longpaths', 'true'], pkg, opts)
         if(!await fs_exists(path.join(pkg.dir, '.git'), opts)){
+
             await git([ 'init' ], pkg, opts)
-            
+            await git([ 'config', 'core.longpaths', 'true' ], pkg, opts, true)
             await git([ 'remote', 'add', pkg.gitRemoteName, pkg.gitOriginURL ], pkg, opts)
             await git([ 'fetch', pkg.gitRemoteName ], pkg, opts)
             await git([ 'checkout', '-b', `${pkg.gitRemoteName}-${pkg.gitBranchName}`, `${pkg.gitRemoteName}/${pkg.gitBranchName}`, '--force' ], pkg, opts)
             
             await getHeadCommitHash(pkg, opts)
             updated = true
+
         } else {
+
+            await git(['config', 'core.longpaths', 'true'], pkg, opts, true)
+
             const prevHash = await getHeadCommitHash(pkg, opts)
             if(args.mr.enabled){
                 const newBranchName = `mr-${pkg.gitRemoteName}-${args.mr.value}`
