@@ -57,9 +57,15 @@ export class Peer {
         return channel
     }
 
-    constructor(
-        private readonly name: string,
-    ){}
+    private readonly name: string
+    constructor(nameOrConfig: string | { name: string, onsend: (data: Buffer) => void }){
+        if(typeof nameOrConfig === 'string'){
+            this.name = nameOrConfig
+        } else {
+            this.name = nameOrConfig.name
+            this.onsend = nameOrConfig.onsend
+        }
+    }
 
     public onsend!: (data: Buffer) => void
     //public ondata!: (data: Buffer) => void
@@ -72,7 +78,7 @@ export class Peer {
     }
 
     public connect(){
-        
+
         this.sessionId = 0x29000000
 
         const channel = this.channels_get(0xFF)
@@ -110,7 +116,7 @@ export class Peer {
             const response = this.createResponse(request, header)
             if(response) responses.push(response)
         }
-        
+
         if(responses.length){
             this.send(responses)
         }
@@ -137,7 +143,7 @@ export class Peer {
     }
 
     private createResponse(request: Protocol, request_header: ProtocolHeader): Protocol | null {
-        
+
         if(request instanceof Connect){
 
             this.sessionId = request.sessionID //TODO:
@@ -163,14 +169,14 @@ export class Peer {
             })
             return response
         }
-        
+
         if(request instanceof VerifyConnect){
             this.sessionId = request_header.sessionID //TODO:
             this.outgoingId = request.outgoingPeerID
         }
 
         if((request.flags & ProtocolFlag.ACKNOWLEDGE) != 0){
-            
+
             console.assert(request_header.timeSent !== null, 'Assertion failed: request.header.timeSent is null')
 
             const channel = this.channels_get(request.channelID)
@@ -204,7 +210,7 @@ export class Peer {
         const { channelID, data } = wrappedPacket
 
         const channel = this.channels_get(channelID)
-        
+
         const fragment = wrappedPacket.fragment
         if(fragment){
             const { fragmentCount, fragmentNumber, fragmentOffset, totalLength } = fragment
@@ -239,7 +245,7 @@ export class Peer {
 
     private unwrapReliablePacket(wrappedPacket: WrappedPacket): Protocol {
         const { channelID, data } = wrappedPacket
-        
+
         const channel = this.channels_get(channelID)
         const reliableSequenceNumber = ++channel.reliableSequenceNumber
         const packet = assign(new SendReliable(), {
@@ -283,13 +289,13 @@ export class Peer {
     }
 
     private readPacket(reader: Reader): Protocol | null {
-        
+
         const packet = Protocol.create(reader, version)
         if(!packet){
             console.log('ERROR: !packet')
             return null
         }
-        
+
         //if(packet instanceof Ping) console.log(this.name, 'read', 'ping')
         //else if(packet instanceof Acknowledge) console.log(this.name, 'read', 'ack')
         //else console.log(this.name, 'read', packet)
@@ -345,7 +351,7 @@ export class Peer {
 
     private writePacket(writer: Writer, packet: Protocol){
         packet.write(writer, version)
-        
+
         //if(packet instanceof Ping) console.log(this.name, 'write', 'ping')
         //else if(packet instanceof Acknowledge) console.log(this.name, 'write', 'ack')
         //else console.log(this.name, 'write', packet)
