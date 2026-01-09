@@ -59,7 +59,7 @@ export class Peer {
 
     private readonly name: string
     constructor(nameOrConfig: string | { name: string, onsend: (data: Buffer) => void }){
-        if(typeof nameOrConfig === 'string'){
+        if(typeof nameOrConfig == 'string'){
             this.name = nameOrConfig
         } else {
             this.name = nameOrConfig.name
@@ -105,8 +105,8 @@ export class Peer {
 
     public receivePackets(data: Buffer): WrappedPacket[] {
         const packets = this.readPackets(data)
-        if(packets === null){
-            console.log('ERROR: packets === null')
+        if(packets == null){
+            console.log('ERROR: packets == null')
             return []
         }
 
@@ -273,7 +273,7 @@ export class Peer {
             const packet = this.readPacket(reader)
             if(packet != null){
                 packets.push(packet)
-                if(reader.position === buffer.length){
+                if(reader.position == buffer.length){
                     break
                 }
             } else {
@@ -282,7 +282,7 @@ export class Peer {
             }
         }
 
-        //console.assert(reader.position === buffer.length, `Assertion failed: reader.position (${reader.position}) != buffer.length (${buffer.length})`)
+        //console.assert(reader.position == buffer.length, `Assertion failed: reader.position (${reader.position}) != buffer.length (${buffer.length})`)
         const result = { header, packets }
         //console.log('read', result)
         return result
@@ -307,7 +307,7 @@ export class Peer {
     private writePackets(packets: Protocol[]): Buffer {
         console.assert(packets.length > 0, 'packets.length == 0')
 
-        const timeSent = Date.now() - this.startTime
+        const timeSent = (Date.now() - this.startTime) & 0x7FFF
         const header = assign(new ProtocolHeader(), {
             sessionID: this.sessionId,
             peerID: this.outgoingId,
@@ -328,14 +328,14 @@ export class Peer {
             this.writePacket(writer, packet)
         }
 
-        console.assert(writer.position === bufferLength, 'Assertion failed: writer.position != bufferLength')
+        console.assert(writer.position == bufferLength, 'Assertion failed: writer.position != bufferLength')
         //return this_buffer.subarray(0, writer.position)
         return this_buffer
     }
 
     private calculateHeaderSize(header: ProtocolHeader){
         let header_size = version.maxHeaderSizeSend
-        if(header.timeSent === null){
+        if(header.timeSent == null){
             header_size -= 2
         }
         return header_size
