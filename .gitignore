@@ -20,19 +20,19 @@ dist
 *.tgz
 *.exe
 
-# media
-*.jpg
-*.jpg.import
-*.ttf
-*.ttf.import
-*.ico
-*.xcf
-*.png
-*.png.import
-*.svg
-*.svg.import
-*.mp3
-*.mp3.import
+## media
+# *.jpg
+# *.jpg.import
+# *.ttf
+# *.ttf.import
+# *.ico
+# *.xcf
+# *.png
+# *.png.import
+# *.svg
+# *.svg.import
+# *.mp3
+# *.mp3.import
 
 # code coverage
 coverage
