@@ -3,7 +3,7 @@ import { console_log, createBar } from '../../../ui/remote/remote'
 import { downloads, fs_readFile, fs_writeFile } from '../fs'
 import type { AbortOptions } from '@libp2p/interface'
 import { logger } from '../../log'
-import embeddedTrackersTxt from '../../../Fishbones_Data/trackers.txt'
+import embeddedTrackersTxt from '../../../thirdparty/trackers.txt'
 import { HARDCODED_ANNOUNCE_URLS } from '../../constants-build'
 import { tr } from '../../translation'
 

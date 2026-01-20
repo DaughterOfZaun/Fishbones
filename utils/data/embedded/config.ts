@@ -19,20 +19,20 @@ export const config = {
     //    windows: './node_modules/7z-bin/bin/win/x64/7z.dll',
     //},
 
-    gc420ZipTorrent: '', //'./Fishbones_Data/League of Legends_UNPACKED.7z.torrent',
-    gs420PkgZipTorrent: '', //'./Fishbones_Data/Chronobreak.GameServer.7z.torrent',
+    gc420ZipTorrent: '', //'./torrents/League of Legends_UNPACKED.7z.torrent',
+    gs420PkgZipTorrent: '', //'./torrents/Chronobreak.GameServer.7z.torrent',
 
-    gcZipTorrent: './Fishbones_Data/playable_client_126.7z.torrent',
-    gsPkgZipTorrent: './Fishbones_Data/ChildrenOfTheGrave-Gameserver.7z.torrent',
+    gcZipTorrent: './torrents/playable_client_126.7z.torrent',
+    gsPkgZipTorrent: './torrents/ChildrenOfTheGrave-Gameserver.7z.torrent',
     gsPkgZip: {
         //linux: './Fishbones_Data/ChildrenOfTheGrave-Gameserver.7z'
     },
 
     sdkForWinZipTorrent: {
-        windows: './Fishbones_Data/dotnet-sdk-9.0.300-win-x64.zip.torrent',
+        windows: './torrents/dotnet-sdk-9.0.300-win-x64.zip.torrent',
     },
     sdkForLinuxZipTorrent: {
-        linux: './Fishbones_Data/dotnet-sdk-9.0.300-linux-x64.tar.gz.torrent',
+        linux: './torrents/dotnet-sdk-9.0.300-linux-x64.tar.gz.torrent',
     },
 
     d3dx9_39_dll: './thirdparty/directx_Jun2010_redist/Aug2008_d3dx9_39_x64/d3dx9_39.dll',
@@ -41,7 +41,7 @@ export const config = {
     godotPck: '', //'./dist/RemoteUI.pck',
 
     gitZipTorrent: {
-        windows: './Fishbones_Data/PortableGit-2.52.0-64-bit.7z.exe.torrent',
+        windows: './torrents/PortableGit-2.52.0-64-bit.7z.exe.torrent',
     },
     gitZip: {
         //windows: './thirdparty/git/PortableGit-2.52.0-64-bit.7z.exe'
@@ -56,12 +56,12 @@ export const config = {
 
     indexJS: './dist/index.js',
 
-    //trackersTxt: './Fishbones_Data/trackers.txt',
+    //trackersTxt: './thirdparty/trackers.txt',
 
     dataChannelLib: {
         linux: './dist/node_datachannel-bfgv6pn8.node',
         windows: './dist/node_datachannel-8fg8wz1b.node',
     },
 
-    modPck1ZipTorrent: './Fishbones_Data/modded_levels_paste_on_client.7z.torrent',
+    modPck1ZipTorrent: './torrents/modded_levels_paste_on_client.7z.torrent',
 }

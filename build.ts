@@ -5,6 +5,7 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { NAME, OUTDIR, OUTFILE, VERSION_REGEX } from './utils/constants-build'
 import { config, type Config } from './utils/data/embedded/config'
+//import { ariaPkg } from './utils/data/packages/aria2'
 
 const GODOT_EXE = './dist/Godot_v4.5.1-stable_linux.x86_64'
 
@@ -42,9 +43,19 @@ if(process.argv.includes('server')){
     process.exit()
 }
 
+async function fs_ensureDir(path: string){
+    try { await fs.mkdir(path) }
+    catch(err){
+        if(err != null && typeof err == 'object' &&
+            'code' in err && err['code'] == 'EEXIST'){ /* Ignore. */ }
+        else throw err
+    }
+}
+
 async function build_embeds(){
 
-    await $`rm ./remote-ui/embedded/*`
+    await fs_ensureDir('./remote-ui/embedded/')
+    await $`rm ./remote-ui/embedded/*`.quiet().nothrow()
 
     config['indexJS'] = indexJS
 
@@ -61,12 +72,15 @@ async function build_embeds(){
             const to = `./remote-ui/embedded/${fileName}`
             embeddedJson[key] = to.replace('./remote-ui/', 'res://')
             //console.log(`ln -sf "${from}" "${to}"`)
-            await $`ln -sf ${from} ${to}`
+            if(process.platform == 'linux')
+                 await $`ln -sf ${from} ${to}`
+            else await $`cp ${from} ${to}`
         } else {
             embeddedJson[key] = ''
         }
     }
 
+    await fs_ensureDir('./dist')
     await fs.writeFile('./dist/embedded.json', JSON.stringify(embeddedJson, null, 4), 'utf8')
 
     let tscn = await fs.readFile('./remote-ui/main.tscn', 'utf8')
@@ -87,7 +101,7 @@ if(process.argv.includes('embeds'))
     await build_embeds()
 
 if(process.argv.includes('bun')){
-    if(platform === 'windows'){
+    if(platform === 'windows' && process.platform == 'linux'){
         await $`mv node_modules node_modules_linux_npm`
         await $`mv node_modules_win_npm node_modules`
     }
@@ -100,6 +114,27 @@ if(process.argv.includes('bun')){
     if(process.argv.includes('libutp')){
         await build_libUTP()
     }
+    if(process.argv.includes('protons')){
+        const protons = './node_modules/protons/dist/bin/protons.js'
+        const messageDir = './message'
+        await Promise.all(
+            (await fs.readdir(messageDir))
+            .filter(file => file.endsWith('.proto'))
+            .map(async (file) => {
+                return $`bun run ${protons} ${`${messageDir}/${file}`}`
+            })
+        )
+    }
+    // if(process.argv.includes('thirdparty')){
+    //     await Promise.all([
+    //         (async () => {
+    //             const ariaDir = './thirdparty/aria2'
+    //             await fs_ensureDir(ariaDir)
+    //             await fs.writeFile(`${ariaDir}/${ariaPkg.exeName}`, await (await fetch(ariaPkg.webSeed)).bytes())
+    //         })(),
+    //         (async () => {})(),
+    //     ])
+    // }
     try {
         await Bun.build({
             entrypoints: [ './index.ts' ],
@@ -114,7 +149,7 @@ if(process.argv.includes('bun')){
         })
         await fs.rename(`./${OUTDIR}/index.js`, indexJS)
     } finally {
-        if(platform === 'windows'){
+        if(platform === 'windows' && process.platform == 'linux'){
             await $`mv node_modules node_modules_win_npm`
             await $`mv node_modules_linux_npm node_modules`
         }
