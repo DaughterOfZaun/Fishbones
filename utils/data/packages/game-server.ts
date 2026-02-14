@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { downloads } from '../fs'
 import embedded from '../embedded/embedded'
-import { magnet, PkgInfoCSProj, type PkgInfoGit } from './shared'
+import { gdrive, magnet, PkgInfoCSProj, type PkgInfoGit } from './shared'
 import { HARDCODED_HTTP_SERVER_URL } from '../../constants-build'
 import { tr } from '../../translation'
 
@@ -21,7 +21,10 @@ export const gsPkg = new class extends PkgInfoCSProj implements PkgInfoGit {
     zipTorrent = `${this.zip}.torrent`
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
     zipMega = 'https://mega.nz/file/Oz5lDKiQ#RWwgpmkdUn1MrqLg8p8idkPj8Z0mxzFYgPzCmAi55Is'
-    zipWebSeed = `${HARDCODED_HTTP_SERVER_URL}/${this.zipName}`
+    zipWebSeeds = [
+        gdrive(`1p9Dz1o_tUrML6a7KdyCeoXeIjyoZ5YhG`),
+        `${HARDCODED_HTTP_SERVER_URL}/${this.zipName}`,
+    ]
     zipEmbded = embedded.gsPkgZip
 
     gitRevision = '4592f1379ddaa972ce0b5dc6cebb9caf09c812ab'

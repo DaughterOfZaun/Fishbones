@@ -172,7 +172,7 @@ export async function download(pkg: PkgInfo, opts: Required<AbortOptions>){
     try {
     
         const webSeeds = []
-        if(pkg.zipWebSeed) webSeeds.push(pkg.zipWebSeed)
+        if(pkg.zipWebSeeds) webSeeds.push(...pkg.zipWebSeeds)
         if(pkg.zipMega && args.megaDownload.enabled){
             await MegaProxy.start(opts)
             webSeeds.push(MegaProxy.getURL(pkg))

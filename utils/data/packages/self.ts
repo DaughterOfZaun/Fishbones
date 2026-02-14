@@ -25,7 +25,7 @@ export class FBPkgInfo extends PkgInfo {
     
     zipSize!: number
     zipTorrent: string
-    zipWebSeed = ''
+    zipWebSeeds: string[] = []
     
     zipTorrentEmbedded = ''
     zipInfoHashV1 = ''

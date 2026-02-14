@@ -1,8 +1,9 @@
 import path from 'node:path'
 import { downloads } from '../fs'
 import embedded from '../embedded/embedded'
-import { magnet, PkgInfoExe } from './shared'
+import { gdrive, magnet, PkgInfoExe } from './shared'
 import { tr } from '../../translation'
+import { HARDCODED_HTTP_SERVER_URL } from '../../constants-build'
 
 export const gitPkg = new class extends PkgInfoExe {
     name = tr('Git')
@@ -11,7 +12,11 @@ export const gitPkg = new class extends PkgInfoExe {
     zipExt = '7z.exe'
     version = '2.52.0'; subversion = 1
     zipName = `PortableGit-${this.version}-64-bit.${this.zipExt}`
-    zipWebSeed = `https://github.com/git-for-windows/git/releases/download/v${this.version}.windows.${this.subversion}/${this.zipName}`
+    zipWebSeeds = [
+        `https://github.com/git-for-windows/git/releases/download/v${this.version}.windows.${this.subversion}/${this.zipName}`,
+        gdrive(`1H3saINYqc--j6_nIQHRX-TC1BtlnE5QE`),
+        `${HARDCODED_HTTP_SERVER_URL}/${this.zipName}`,
+    ]
     //zipEmbded = embedded.gitZip
     makeDir = true
 

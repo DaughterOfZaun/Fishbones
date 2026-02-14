@@ -2,7 +2,7 @@ import type { HardcodedMapInfo } from "../constants/maps"
 import embedded from "../embedded/embedded"
 import { downloads } from "../fs"
 import { gcPkg } from "./game-client"
-import { magnet, PkgInfo } from "./shared"
+import { gdrive, magnet, PkgInfo } from "./shared"
 import { HARDCODED_HTTP_SERVER_URL } from '../../constants-build'
 import { tr } from "../../translation"
 import path from 'node:path'
@@ -26,7 +26,10 @@ export const modPck1 = new class ModPackOne extends PkgInfo {
     zipTorrent = `${this.zip}.torrent`
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
     zipMega = 'https://mega.nz/file/ruZDDKTB#XNxrd3gr2GdxhqYPdgAWG2dT4sxBv9Q1mzMT1M-rjLc'
-    zipWebSeed = `${HARDCODED_HTTP_SERVER_URL}/${this.zipName}`
+    zipWebSeeds = [
+        gdrive(`1OWCNPQ6daIPS_nf3PjpnQzLAcBJAHXyv`),
+        `${HARDCODED_HTTP_SERVER_URL}/${this.zipName}`,
+    ]
 
     //TODO: Set meaningful value.
     checkUnpackBy = path.join(this.dir, 'LEVELS', 'Map6', 'Scene', 'room.nvr')

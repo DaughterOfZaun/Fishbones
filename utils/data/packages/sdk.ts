@@ -1,8 +1,9 @@
 import path from 'node:path'
 import { downloads } from '../fs'
 import embedded from '../embedded/embedded'
-import { magnet, PkgInfoExe } from './shared'
+import { gdrive, magnet, PkgInfoExe } from './shared'
 import { tr } from '../../translation'
+import { HARDCODED_HTTP_SERVER_URL } from '../../constants-build'
 
 const sdkVer = '9.0.300'
 
@@ -31,12 +32,14 @@ const sdkZipInfo = {
         ihv1: '249a75bd3c8abba27b59fe42ab0771f77d6caee7',
         ihv2: '1220418d03e796bd159ed3ff24606a7b4948e520fbc4e93a172fc8a1798c51bc5647',
         embeddedTorrent: embedded.sdkForWinZipTorrent,
+        gdriveID: '1R5LNFJku72cIA2doBY712lKYoY_2-PQN',
         size: 298580138,
     },
     'dotnet-sdk-9.0.300-linux-x64.tar.gz': {
         ihv1: 'f859eefcf797348b967220427a721655a9af0bc8',
         ihv2: '1220db828e2a00844b2ad1a457b03e521d24a0b03d4746b0e849bcf0ea1d2b34eb77',
         embeddedTorrent: embedded.sdkForLinuxZipTorrent,
+        gdriveID: '1bSG-7_awXjHxmPWvH7C5Nk8Lvfe69hGj',
         size: 217847129,
     },
 }[sdkZipName]
@@ -64,7 +67,11 @@ export const sdkPkg = new class extends PkgInfoExe {
     exeName = `dotnet${this.exeExt}`
     exe = path.join(this.dir, this.exeName)
 
-    zipWebSeed = `https://builds.dotnet.microsoft.com/dotnet/Sdk/${sdkVer}/${sdkZipName}`
+    zipWebSeeds = [
+        `https://builds.dotnet.microsoft.com/dotnet/Sdk/${sdkVer}/${sdkZipName}`,
+        gdrive(sdkZipInfo!.gdriveID),
+        `${HARDCODED_HTTP_SERVER_URL}/${this.zipName}`,
+    ]
 
     topLevelEntries = [
         this.exeName,

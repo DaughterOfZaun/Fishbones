@@ -7,6 +7,10 @@ export const magnet = (ihv1?: string, ihv2?: string, fname?: string, size?: numb
     return `magnet:?${parts.join('&')}`
 }
 
+export const gdrive = (id: string) => {
+    return `https://drive.usercontent.google.com/download?id=${id}&export=download&authuser=0&confirm=t`
+}
+
 //TODO: PkgInfoDownloadable/Embedded
 export abstract class PkgInfo {
     abstract name: string
@@ -30,7 +34,7 @@ export abstract class PkgInfo {
     abstract topLevelEntries: string[]
     abstract topLevelEntriesOptional: string[]
     
-    zipWebSeed?: string
+    zipWebSeeds?: string[]
     zipEmbded?: string
     zipMega?: string
 }

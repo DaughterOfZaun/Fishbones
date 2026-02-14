@@ -64,7 +64,7 @@ export async function checkForUpdates(opts: Required<AbortOptions>){
 
             prev_fbPkg = fbPkg
             fbPkg = new FBPkgInfo(versionToString(zipVersion))
-            fbPkg.zipWebSeed = zip.browser_download_url
+            fbPkg.zipWebSeeds = [ zip.browser_download_url ]
             fbPkg.zipSize = zip.size
             
             //await fs_removeFile(fbPkg.zip, opts, true)

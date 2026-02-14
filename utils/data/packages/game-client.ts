@@ -1,7 +1,7 @@
 import path from 'node:path'
 import { downloads } from '../fs'
 import embedded from '../embedded/embedded'
-import { magnet, PkgInfoExe } from './shared'
+import { gdrive, magnet, PkgInfoExe } from './shared'
 import { HARDCODED_HTTP_SERVER_URL } from '../../constants-build'
 import { tr } from '../../translation'
 
@@ -25,7 +25,10 @@ export const gcPkg = new class extends PkgInfoExe {
     zipTorrent = `${this.zip}.torrent`
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
     zipMega = 'https://mega.nz/file/uqRmkCKC#nJFZ2hAYqTq5q-T1PExXPpu0aX4ALjjZj2SZ4q9yCpk'
-    zipWebSeed = `${HARDCODED_HTTP_SERVER_URL}/${this.zipName}`
+    zipWebSeeds = [
+        gdrive(`1tSoj5PIOWg1Wl7Y-SbjEAEypskvxJ6mx`),
+        `${HARDCODED_HTTP_SERVER_URL}/${this.zipName}`,
+    ]
 
     exeDir = this.dir
     exeName = 'League of Legends.exe'
