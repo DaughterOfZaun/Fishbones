@@ -32,6 +32,8 @@ export type SocketToProgram = AnySocket & {
 
 export class Proxy {
     
+    public dataTransmitted: number = 0
+
     protected readonly strategy: UseExistingLibP2PConnection
     protected readonly peersByPeerId = new Map<PeerIdStr, PeerData>()
 
@@ -63,6 +65,7 @@ export class Proxy {
             }, opts),
             socketToProgram: await this.createSocketToProgram(programHost, programPort, (data: Buffer, programHostPort: string) => {
                 log.trace('internal socket: redirecting pkt from %s through %s to %s', programHostPort, peer.socketToRemote.sourceHostPort, peer.socketToRemote.targetHostPort)
+                this.dataTransmitted += data.length
                 peer.socketToRemote.send(data)
             }, opts)
         }
