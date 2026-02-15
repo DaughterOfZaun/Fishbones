@@ -82,7 +82,7 @@ export class Peer {
         this.sessionId = 0x29000000
 
         const channel = this.channels_get(0xFF)
-        const reliableSequenceNumber = ++channel.reliableSequenceNumber
+        const reliableSequenceNumber = (++channel.reliableSequenceNumber) % (2 ** 16)
         const packet = assign(new Connect(), {
             flags: ProtocolFlag.ACKNOWLEDGE,
             channelID: channel.id,
@@ -150,7 +150,7 @@ export class Peer {
             this.outgoingId = request.outgoingPeerID
 
             const channel = this.channels_get(0xFF)
-            const reliableSequenceNumber = ++channel.reliableSequenceNumber
+            const reliableSequenceNumber = (++channel.reliableSequenceNumber) % (2 ** 16)
             const response = assign(new VerifyConnect(), {
                 flags: ProtocolFlag.ACKNOWLEDGE,
                 channelID: channel.id,
@@ -214,7 +214,7 @@ export class Peer {
         const fragment = wrappedPacket.fragment
         if(fragment){
             const { fragmentCount, fragmentNumber, fragmentOffset, totalLength } = fragment
-            const reliableSequenceNumber = ++channel.reliableSequenceNumber
+            const reliableSequenceNumber = (++channel.reliableSequenceNumber) % (2 ** 16)
             const startSequenceNumber = channel.fragmentStartSequenceNumbers_get(
                 fragment.startSequenceNumber, reliableSequenceNumber
             )
@@ -230,7 +230,7 @@ export class Peer {
         }
 
         const reliableSequenceNumber = channel.reliableSequenceNumber
-        const unreliableSequenceNumber = ++channel.unreliableSequenceNumber
+        const unreliableSequenceNumber = (++channel.unreliableSequenceNumber) % (2 ** 16)
         const packet = assign(new SendUnreliable(), {
             flags: 0,
             channelID: channelID,
@@ -247,7 +247,7 @@ export class Peer {
         const { channelID, data } = wrappedPacket
 
         const channel = this.channels_get(channelID)
-        const reliableSequenceNumber = ++channel.reliableSequenceNumber
+        const reliableSequenceNumber = (++channel.reliableSequenceNumber) % (2 ** 16)
         const packet = assign(new SendReliable(), {
             flags: ProtocolFlag.ACKNOWLEDGE,
             channelID: channelID,

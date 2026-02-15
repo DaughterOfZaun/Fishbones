@@ -291,7 +291,7 @@ export abstract class BasePacket {
         throw new Error("Method not implemented.");
     }
 
-    public read(bufferOrReader: Buffer | Reader): this {
+    public read(bufferOrReader: Buffer | Reader, debug?: boolean): this {
     
         //if(!(this instanceof World_SendCamera_Server)){
         //    console.log('read', this.constructor.name)
@@ -302,7 +302,7 @@ export abstract class BasePacket {
         const reader =
             bufferOrReader instanceof Reader ?
                 bufferOrReader :
-                new Reader(bufferOrReader, 'LE')
+                new Reader(bufferOrReader, 'LE', debug)
         
         reverseCall(this, this._read.name, reader)
 
@@ -313,18 +313,18 @@ export abstract class BasePacket {
         return this
     }
 
-    public write(writer?: Writer): Buffer {
+    public write(writer?: Writer, debug?: boolean): Buffer {
 
         //if(!(this instanceof World_SendCamera_Server_Acknologment)){
         //    console.log('write', this.constructor.name)
         //    console.log('source', this.stringify())
         //}
 
-        writer ??= new Writer(buffer, 'LE')
+        writer ??= new Writer(buffer, 'LE', debug)
         
         reverseCall(this, this._write.name, writer)
 
-        const result = buffer.subarray(0, writer.position)
+        const result = writer.buffer.subarray(0, writer.position)
 
         //if(!(this instanceof World_SendCamera_Server_Acknologment)){
         //    console.log('result', result.toHex())
@@ -367,8 +367,8 @@ export abstract class GamePacket extends BasePacket {
         this.senderNetID = reader.readUInt32("senderNetID")
     }
     public override _write(writer: Writer): void {
-        writer.writeByte(this._type())
-        writer.writeUInt32(this.senderNetID)
+        writer.writeByte(this._type(), 'type')
+        writer.writeUInt32(this.senderNetID, 'senderNetID')
     }
     public _type(): Type {
         throw new Error("Method not implemented.");
@@ -714,8 +714,8 @@ export class WaypointGroup extends GamePacket {
     movements: MovementDataNormal[] = []
     public override _type(){ return Type.WaypointGroup }
     public override _read(reader: Reader){
-        this.syncID = reader.readUInt32()
-        const count = reader.readUInt16()
+        this.syncID = reader.readUInt32('syncID')
+        const count = reader.readUInt16('count')
         for(let i = 0; i < count; i++){
             const mdn = new MovementDataNormal()
                   mdn._read(reader)
@@ -723,8 +723,8 @@ export class WaypointGroup extends GamePacket {
         }
     }
     public override _write(writer: Writer){
-        writer.writeUInt32(this.syncID)
-        writer.writeUInt16(this.movements.length)
+        writer.writeUInt32(this.syncID, 'syncID')
+        writer.writeUInt16(this.movements.length, 'count')
         for(const movement of this.movements){
             movement._write(writer)
         }
@@ -886,7 +886,16 @@ export class S2C_ChainMissileSync extends GamePacket {
     //ulong targets[32];
 }
 export class OnReplication_Acc extends GamePacket {
-    //uint syncID;
+    public override _type(){ return Type.OnReplication_Acc }
+    
+    public syncID: number = 0 //uint syncID;
+
+    public override _read(reader: Reader){
+        this.syncID = reader.readUInt32()
+    }
+    public override _write(writer: Writer){
+        writer.writeUInt32(this.syncID)
+    }
 }
 export class S2C_SetCircularMovementRestriction extends GamePacket {
     //struct r3dPoint3D center;
@@ -1106,8 +1115,8 @@ export class MovementDataNormal extends MovementData {
     }
     public override _write(writer: Writer){
         console.assert(this.waypoints.length <= 0x7F, `Assertion failed: this.waypoints.length (${this.waypoints.length}) <= 0x7F`)
-        writer.writeUInt16(+this.hasTeleportID)
-        writer.writeUInt16(this.waypoints.length)
+        writer.writeUInt16(+this.hasTeleportID, 'hasTeleportID')
+        writer.writeUInt16(this.waypoints.length, 'waypoints.length')
         if(this.waypoints.length){
             writer.writeUInt32(this.teleportNetID)
             if(this.hasTeleportID)
@@ -1117,10 +1126,10 @@ export class MovementDataNormal extends MovementData {
 
             const size = this.waypoints.length
             const count = Math.floor((size - 2) / 4 + 1)
-            writer.writePad(count)
+            writer.writePad(count, 'flags')
             for(const waypoint of this.waypoints){
-                writer.writeInt16(getX(waypoint))
-                writer.writeInt16(getZ(waypoint))
+                writer.writeInt16(Math.floor(getX(waypoint)), 'lastX')
+                writer.writeInt16(Math.floor(getZ(waypoint)), 'lastZ')
             }
         }
     }
@@ -1481,8 +1490,20 @@ export class SetItem extends GamePacket {
     //uchar spellCharges;
 }
 export class Waypoint_Acc extends GamePacket {
-    //int syncID;
-    //uchar teleportCount;
+    public override _type(){ return Type.Waypoint_Acc }
+
+    public syncID: number = 0 //int syncID;
+    public teleportCount: number = 0 //uchar teleportCount;
+
+    public override _read(reader: Reader){
+        this.syncID = reader.readUInt32()
+        this.teleportCount = reader.readByte()
+    }
+
+    public override _write(writer: Writer){
+        writer.writeUInt32(this.syncID)
+        writer.writeByte(this.teleportCount)
+    }
 }
 export class MissileReplication extends GamePacket {
     //struct r3dPoint3D position;
@@ -1746,6 +1767,15 @@ export class OnReplication extends GamePacket {
     datas: ReplicationData[] = []
 
     public override _type(){ return Type.OnReplication }
+    public override _read(reader: Reader){
+        this.syncID = reader.readUInt32()
+        //const count = reader.readByte()
+        //for(let i = 0; i < count; i++){
+        //    const data = new ReplicationData()
+        //          data._read(reader)
+        //    this.datas.push(data)
+        //}
+    }
     public override _write(writer: Writer){
         writer.writeUInt32(this.syncID)
         writer.writeByte(this.datas.length)
@@ -1758,6 +1788,17 @@ export class ReplicationData extends BasePacket {
     unitNetID: number = 0
     values: number[] = []
     skip: boolean[] = []
+
+    public override _read(reader: Reader){
+        this.values.push(reader.readByte())
+        this.skip.push(false)
+        this.unitNetID = reader.readUInt32()
+        //const count = 0
+        //for(let i = 1; i < count; i++){
+        //    this.values.push(reader.readUInt32())
+        //    this.skip.push(false)
+        //}
+    }
 
     public override _write(writer: Writer){
         writer.writeByte(this.values[0]!)

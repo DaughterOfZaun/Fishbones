@@ -7,7 +7,7 @@ import { NAME, OUTDIR, OUTFILE, VERSION_REGEX } from './utils/constants-build'
 import { config, type Config } from './utils/data/embedded/config'
 //import { ariaPkg } from './utils/data/packages/aria2'
 
-const GODOT_EXE = './dist/Godot_v4.5.1-stable_linux.x86_64'
+const GODOT_EXE = './dist/Godot_v4.6-stable_linux.x86_64'
 
 const release = process.argv.includes('release') ? 'release' : 'debug'
 

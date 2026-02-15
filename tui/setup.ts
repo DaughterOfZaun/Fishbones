@@ -42,7 +42,9 @@ export async function setup(game: Game, server: LocalServer, opts: Required<Abor
         Minions: checkbox(game.features.isMinionsEnabled, value => game.features.set(Features.MINIONS_DISABLED, !value)),
         Cheats: checkbox(game.features.isCheatsEnabled, value => game.features.set(Features.CHEATS_ENABLED, value)),
         HalfPing: checkbox(game.features.isHalfPingEnabled, value => game.features.set(Features.HALF_PING_MODE_ENABLED, value)),
-    
+        Firewall: checkbox(game.features.isFirewallEnabled, value => game.features.set(Features.FIREWALL_ENABLED, value)),
+        Bypass: checkbox(game.features.isBypassEnabled, value => game.features.set(Features.BYPASS_ENABLED, value)),
+        
         Champions: button(() => { server.champions.uinput(opts).catch(() => { /* Ignore */ }) }),
         SummonerSpells: button(() => { server.spells.uinput(opts).catch(() => { /* Ignore */ }) }),
 

@@ -14,7 +14,7 @@ import { ProxyServer } from '../utils/proxy/proxy-server'
 import { ClientServerProxy } from '../utils/proxy/proxy-client-server'
 import type { WriteonlyMessageStream } from '../utils/pb-stream'
 import { launchClient, relaunchClient, stopClient } from '../utils/process/client'
-import { launchServer, stopServer } from '../utils/process/server'
+import { launchServer, stopServer, getRunningServerPort } from '../utils/process/server'
 import { safeOptions, shutdownOptions } from '../utils/process/process'
 import { Deferred } from '../utils/promises'
 import { logger } from '../utils/log'
@@ -25,6 +25,7 @@ import { runes } from '../utils/data/constants/runes'
 import { VERSION, versionFromString } from '../utils/constants-build'
 import { console_log } from '../ui/remote/remote'
 import { tr } from '../utils/translation'
+import { firewall } from '../utils/proxy/proxy-firewall'
 
 export const versionNumber = versionFromString(VERSION)
 
@@ -368,7 +369,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             const proc = await launchServer(this.getGameInfo(), opts)
             proc.once('exit', this.onServerExit)
             
-            this.proxyServer = new ProxyServer(this.node)
+            this.proxyServer = firewall(new ProxyServer(this.node), this.features.isFirewallEnabled)
             const peerIds = players.filter(p => !!p.peerId).map(p => p.peerId!)
             await this.proxyServer.start(proc.port, peerIds, opts)
         } catch(err) {
@@ -461,7 +462,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                     try {
                         const players = this.getPlayers()
                         const peerIds = players.filter(p => !!p.peerId).map(p => p.peerId!)
-                        this.proxyClientServer = new ClientServerProxy(this.node)
+                        this.proxyClientServer = firewall(new ClientServerProxy(this.node), this.features.isFirewallEnabled)
                         await this.proxyClientServer.start(peerIds, opts)
 
                         //let proc: Awaited<ReturnType<typeof launchServer>>
@@ -507,8 +508,11 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         const { clientId } = res
         
         const ip = LOCALHOST
-        let port = 0
+        let port = getRunningServerPort()
 
+        if(this.features.isBypassEnabled && port){
+            // Do nothing. Connect directly to the server.
+        } else
         if(this.features.isHalfPingEnabled){
             const proxy = this.proxyClientServer!
             port = proxy.getClientPort()!
@@ -517,7 +521,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             }
         } else {
             //TODO: try-catch
-            this.proxyClient = new ProxyClient(this.node)
+            this.proxyClient = firewall(new ProxyClient(this.node), this.features.isFirewallEnabled)
             await this.proxyClient.connect(this.ownerId, this.proxyServer, opts)
             port = this.proxyClient.getPort()!
         }

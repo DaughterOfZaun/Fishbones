@@ -6,6 +6,7 @@ import { decrypt, encrypt } from './blowfish'
 import * as PKT from './pkt'
 import { toString, Vector2 } from './math'
 import { Writer } from './enet'
+import { replacer } from './utils'
 
 class Unit {
     public teleportID: number = 0
@@ -54,7 +55,7 @@ export const firewall = <T extends Proxy>(proxy: T, enabled: boolean): T => {
             fragment.buffer.set(packet.data, info.fragmentOffset)
         }
         
-        //console.log(fragmentID, info.fragmentNumber, fragment.numbers.size, '/', fragment.count, 'at', info.fragmentOffset, 'for', packet.data.length, '/', fragment.buffer.length)
+        //console.log('defragment', fragmentID, info.fragmentNumber, fragment.numbers.size, '/', fragment.count, 'at', info.fragmentOffset, 'for', packet.data.length, '/', fragment.buffer.length)
         
         if(fragment.numbers.size == fragment.count){
             fragments.delete(fragmentID)
@@ -70,12 +71,29 @@ export const firewall = <T extends Proxy>(proxy: T, enabled: boolean): T => {
     const super_createSocketToProgram = proxy['createSocketToProgram'].bind(proxy)
     proxy['createSocketToProgram'] = async function (programHost, programPort, onData, opts) {
         
+        const autoDefrag = true
+        const autoFilter = true
+        const autoRespond = true
+        const autoLimit = false
+
         const peerToProgram = new Peer('peerToProgram')
+        const respond = <T extends PKT.BasePacket>(packet: WrappedPacket, ack: T, fields: Partial<T>) => {
+            Object.assign(ack, fields)
+            return peerToProgram.sendUnreliable([{
+                fragment: undefined,
+                data: encrypt(ack.write()),
+                channelID: packet.channelID,
+            }])
+        }
         
         const socketToProgram = await super_createSocketToProgram(programHost, programPort, (rawdata, programHostPort) => {
             let packets = peerToProgram.receivePackets(rawdata)
-            .map(defragment).filter(packet => !!packet)
-            .filter((packet) => {
+
+            if(autoDefrag)
+            packets = packets.map(defragment).filter(packet => !!packet)
+
+            if(autoFilter)
+            packets = packets.filter((packet) => {
                 
                 let messageReceived: PKT.BasePacket | undefined
                 let messageAccepted = true
@@ -84,9 +102,29 @@ export const firewall = <T extends Proxy>(proxy: T, enabled: boolean): T => {
                 const decryptedData = decrypt(packet.data)
                 const packet_type = decryptedData[0] as PKT.Type
                 
-                if(packet_type == PKT.Type.World_SendCamera_Server){
+                if(autoRespond && packet_type == PKT.Type.World_SendCamera_Server){
+                    const message = messageReceived = new PKT.World_SendCamera_Server().read(decryptedData)
+                    messageAccepted = false
+                    respond(packet, new PKT.World_SendCamera_Server_Acknologment(), {
+                        senderNetID: message.senderNetID,
+                        syncID: message.syncID,
+                    })
+                }
+                if(autoRespond && packet_type == PKT.Type.World_SendCamera_Server_Acknologment){
                     messageAccepted = false
                 }
+
+                if(autoRespond && packet_type == PKT.Type.OnReplication){
+                    const message = messageReceived = new PKT.OnReplication().read(decryptedData)
+                    respond(packet, new PKT.OnReplication_Acc(), {
+                        senderNetID: message.senderNetID,
+                        syncID: message.syncID,
+                    })
+                }
+                if(autoRespond && packet_type == PKT.Type.OnReplication_Acc){
+                    messageAccepted = false
+                }
+                
                 if(packet_type == PKT.Type.Basic_Attack){
                     const message = messageReceived = new PKT.Basic_Attack().read(decryptedData)
                     const { unit, unitCreated } = getUnit(message.senderNetID)
@@ -100,17 +138,17 @@ export const firewall = <T extends Proxy>(proxy: T, enabled: boolean): T => {
                     unit.waypoints = []
                 }
                 if(packet_type == PKT.Type.NPC_InstantStop_Attack){
-                    messageAccepted = false
                     const message = messageReceived = new PKT.NPC_InstantStop_Attack().read(decryptedData)
                     const { unit, unitCreated } = getUnit(message.senderNetID)
-                    if(unit.isAttacking){
-                        unit.isAttacking = false
-                        messageAccepted = true
-                    }
+                    messageAccepted = unit.isAttacking
+                    unit.isAttacking = false
                 }
+
                 if(packet_type == PKT.Type.WaypointGroup){
-                    messageAccepted = false
                     const message = messageReceived = new PKT.WaypointGroup().read(decryptedData)
+
+                    const teleportCount = message.movements.length
+                    
                     message.movements = message.movements.filter(movement => {
 
                         const { unit, unitCreated } = getUnit(movement.teleportNetID)
@@ -131,33 +169,72 @@ export const firewall = <T extends Proxy>(proxy: T, enabled: boolean): T => {
                             if(movement.hasTeleportID)
                             unit.teleportID = movement.teleportID
                             unit.waypoints = movement.waypoints
-                            messageAccepted = true
                             return true
                         }
-                        //messageChanged = true
                         return false
                     })
+
+                    messageAccepted = message.movements.length > 0
+                    messageChanged = message.movements.length != teleportCount
+
+                    if(autoRespond)
+                    respond(packet, new PKT.Waypoint_Acc(), {
+                        senderNetID: message.senderNetID,
+                        syncID: message.syncID,
+                        teleportCount, //TODO:
+                    })
+                }
+                if(autoRespond && packet_type == PKT.Type.Waypoint_Acc){
+                    messageAccepted = false
                 }
                 
-                if(messageAccepted)
-                    console.log('accepted', PKT.Type[packet_type], 'on', packet.channelID)
-
+                //if(messageAccepted)
+                //    console.log('accepted', PKT.Type[packet_type], 'on', packet.channelID)
+                
                 if(messageReceived != undefined && messageAccepted && messageChanged){
-                    const writer = new Writer(packet.data, 'LE') //HACK:
-                    packet.data = encrypt(messageReceived.write(writer))
+                    //const writer = new Writer(packet.data, 'LE') //HACK:
+                    //const writer = new Writer(Buffer.alloc(1024), 'LE') //HACK:
+                    const writer = undefined
+                    const written = messageReceived.write(writer)
+                    packet.data = encrypt(written)
                     console.assert(packet.fragment == undefined)
                 }
+
+                //console.assert(packet.data.length <= 962, `packet.data.length = ${packet.data.length}`)
+
                 return messageAccepted
             })
             
+            //console.log('sum(packets.length)', '=', packets.reduce((sum, p) => sum + p.data.length, 0))
+
             if(packets.length === 0) return
 
             const wrapped = Buffer.from(Wrapped.encode({ packets }))
             onData(wrapped, programHostPort)
         }, opts)
         
+        if(autoLimit && this['role'] == Role.Client){
+           const kbps = 4 * 1024
+           const queue: Buffer[] = []
+           const socketToProgram_send = socketToProgram.send.bind(socketToProgram)
+           let timeout: ReturnType<typeof setTimeout> | null = null
+           peerToProgram.onsend = (data) => {
+               queue.push(data)
+               if(timeout == null)
+                   sendData_and_setTimeout()
+           }
+           function sendData_and_setTimeout(){
+               const data = queue.shift()
+               if(data){
+                   socketToProgram_send(data)
+                   timeout = setTimeout(sendData_and_setTimeout, Math.round(data.length / kbps * 1000))
+               } else {
+                   timeout = null
+               }
+           }
+        } else
         peerToProgram.onsend = socketToProgram.send.bind(socketToProgram)
-        
+
         socketToProgram.send = (rawdata) => {
 
             const unwrapped = Wrapped.decode(rawdata)

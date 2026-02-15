@@ -7,7 +7,11 @@ import type { AbortOptions } from '@libp2p/interface'
 
 const LOG_PREFIX = 'SERVER'
 
-let serverSubprocess: ChildProcess | undefined
+let serverSubprocess: ChildProcess & { port?: number } | undefined
+
+export function getRunningServerPort(){
+    return serverSubprocess?.port
+}
 
 export async function launchServer(info: GameInfo, opts: Required<AbortOptions>, port = 0){
     //info.gameInfo.CONTENT_PATH = path.relative(gsPkg.dllDir, gsPkg.gcDir)

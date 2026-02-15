@@ -110,7 +110,8 @@ export class Reader {
     
     constructor(
         public readonly buffer: Buffer,
-        endianness: 'BE'|'LE' = 'BE'
+        public readonly endianness: 'BE'|'LE' = 'BE',
+        public readonly debug?: boolean,
     ){
         this.funcs = funcs[endianness]
     }
@@ -119,61 +120,61 @@ export class Reader {
         return this.readByte(name) != 0
     }
     public readSByte(name?: string){
-        //if(name) console.log('readByte', name, this.buffer.subarray(this.position, this.position + 1))
+        if(this.debug) console.log('readByte', name, this.buffer.subarray(this.position, this.position + 1))
         const result = this.funcs.readInt8.call(this.buffer, this.position);
         this.position += 1;
         return result
     }
     public readByte(name?: string){
-        //if(name) console.log('readByte', name, this.buffer.subarray(this.position, this.position + 1))
+        if(this.debug) console.log('readByte', name, this.buffer.subarray(this.position, this.position + 1))
         const result = this.funcs.readUInt8.call(this.buffer, this.position);
         this.position += 1;
         return result
     }
     public readInt16(name?: string){
-        //if(name) console.log('readInt16', name, this.buffer.subarray(this.position, this.position + 2))
+        if(this.debug) console.log('readInt16', name, this.buffer.subarray(this.position, this.position + 2))
         const result = this.funcs.readInt16.call(this.buffer, this.position);
         this.position += 2;
         return result
     }
     public readUInt16(name?: string){
-        //if(name) console.log('readUInt16', name, this.buffer.subarray(this.position, this.position + 2))
+        if(this.debug) console.log('readUInt16', name, this.buffer.subarray(this.position, this.position + 2))
         const result = this.funcs.readUInt16.call(this.buffer, this.position);
         this.position += 2;
         return result
     }
     public readInt32(name?: string){
-        //if(name) console.log('readUInt32', name, this.buffer.subarray(this.position, this.position + 4))
+        if(this.debug) console.log('readUInt32', name, this.buffer.subarray(this.position, this.position + 4))
         const result = this.funcs.readInt32.call(this.buffer, this.position);
         this.position += 4;
         return result
     }
     public readUInt32(name?: string){
-        //if(name) console.log('readUInt32', name, this.buffer.subarray(this.position, this.position + 4))
+        if(this.debug) console.log('readUInt32', name, this.buffer.subarray(this.position, this.position + 4))
         const result = this.funcs.readUInt32.call(this.buffer, this.position);
         this.position += 4;
         return result
     }
     public readInt64(name?: string){
-        //if(name) console.log('readUInt64', name, this.buffer.subarray(this.position, this.position + 8))
+        if(this.debug) console.log('readUInt64', name, this.buffer.subarray(this.position, this.position + 8))
         const result = this.funcs.readBigInt64.call(this.buffer, this.position);
         this.position += 8;
         return result
     }
     public readUInt64(name?: string){
-        //if(name) console.log('readUInt64', name, this.buffer.subarray(this.position, this.position + 8))
+        if(this.debug) console.log('readUInt64', name, this.buffer.subarray(this.position, this.position + 8))
         const result = this.funcs.readBigUInt64.call(this.buffer, this.position);
         this.position += 8;
         return result
     }
     public readFloat(name?: string){
-        //if(name) console.log('readFloat', name, this.buffer.subarray(this.position, this.position + 4))
+        if(this.debug) console.log('readFloat', name, this.buffer.subarray(this.position, this.position + 4))
         const result = this.funcs.readFloat.call(this.buffer, this.position);
         this.position += 4;
         return result
     }
     public readBytes(count: number, name?: string){
-        //if(name) console.log('readBytes', name, this.buffer.subarray(this.position, this.position + count))
+        if(this.debug) console.log('readBytes', name, this.buffer.subarray(this.position, this.position + count))
         console.assert(this.position + count <= this.buffer.length, `Assertion failed: this.position (${this.position}) + count (${count}) <= this.buffer.length (${this.buffer.length})`)
         const result = this.buffer.subarray(this.position, this.position + count)
         this.position += result.length
@@ -203,8 +204,9 @@ export class Writer {
     private readonly funcs: any
 
     constructor(
-        private readonly buffer: Buffer,
-        endianness: 'BE'|'LE' = 'BE'
+        public readonly buffer: Buffer,
+        public readonly endianness: 'BE'|'LE' = 'BE',
+        public readonly debug?: boolean,
     ){
         this.funcs = funcs[endianness]
     }
@@ -217,18 +219,21 @@ export class Writer {
         this.position += 1;
         return result
     }
-    public writeByte(value: number){
+    public writeByte(value: number, name?: string){
         const result = this.funcs.writeUInt8.call(this.buffer, value, this.position);
+        if(this.debug) console.log('writeByte', name, this.buffer.subarray(this.position, this.position + 1).toString('hex'))
         this.position += 1;
         return result
     }
-    public writeInt16(value: number){
+    public writeInt16(value: number, name?: string){
         const result = this.funcs.writeInt16.call(this.buffer, value, this.position);
+        if(this.debug) console.log('writeUInt16', name, this.buffer.subarray(this.position, this.position + 2).toString('hex'))
         this.position += 2;
         return result
     }
-    public writeUInt16(value: number){
+    public writeUInt16(value: number, name?: string){
         const result = this.funcs.writeUInt16.call(this.buffer, value, this.position);
+        if(this.debug) console.log('writeUInt16', name, this.buffer.subarray(this.position, this.position + 2).toString('hex'))
         this.position += 2;
         return result
     }
@@ -237,8 +242,9 @@ export class Writer {
         this.position += 4;
         return result
     }
-    public writeUInt32(value: number){
+    public writeUInt32(value: number, name?: string){
         const result = this.funcs.writeUInt32.call(this.buffer, value, this.position);
+        if(this.debug) console.log('writeUInt32', name, this.buffer.subarray(this.position, this.position + 4).toString('hex'))
         this.position += 4;
         return result
     }
@@ -257,9 +263,10 @@ export class Writer {
         this.position += 4;
         return result
     }
-    public writePad(count: number){
+    public writePad(count: number, name?: string){
         if(count % 1 != 0) throw new Error()
         const result = this.buffer.fill(0, this.position, this.position + count, 'binary')
+        if(this.debug) console.log('writePad', name, this.buffer.subarray(this.position, this.position + count).toString('hex'))
         this.position += count
         return result
     }
