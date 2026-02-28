@@ -105,10 +105,10 @@ export class Proxy {
         return {
             close(): void { socket.close() },
             get port(){ return socket.port },
-            get opened(){ return !socket.closed },
+            //get opened(){ return !socket.closed },
             get sourceHostPort(){ return `${socket.hostname}:${socket.port}` },
             get targetHostPort(){ return `${programHostLastUsed}:${programPortLastUsed}` },
-            get connected(){ return !!(programHostLastUsed && programPortLastUsed) },
+            //get connected(){ return !!(programHostLastUsed && programPortLastUsed) },
             setPort(port: number){ programPortLastUsed = port },
             send(data: Buffer): boolean {
                 if(socket.closed){

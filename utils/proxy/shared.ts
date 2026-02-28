@@ -5,9 +5,9 @@ import type { PeerId, AbortOptions } from "@libp2p/interface"
 export type AnySocket = {
     sourceHostPort: string // Only used for logging.
     targetHostPort: string // Only used for logging.
-    connected: boolean
+    //connected: boolean
     send(data: Buffer): boolean
-    opened: boolean
+    //opened: boolean
     close(): void
 }
 /*

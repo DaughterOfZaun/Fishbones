@@ -3,6 +3,7 @@ import { downloads } from '../fs'
 import embedded from '../embedded/embedded'
 import { magnet, PkgInfoCSProj } from './shared'
 import { tr } from '../../translation'
+import { sdkPkg } from './sdk'
 
 export const gs420Pkg = new class extends PkgInfoCSProj {
     name = tr('Game Server')
@@ -25,7 +26,7 @@ export const gs420Pkg = new class extends PkgInfoCSProj {
     csProjDir = path.join(this.dir, this.projName)
     
     target = 'Debug'
-    netVer = 'net9.0'
+    netVer = sdkPkg.target
     csProj = path.join(this.csProjDir, `${this.projName}.csproj`)
     dllDir = path.join(this.csProjDir, 'bin', this.target, this.netVer)
     dllName = `${this.projName}.dll`
@@ -35,6 +36,7 @@ export const gs420Pkg = new class extends PkgInfoCSProj {
     gcDir = path.join(this.dir, 'Content', 'GameClient')
 
     program = path.join(this.csProjDir, 'Program.cs')
+    allCSProjs = []
 
     topLevelEntries = [
         'QuadTree',

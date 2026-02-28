@@ -33,6 +33,7 @@ export abstract class PkgInfo {
     abstract checkUnpackBy: string
     abstract topLevelEntries: string[]
     abstract topLevelEntriesOptional: string[]
+    pathsToCheck?: string[]
     
     zipWebSeeds?: string[]
     zipEmbded?: string
@@ -58,6 +59,8 @@ export abstract class PkgInfoCSProj extends PkgInfo {
     abstract dll: string
 
     abstract program: string
+
+    abstract allCSProjs: string[]
 }
 
 export interface PkgInfoGit extends PkgInfo {

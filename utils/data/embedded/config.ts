@@ -29,10 +29,10 @@ export const config = {
     },
 
     sdkForWinZipTorrent: {
-        windows: './torrents/dotnet-sdk-9.0.300-win-x64.zip.torrent',
+        windows: './torrents/dotnet-sdk-10.0.103-win-x64.zip.torrent',
     },
     sdkForLinuxZipTorrent: {
-        linux: './torrents/dotnet-sdk-9.0.300-linux-x64.tar.gz.torrent',
+        linux: './torrents/dotnet-sdk-10.0.103-linux-x64.tar.gz.torrent',
     },
 
     d3dx9_39_dll: './thirdparty/directx_Jun2010_redist/Aug2008_d3dx9_39_x64/d3dx9_39.dll',

@@ -4,6 +4,7 @@ import embedded from '../embedded/embedded'
 import { gdrive, magnet, PkgInfoCSProj, type PkgInfoGit } from './shared'
 import { HARDCODED_HTTP_SERVER_URL } from '../../constants-build'
 import { tr } from '../../translation'
+import { sdkPkg } from './sdk'
 
 export const gsPkg = new class extends PkgInfoCSProj implements PkgInfoGit {
     name = tr('Game Server')
@@ -37,7 +38,7 @@ export const gsPkg = new class extends PkgInfoCSProj implements PkgInfoGit {
     csProjDir = path.join(this.dir, this.projName)
     
     target = 'Debug'
-    netVer = 'net9.0'
+    netVer = sdkPkg.target
     csProj = path.join(this.csProjDir, `${this.projName}.csproj`)
     dllDir = path.join(this.csProjDir, 'bin', this.target, this.netVer)
     dllName = `${this.projName}.dll`
@@ -47,6 +48,22 @@ export const gsPkg = new class extends PkgInfoCSProj implements PkgInfoGit {
     gcDir = path.join(this.dir, 'Content', 'GameClient')
 
     program = path.join(this.csProjDir, 'Program.cs')
+
+    allCSProjs = [
+        'ChildrenOfTheGraveEnumNetwork/ChildrenOfTheGraveEnumNetwork.csproj',
+        'ChildrenOfTheGraveLibrary/ChildrenOfTheGraveLibrary.csproj',
+        'ChildrenOfTheGraveServerConsole/ChildrenOfTheGraveServerConsole.csproj',
+        'Content/AvCsharp-Scripts/AvCsharp-Scripts.csproj',
+        'Content/AvLua-Converted/AvLua-Converted.csproj',
+        'LENet/LENet/LENet.csproj',
+        'MirrorImage/BloodBoil/BloodBoil.csproj',
+        'MirrorImage/CrystalSlash/CrystalSlash.csproj',
+        'MirrorImage/HeavenlyWave/HeavenlyWave.csproj',
+        'MirrorImage/MirrorImage.csproj',
+        'MirrorImage/SiphoningStrike/SiphoningStrike.csproj',
+        'MirrorImage/TechmaturgicalRepairBot/TechmaturgicalRepairBot.csproj',
+        'QuadTree/QuadTree.csproj',
+    ]
 
     topLevelEntries = [
         'QuadTree',

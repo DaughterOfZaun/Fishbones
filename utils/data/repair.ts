@@ -226,7 +226,7 @@ async function getPotentialRoots(opts: Required<AbortOptions>){
 }
 
 //TODO: Compare files to PkgInfo.topLevelEntries
-async function findPackageDir(pkg: PkgInfo, opts: Required<AbortOptions>){
+async function * findPackageDirs(pkg: PkgInfo, opts: Required<AbortOptions>){
     const { dirName: pkgDirName, checkUnpackBy: filePath } = pkg
     console.assert(filePath.startsWith(pkg.dir))
 
@@ -252,11 +252,17 @@ async function findPackageDir(pkg: PkgInfo, opts: Required<AbortOptions>){
         pathsToTest.delete(pkg.dir)
 
         for(const pathToTest of pathsToTest){
-            if(await fs_exists(filePath.replace(pkg.dir, pathToTest), opts, false))
-                return pathToTest
+            const results = await Promise.all([
+                fs_exists(filePath.replace(pkg.dir, pathToTest), opts, false),
+                ...(pkg.pathsToCheck ?? []).map(async (pathToCheck) => {
+                    return fs_exists(path.join(pathToTest, ...pathToCheck.split('/')), opts, false)
+                })
+            ])
+            if(results.every(result => result))
+                yield pathToTest
         }
     }
-    return undefined
+    //return undefined
 }
 
 async function moveFoundFilesToDir(foundPkgDir: string, pkg: PkgInfo, opts: Required<AbortOptions>){
@@ -332,8 +338,7 @@ export async function repairArchived(pkg: PkgInfo, opts: Required<AbortOptions> 
         } else
             return // OK
     } else {
-        const foundPkgDir = await findPackageDir(pkg, opts)
-        if(foundPkgDir){
+        for await (const foundPkgDir of findPackageDirs(pkg, opts)){
             const foundEntries = new Set(await fs.readdir(foundPkgDir))
             const requiredEntres = new Set(pkg.topLevelEntries)
             const optionalEntries = new Set(pkg.topLevelEntriesOptional)

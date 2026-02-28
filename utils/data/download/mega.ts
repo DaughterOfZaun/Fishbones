@@ -5,9 +5,9 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import type { AddressInfo } from 'net'
 import { registerShutdownHandler } from '../../process/process'
 import type { AbortOptions } from '@libp2p/interface'
-import { logger } from '../../log'
+//import { logger } from '../../log'
 
-const LOG_PREFIX = 'MEGA'
+//const LOG_PREFIX = 'MEGA'
 
 /*
 type Fetch = (url: string | URL | Request, opts: BunFetchRequestInit | RequestInit | undefined) => Promise<Response>
@@ -68,12 +68,12 @@ api.request = async function request(json, cb, retryno){
         if(file){
             const res = cachedResponses.get(file)
             if(res && (Date.now() - res.time) <= CACHED_RESPONSE_LIFETIME){
-                logger.log(LOG_PREFIX, 'cached response found', Bun.inspect(res))
+                //logger.log(LOG_PREFIX, 'cached response found', Bun.inspect(res))
                 return Promise.resolve(res.data)
             }
             return api_request(json, (err, res) => {
                 if(!err && res){
-                    logger.log(LOG_PREFIX, 'caching response', Bun.inspect(res))
+                    //logger.log(LOG_PREFIX, 'caching response', Bun.inspect(res))
                     cachedResponses.set(file, { time: Date.now(), data: res })
                 }
                 cb?.(err, res)
@@ -124,7 +124,7 @@ let nextRequestId = 0
 function requestListener(req: IncomingMessage, res: ServerResponse){
     const id = nextRequestId++
 
-    logger.log(LOG_PREFIX, id, req.method ?? 'undefined', 'REQUEST', JSON.stringify(req.headers, null, 4))
+    //logger.log(LOG_PREFIX, id, req.method ?? 'undefined', 'REQUEST', JSON.stringify(req.headers, null, 4))
 
     if(!req.url) return
     const file = files.get(req.url)
@@ -158,9 +158,9 @@ function requestListener(req: IncomingMessage, res: ServerResponse){
             //'content-digest': `sha-256=:${file.hash}:`,
         }
         res_headersSent = true
-        logger.log(LOG_PREFIX, id, 'HEADERS', status, JSON.stringify(headers, null, 4))
+        //logger.log(LOG_PREFIX, id, 'HEADERS', status, JSON.stringify(headers, null, 4))
         res.writeHead(status, headers)
-        logger.log(LOG_PREFIX, id, 'WRITE & PIPE')
+        //logger.log(LOG_PREFIX, id, 'WRITE & PIPE')
         res.write(chunk)
         stream.pipe(res)
     })
@@ -174,17 +174,17 @@ function requestListener(req: IncomingMessage, res: ServerResponse){
                 const headers = {
                     'retry-after': err.timeLimit.toString()
                 }
-                logger.log(LOG_PREFIX, id, 'HEADERS', 503, JSON.stringify(headers, null, 4))
+                //logger.log(LOG_PREFIX, id, 'HEADERS', 503, JSON.stringify(headers, null, 4))
                 res.writeHead(503 /*Service Unavailable*/, headers)
             } else if((status = err.message.match(/MEGA returned a (\d+) status code/)?.[1])){
-                logger.log(LOG_PREFIX, id, 'HEADERS', status)
+                //logger.log(LOG_PREFIX, id, 'HEADERS', status)
                 res.writeHead(parseInt(status))
             } else {
-                logger.log(LOG_PREFIX, id, 'HEADERS', 502)
+                //logger.log(LOG_PREFIX, id, 'HEADERS', 502)
                 res.writeHead(502 /*Bad Gateway*/)
             }
         }
-        logger.log(LOG_PREFIX, id, 'CLOSE')
+        //logger.log(LOG_PREFIX, id, 'CLOSE')
         stream.emit('close')
         //stream.destroy()
         stream.end()

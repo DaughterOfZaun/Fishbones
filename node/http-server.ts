@@ -3,6 +3,8 @@ const routes = new Map([
     'playable_client_126.7z',
     'modded_levels_paste_on_client.7z',
     'ChildrenOfTheGrave-Gameserver.7z',
+    'dotnet-sdk-10.0.103-win-x64.zip',
+    'dotnet-sdk-10.0.103-linux-x64.tar.gz',
 ].map(fileName => {
     return [ `/${fileName}`, Bun.file(`${downloads}/${fileName}`) ]
 }))

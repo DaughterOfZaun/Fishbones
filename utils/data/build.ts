@@ -19,8 +19,54 @@ const nugetConfigContent = `
 </configuration>
 `.trimStart()
 
+const filesToRevert = new Map<string, string>()
+const filesToRemove = new Set<string>()
+
+async function patch(filePath: string, patcher: (fileContent: string) => string, fs_opts: ReadWriteFileOpts){
+    const fileContent = await fs_readFile(filePath, fs_opts)
+    if(fileContent){
+        const patchedContent = patcher(fileContent)
+        if(patchedContent != fileContent){
+            if(await fs_writeFile(filePath, patchedContent, fs_opts))
+                filesToRevert.set(filePath, fileContent)
+        }
+    }
+}
+
+async function create(filePath: string, fileContent: string, fs_opts: ReadWriteFileOpts){
+    if(!(await fs_exists(filePath, fs_opts, false))){
+        if(await fs_writeFile(filePath, fileContent, fs_opts))
+            filesToRemove.add(filePath)
+    }
+}
+
+async function copy(filePathFrom: string, filePathTo: string, patcher: (fileContent: string) => string, opts: Required<AbortOptions>){
+    if(!(await fs_exists(filePathTo, opts, false))){
+        let fileContent = await fs_readFile(filePathFrom, { ...opts, encoding: 'utf8' })
+        if(fileContent){
+            fileContent = patcher(fileContent)
+            if(await fs_writeFile(filePathTo, fileContent, { ...opts, encoding: 'utf8' }))
+                filesToRemove.add(filePathTo)
+        }
+    }
+}
+
+async function revert(fs_opts: ReadWriteFileOpts) {
+    return Promise.all([
+        ...filesToRevert.entries().map(async ([filePath, fileContent]) => {
+            if(await fs_writeFile(filePath, fileContent, fs_opts))
+                filesToRevert.delete(filePath)
+        }),
+        ...filesToRemove.values().map(async (filePath) => {
+            if(await fs_removeFile(filePath, fs_opts))
+                filesToRemove.delete(filePath)
+        })
+    ])
+}
+
 export async function build(pkg: PkgInfoCSProj, opts: Required<AbortOptions>){
-    const fs_opts: ReadWriteFileOpts = { ...opts, encoding: 'utf8', rethrow: true }
+
+    const fs_opts: ReadWriteFileOpts = { ...opts, encoding: 'utf8', rethrow: false }
 
     if(!args.build.enabled){
         console.log(`Pretending to build ${pkg.dllName}...`)
@@ -30,59 +76,48 @@ export async function build(pkg: PkgInfoCSProj, opts: Required<AbortOptions>){
     //console_log(`Building ${pkg.dllName}...`)
     const bar = createBar('Building', pkg.dllName)
     
-    let csproj: string | undefined
-    let csprojWasPatched = false
-    let program: string | undefined
-    let programWasPatched = false
-    let nugetConfigWasPlaced = false
-    const filesToRemove: string[] = []
-    
     const nugetConfig = path.join(pkg.dir, 'NuGet.Config')
 
     try {
-        
-        program = (await fs_readFile(pkg.program, fs_opts))!
-        const patchedProgram = program.replace(/(?<!\/\/)(Console\.SetWindowSize)/, '//$1')
-        if(patchedProgram != program){
-            await fs_writeFile(pkg.program, patchedProgram, fs_opts)
-            programWasPatched = true
-        }
 
-        csproj = (await fs_readFile(pkg.csProj, fs_opts))!
-        const patchedCSProj = csproj.replace(
-            /(<PackageReference Include="MoonSharp\.Debugger" Version="2\.0\.0" \/>)/,
-            '<!-- $1 -->'
-        )
-        if(patchedCSProj != csproj){
-            await fs_writeFile(pkg.csProj, patchedCSProj, fs_opts)
-            csprojWasPatched = true
-        }
+        await Promise.all([
 
-        if(!(await fs_exists(nugetConfig, fs_opts, false))){
-            await fs_writeFile(nugetConfig, nugetConfigContent, fs_opts)
-            nugetConfigWasPlaced = true
-        }
+            patch(pkg.program, program => program.replace(/(?<!\/\/)(Console\.SetWindowSize)/, '//$1'), fs_opts),
 
-        const maps = path.join(pkg.dir, 'Content', 'AvCsharp-Scripts', 'Maps')
-        const map1bts = path.join(maps, 'Map1', 'BehaviourTrees')
-        const map2bts = path.join(maps, 'Map2', 'BehaviourTrees')
-        await Promise.all(
-            (await fs_readdir(map1bts, opts)).map(async (fileName) => {
-                const srcBT = path.join(map1bts, fileName)
-                const dstBT = path.join(map2bts, fileName)
-                if(!(await fs_exists(dstBT, opts, false))){
-                    let content = await fs_readFile(srcBT, { ...opts, encoding: 'utf8' })
-                    if(content){
-                        content = content.replace(
+            patch(pkg.csProj, csproj => csproj.replace(
+                /(<PackageReference Include="MoonSharp\.Debugger" Version="2\.0\.0" \/>)/,
+                '<!-- $1 -->'
+            ), fs_opts),
+
+            create(nugetConfig, nugetConfigContent, fs_opts),
+
+            (async () => {
+
+                const maps = path.join(pkg.dir, 'Content', 'AvCsharp-Scripts', 'Maps')
+                const map1bts = path.join(maps, 'Map1', 'BehaviourTrees')
+                const map2bts = path.join(maps, 'Map2', 'BehaviourTrees')
+
+                const fileNames = await fs_readdir(map1bts, opts)
+                await Promise.all(
+                    fileNames.map(async (fileName) => {
+                        const srcBT = path.join(map1bts, fileName)
+                        const dstBT = path.join(map2bts, fileName)
+                        return copy(srcBT, dstBT, content => content.replace(
                             'namespace BehaviourTrees.Map1;',
                             'namespace BehaviourTrees.Map2;'
-                        )
-                        await fs_writeFile(dstBT, content, { ...opts, encoding: 'utf8' })
-                        filesToRemove.push(dstBT)
-                    }
-                }
-            })
-        )
+                        ), fs_opts)
+                    })
+                )
+            })(),
+
+            ...pkg.allCSProjs.map(async (filePath) => {
+                filePath = path.join(pkg.dir, ...filePath.split('/'))
+                return patch(filePath, csproj => csproj.replace(
+                    /<TargetFramework>.*<\/TargetFramework>/,
+                    `<TargetFramework>${sdkPkg.target}</TargetFramework>`
+                ), fs_opts)
+            }),
+        ])
 
         sdkSubprocess = spawn(sdkPkg.exe, [
             'build',
@@ -105,21 +140,7 @@ export async function build(pkg: PkgInfoCSProj, opts: Required<AbortOptions>){
         killIfActive(sdkSubprocess)
         sdkSubprocess = undefined
         
-        // Revert patch.
-        if(program && programWasPatched)
-            await fs_writeFile(pkg.program, program, fs_opts)
-
-        if(csproj && csprojWasPatched)
-            await fs_writeFile(pkg.csProj, csproj, fs_opts)
-
-        if(nugetConfigWasPlaced)
-            await fs_removeFile(nugetConfig, fs_opts)
-
-        await Promise.all(
-            filesToRemove.map(async filePath => {
-                return fs_removeFile(filePath, opts)
-            })
-        )
+        await revert(fs_opts)
     }
 
     if(!await fs_exists(pkg.dll, opts))
