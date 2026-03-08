@@ -62,7 +62,7 @@ export enum Type {
     ServerTick,
     S2C_StopAnimation,
     AvatarInfo_Server,
-    DampenerSwitch,
+    DampenerSwitchStates,
     World_SendCamera_Server_Acknologment,
     S2C_ModifyDebugCircleRadius,
     World_SendCamera_Server,
@@ -153,7 +153,7 @@ export enum Type {
     GlobalCombatMessage,
     World_LockCamera_Server,
     BuyItemReq,
-    WaypointListHeroWithSpeed,
+    WaypointListWithSpeed,
     S2C_SetInputLockingFlag,
     CHAR_SetCooldown,
     CHAR_CancelTargetingReticle,
@@ -363,7 +363,6 @@ function reverseCall(obj: any, key: string, ...args: any[]): void {
 
 export abstract class GamePacket extends BasePacket {
     public senderNetID: number = 0
-    //public override _size(){ return 5 }
     public override _read(reader: Reader): void {
         const type = reader.readByte("type")
         console.assert(type == this._type(), `Assertion failed: type (${type}) == this._type() (${this._type()})`)
@@ -379,7 +378,6 @@ export abstract class GamePacket extends BasePacket {
 }
 
 export abstract class DefaultPayload extends BasePacket {
-    //public override _size(){ return 1 + 3 }
     public override _read(reader: Reader): void {
         const type = reader.readByte("type")
         reader.readBytes(3)
@@ -408,7 +406,6 @@ export class RegistryPacket extends BasePacket {
     playerID: bigint = 0n
     signiture: Buffer = Buffer.from([])
 
-    //public override _size(){ return 1 + 3 + 4 + 8 + 8 }
     public override _read(reader: Reader): void {
         this.action = reader.readByte("action")
         reader.readBytes(3)
@@ -429,12 +426,11 @@ export class RegistryPacket extends BasePacket {
 }
 
 export class RequestJoinTeam extends DefaultPayload {
-    // ulong Id_Player;
-    // enum TEAMS team;
-    playerID: number = 0
-    team: Teams = 0 as Teams
     public override _type(){ return PayloadType.RequestJoinTeam }
-    //public override _size(){ return 4 + 4 }
+
+    playerID: number = 0 // ulong Id_Player;
+    team: Teams = 0 as Teams // enum TEAMS team;
+
     public override _read(reader: Reader): void {
         this.playerID = reader.readUInt32("playerID")
         this.team = reader.readUInt32("team")
@@ -446,18 +442,13 @@ export class RequestJoinTeam extends DefaultPayload {
 }
 
 export class RequestReskin extends DefaultPayload {
-    
-    // long64 Id_Player;
-    // int skinID;
-    // ulong bufferLen;
-    // char buffer[128];
-
-    playerId: bigint = 0n
-    skinID = 0
-    buffer: string = ''
-
     public override _type(){ return PayloadType.RequestReskin }
-    //public override _size(){ return 8 + 8 + 4 + 24*8 + 24*8 + 8 + 8 }
+    
+    playerId: bigint = 0n // long64 Id_Player;
+    skinID = 0 // int skinID;
+    // ulong bufferLen;
+    buffer: string = '' // char buffer[128];
+
     public override _read(reader: Reader): void {
         reader.readUInt32("padding")
         this.playerId = reader.readUInt64("playerId")
@@ -481,6 +472,7 @@ export class RequestRename extends RequestReskin {
 }
 
 export class TeamRosterUpdate extends DefaultPayload {
+    public override _type(){ return PayloadType.TeamRosterUpdate }
 
     // ulong teamsize_order;
     // ulong teamsize_chaos;
@@ -500,8 +492,6 @@ export class TeamRosterUpdate extends DefaultPayload {
     current_teamsize_order: number = 0
     current_teamsize_chaos: number = 0
     
-    public override _type(){ return PayloadType.TeamRosterUpdate }
-    //public override _size(){ return 4 + 4 + 4 + 24*8 + 24*8 + 4 + 4 }
     public override _read(reader: Reader): void {
         this.teamsize_order = reader.readUInt32("teamsize_order")
         this.teamsize_chaos = reader.readUInt32("teamsize_chaos")
@@ -533,28 +523,34 @@ export class TeamRosterUpdate extends DefaultPayload {
 }
 
 export class ClientCheatDetectionSignal extends GamePacket {
+    public _type(){ return Type.ClientCheatDetectionSignal }
 
     //uint signal;
     //uint flags;
 }
 export class RemoveItemReq extends GamePacket {
+    public _type(){ return Type.RemoveItemReq }
     //uchar slot:7;
     //uchar sell:1;
 }
 export class SPM_HierarchicalMemoryUpdate extends GamePacket {
+    public _type(){ return Type.SPM_HierarchicalMemoryUpdate }
     //struct HierarchicalMemoryUpdateHeader header;
     //struct HierarchicalMemoryUpdateEntry entries[0];
 }
 export class S2C_CameraBehavior extends GamePacket {
+    public _type(){ return Type.S2C_CameraBehavior }
     //struct r3dPoint3D position;
 }
 export class DisplayFloatingText extends GamePacket {
+    public _type(){ return Type.DisplayFloatingText }
     //ulong targetNetID;
     //uchar floatingTextType;
     //int param1;
     //char message[128];
 }
 export class S2C_HandleTipUpdate extends GamePacket {
+    public _type(){ return Type.S2C_HandleTipUpdate }
     //char tipName[128];
     //char tipOther[128];
     //char tipImagePath[128];
@@ -562,10 +558,10 @@ export class S2C_HandleTipUpdate extends GamePacket {
     //int tipId;
 }
 export class World_SendGameNumber extends GamePacket {
-    //ulong64 gameID;
-    gameID: bigint = 0n
-    public override _type(){ return Type.World_SendGameNumber }
-    //public override _size(){ return 8 }
+    public _type(){ return Type.World_SendGameNumber }
+    
+    gameID: bigint = 0n //ulong64 gameID;
+
     public override _read(reader: Reader): void {
         this.gameID = reader.readUInt64("gameID")
     }
@@ -574,6 +570,7 @@ export class World_SendGameNumber extends GamePacket {
     }
 }
 export class S2C_BotAI extends GamePacket {
+    public _type(){ return Type.S2C_BotAI }
     //char botAIName[64];
     //char botAIStrategy[64];
     //char botAIBehavior[64];
@@ -581,11 +578,13 @@ export class S2C_BotAI extends GamePacket {
     //char botAIState[3][64];
 }
 export class S2C_Neutral_Camp_Empty extends GamePacket {
+    public _type(){ return Type.S2C_Neutral_Camp_Empty }
     //uint playerID;
     //int campIndex;
     //bool state;
 }
 export class NPC_CastSpellReq extends GamePacket {
+    public _type(){ return Type.NPC_CastSpellReq }
     //bool isSummonerSpellSlot:1;
     //uchar slot:7;
     //struct r3dPoint3D pos;
@@ -599,38 +598,48 @@ export class AvatarInfo {
     //uchar level;
 }
 export class NPC_LevelUp extends GamePacket {
+    public _type(){ return Type.NPC_LevelUp }
     //uchar level;
     //uchar points;
 }
 export class S2C_OpenTutorialPopup extends GamePacket {
+    public _type(){ return Type.S2C_OpenTutorialPopup }
     //char messageboxTextStringID[128];
 }
 export class GlobalCombatMessage extends GamePacket {
+    public _type(){ return Type.GlobalCombatMessage }
     //enum CombatMessage message;
     //ulong gameObjectNetIdForName;
 }
 export class ReplayOnly_GoldEarned extends GamePacket {
+    public _type(){ return Type.ReplayOnly_GoldEarned }
     //ulong ownerID;
     //float amount;
 }
 export class C2S_AntiBot extends GamePacket {
+    public _type(){ return Type.C2S_AntiBot }
     //ushort protoID;
     //ushort pktSize;
     //uchar pktData[1024];
 }
 export class S2C_CloseShop extends GamePacket {
+    public _type(){ return Type.S2C_CloseShop }
 }
 export class S2C_UnitChangeTeam extends GamePacket {
+    public _type(){ return Type.S2C_UnitChangeTeam }
     //ulong targetNetID;
     //int team;
 }
 export class S2C_Reconnect extends GamePacket {
+    public _type(){ return Type.S2C_Reconnect }
     //ulong cid;
 }
 export class S2C_FaceDirection extends GamePacket {
+    public _type(){ return Type.S2C_FaceDirection }
     //struct r3dPoint3D facing;
 }
 export class NPC_Die_EventHistroy extends GamePacket {
+    public _type(){ return Type.NPC_Die_EventHistroy }
     //ulong killerNetID;
     //float timeWindow;
     //enum EventSourceType killerEventSourceType:4;
@@ -639,24 +648,27 @@ export class NPC_Die_EventHistroy extends GamePacket {
     //undefined field10_0x10;
 }
 export class FX_Kill extends GamePacket {
+    public _type(){ return Type.FX_Kill }
     //ulong netID;
 }
 export class S2C_TeamSurrenderStatus extends GamePacket {
+    public _type(){ return Type.S2C_TeamSurrenderStatus }
     //enum Reason reason;
     //uchar forVote;
     //uchar againstVote;
     //int team;
 }
 export class ChangeSlotSpellIcon extends GamePacket {
+    public _type(){ return Type.ChangeSlotSpellIcon }
     //uchar slot:7;
     //bool isSummonerSpell:1;
     //uchar iconIndex;
 }
 export class SynchSimTimeS2C extends GamePacket {
-    //float synchtime;
-    synchtime: number = 0
-    public override _type(){ return Type.SynchSimTimeS2C }
-    //public override _size(){ return 4 }
+    public _type(){ return Type.SynchSimTimeS2C }
+
+    synchtime: number = 0 //float synchtime;
+
     public override _read(reader: Reader){
         this.synchtime = reader.readFloat("synchtime")
     }
@@ -665,12 +677,14 @@ export class SynchSimTimeS2C extends GamePacket {
     }
 }
 export class NPC_BuffReplace extends GamePacket {
+    public _type(){ return Type.NPC_BuffReplace }
     //uchar buffSlot;
     //float runningTime;
     //float duration;
     //ulong casterNetID;
 }
 export class S2C_HandleQuestUpdate extends GamePacket {
+    public _type(){ return Type.S2C_HandleQuestUpdate }
     //char param[128];
     //char param2[128];
     //char param3[128];
@@ -680,6 +694,7 @@ export class S2C_HandleQuestUpdate extends GamePacket {
     //int questId;
 }
 export class NPC_BuffUpdateCount extends GamePacket {
+    public _type(){ return Type.NPC_BuffUpdateCount }
     //uchar buffSlot;
     //uchar count;
     //float duration;
@@ -687,23 +702,30 @@ export class NPC_BuffUpdateCount extends GamePacket {
     //ulong casterNetID;
 }
 export class OnLeaveLocalVisiblityClient extends GamePacket {
+    public _type(){ return Type.OnLeaveLocalVisiblityClient }
 }
 export class S2C_HighlightHUDElement extends GamePacket {
+    public _type(){ return Type.S2C_HighlightHUDElement }
     //uchar elementType;
     //uchar elementNumber;
 }
 export class FX_Create_Group extends GamePacket {
+    public _type(){ return Type.FX_Create_Group }
+
     //uchar numbFXGroups;
-    //uchar data[0];
+    public data: FX_Create[] = [] //uchar data[0];
 }
 export class ChangeSlotSpellName extends GamePacket {
+    public _type(){ return Type.ChangeSlotSpellName }
     //uchar slot:7;
     //bool isSummonerSpell:1;
     //char spellName[64];
 }
 export class S2C_DestroyClientMissile extends GamePacket {
+    public _type(){ return Type.S2C_DestroyClientMissile }
 }
 export class WaypointGroup extends GamePacket {
+    public _type(){ return Type.WaypointGroup }
     
     //undefined field5_0x5;
     //undefined field6_0x6;
@@ -715,7 +737,6 @@ export class WaypointGroup extends GamePacket {
 
     syncID: number = 0
     movements: MovementDataNormal[] = []
-    public override _type(){ return Type.WaypointGroup }
     public override _read(reader: Reader){
         this.syncID = reader.readUInt32('syncID')
         const count = reader.readUInt16('count')
@@ -734,67 +755,79 @@ export class WaypointGroup extends GamePacket {
     }
 }
 export class S2C_PlayEmote extends GamePacket {
+    public _type(){ return Type.S2C_PlayEmote }
     //ulong emotId;
 }
 export class RemovePerceptionBubble extends GamePacket {
+    public _type(){ return Type.RemovePerceptionBubble }
     //ulong bubbleID;
 }
 export class ServerGameSettings extends GamePacket {
+    public _type(){ return Type.ServerGameSettings }
     //bool FoW_LocalCulling;
     //bool FoW_BroadcastEverything;
 }
 export class HeroReincarnateAlive extends GamePacket {
+    public _type(){ return Type.HeroReincarnateAlive }
     //struct r3dPoint3D location;
 }
 export class UseObjectC2S extends GamePacket {
+    public _type(){ return Type.UseObjectC2S }
     //ulong targetNetID;
 }
 export class S2C_ShowAuxiliaryText extends GamePacket {
+    public _type(){ return Type.S2C_ShowAuxiliaryText }
     //char textStringID[128];
 }
 export class S2C_SetInputLockingFlag extends GamePacket {
+    public _type(){ return Type.S2C_SetInputLockingFlag }
     //uint inputLockingFlags;
     //bool flagValue;
 }
 export class C2S_TutorialAudioEventFinished extends GamePacket {
+    public _type(){ return Type.C2S_TutorialAudioEventFinished }
     //ulong audioEventNetworkID;
 }
 export class SPM_SamplingProfilerUpdate extends GamePacket {
+    public _type(){ return Type.SPM_SamplingProfilerUpdate }
     //uint entryCount;
     //uint sizeOfStringBlock;
 }
 export class ModifyShield extends GamePacket {
+    public _type(){ return Type.ModifyShield }
     //bool toPhysicalShield:1;
     //bool toMagicShield:1;
     //bool noFade:1;
     //float amount;
 }
 export class UseItemAns extends GamePacket {
+    public _type(){ return Type.UseItemAns }
     //uchar slot;
     //uchar itemsInSlot;
     //uchar spellCharges;
 }
 export class UpdateGoldRedirectTarget extends GamePacket {
+    public _type(){ return Type.UpdateGoldRedirectTarget }
     //ulong goldRedirectTargetNetID;
 }
 export class NPC_BuffRemove2 extends GamePacket {
+    public _type(){ return Type.NPC_BuffRemove2 }
     //uchar buffSlot;
     //uint buffNameHash;
 }
 export class SPM_RemoveListener extends GamePacket {
+    public _type(){ return Type.SPM_RemoveListener }
 }
 export class C2S_TeamSurrenderVote extends GamePacket {
+    public _type(){ return Type.C2S_TeamSurrenderVote }
     //bool vote:1;
 }
 export class S2C_StartSpawn extends GamePacket {
-    //uchar numbBotsOrder;
-    //uchar numbBotsChaos;
+    public _type(){ return Type.S2C_StartSpawn }
 
-    numBotsOrder: number = 0
-    numBotsChaos: number = 0
+    numBotsOrder: number = 0 //uchar numbBotsOrder;
+    numBotsChaos: number = 0 //uchar numbBotsChaos;
 
-    public override _type(){ return Type.S2C_StartSpawn }
-    //public override _size(){ return 2 + 2 }
     public override _read(reader: Reader){
         this.numBotsOrder = reader.readUInt16("numBotsOrder")
         this.numBotsChaos = reader.readUInt16("numBotsChaos")
@@ -805,46 +838,49 @@ export class S2C_StartSpawn extends GamePacket {
     }
 }
 export class S2C_EndSpawn extends GamePacket {
-    public override _type(){ return Type.S2C_EndSpawn }
-    //public override _size(){ return 0 }
+    public _type(){ return Type.S2C_EndSpawn }
     public override _read(){}
     public override _write(){}
 }
 export class NPC_BuffUpdateCountGroup extends GamePacket {
+    public _type(){ return Type.NPC_BuffUpdateCountGroup }
     //float duration;
     //float runningTime;
     //uchar numInGroup;
 }
-export class ReloadScripts extends GamePacket {
-}
+//export class ReloadScripts extends GamePacket {
+//    public _type(){ return Type.ReloadScripts }
+//}
 export class C2S_Exit extends GamePacket {
+    public _type(){ return Type.C2S_Exit }
 }
 export class S2C_ToggleUIHighlight extends GamePacket {
+    public _type(){ return Type.S2C_ToggleUIHighlight }
     //uchar elementID;
     //uchar elementType;
     //uchar elementNumber;
     //uchar elementSubCategory;
     //bool flag:1;
 }
-export class CHAR_SetCooldown_Broadcast extends GamePacket {
-    //uchar slot:7;
-    //bool isSummonerSpell:1;
-    //float cooldown;
-}
 export class NPC_CastSpellAns extends GamePacket {
+    public _type(){ return Type.NPC_CastSpellAns }
     //int casterPosSyncID;
 }
 export class S2C_MusicCueCommand extends GamePacket {
+    public _type(){ return Type.S2C_MusicCueCommand }
     //uchar musicCueCommand;
     //uint cueID;
 }
 export class S2C_EndOfGameEvent extends GamePacket {
+    public _type(){ return Type.S2C_EndOfGameEvent }
     //uchar teamIsOrder;
 }
 export class S2C_RemoveUnitHighlight extends GamePacket {
+    public _type(){ return Type.S2C_RemoveUnitHighlight }
     //ulong unitNetworkID;
 }
 export class UnitApplyDamage extends GamePacket {
+    public _type(){ return Type.UnitApplyDamage }
     //uchar type:7;
     //bool hasAttackSound:1;
     //ulong targetNetID;
@@ -852,19 +888,23 @@ export class UnitApplyDamage extends GamePacket {
     //float damage;
 }
 export class S2C_ChangeCharacterData extends GamePacket {
+    public _type(){ return Type.S2C_ChangeCharacterData }
     //ulong id;
     //bool useSpells;
     //char skinName[64];
 }
 export class ChangeSlotSpellType extends GamePacket {
+    public _type(){ return Type.ChangeSlotSpellType }
     //uchar slot:7;
     //bool isSummonerSpell:1;
     //uchar targeting;
 }
 export class S2C_OnLeaveTeamVisiblity extends GamePacket {
+    public _type(){ return Type.S2C_OnLeaveTeamVisiblity }
     //uchar team;
 }
 export class SpawnBotS2C extends GamePacket {
+    public _type(){ return Type.SpawnBotS2C }
     //ulong netObjID;
     //uchar netNodeID;
     //struct r3dPoint3D pos;
@@ -877,19 +917,22 @@ export class SpawnBotS2C extends GamePacket {
     //char skinName[64];
 }
 export class S2C_FX_OnLeaveTeamVisiblity extends GamePacket {
+    public _type(){ return Type.S2C_FX_OnLeaveTeamVisiblity }
     //ulong netID;
     //uchar team;
 }
 export class S2C_DisplayLocalizedTutorialChatText extends GamePacket {
+    public _type(){ return Type.S2C_DisplayLocalizedTutorialChatText }
     //char stringID[128];
 }
 export class S2C_ChainMissileSync extends GamePacket {
+    public _type(){ return Type.S2C_ChainMissileSync }
     //int size;
     //ulong ownerNetworkID;
     //ulong targets[32];
 }
 export class OnReplication_Acc extends GamePacket {
-    public override _type(){ return Type.OnReplication_Acc }
+    public _type(){ return Type.OnReplication_Acc }
     
     public syncID: number = 0 //uint syncID;
 
@@ -901,44 +944,49 @@ export class OnReplication_Acc extends GamePacket {
     }
 }
 export class S2C_SetCircularMovementRestriction extends GamePacket {
+    public _type(){ return Type.S2C_SetCircularMovementRestriction }
     //struct r3dPoint3D center;
     //float radius;
     //bool restrictCamera;
 }
 export class C2S_MapPing extends GamePacket {
+    public _type(){ return Type.C2S_MapPing }
     //struct r3dPoint3D pos;
     //ulong target;
     //uchar pingCategoty:4;
 }
 export class ChangePARColorOverride extends GamePacket {
+    public _type(){ return Type.ChangePARColorOverride }
     //ulong unitID;
     //char mbEnabling;
     //struct r3dColor barColor;
     //struct r3dColor fadeColor;
 }
 export class UnitAddEXP extends GamePacket {
+    public _type(){ return Type.UnitAddEXP }
     //ulong targetNetID;
     //float exp;
 }
 export class SPM_HierarchicalBBProfileUpdate extends GamePacket {
+    public _type(){ return Type.SPM_HierarchicalBBProfileUpdate }
     //struct HierarchicalBBProfileUpdateHeader header;
     //uchar entries[0];
 }
 export class C2S_QueryStatusReq extends GamePacket {
-    public override _type(){ return Type.C2S_QueryStatusReq }
+    public _type(){ return Type.C2S_QueryStatusReq }
     public override _write(writer: Writer): void {}
     public override _read(reader: Reader): void {}
 }
 export class C2S_CharSelected extends GamePacket {
-    public override _type(){ return Type.C2S_CharSelected }
+    public _type(){ return Type.C2S_CharSelected }
     public override _write(writer: Writer): void {}
     public override _read(reader: Reader): void {}
 }
 export class S2C_QueryStatusAns extends GamePacket {
-    //uchar res;
-    res: boolean = false
-    public override _type(){ return Type.S2C_QueryStatusAns }
-    //public override _size(){ return 1 }
+    public _type(){ return Type.S2C_QueryStatusAns }
+    
+    res: boolean = false //uchar res;
+
     public override _write(writer: Writer): void {
         writer.writeBool(this.res)
     }
@@ -947,6 +995,7 @@ export class S2C_QueryStatusAns extends GamePacket {
     }
 }
 export class S2C_IncrementPlayerScore extends GamePacket {
+    public _type(){ return Type.S2C_IncrementPlayerScore }
     //ulong playerNetworkID;
     //uchar scoreCategory;
     //uchar scoreEvent;
@@ -955,84 +1004,113 @@ export class S2C_IncrementPlayerScore extends GamePacket {
     //float totalPointValue;
 }
 export class S2C_ModifyDebugCircleColor extends GamePacket {
+    public _type(){ return Type.S2C_ModifyDebugCircleColor }
     //int id;
     //struct r3dColor color;
 }
 export class OnLeaveVisiblityClient extends GamePacket {
+    public _type(){ return Type.OnLeaveVisiblityClient }
 }
 export class CHAR_SetCooldown extends GamePacket {
+    public _type(){ return Type.CHAR_SetCooldown }
     //uchar slot:7;
     //bool isSummonerSpell:1;
     //float cooldown;
 }
 export class BuyItemReq extends GamePacket {
+    public _type(){ return Type.BuyItemReq }
     //ulong itemID;
 }
 export class NPC_BuffReplaceGroup extends GamePacket {
+    public _type(){ return Type.NPC_BuffReplaceGroup }
     //float runningTime;
     //float duration;
     //uchar numInGroup;
 }
 export class S2C_HandleRespawnPointUpdate extends GamePacket {
+    public _type(){ return Type.S2C_HandleRespawnPointUpdate }
     //uchar respawnPointCommand;
     //uchar respawnPointUIID;
     //int team;
     //ulong clientID;
     //struct r3dPoint3D pos;
 }
-export class NPC_Die extends GamePacket {
-    //undefined field5_0x5;
-    //undefined field6_0x6;
-    //undefined field7_0x7;
-    //undefined field8_0x8;
-    //undefined field9_0x9;
-    //undefined field10_0xa;
-    //undefined field11_0xb;
-    //undefined field12_0xc;
-    //undefined field13_0xd;
-    //undefined field14_0xe;
-    //undefined field15_0xf;
+export class DeathPacketData extends GamePacket {
+    
+    public killerNetID: number = 0 // ulong killerNetID;
+    // struct DamageInfo info;
+    public damageType: number = 0 // uchar mDamageType;
+    public spellSourceType: number = 0 // uchar mSpellSourceType;
+    public deathDuration: number = 0 // float DeathDuration;
+    public becomeZombie: boolean = false // bool becomeZombie;
+
+    public _read(reader: Reader): void {
+        this.killerNetID = reader.readUInt32('killerNetID')
+        this.damageType = reader.readByte('damageType')
+        this.spellSourceType = reader.readByte('spellSourceType')
+        this.deathDuration = reader.readFloat('deathDuration')
+        this.becomeZombie = reader.readBool('becomeZombie')
+    }
+    public _write(writer: Writer): void {
+        writer.writeUInt32(this.killerNetID, 'killerNetID')
+        writer.writeByte(this.damageType, 'damageType')
+        writer.writeByte(this.spellSourceType, 'spellSourceType')
+        writer.writeFloat(this.deathDuration, 'deathDuration')
+        writer.writeBool(this.becomeZombie, 'becomeZombie')
+    }
 }
-export class NPC_Hero_Die extends GamePacket {
-    //undefined field5_0x5;
-    //undefined field6_0x6;
-    //undefined field7_0x7;
-    //undefined field8_0x8;
-    //undefined field9_0x9;
-    //undefined field10_0xa;
-    //undefined field11_0xb;
-    //undefined field12_0xc;
-    //undefined field13_0xd;
-    //undefined field14_0xe;
-    //undefined field15_0xf;
+export class NPC_Die extends DeathPacketData {
+    public _type(){ return Type.NPC_Die }
+}
+export class NPC_Hero_Die extends DeathPacketData {
+    public _type(){ return Type.NPC_Hero_Die }
 }
 export class SetFadeOut_Pop extends GamePacket {
+    public _type(){ return Type.SetFadeOut_Pop }
     //short id;
 }
 export class S2C_MoveCameraToPoint extends GamePacket {
+    public _type(){ return Type.S2C_MoveCameraToPoint }
     //bool startAtCurrentCameraPosition:1;
     //struct r3dPoint3D startPosition;
     //struct r3dPoint3D targetPosition;
     //float travelTime;
 }
 export class SynchSimTimeC2S extends GamePacket {
+    public _type(){ return Type.SynchSimTimeC2S }
     //ulong clientNetID;
     //float time_LastServer;
     //float time_LastClient;
     //uchar checkSum[32];
 }
 export class S2C_CreateTurret extends GamePacket {
-    //ulong netObjID;
-    //uchar netNodeID;
-    //char name[64];
+    public _type(){ return Type.S2C_CreateTurret }
+
+    public netObjID: number = 0 //ulong netObjID;
+    public netNodeID: number = 0 //uchar netNodeID;
+    public name: string = '' //char name[64];
+
+    public _read(reader: Reader): void {
+        this.netObjID = reader.readUInt32('netObjID')
+        this.netNodeID = reader.readByte('netNodeID')
+        this.name = reader.readFixedString(64, 'name')
+    }
+
+    public _write(writer: Writer): void {
+        writer.writeUInt32(this.netObjID, 'netObjID')
+        writer.writeByte(this.netNodeID, 'netNodeID')
+        writer.writeFixedString(64, this.name, 'name')
+    }
 }
 export class OnReplicationMixin extends GamePacket {
     //uint syncID;
     //uchar count;
 }
 export class SPM_RemoveBBProfileListener extends GamePacket {
+    public _type(){ return Type.SPM_RemoveBBProfileListener }
 }
 export class S2C_CreateNeutral extends GamePacket {
+    public _type(){ return Type.S2C_CreateNeutral }
     //ulong netObjID;
     //uchar netNodeID;
     //struct r3dPoint3D pos;
@@ -1050,15 +1128,18 @@ export class S2C_CreateNeutral extends GamePacket {
     //bool behaviorTree:1;
 }
 export class S2C_SetGreyscaleEnabledWhenDead extends GamePacket {
+    public _type(){ return Type.S2C_SetGreyscaleEnabledWhenDead }
     //bool flag:1;
 }
 export class AttachFlexParticleS2C extends GamePacket {
+    public _type(){ return Type.AttachFlexParticleS2C }
     //ulong netObjID;
     //uchar flexID;
     //uchar cpIndex;
     //uchar attachType;
 }
 export class ChangeSlotSpellOffsetTarget extends GamePacket {
+    public _type(){ return Type.ChangeSlotSpellOffsetTarget }
     //uchar slot:7;
     //bool isSummonerSpell:1;
     //ulong targetNetID;
@@ -1195,6 +1276,7 @@ export enum LookAtType {
 }
 
 export class OnEnterVisiblityClient extends GamePacket {
+    public _type(){ return Type.OnEnterVisiblityClient }
 
     items: {
         slot: number
@@ -1206,7 +1288,6 @@ export class OnEnterVisiblityClient extends GamePacket {
     lookAtPosition: Vector3 = Vector3.Zero
     movementData: MovementData = MovementData.None
 
-    public override _type(){ return Type.OnEnterVisiblityClient }
     public override _write(writer: Writer): void {
         console.assert(this.items.length <= 0xFF, `Assertion failed: this.items.length (${this.items.length}) <= 0xFF`)
         writer.writeByte(this.items.length)
@@ -1223,41 +1304,51 @@ export class OnEnterVisiblityClient extends GamePacket {
     }
 }
 export class S2C_ChangeCharacterVoice extends GamePacket {
+    public _type(){ return Type.S2C_ChangeCharacterVoice }
     //bool reset;
     //char voiceOverride[64];
 }
 export class S2C_SetSpellData extends GamePacket {
+    public _type(){ return Type.S2C_SetSpellData }
     //ulong netObjID;
     //ulong hashedSpellName;
     //uchar spellSlot;
 }
 export class S2C_FadeMinions extends GamePacket {
+    public _type(){ return Type.S2C_FadeMinions }
     //uchar team;
     //float fadeAmount;
     //float fadeTime;
 }
 export class SPM_AddBBProfileListener extends GamePacket {
+    public _type(){ return Type.SPM_AddBBProfileListener }
 }
 export class SetFadeOut_Push extends GamePacket {
+    public _type(){ return Type.SetFadeOut_Push }
     //short id;
     //float fadeTime;
     //float fadeTargetValue;
 }
 export class S2C_UnitSetMinimapIcon extends GamePacket {
+    public _type(){ return Type.S2C_UnitSetMinimapIcon }
     //ulong targetNetID;
     //char iconName[64];
 }
 export class SPM_AddListener extends GamePacket {
+    public _type(){ return Type.SPM_AddListener }
 }
 export class S2C_PlayAnimation extends GamePacket {
+    public _type(){ return Type.S2C_PlayAnimation }
     //ulong flags;
     //float scaleTime;
     //char animationName[64];
 }
 export class S2C_RefreshAuxiliaryText extends GamePacket {
+    public _type(){ return Type.S2C_RefreshAuxiliaryText }
     //char textStringID[128];
 }
 export class S2C_AddDebugCircle extends GamePacket {
+    public _type(){ return Type.S2C_AddDebugCircle }
     //int id;
     //ulong unitNetworkID;
     //struct r3dPoint3D center;
@@ -1265,18 +1356,20 @@ export class S2C_AddDebugCircle extends GamePacket {
     //struct r3dColor color;
 }
 export class S2C_AI_TargetSelection extends GamePacket {
+    public _type(){ return Type.S2C_AI_TargetSelection }
     //ulong targetIDs[5];
 }
 export class S2C_WriteNavFlags extends GamePacket {
+    public _type(){ return Type.S2C_WriteNavFlags }
     //ushort size;
     //int syncID;
     //uchar data[0];
 }
 export class C2S_Reconnect extends GamePacket {
-    //bool isFullReconnect;
-    isFullReconnect: boolean = false
-    public override _type(){ return Type.C2S_Reconnect }
-    //public override _size(){ return 1 }
+    public _type(){ return Type.C2S_Reconnect }
+
+    isFullReconnect: boolean = false //bool isFullReconnect;
+
     public override _read(reader: Reader): void {
         this.isFullReconnect = reader.readBool("isFullReconnect")
     }
@@ -1285,12 +1378,15 @@ export class C2S_Reconnect extends GamePacket {
     }
 }
 export class S2C_SetFoWStatus extends GamePacket {
+    public _type(){ return Type.S2C_SetFoWStatus }
     //bool enabled;
 }
 export class HeroReincarnate extends GamePacket {
+    public _type(){ return Type.HeroReincarnate }
     //struct r3dPoint3D location;
 }
 export class NPC_MessageToClient extends GamePacket {
+    public _type(){ return Type.NPC_MessageToClient }
     //ulong targetNetID;
     //float bubbleDelay;
     //int slotNum;
@@ -1299,14 +1395,16 @@ export class NPC_MessageToClient extends GamePacket {
     //char message[1024];
 }
 export class S2C_MuteVolumeCategory extends GamePacket {
+    public _type(){ return Type.S2C_MuteVolumeCategory }
     //uchar volumeCategory;
     //bool muteFlag:1;
 }
 export class S2C_StopAnimation extends GamePacket {
+    public _type(){ return Type.S2C_StopAnimation }
     //uchar flags;
 }
 export class PausePacket extends GamePacket {
-    public override _type(){ return Type.PausePacket }
+    public _type(){ return Type.PausePacket }
         
     public clientID: number = 0 //ulong clientID;
     public pauseTimeRemaining: number = 0 //int pauseTimeRemaining;
@@ -1324,22 +1422,28 @@ export class PausePacket extends GamePacket {
     }
 }
 export class S2C_OnEnterTeamVisiblity extends GamePacket {
+    public _type(){ return Type.S2C_OnEnterTeamVisiblity }
     //uchar team;
 }
 export class S2C_OpenAFKWarningMessage extends GamePacket {
+    public _type(){ return Type.S2C_OpenAFKWarningMessage }
 }
 export class SwapItemAns extends GamePacket {
+    public _type(){ return Type.SwapItemAns }
     //uchar source;
     //uchar dest;
 }
 export class S2C_FadeOutMainSFX extends GamePacket {
+    public _type(){ return Type.S2C_FadeOutMainSFX }
     //float fadeTime;
 }
 export class S2C_AnimatedBuildingSetCurrentSkin extends GamePacket {
+    public _type(){ return Type.S2C_AnimatedBuildingSetCurrentSkin }
     //uchar team;
     //uint skinID;
 }
 export class WaypointGroupWithSpeed extends GamePacket {
+    public _type(){ return Type.WaypointGroupWithSpeed }
     //undefined field5_0x5;
     //undefined field6_0x6;
     //undefined field7_0x7;
@@ -1349,11 +1453,11 @@ export class WaypointGroupWithSpeed extends GamePacket {
     //uchar data[0];
 }
 export class NPC_SetAutocast extends GamePacket {
+    public _type(){ return Type.NPC_SetAutocast }
     //schar slot;
 }
 export class NPC_InstantStop_Attack extends GamePacket {
-    
-    public override _type(){ return Type.NPC_InstantStop_Attack }
+    public _type(){ return Type.NPC_InstantStop_Attack }
     
     public keepAnimating: boolean = false
     public forceSpellCast: boolean = false
@@ -1380,15 +1484,19 @@ export class NPC_InstantStop_Attack extends GamePacket {
     }
 }
 export class C2S_OnRespawnPointEvent extends GamePacket {
+    public _type(){ return Type.C2S_OnRespawnPointEvent }
     //uchar respawnPointEvent;
     //uchar respawnPointUIElementID;
 }
 export class S2C_HighlightTitanBarElement extends GamePacket {
+    public _type(){ return Type.S2C_HighlightTitanBarElement }
     //uchar elementType;
 }
 export class OnEnterLocalVisiblityClient extends GamePacket {
+    public _type(){ return Type.OnEnterLocalVisiblityClient }
 }
 export class S2C_TeamSurrenderVote extends GamePacket {
+    public _type(){ return Type.S2C_TeamSurrenderVote }
     //bool vote:1;
     //bool firstVote:1;
     //ulong playerNetworkID;
@@ -1399,13 +1507,16 @@ export class S2C_TeamSurrenderVote extends GamePacket {
     //float timeOut;
 }
 export class S2C_SetAnimStates extends GamePacket {
+    public _type(){ return Type.S2C_SetAnimStates }
     //uchar numb;
     //uchar entries[0];
 }
 export class S2C_LockCamera extends GamePacket {
+    public _type(){ return Type.S2C_LockCamera }
     //bool lock;
 }
 export class S2C_MapPing extends GamePacket {
+    public _type(){ return Type.S2C_MapPing }
     //struct r3dPoint3D pos;
     //ulong target;
     //ulong src;
@@ -1415,6 +1526,7 @@ export class S2C_MapPing extends GamePacket {
     //bool pingThrottled:1;
 }
 export class NPC_BuffAddGroup extends GamePacket {
+    public _type(){ return Type.NPC_BuffAddGroup }
     //uchar buffType;
     //uint buffNameHash;
     //float runningTime;
@@ -1422,9 +1534,11 @@ export class NPC_BuffAddGroup extends GamePacket {
     //uchar numInGroup;
 }
 export class S2C_LevelUpSpell extends GamePacket {
+    public _type(){ return Type.S2C_LevelUpSpell }
     //int spellSlot;
 }
 export class CHAR_SpawnPet extends GamePacket {
+    public _type(){ return Type.CHAR_SpawnPet }
     //ulong netObjID;
     //uchar netNodeID;
     //struct r3dPoint3D pos;
@@ -1443,19 +1557,24 @@ export class CHAR_SpawnPet extends GamePacket {
     //bool showMinimapIcon;
 }
 export class S2C_EndGame extends GamePacket {
+    public _type(){ return Type.S2C_EndGame }
     //bool teamIsOrder:1;
     //bool surrender:1;
 }
 export class NPC_UpgradeSpellReq extends GamePacket {
+    public _type(){ return Type.NPC_UpgradeSpellReq }
     //uchar slot;
 }
 export class SPM_AddMemoryListener extends GamePacket {
+    public _type(){ return Type.SPM_AddMemoryListener }
 }
 export class S2C_ModifyDebugCircleRadius extends GamePacket {
+    public _type(){ return Type.S2C_ModifyDebugCircleRadius }
     //int id;
     //float radius;
 }
 export class NPC_BuffAdd2 extends GamePacket {
+    public _type(){ return Type.NPC_BuffAdd2 }
     //uchar buffSlot;
     //uchar buffType;
     //uchar count;
@@ -1466,10 +1585,10 @@ export class NPC_BuffAdd2 extends GamePacket {
     //ulong casterNetID;
 }
 export class S2C_StartGame extends GamePacket {
-    //bool tournamentPauseEnabled:1;
-    tournamentPauseEnabled: boolean = false
-    public override _type(){ return Type.S2C_StartGame }
-    //public override _size(){ return 1 }
+    public _type(){ return Type.S2C_StartGame }
+    
+    tournamentPauseEnabled: boolean = false //bool tournamentPauseEnabled:1;
+
     public override _read(reader: Reader){
         this.tournamentPauseEnabled = reader.readBool("tournamentPauseEnabled")
     }
@@ -1478,9 +1597,11 @@ export class S2C_StartGame extends GamePacket {
     }
 }
 export class S2C_ShowObjectiveText extends GamePacket {
+    public _type(){ return Type.S2C_ShowObjectiveText }
     //char textStringID[128];
 }
 export class S2C_HandleCapturePointUpdate extends GamePacket {
+    public _type(){ return Type.S2C_HandleCapturePointUpdate }
     //uchar pointIndex;
     //ulong otherNetworkId;
     //uchar parType;
@@ -1488,21 +1609,27 @@ export class S2C_HandleCapturePointUpdate extends GamePacket {
     //uchar command;
 }
 export class C2S_WriteNavFlags_Acc extends GamePacket {
+    public _type(){ return Type.C2S_WriteNavFlags_Acc }
     //int syncID;
 }
 export class S2C_PopAllCharacterData extends GamePacket {
+    public _type(){ return Type.S2C_PopAllCharacterData }
 }
 export class Building_Die extends GamePacket {
+    public _type(){ return Type.Building_Die }
     //ulong attacker;
 }
 export class AvatarInfo_Server extends GamePacket {
+    public _type(){ return Type.AvatarInfo_Server }
     //struct AvatarInfo info;
 }
 export class S2C_IncrementPlayerStat extends GamePacket {
+    public _type(){ return Type.S2C_IncrementPlayerStat }
     //ulong playerNetworkID;
     //uchar statEvent;
 }
 export class SendSelectedObjID extends GamePacket {
+    public _type(){ return Type.SendSelectedObjID }
     //ulong clientID;
     //ulong selectedNetworkID;
 }
@@ -1514,9 +1641,11 @@ export class FX_Common {
     //uchar count;
 }
 export class S2C_LineMissileHitList extends GamePacket {
+    public _type(){ return Type.S2C_LineMissileHitList }
     //short size;
 }
 export class UpdateLevelPropS2C extends GamePacket {
+    public _type(){ return Type.UpdateLevelPropS2C }
     //char stringParam1[64];
     //float floatParam1;
     //float floatParam2;
@@ -1528,9 +1657,10 @@ export class UpdateLevelPropS2C extends GamePacket {
     //uchar byteParam3;
 }
 export class S2C_AI_State extends GamePacket {
-    //int stateID;
-    stateID: AIState = 0
-    public override _type(){ return Type.S2C_AI_State }
+    public _type(){ return Type.S2C_AI_State }
+    
+    stateID: AIState = 0 //int stateID;
+
     public override _read(reader: Reader){
         this.stateID = reader.readUInt32("stateID")
     }
@@ -1539,13 +1669,14 @@ export class S2C_AI_State extends GamePacket {
     }
 }
 export class SetItem extends GamePacket {
+    public _type(){ return Type.SetItem }
     //uchar slot;
     //ulong itemID;
     //uchar itemsInSlot;
     //uchar spellCharges;
 }
 export class Waypoint_Acc extends GamePacket {
-    public override _type(){ return Type.Waypoint_Acc }
+    public _type(){ return Type.Waypoint_Acc }
 
     public syncID: number = 0 //int syncID;
     public teleportCount: number = 0 //uchar teleportCount;
@@ -1561,6 +1692,7 @@ export class Waypoint_Acc extends GamePacket {
     }
 }
 export class MissileReplication extends GamePacket {
+    public _type(){ return Type.MissileReplication }
     //struct r3dPoint3D position;
     //struct r3dPoint3D casterPos;
     //struct r3dPoint3D direction;
@@ -1574,11 +1706,13 @@ export class MissileReplication extends GamePacket {
     //char castInfoBuf[512];
 }
 export class SPM_HierarchicalProfilerUpdate extends GamePacket {
+    public _type(){ return Type.SPM_HierarchicalProfilerUpdate }
     //uint frameNum;
     //uint entryCount;
     //struct HierarchicalProfilerUpdateEntry entries[0];
 }
 export class AddUnitPerceptionBubble extends GamePacket {
+    public _type(){ return Type.AddUnitPerceptionBubble }
     //int perceptionBubbleType;
     //ulong clientNetID;
     //float radius;
@@ -1588,30 +1722,38 @@ export class AddUnitPerceptionBubble extends GamePacket {
     //ulong flags;
 }
 export class AI_TargetHeroS2C extends GamePacket {
+    public _type(){ return Type.AI_TargetHeroS2C }
     //ulong targetID;
 }
 export class S2C_ToolTipVars extends GamePacket {
+    public _type(){ return Type.S2C_ToolTipVars }
     //ushort size;
     //uchar data[0];
 }
 export class S2C_HandleUIHighlight extends GamePacket {
+    public _type(){ return Type.S2C_HandleUIHighlight }
     //uchar uiHighlightCommand;
     //uchar uiElement;
 }
 export class NPC_UpgradeSpellAns extends GamePacket {
+    public _type(){ return Type.NPC_UpgradeSpellAns }
     //uchar slot;
     //uchar spellLevel;
     //uchar spellTrainingPoints;
 }
 export class S2C_PauseAnimation extends GamePacket {
+    public _type(){ return Type.S2C_PauseAnimation }
     //bool state;
 }
 export class C2S_AntiBotDP extends GamePacket {
+    public _type(){ return Type.C2S_AntiBotDP }
     //ushort protoID;
     //ushort pktSize;
     //uchar pktData[1024];
 }
 export class S2C_CreateHero extends GamePacket {
+    public _type(){ return Type.S2C_CreateHero }
+
     //ulong netObjID;
     //ulong playerUID;
     //uchar netNodeID;
@@ -1636,8 +1778,6 @@ export class S2C_CreateHero extends GamePacket {
     name: string = ''
     skin: string = ''
 
-    public override _type(){ return Type.S2C_CreateHero }
-    //public override _size(){ return 8 + 8 + 6*1 + 4 + 40 + 40 }
     public override _read(reader: Reader){
         throw new Error("Method not implemented.");
     }
@@ -1656,17 +1796,22 @@ export class S2C_CreateHero extends GamePacket {
     }
 }
 export class SyncSimTimeFinalS2C extends GamePacket {
+    public _type(){ return Type.SyncSimTimeFinalS2C }
     //float time_LastClient;
     //float time_RTTlastoverhead;
     //float time_convergence;
 }
 export class S2C_CreateUnitHighlight extends GamePacket {
+    public _type(){ return Type.S2C_CreateUnitHighlight }
     //ulong unitNetworkID;
 }
 export class C2S_OnTutorialPopupClosed extends GamePacket {
+    public _type(){ return Type.C2S_OnTutorialPopupClosed }
 }
 export class SpawnMinionS2C extends GamePacket {
-    //ulong netObjID;
+    public _type(){ return Type.SpawnMinionS2C }
+
+    public netObjID: number = 0 //ulong netObjID;
     //uchar netNodeID;
     //struct r3dPoint3D pos;
     //int skinID;
@@ -1680,42 +1825,58 @@ export class SpawnMinionS2C extends GamePacket {
     //bool useBehaviorTreeAI:1;
     //char name[64];
     //char skinName[64];
+
+    public _read(reader: Reader): void {
+        this.netObjID = reader.readUInt64()
+    }
 }
 export class RemoveItemAns extends GamePacket {
+    public _type(){ return Type.RemoveItemAns }
     //uchar slot;
     //uchar itemsInSlot;
 }
 export class S2C_TeamSurrenderCountDown extends GamePacket {
+    public _type(){ return Type.S2C_TeamSurrenderCountDown }
     //float timeRemaining;
 }
 export class AI_Command extends GamePacket {
+    public _type(){ return Type.AI_Command }
     //char command[128];
 }
 export class WaypointListWithSpeed extends GamePacket {
+    public _type(){ return Type.WaypointListWithSpeed }
     //int syncID;
     //struct SpeedParams speedParams;
     //struct NetWaypoint dataarray_NWP[0];
 }
 export class S2C_HighlightShopElement extends GamePacket {
+    public _type(){ return Type.S2C_HighlightShopElement }
     //uchar elementType;
     //uchar elementNumber;
     //uchar elementSubCategory;
 }
 export class SPM_RemoveMemoryListener extends GamePacket {
+    public _type(){ return Type.SPM_RemoveMemoryListener }
 }
 export class S2C_HeroStats extends GamePacket {
+    public _type(){ return Type.S2C_HeroStats }
 }
 export class S2C_RemoveDebugCircle extends GamePacket {
+    public _type(){ return Type.S2C_RemoveDebugCircle }
     //int id;
 }
 export class SetFrequency extends GamePacket {
+    public _type(){ return Type.SetFrequency }
     //float newFrequency;
 }
 export class S2C_ToggleInputLockingFlag extends GamePacket {
+    public _type(){ return Type.S2C_ToggleInputLockingFlag }
     //uint inputLockingFlags;
 }
 
 export class NPC_IssueOrderReq extends GamePacket {
+    public _type(){ return Type.NPC_IssueOrderReq }
+
     //struct OrderInfo info;
     //struct OrderInfo {
     //    uchar order;
@@ -1727,7 +1888,7 @@ export class NPC_IssueOrderReq extends GamePacket {
     pos: Vector3 = Vector3.Zero
     targetNetID: number = 0
     data!: MovementDataNormal //= MovementData.None
-    public override _type(){ return Type.NPC_IssueOrderReq }
+
     public override _read(reader: Reader){
         this.order = reader.readByte("order")
         this.pos = Vector3.read(reader, "pos")
@@ -1738,14 +1899,12 @@ export class NPC_IssueOrderReq extends GamePacket {
 }
 
 export class SynchVersionC2S extends GamePacket {
-    //float time_LastClient;
-    //ulong clientNetID;
-    //char versionString[256];
-    time_LastClient: number = 0
-    clientNetID: number = 0
-    versionString: string = ''
-    public override _type(){ return Type.SynchVersionC2S }
-    //public override _size(){ return 4 + 4 + 256 }
+    public _type(){ return Type.SynchVersionC2S }
+    
+    time_LastClient: number = 0 //float time_LastClient;
+    clientNetID: number = 0 //ulong clientNetID;
+    versionString: string = '' //char versionString[256];
+
     public override _read(reader: Reader){
         this.time_LastClient = reader.readFloat("time_LastClient")
         this.clientNetID = reader.readUInt32("clientNetID")
@@ -1759,16 +1918,13 @@ export class SynchVersionC2S extends GamePacket {
 }
 
 export class World_SendCamera_Server extends GamePacket {
-    //struct r3dPoint3D cameraPos;
-    //struct r3dPoint3D cameraDir;
-    //ulong clientID;
-    //uchar syncID;
-    cameraPos: Vector3 = Vector3.Zero
-    cameraDir: Vector3 = Vector3.Zero
-    clientID: number = 0
-    syncID: number = 0
-    public override _type(){ return Type.World_SendCamera_Server }
-    //public override _size(){ return 3*4 + 3*4 + 4 + 1 }
+    public _type(){ return Type.World_SendCamera_Server }
+    
+    cameraPos: Vector3 = Vector3.Zero //struct r3dPoint3D cameraPos;
+    cameraDir: Vector3 = Vector3.Zero //struct r3dPoint3D cameraDir;
+    clientID: number = 0 //ulong clientID;
+    syncID: number = 0 //uchar syncID;
+
     public override _read(reader: Reader){
         this.cameraPos = Vector3.read(reader, "cameraPos")
         this.cameraDir = Vector3.read(reader, "cameraDir")
@@ -1777,18 +1933,31 @@ export class World_SendCamera_Server extends GamePacket {
     }
 }
 export class Barrack_SpawnUnit extends GamePacket {
-    //ulong netObjID;
-    //uchar netNodeID;
-    //uchar waveCount;
-    //uchar minionType;
-    //short damageBonus;
-    //short healthBonus;
+    public _type(){ return Type.Barrack_SpawnUnit }
+
+    public netObjID: number = 0 //ulong netObjID;
+    public netNodeID: number = 0 //uchar netNodeID
+    public waveCount: number = 0 //uchar waveCount
+    public minionType: number = 0 //uchar minionType
+    public damageBonus: number = 0 //short damageBonus
+    public healthBonus: number = 0 //short healthBonus
+
+    public _read(reader: Reader): void {
+        this.netObjID = reader.readUInt32('netObjID')
+        this.netNodeID = reader.readByte('netNodeID')
+        this.waveCount = reader.readByte('waveCount')
+        this.minionType = reader.readByte('minionType')
+        this.damageBonus = reader.readInt16('damageBonus')
+        this.healthBonus = reader.readInt16('healthBonus')
+    }
 }
 export class C2S_OnQuestEvent extends GamePacket {
+    public _type(){ return Type.C2S_OnQuestEvent }
     //uchar questEvent;
     //int questId;
 }
 export class AddPosPerceptionBubble extends GamePacket {
+    public _type(){ return Type.AddPosPerceptionBubble }
     //int perceptionBubbleType;
     //ulong clientNetID;
     //float radius;
@@ -1798,24 +1967,31 @@ export class AddPosPerceptionBubble extends GamePacket {
     //ulong flags;
 }
 export class BuyItemAns extends GamePacket {
+    public _type(){ return Type.BuyItemAns }
     //uchar slot;
     //ulong itemID;
     //uchar itemsInSlot;
     //uchar useOnBought;
 }
 export class NPC_ForceDead extends GamePacket {
+    public _type(){ return Type.NPC_ForceDead }
 }
 export class S2C_HandleGameScore extends GamePacket {
+    public _type(){ return Type.S2C_HandleGameScore }
     //int team;
     //int score;
 }
 export class C2S_PlayEmote extends GamePacket {
+    public _type(){ return Type.C2S_PlayEmote }
     //ulong emotId;
 }
 export class S2C_ShowHealthBar extends GamePacket {
+    public _type(){ return Type.S2C_ShowHealthBar }
     //bool show;
 }
 export class OnReplication extends GamePacket {
+    public _type(){ return Type.OnReplication }
+
     //undefined field5_0x5;
     //undefined field6_0x6;
     //undefined field7_0x7;
@@ -1826,7 +2002,6 @@ export class OnReplication extends GamePacket {
     syncID: number = 0
     datas: ReplicationData[] = []
 
-    public override _type(){ return Type.OnReplication }
     public override _read(reader: Reader){
         this.syncID = reader.readUInt32()
         //const count = reader.readByte()
@@ -1917,31 +2092,19 @@ export class ReplicationData extends BasePacket {
 }
 */
 export class SwapItemReq extends GamePacket {
+    public _type(){ return Type.SwapItemReq }
     //uchar source;
     //uchar dest;
 }
 export class SynchVersionS2C extends GamePacket {
-    
-    //bool isVersionOk;
-    //int mapToLoad;
-    //struct PlayerLiteInfo playerInfo[12];
-    //char versionString[256];
-    //char mapMode[128];
+    public _type(){ return Type.SynchVersionS2C }
 
-    isVersionOk: boolean = false
-    mapToLoad: number = 0
-    playerInfo: PlayerLiteInfo[] = []
-    versionString: string = ''
-    mapMode: string = ''
-    
-    public override _type(){ return Type.SynchVersionS2C }
-    // public override _size(){
-    //     let size = 1 + 4
-    //     //size += this.playerInfo.reduce((sum, pi) => sum + pi._size(), 0)
-    //     size += PlayerLiteInfo.empty._size() * 12
-    //     size += 256 + 128
-    //     return size
-    // }
+    isVersionOk: boolean = false //bool isVersionOk;
+    mapToLoad: number = 0 //int mapToLoad;
+    playerInfo: PlayerLiteInfo[] = [] //struct PlayerLiteInfo playerInfo[12];
+    versionString: string = '' //char versionString[256];
+    mapMode: string = '' //char mapMode[128];
+
     public override _read(reader: Reader){
         this.isVersionOk = reader.readBool("isVersionOk")
         this.mapToLoad = reader.readUInt32("mapToLoad")
@@ -1993,13 +2156,6 @@ export class PlayerLiteInfo extends BasePacket {
     botDifficulty: number = 0
     profileIconId: number = 0
 
-    //public override _size(){
-    //     let size = 8 + 2 + 4 + 4 + 1 + 4
-    //     size += 28 //size += Buffer.from(this.botName + '\u0000', 'utf8').length
-    //     size += 28 //size += Buffer.from(this.botSkinName + '\u0000', 'utf8').length
-    //     size += 4 + 4
-    //     return size
-    // }
     public override _write(writer: Writer){
         writer.writeUInt64(this.playerId)
         writer.writeUInt16(this.summonerLevel)
@@ -2029,37 +2185,44 @@ export class PlayerLiteInfo extends BasePacket {
 }
 
 export class DampenerSwitchStates extends GamePacket {
+    public _type(){ return Type.DampenerSwitchStates }
     //ushort duration:15;
     //bool newState:1;
 }
 export class UnitAddGold extends GamePacket {
+    public _type(){ return Type.UnitAddGold }
     //ulong targetNetID;
     //ulong sourceNetID;
     //float gold;
 }
 export class S2C_AntiBot extends GamePacket {
+    public _type(){ return Type.S2C_AntiBot }
     //ushort protoID;
     //ushort pktSize;
     //uchar pktData[1024];
 }
 export class World_LockCamera_Server extends GamePacket {
+    public _type(){ return Type.World_LockCamera_Server }
     //bool lockCamera;
     //ulong clientID;
 }
 export class C2S_ClientReady extends GamePacket {
-    public override _type(){ return Type.C2S_ClientReady }
+    public _type(){ return Type.C2S_ClientReady }
     public override _write(writer: Writer): void {}
     public override _read(reader: Reader): void {}
 }
 export class C2S_OnTipEvent extends GamePacket {
+    public _type(){ return Type.C2S_OnTipEvent }
     //uchar tipEvent;
     //int tipId;
 }
 export class WaypointList extends GamePacket {
+    public _type(){ return Type.WaypointList }
     //int syncID;
     //struct NetWaypoint dataarray_NWP[0];
 }
 export class SpawnLevelPropS2C extends GamePacket {
+    public _type(){ return Type.SpawnLevelPropS2C }
     //ulong netObjID;
     //uchar netNodeID;
     //struct r3dPoint3D pos;
@@ -2075,19 +2238,21 @@ export class SpawnLevelPropS2C extends GamePacket {
     //char propName[64];
 }
 export class CHAR_CancelTargetingReticle extends GamePacket {
+    public _type(){ return Type.CHAR_CancelTargetingReticle }
     //uchar slot:7;
     //bool isSummonerSpell:1;
 }
 export class Pause extends GamePacket {
+    public _type(){ return Type.Pause }
     //struct r3dPoint3D pos;
     //struct r3dPoint3D forward;
     //int syncID;
 }
 export class World_SendCamera_Server_Acknologment extends GamePacket {
-    //uchar syncID;
-    syncID: number = 0
-    public override _type(){ return Type.World_SendCamera_Server }
-    //public override _size(){ return 1 }
+    public _type(){ return Type.World_SendCamera_Server_Acknologment }
+    
+    syncID: number = 0 //uchar syncID;
+
     public override _read(reader: Reader){
         this.syncID = reader.readByte("syncID")
     }
@@ -2096,15 +2261,14 @@ export class World_SendCamera_Server_Acknologment extends GamePacket {
     }
 }
 export class Basic_Attack extends GamePacket {
+    public _type(){ return Type.Basic_Attack }
     
     //struct Common_Basic_Attack data;
-
     public targetNetID: number = 0
     public extraTime: number = 0
     public missileNextID: number = 0
     public attackSlot: number = 0
 
-    public override _type(){ return Type.Basic_Attack }
     public override _read(reader: Reader){
         this.targetNetID = reader.readUInt32();
         this.extraTime = (reader.readByte() - 128) / 100.0;
@@ -2133,23 +2297,12 @@ export class Basic_Attack_Pos extends Basic_Attack {
         Vector2.write(writer, this.position)
     }
 }
-export class NPC_Die_Broadcast extends GamePacket {
-    //undefined field5_0x5;
-    //undefined field6_0x6;
-    //undefined field7_0x7;
-    //undefined field8_0x8;
-    //undefined field9_0x9;
-    //undefined field10_0xa;
-    //undefined field11_0xb;
-    //undefined field12_0xc;
-    //undefined field13_0xd;
-    //undefined field14_0xe;
-    //undefined field15_0xf;
-}
 export class S2C_PopCharacterData extends GamePacket {
+    public _type(){ return Type.S2C_PopCharacterData }
     //ulong id;
 }
 export class S2C_ColorRemapFX extends GamePacket {
+    public _type(){ return Type.S2C_ColorRemapFX }
     //char isFadingIn;
     //float fadeTime;
     //int teamID;
@@ -2157,24 +2310,30 @@ export class S2C_ColorRemapFX extends GamePacket {
     //float maxWeight;
 }
 export class C2S_OnShopOpened extends GamePacket {
+    public _type(){ return Type.C2S_OnShopOpened }
 }
 export class NPC_BuffRemoveGroup extends GamePacket {
+    public _type(){ return Type.NPC_BuffRemoveGroup }
     //uint buffNameHash;
     //uchar numInGroup;
 }
 export class S2C_PlayVOAudioEvent extends GamePacket {
+    public _type(){ return Type.S2C_PlayVOAudioEvent }
     //char folderName[64];
     //char eventID[64];
     //uchar callbackType;
     //ulong audioEventNetworkID;
 }
 export class S2C_RefreshObjectiveText extends GamePacket {
+    public _type(){ return Type.S2C_RefreshObjectiveText }
     //char textStringID[128];
 }
 export class Connected extends GamePacket {
+    public _type(){ return Type.Connected }
     //ulong clientID;
 }
 export class S2C_Exit extends GamePacket {
+    public _type(){ return Type.S2C_Exit }
     //ulong cid;
 }
 
@@ -2196,7 +2355,6 @@ abstract class Ping_Load_Info extends GamePacket {
     ping: number = 0
     ready: boolean = false
 
-    //public override _size(){ return 4 + 8 + 4 + 4 + 4 + 4 }
     public override _read(reader: Reader){
         this.clientID = reader.readUInt32("clientID")
         this.playerID = reader.readUInt64("playerID")
@@ -2217,22 +2375,24 @@ abstract class Ping_Load_Info extends GamePacket {
     }
 }
 export class C2S_Ping_Load_Info extends Ping_Load_Info {
-    //struct ConnectionInfo info;
     public override _type(){ return Type.C2S_Ping_Load_Info }
+    //struct ConnectionInfo info;
 }
 export class S2C_Ping_Load_Info extends Ping_Load_Info {
-    //struct ConnectionInfo info;
     public override _type(){ return Type.S2C_Ping_Load_Info }
+    //struct ConnectionInfo info;
 }
 
 export class ServerTick extends GamePacket {
+    public _type(){ return Type.ServerTick }
     //float delta;
 }
 export class AI_TargetS2C extends GamePacket {
+    public _type(){ return Type.AI_TargetS2C }
     //ulong targetID;
 }
 export class ResumePacket extends GamePacket {
-    public override _type(){ return Type.ResumePacket }
+    public _type(){ return Type.ResumePacket }
 
     public clientID: number = 0 //ulong clientID;
     public delayed: boolean = false //bool delayed:1;
@@ -2247,19 +2407,23 @@ export class ResumePacket extends GamePacket {
     }
 }
 export class SyncMissionStartTimeS2C extends GamePacket {
+    public _type(){ return Type.SyncMissionStartTimeS2C }
     //float startTime;
 }
 export class UnitApplyHeal extends GamePacket {
+    public _type(){ return Type.UnitApplyHeal }
     //float maxHP;
     //float heal;
 }
 export class C2S_StatsUpdateReq extends GamePacket {
+    public _type(){ return Type.C2S_StatsUpdateReq }
 }
 export class S2C_FX_OnEnterTeamVisiblity extends GamePacket {
+    public _type(){ return Type.S2C_FX_OnEnterTeamVisiblity }
     //ulong netID;
     //uchar team;
 }
-export class FX_Create {
+export class FX_Create extends BasePacket {
     //ulong targetNetID;
     //ulong netAssignedID;
     //ulong bindNetID;

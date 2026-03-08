@@ -73,8 +73,11 @@ export const firewall = <T extends Proxy>(proxy: T, enabled: boolean, callbacks?
     proxy['createSocketToProgram'] = async function (programHost, programPort, onData, opts) {
 
         if(callbacks && this['role'] == Role.Client){
-            const socketToProgram = callbacks.getSocketToProgram(onData)
+            const socketToProgram =
+                callbacks.getSocketToProgram()
+                callbacks.setOnData(onData)
             if(socketToProgram) return socketToProgram
+            onData = callbacks.getOnData()
         }
         
         const autoDefrag = true
@@ -273,6 +276,9 @@ export const firewall = <T extends Proxy>(proxy: T, enabled: boolean, callbacks?
             peerToProgram.connect()
         
         socketToProgram.peer = peerToProgram
+
+        if(callbacks && this['role'] == Role.Client)
+            callbacks.setSocketToProgram(socketToProgram)
 
         return socketToProgram
     }

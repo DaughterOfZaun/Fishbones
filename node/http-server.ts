@@ -1,3 +1,5 @@
+import indexHTML from './http-server-index.html'
+
 const downloads = './Fishbones_Data'
 const routes = new Map([
     'playable_client_126.7z',
@@ -11,9 +13,18 @@ const routes = new Map([
 
 const server = Bun.serve({
     hostname: '0.0.0.0',
+    routes: {
+        '/': indexHTML,
+    },
     fetch(req) {
 
-        const url = new URL(req.url)
+        let url: URL
+        try {
+            url = new URL(req.url)
+        } catch {
+            return new Response("Invalid URL", { status: 400 })
+        }
+
         const file = routes.get(url.pathname)
         if(!file){
             return new Response("File not found", { status: 404 })

@@ -29,6 +29,62 @@ let clientSubprocess: ChildProcess | undefined
 let socketToProgram: SocketToProgram | undefined
 let socketToProgram_onData: OnData | undefined
 
+const clientState = new class ClientState {
+    loaded = false
+    started = false
+    paused = false
+    objs = new Array<GameObject>()
+    reset(){
+        this.loaded = false
+        this.started = false
+        this.paused = false
+        this.objs.length = 0
+    }
+}
+
+const serverState = new class ServerState {
+    handshaken = false
+    gameStarted = false
+    reset(){
+        this.handshaken = false
+        this.gameStarted = false
+    }
+}
+
+class GameObject {
+    constructor(
+        public netID: number,
+        public partOfInitialScene: boolean,
+    ){}
+    reset() {
+        //throw new Error("Method not implemented.")
+    }
+    delete(){
+        //throw new Error("Method not implemented.")
+    }
+}
+class LaneMinion extends GameObject {
+    delete(){
+        sendToClient(new PKT.NPC_Die(), {
+            senderNetID: this.netID,
+            killerNetID: this.netID,
+        })
+    }
+}
+class Turret extends GameObject {
+    
+    //name: string = ''
+
+    reset(){
+        //sendToClient(new PKT.S2C_CreateTurret(), {
+        //    senderNetID: this.netID,
+        //    netObjID: this.netID,
+        //    netNodeID: 64,
+        //    name: this.name,
+        //})
+    }
+}
+
 function sendToServer<T extends BasePacket>(packet: T, fields: Partial<T>, channelID = ENetChannels.GENERIC_APP_TO_SERVER){
     
     let data = assign(packet, fields).write()
@@ -66,18 +122,27 @@ export function getLastLaunchCmd(){
 export async function launchClient(ip: string, port: number, key: string, playerID: number, gameInfo: GameInfo, opts: Required<AbortOptions>){
     
     const [,,, lastPlayerID, lastGameInfo] = launchArgs ?? []
-    
-    launchArgs = [ip, port, key, playerID, gameInfo]
     const clientID = playerID - 1
 
-    if(
-        socketToProgram
-        && clientSubprocess
-        && clientSubprocess.exitCode == null
-        && playerID == lastPlayerID
-        && gameInfo.game.map == lastGameInfo?.game.map
-        && gameInfo.game.gameMode == lastGameInfo?.game.gameMode
-    ){
+    serverState.reset()
+
+    const canReuse =
+        clientState.loaded
+        //&& socketToProgram !== undefined
+        //&& clientSubprocess !== undefined
+        //&& clientSubprocess.exitCode == null
+        //&& playerID == lastPlayerID
+        //&& JSON.stringify(gameInfo) == JSON.stringify(lastGameInfo)
+        //&& gameInfo.game.map == lastGameInfo?.game.map
+        //&& gameInfo.game.gameMode == lastGameInfo?.game.gameMode
+
+    if(!canReuse){
+        clientState.reset()
+        launchArgs = [ip, port, key, playerID, gameInfo]
+        return originalLaunchClient(ip, port, key, playerID, opts)
+    }
+    else {
+        
         resetClient()
         
         setTimeout(() => {
@@ -89,230 +154,56 @@ export async function launchClient(ip: string, port: number, key: string, player
         }, 1000)
 
         return clientSubprocess
-    } else {
-        return originalLaunchClient(ip, port, key, playerID, opts)
-    }
+    } 
 }
 
 export async function stopClient(opts: Required<AbortOptions>){
-
-}
-
-export async function preloadClient(opts: Required<AbortOptions>){
-    
-    const node = null!
-    const proxyClient = firewall(new ProxyClient(node), true, clientPreloaderCallbacks)
-    socketToProgram = await proxyClient['createSocketToProgram'](LOCALHOST, 0, (data, programHostPort) => {
-        socketToProgram_onData?.(data, programHostPort)
-    }, opts)
-
-    const playerID = 1
-    //const gameInfo = { game: { map: 30, gameMode: 'CLASSIC' } } as GameInfo
-    launchArgs = [ LOCALHOST, socketToProgram.port, blowfishKey, playerID, defaultGameInfo]
-    clientSubprocess = await originalLaunchClient(LOCALHOST, socketToProgram.port, blowfishKey, playerID, opts)
+    pauseClient()
 }
 
 const isOrder = (str: string) => str.toUpperCase() == 'BLUE'
 const getTeamID = (str: string) => isOrder(str) ? 100 : 200
 const isChaos = (str: string) => !isOrder(str)
 
-const state = {
-    handshakeDone: false,
-}
 function resetClient(){
-    state.handshakeDone = false
+    //TODO:
+    for(const obj of clientState.objs){
+        if(obj.partOfInitialScene) obj.reset()
+        else obj.delete()
+    }
+    clientState.objs.length = 0
 }
 
 export type ClientPreloaderCallbacks = typeof clientPreloaderCallbacks
 export const clientPreloaderCallbacks = {
 
-    getSocketToProgram(onData: OnData){
-        if(!socketToProgram) return
-        socketToProgram_onData = onData
+    getSocketToProgram(){
         return socketToProgram
     },
-    
+    setSocketToProgram(stp: SocketToProgram){
+        socketToProgram = stp
+        socketToProgram.close = () => {}
+    },
+    getOnData(){
+        return (data: Buffer, programHostPort: string) => {
+            socketToProgram_onData?.(data, programHostPort)
+        }
+    },
+    setOnData(onData: OnData){
+        socketToProgram_onData = onData
+    },
+
     filterOutgoing(packets: WrappedPacket[]): WrappedPacket[] {
-        packets = packets.filter(packet => {
 
-            const [ ip, port, key, playerID, gameInfo ] = launchArgs!
-            const clientID = playerID - 1
-
-            const nonDecryptedData = packet.data
-            if(packet.channelID == ENetChannels.DEFAULT){
-                const packet = new PKT.RegistryPacket().read(nonDecryptedData)
-                
-                sendToClient(packet, {
-                    cid: clientID,
-                }, ENetChannels.DEFAULT)
-
-                sendToClient(new PKT.SynchSimTimeS2C(), {
-                    synchtime: 0, //TODO:
-                })
-
-                return false
-            }
+        for(const packet of packets){
 
             const decryptedData = decrypt(packet.data)
             const packet_type = decryptedData[0] as (PKT.Type | PKT.PayloadType)
 
-            if(packet_type == PKT.Type.C2S_Reconnect){
-                return false
-            }
-            if(packet_type == PKT.Type.C2S_QueryStatusReq){
-                sendToClient(new PKT.S2C_QueryStatusAns(), {
-                    res: true,
-                })
-                return false
-            }
-            if(packet_type == PKT.Type.SynchVersionC2S){
-                sendToClient(new PKT.SynchVersionS2C(), {
-                    versionString: "1.0.0.126",
-                    isVersionOk: true,
-                    mapToLoad: gameInfo.game.map,
-                    mapMode: gameInfo.game.gameMode,
-                    playerInfo: gameInfo.players.map(playerInfo => {
-                        return assign(new PKT.PlayerLiteInfo(), {
-                            playerId: BigInt(playerInfo.playerId),
-                            summonerLevel: 30, //TODO:
-                            summonerSpell1: 0x03657421, //TODO:
-                            summonerSpell2: 0x065E8695, //TODO:
-                            isBot: false, //TODO:
-                            teamId: getTeamID(playerInfo.team),
-                            botName: '',
-                            botSkinName: '',
-                            botDifficulty: 0,
-                            profileIconId: playerInfo.icon,
-                        })
-                    }),
-                })
-                return false
-            }
-            if(packet_type == PKT.PayloadType.RequestJoinTeam){
-
-                const playerInfo = gameInfo.players.find(playerInfo => playerInfo.playerId == playerID)!
-                const orderPlayers = gameInfo.players.filter(playerInfo => isOrder(playerInfo.team))
-                const chaosPlayers = gameInfo.players.filter(playerInfo => isChaos(playerInfo.team))
-                
-                sendToClient(new PKT.World_SendGameNumber(), {
-                    gameID: BigInt(gameInfo.gameId),
-                })
-                
-                sendToClient(new PKT.TeamRosterUpdate(), {
-                    teamsize_order: 6,
-                    teamsize_chaos: 6,
-                    orderMembers: orderPlayers.map(playerInfo => BigInt(playerInfo.playerId)),
-                    chaosMembers: chaosPlayers.map(playerInfo => BigInt(playerInfo.playerId)),
-                    current_teamsize_order: orderPlayers.length,
-                    current_teamsize_chaos: chaosPlayers.length,
-                }, ENetChannels.MIDDLE_TIER_ROSTER)
-                
-                sendToClient(new PKT.RequestRename(), {
-                    playerId: BigInt(playerInfo.playerId),
-                    skinID: playerInfo.skin,
-                    buffer: playerInfo.name,
-                }, ENetChannels.MIDDLE_TIER_ROSTER)
-
-                sendToClient(new PKT.RequestReskin(), {
-                    playerId: BigInt(playerInfo.playerId),
-                    skinID: playerInfo.skin,
-                    buffer: playerInfo.champion,
-                }, ENetChannels.MIDDLE_TIER_ROSTER)
-
-                return false
-            }
-            if(packet_type == PKT.Type.C2S_Ping_Load_Info){
-                const packet = new PKT.C2S_Ping_Load_Info().read(decryptedData)
-
-                const clientID = packet.clientID
-                const playerID = clientID + 1
-
-                sendToClient(new PKT.S2C_Ping_Load_Info(), {
-                    clientID: clientID,
-                    playerID: BigInt(playerID),
-                    percentage: packet.percentage,
-                    ETA: packet.ETA,
-                    count: packet.count,
-                    ping: packet.ping,
-                    ready: packet.ready,
-                })
-                return false
-            }
-            if(packet_type == PKT.Type.C2S_CharSelected){
-
-                return false
-                
-                sendToClient(new PKT.S2C_StartSpawn(), {
-                    numBotsOrder: 0, //TODO:
-                    numBotsChaos: 0, //TODO:
-                })
-                
-                //TODO:
-
-                for(const playerInfo of gameInfo.players){
-                    
-                    const netID = 0x40000000 + 22 //TODO:
-                    const playerID = playerInfo.playerId
-                    const clientID = playerID - 1
-
-                    sendToClient(new PKT.S2C_CreateHero(), {
-                        netObjID: netID,
-                        playerUID: clientID,
-                        netNodeID: 64,
-                        skillLevel: 0,
-                        teamIsOrder: isOrder(playerInfo.team),
-                        isBot: false,
-                        botRank: 0,
-                        spawnPosIndex: 0,
-                        skinID: playerInfo.skin,
-                        name: playerInfo.name,
-                        skin: playerInfo.champion,
-                    }) //TODO:
-
-                    sendToClient(new PKT.OnEnterVisiblityClient(), {
-                        items: [],
-                        lookAtType: 0, //TODO:
-                        lookAtPosition: Vector3.Zero,
-                        movementData: assign(new PKT.MovementDataStop(), {
-                            position: vec2(899.7015, 1121.2828),
-                            forward: vec2(0, 1),
-                            syncID: 0, //TODO:
-                        }),
-                        senderNetID: netID,
-                    })
-                }
-                sendToClient(new PKT.S2C_EndSpawn())
-                return false
-            }
             if(packet_type == PKT.Type.C2S_ClientReady){
-
-                return true
-
-                sendToClient(new PKT.S2C_StartGame(), {
-                    tournamentPauseEnabled: false,
-                })
-                
-                sendToClient(new PKT.PausePacket(), {
-                    clientID: clientID,
-                    pauseTimeRemaining: 2 ** 31 - 1,
-                    tournamentPause: false,
-                })
-                
-                // setTimeout(() => {
-                //     sendToClient(new PKT.ResumePacket(), {
-                //         clientID: clientID,
-                //         delayed: false,
-                //     })
-                // }, 3000)
-                
-                return false
+                clientState.loaded = true
             }
-
-            return true
-        })
-
-        if(!state.handshakeDone) return []
-
+        }
         return packets
     },
 
@@ -323,119 +214,184 @@ export const clientPreloaderCallbacks = {
             const [ ip, port, key, playerID, gameInfo ] = launchArgs!
             const clientID = playerID - 1
             
-            //const nonDecryptedData = packet.data
-            if(packet.channelID == ENetChannels.DEFAULT){
-
-                if(!state.handshakeDone) state.handshakeDone = true
-                else return false
-
-                //const packet = new PKT.RegistryPacket().read(nonDecryptedData)
-                sendToServer(new PKT.C2S_Reconnect(), {
-                    isFullReconnect: true,
-                })
-
-                //TODO: ...
-                sendToServer(new PKT.C2S_QueryStatusReq(), {})
-                sendToServer(new PKT.C2S_QueryStatusReq(), {})
-
-                sendToServer(new PKT.SynchVersionC2S(), {
-                    time_LastClient: 0,
-                    clientNetID: clientID,
-                    versionString: "Version 1.0.0.126 [PUBLIC]",
-                })
-
-                return false
-            }
-
             const decryptedData = decrypt(packet.data)
             const packet_type = decryptedData[0] as (PKT.Type | PKT.PayloadType)
 
-            if(packet_type == PKT.Type.S2C_QueryStatusAns){
-                return false
+            if(clientState.loaded){
+
+                //const nonDecryptedData = packet.data
+                if(packet.channelID == ENetChannels.DEFAULT){
+
+                    if(serverState.handshaken) return false
+                    else serverState.handshaken = true
+
+                    //const packet = new PKT.RegistryPacket().read(nonDecryptedData)
+                    sendToServer(new PKT.C2S_Reconnect(), {
+                        isFullReconnect: true,
+                    })
+
+                    //TODO: ...
+                    sendToServer(new PKT.C2S_QueryStatusReq(), {})
+                    sendToServer(new PKT.C2S_QueryStatusReq(), {})
+
+                    sendToServer(new PKT.SynchVersionC2S(), {
+                        time_LastClient: 0,
+                        clientNetID: clientID,
+                        versionString: "Version 1.0.0.126 [PUBLIC]",
+                    })
+
+                    return false
+                }
+            
+                if(packet_type == PKT.Type.S2C_QueryStatusAns){
+                    return false
+                }
+
+                if(packet_type == PKT.Type.SynchVersionS2C){
+                    
+                    const playerInfo = gameInfo.players.find(playerInfo => playerInfo.playerId == playerID)!
+
+                    sendToServer(new PKT.RequestJoinTeam(), {
+                        playerID: playerID,
+                        team: getTeamID(playerInfo.team),
+                    }, ENetChannels.MIDDLE_TIER_ROSTER)
+                }
+
+                if(packet_type == PKT.Type.World_SendGameNumber){
+                    return false
+                }
+
+                if(packet_type == PKT.Type.SynchVersionS2C){
+                    sendToServer(new PKT.C2S_Ping_Load_Info(), {
+                        clientID: clientID,
+                        playerID: BigInt(playerID),
+                        percentage: 100,
+                        ETA: 0,
+                        count: 1000,
+                        ping: 8,
+                        ready: true,
+                    })
+                    
+                    sendToServer(new PKT.C2S_CharSelected(), {})
+
+                    return false
+                }
+
+                //Allow: packet_type == PKT.Type.SynchSimTimeS2C
+
+                if(
+                    packet.channelID == ENetChannels.MIDDLE_TIER_ROSTER
+                    //packet_type == PKT.PayloadType.TeamRosterUpdate ||
+                    //packet_type == PKT.PayloadType.RequestRename ||
+                    //packet_type == PKT.PayloadType.RequestReskin ||
+                ){
+                    return false
+                }
+
+                if(packet_type == PKT.Type.S2C_Ping_Load_Info){
+                    return false
+                }
+
+                if(packet_type == PKT.Type.S2C_StartSpawn){
+                    return false
+                }
+
+                if(packet_type == PKT.Type.S2C_EndSpawn){
+                    sendToServer(new PKT.C2S_ClientReady(), {})
+                    return false
+                }
+
+                if(packet_type == PKT.Type.S2C_StartGame){
+                    
+                    serverState.gameStarted = true
+
+                    if(!clientState.started){
+                        clientState.started = true
+                        return true
+                    }
+                    resumeClient()
+                    return false
+                }
+
+                if(packet_type == PKT.Type.S2C_EndGame){
+                    pauseClient()
+                    return false
+                }
             }
 
-            if(packet_type == PKT.Type.SynchVersionS2C){
-                
-                const playerInfo = gameInfo.players.find(playerInfo => playerInfo.playerId == playerID)!
+            //TODO: Remove minions
+            //TODO: Restore buildings
+            //TODO: Restore spells
 
-                sendToServer(new PKT.RequestJoinTeam(), {
-                    playerID: playerID,
-                    team: getTeamID(playerInfo.team),
-                }, ENetChannels.MIDDLE_TIER_ROSTER)
+            if(!clientState.loaded || serverState.gameStarted){
+
+                if(packet_type == PKT.Type.Barrack_SpawnUnit){
+                    const packet = new PKT.Barrack_SpawnUnit().read(decryptedData)
+                    clientState.objs.push(new LaneMinion(packet.netObjID, !clientState.loaded))
+                }
+
+                if(packet_type == PKT.Type.S2C_CreateTurret){
+                    const packet = new PKT.S2C_CreateTurret()
+                    clientState.objs.push(new Turret(packet.netNodeID, !clientState.loaded))
+                }
+
+                {
+                    let packet
+                    if(packet_type == PKT.Type.Building_Die) packet = new PKT.Building_Die().read(decryptedData)
+                    if(packet_type == PKT.Type.NPC_Hero_Die) packet = new PKT.NPC_Hero_Die().read(decryptedData)
+                    if(packet_type == PKT.Type.NPC_Die     ) packet = new PKT.NPC_Die     ().read(decryptedData)
+                    if(packet){
+                        
+                        sendToClient(new PKT.OnLeaveLocalVisiblityClient(), {
+                            senderNetID: packet!.senderNetID
+                        })
+                        sendToClient(new PKT.OnLeaveVisiblityClient(), {
+                            senderNetID: packet!.senderNetID
+                        })
+                        
+                        //TODO: Spawn DestroyedTower
+                        //TODO: Spawn DestroyedExplosion
+
+                        return false
+                    }
+                }
+
+                return true
             }
-
-            if(packet_type == PKT.Type.World_SendGameNumber){
-                return false
-            }
-
-            if(packet_type == PKT.Type.SynchVersionS2C){
-                sendToServer(new PKT.C2S_Ping_Load_Info(), {
-                    clientID: clientID,
-                    playerID: BigInt(playerID),
-                    percentage: 100,
-                    ETA: 0,
-                    count: 1000,
-                    ping: 8,
-                    ready: true,
-                })
-                
-                sendToServer(new PKT.C2S_CharSelected(), {})
-
-                return false
-            }
-
-            //Allow: packet_type == PKT.Type.SynchSimTimeS2C
-
-            if(
-                packet.channelID == ENetChannels.MIDDLE_TIER_ROSTER
-                //packet_type == PKT.PayloadType.TeamRosterUpdate ||
-                //packet_type == PKT.PayloadType.RequestRename ||
-                //packet_type == PKT.PayloadType.RequestReskin ||
-            ){
-                return false
-            }
-
-            if(packet_type == PKT.Type.S2C_Ping_Load_Info){
-                return false
-            }
-
-            // if(packet_type == PKT.Type.S2C_StartSpawn){
-            //     return false
-            // }
-
-            // if(packet_type == PKT.Type.S2C_EndSpawn){
-            //     sendToServer(new PKT.C2S_ClientReady(), {})
-            //     return false
-            // }
-
-            // if(packet_type == PKT.Type.S2C_StartGame){
-            //     //TODO:
-            //     sendToClient(new PKT.ResumePacket(), {
-            //         clientID: clientID,
-            //         delayed: false,
-            //     })
-            //     return false
-            // }
-
-            if(packet_type == PKT.Type.S2C_EndGame){
-                //TODO:
-                sendToClient(new PKT.PausePacket(), {
-                    clientID: clientID,
-                    pauseTimeRemaining: 2 ** 31 - 1,
-                    tournamentPause: false,
-                })
-                return false
-            }
-
-            return true
+            return false
         })
 
-        if(!state.handshakeDone) return []
-
-        
-        
         return packets
     },
+}
+
+function resumeClient(){
+
+    const [ ip, port, key, playerID, gameInfo ] = launchArgs!
+    const clientID = playerID - 1
+
+    if(clientState.paused){
+        clientState.paused = false
+        sendToClient(new PKT.ResumePacket(), {
+            clientID: clientID,
+            delayed: false,
+        })
+    }
+}
+
+function pauseClient(){
+
+    const [ ip, port, key, playerID, gameInfo ] = launchArgs!
+    const clientID = playerID - 1
+
+    if(!clientState.paused){
+        clientState.paused = true
+        sendToClient(new PKT.PausePacket(), {
+            clientID: clientID,
+            pauseTimeRemaining: 2 ** 31 - 1,
+            tournamentPause: false,
+        })
+    }
 }
 
 export const defaultGameInfo: GameInfo = {
@@ -453,7 +409,7 @@ export const defaultGameInfo: GameInfo = {
         KEEP_ALIVE_WHEN_EMPTY: false,
         MANACOSTS_ENABLED: true,
         COOLDOWNS_ENABLED: true,
-        CHEATS_ENABLED: false,
+        CHEATS_ENABLED: true,
         MINION_SPAWNS_ENABLED: true,
         CONTENT_PATH: "../../../../Content",
         DEPLOY_FOLDER: "",

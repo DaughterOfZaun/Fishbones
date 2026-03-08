@@ -180,7 +180,8 @@ export class Reader {
         this.position += result.length
         return result
     }
-    public readFixedString(length: number){
+    public readFixedString(length: number, name?: string){
+        if(this.debug) console.log('readFixedString', name, this.buffer.subarray(this.position, this.position + length))
         const zeroIndex = this.buffer.indexOf(0, this.position)
         console.assert(zeroIndex <= this.position + length, `Assertion failed: zeroIndex (${zeroIndex}) <= this.position (${this.position}) + length (${length})`)
         console.assert(zeroIndex !== -1, `Assertion failed: buffer.indexOf(0) == -1`)
