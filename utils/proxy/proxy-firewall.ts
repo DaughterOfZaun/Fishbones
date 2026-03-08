@@ -6,7 +6,8 @@ import { decrypt, encrypt } from './blowfish'
 import * as PKT from './pkt'
 import { toString, Vector2 } from './math'
 import { Writer } from './enet'
-import { replacer } from './utils'
+import { assign, replacer } from './utils'
+import type { ClientPreloaderCallbacks } from '../process/client-preloader'
 
 class Unit {
     public teleportID: number = 0
@@ -23,7 +24,7 @@ class Fragment {
     }
 }
 
-export const firewall = <T extends Proxy>(proxy: T, enabled: boolean): T => {
+export const firewall = <T extends Proxy>(proxy: T, enabled: boolean, callbacks?: ClientPreloaderCallbacks): T => {
 
     if(!enabled) return proxy
 
@@ -70,6 +71,11 @@ export const firewall = <T extends Proxy>(proxy: T, enabled: boolean): T => {
 
     const super_createSocketToProgram = proxy['createSocketToProgram'].bind(proxy)
     proxy['createSocketToProgram'] = async function (programHost, programPort, onData, opts) {
+
+        if(callbacks && this['role'] == Role.Client){
+            const socketToProgram = callbacks.getSocketToProgram(onData)
+            if(socketToProgram) return socketToProgram
+        }
         
         const autoDefrag = true
         const autoFilter = true
@@ -95,6 +101,8 @@ export const firewall = <T extends Proxy>(proxy: T, enabled: boolean): T => {
             if(autoFilter)
             packets = packets.filter((packet) => {
                 
+                //console.log(Date.now(), Role[this['role']], 'sends packet on', PKT.ENetChannels[packet.channelID])
+
                 let messageReceived: PKT.BasePacket | undefined
                 let messageAccepted = true
                 let messageChanged = false
@@ -153,6 +161,8 @@ export const firewall = <T extends Proxy>(proxy: T, enabled: boolean): T => {
 
                         const { unit, unitCreated } = getUnit(movement.teleportNetID)
                         
+                        if(unit.isAttacking) return false
+
                         const teleportIDChanged = unitCreated || movement.hasTeleportID && movement.teleportID != unit.teleportID
                         const waypointsChanged = unitCreated || movement.waypoints.length > unit.waypoints.length || !movement.waypoints.every((waypoint, i) => {
                             if(i == 0) return true // Current position.
@@ -204,6 +214,9 @@ export const firewall = <T extends Proxy>(proxy: T, enabled: boolean): T => {
 
                 return messageAccepted
             })
+
+            if(autoFilter && callbacks && this['role'] == Role.Client)
+                packets = callbacks.filterOutgoing(packets)
             
             //console.log('sum(packets.length)', '=', packets.reduce((sum, p) => sum + p.data.length, 0))
 
@@ -238,18 +251,29 @@ export const firewall = <T extends Proxy>(proxy: T, enabled: boolean): T => {
         socketToProgram.send = (rawdata) => {
 
             const unwrapped = Wrapped.decode(rawdata)
-            const packets = unwrapped.packets.map(packet => ({
+            let packets = unwrapped.packets.map((packet): WrappedPacket => ({
                 fragment: packet.fragment,
                 channelID: packet.channelID,
                 data: Buffer.from(packet.data),
             }))
-            peerToProgram.sendUnreliable(packets)
+
+            //for(const packet of packets)
+            //console.log(Date.now(), Role[this['role']], 'receives packet on', PKT.ENetChannels[packet.channelID])
+            
+            if(autoFilter && callbacks && this['role'] == Role.Client)
+                packets = callbacks.filterIncoming(packets)
+
+            if(packets.length > 0)
+                peerToProgram.sendUnreliable(packets)
+
             return true
         }
 
         if(this['role'] == Role.Server)
             peerToProgram.connect()
         
+        socketToProgram.peer = peerToProgram
+
         return socketToProgram
     }
 

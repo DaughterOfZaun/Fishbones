@@ -2,7 +2,7 @@ import { build } from "./build"
 import { download, appendPartialDownloadFileExt, repairAria2, seed } from "./download/download"
 import { gcPkg, gitPkg, gsPkg, modPck1, type PkgInfo, repairTorrents, sdkPkg } from "./packages"
 import { console_log, createBar, currentExe, extractFile } from "../../ui/remote/remote"
-import { console_log_fs_err, cwd, downloads, fs_chmod, fs_copyFile, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_overwrite, fs_rmdir, fs_truncate, rwx_rx_rx } from './fs'
+import { console_log_fs_err, cwd, downloads, fs_chmod, fs_copyFile, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_overwrite, fs_removeFile, fs_rmdir, fs_truncate, fs_writeFile, rwx_rx_rx } from './fs'
 import { readTrackersTxt } from "./download/trackers"
 import { appendPartialUnpackFileExt, DataError, repair7z, unpack } from "./unpack"
 import { TerminationError, unwrapAbortError } from "../process/process"
@@ -50,7 +50,7 @@ export async function repair(opts: Required<AbortOptions>){
     if(prev_fbPkg && isNewVersionAvailable()){
 
         // A hack to speed up download.
-        if(await fs.exists(prev_fbPkg.zip) && !await fs.exists(fbPkg.zip)){
+        if(await fs_exists(prev_fbPkg.zip, opts) && !await fs_exists(fbPkg.zip, opts)){
             const bar = createBar(tr('Copying'), prev_fbPkg.zip)
             await fs_copyFile(prev_fbPkg.zip, fbPkg.zip, opts)
             await fs_truncate(fbPkg.zip, fbPkg.zipSize, opts)
@@ -83,8 +83,10 @@ export async function repair(opts: Required<AbortOptions>){
     let modFileIsMissing = !await fs_exists(modPck1.lockFile, opts, false)
     results = await Promise.allSettled([
         (async () => {
-            if(args.torrentDownload.enabled){
+            if(args.torrentDownload.enabled) try {
                 await repairSelfPackage(opts)
+            } catch(err){
+                console_log(tr(`Restoring launcher package failed:`), Bun.inspect(err))
             }
         })(),
         Promise.allSettled([
@@ -154,10 +156,10 @@ export async function repair(opts: Required<AbortOptions>){
                 } finally {
                     bar.stop()
                 }
-                await fs.rm(modPck1.dir, { recursive: true, force: true })
+                await fs_removeFile(modPck1.dir, { ...opts, recursive: true, force: true })
                 //const fs_opts = { ...opts, recursive: true }
                 await fs_ensureDir(path.dirname(modPck1.lockFile), opts)
-                await fs.writeFile(modPck1.lockFile, '', 'utf8')
+                await fs_writeFile(modPck1.lockFile, '', { ...opts, encoding: 'utf8' })
                 modFileIsMissing = false
             }
         }),

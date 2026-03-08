@@ -42,12 +42,11 @@ const s7zDataErrorMsgs = new RegExp(
         /\bIs not archive\b/,
         /\bCan(?: ?not|'?t) open (?:(?:the )?file )?as (?:\[\w+\] )?archive\b/, //'
         /\bUnexpected end of (?:data|archive|(?:input )?stream)\b/,
-        /\bSystem ERROR\b/,
         //TODO: ...
     ]
     .map(regex => regex.source).join('|')
 )
-
+const s7zSystemErrorMsg = /\bSystem ERROR\b/
 const s7zProgressMsg = /(\d+)%/
 
 enum s7zExitCodes {
@@ -65,6 +64,7 @@ export function appendPartialUnpackFileExt(path: string){
 }
 
 export class DataError extends Error {}
+export class SystemError extends Error {}
 export async function unpack(pkg: PkgInfo, opts: Required<AbortOptions>){
     
     if(!args.unpack.enabled){
@@ -145,10 +145,15 @@ export async function unpack(pkg: PkgInfo, opts: Required<AbortOptions>){
             } else if(chunk){
                 logger.log(loggerPrefix, chunk)
             }
-            if(src === 'stderr' && !signal.aborted && s7zDataErrorMsgs.test(chunk)){
-                //s7zs.at(i)![src]!.removeAllListeners('data')
-                controller.abort(new DataError(`Unpacking of "${pkg.zipName}" failed.`))
-                logger.log(loggerPrefix, 'ABORTED')
+            if(src === 'stderr' && !signal.aborted){
+                const isSystemError = s7zSystemErrorMsg.test(chunk)
+                const isDataError = s7zDataErrorMsgs.test(chunk)
+                if(isSystemError || isDataError){
+                    //s7zs.at(i)![src]!.removeAllListeners('data')
+                    const UnpackingError = isDataError ? DataError : SystemError
+                    controller.abort(new UnpackingError(`Unpacking of "${pkg.zipName}" failed.`))
+                    logger.log(loggerPrefix, 'ABORTED')
+                }
             }
         }
 

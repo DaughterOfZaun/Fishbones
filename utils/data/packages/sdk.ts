@@ -74,6 +74,7 @@ export const sdkPkg = new class extends PkgInfoExe {
     dir = path.join(downloads, this.dirName)
     zip = path.join(downloads, this.zipName)
     zipTorrent = `${this.zip}.torrent`
+    zipTorrentName = `${this.zipName}.torrent`
     zipTorrentEmbedded = sdkZipInfo!.embeddedTorrent!
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
 

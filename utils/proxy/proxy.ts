@@ -28,6 +28,7 @@ export interface PeerData {
 export type SocketToProgram = AnySocket & {
     setPort(port: number): void
     port: number
+    peer?: Peer
 }
 
 export class Proxy {
@@ -115,6 +116,7 @@ export class Proxy {
                     log.error('attempting to send data through a closed socket')
                     return false
                 }
+                //log.trace('sending data to', programPortLastUsed, programHostLastUsed)
                 return socket.send(data, programPortLastUsed, programHostLastUsed)
             },
         }

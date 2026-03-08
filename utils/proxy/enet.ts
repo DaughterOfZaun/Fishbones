@@ -211,11 +211,12 @@ export class Writer {
         this.funcs = funcs[endianness]
     }
 
-    public writeBool(value: boolean){
-        return this.writeByte(+value)
+    public writeBool(value: boolean, name?: string){
+        return this.writeByte(+value, name)
     }
-    public writeSByte(value: number){
+    public writeSByte(value: number, name?: string){
         const result = this.funcs.writeInt8.call(this.buffer, value, this.position);
+        if(this.debug) console.log('writeSByte', name, this.buffer.subarray(this.position, this.position + 1).toString('hex'))
         this.position += 1;
         return result
     }
@@ -237,8 +238,9 @@ export class Writer {
         this.position += 2;
         return result
     }
-    public writeInt32(value: number){
+    public writeInt32(value: number, name?: string){
         const result = this.funcs.writeInt32.call(this.buffer, value, this.position);
+        if(this.debug) console.log('writeInt32', name, this.buffer.subarray(this.position, this.position + 4).toString('hex'))
         this.position += 4;
         return result
     }
@@ -253,13 +255,15 @@ export class Writer {
         this.position += 8;
         return result
     }
-    public writeUInt64(value: bigint){
+    public writeUInt64(value: bigint, name?: string){
         const result = this.funcs.writeBigUInt64.call(this.buffer, value, this.position);
+        if(this.debug) console.log('writeUInt64', name, this.buffer.subarray(this.position, this.position + 8).toString('hex'))
         this.position += 8;
         return result
     }
-    public writeFloat(value: number){
+    public writeFloat(value: number, name?: string){
         const result = this.funcs.writeFloat.call(this.buffer, value, this.position);
+        if(this.debug) console.log('writeFloat', name, this.buffer.subarray(this.position, this.position + 4).toString('hex'))
         this.position += 4;
         return result
     }
@@ -275,10 +279,11 @@ export class Writer {
         this.position += data.length
         return result
     }
-    public writeFixedString(length: number, data: string){
+    public writeFixedString(length: number, data: string, name?: string){
         if(length % 1 != 0) throw new Error()
         console.assert(length >= data.length + 1, `Assertion failed: length (${length}) <= data.length (${ data.length }) + 1`)
         const result = this.buffer.write(data + '\u0000', this.position, 'utf8')
+        if(this.debug) console.log('writeFixedString', name, this.buffer.subarray(this.position, this.position + length).toString('hex'))
         this.position += length
         return result
     }

@@ -36,6 +36,7 @@ export const gitPkg = new class extends PkgInfoExe {
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
     zipTorrentEmbedded = embedded.gitZipTorrent
     zipTorrent = `${this.zip}.torrent`
+    zipTorrentName = `${this.zipName}.torrent`
 
     topLevelEntries = [
         'cmd',

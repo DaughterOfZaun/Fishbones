@@ -172,6 +172,12 @@ export function getBitFlagLE(buffer: Buffer, index: number){
     return ((buffer[Math.floor(index / 8)]! >> (index % 8)) & 1) != 0
 }
 
+export function setBitFlagLE(buffer: Buffer, index: number, value: number | boolean){
+    const i = Math.floor(index / 8)
+    const j = index % 8
+    buffer[i]! = buffer[i]! & ~(1 << j) | (+value << j)
+}
+
 export function makeWanderPoint(point: Vector3, distance: number) {
     return Vector3.Zero //TODO:
 }

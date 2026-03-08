@@ -155,7 +155,7 @@ export async function fs_rmdir(path: string, opts: RmDirOptions & Required<Abort
 export async function fs_removeFile(path: string, opts: RmOptions & Required<AbortOptions>, log = true){
     let result = false
     try {
-        await fs.rm(path)
+        await fs.rm(path, opts)
         result = true
     } catch(err){
         if(log)

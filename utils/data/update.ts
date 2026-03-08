@@ -9,7 +9,7 @@ import path from "node:path"
 import os from "node:os"
 
 export async function runPostInstall(opts: Required<AbortOptions>){
-    const bar = createBar(tr('Installing'), gitPkg.postInstallRelative)
+    const bar = createBar(tr('Running'), gitPkg.postInstallRelative)
     try {
         const logPrefix = "GIT POST-INSTALL CMD"
         const proc = spawn(

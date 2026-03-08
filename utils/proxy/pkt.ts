@@ -1,7 +1,10 @@
-import { getBitFlagLE, getX, getZ, vec2, Vector2, Vector3 } from "./math";
+import { getBitFlagLE, getX, getZ, setBitFlagLE, vec2, Vector2, Vector3 } from "./math";
 import type { AIState, Orders, Teams } from "./enums";
 import { Reader, Writer } from "./enet";
 import { replacer } from "./utils";
+
+const SByte_MaxValue = +127
+const SByte_MinValue = -128
 
 export enum ENetChannels {
     DEFAULT = 0,
@@ -921,6 +924,16 @@ export class SPM_HierarchicalBBProfileUpdate extends GamePacket {
     //struct HierarchicalBBProfileUpdateHeader header;
     //uchar entries[0];
 }
+export class C2S_QueryStatusReq extends GamePacket {
+    public override _type(){ return Type.C2S_QueryStatusReq }
+    public override _write(writer: Writer): void {}
+    public override _read(reader: Reader): void {}
+}
+export class C2S_CharSelected extends GamePacket {
+    public override _type(){ return Type.C2S_CharSelected }
+    public override _write(writer: Writer): void {}
+    public override _read(reader: Reader): void {}
+}
 export class S2C_QueryStatusAns extends GamePacket {
     //uchar res;
     res: boolean = false
@@ -1089,13 +1102,12 @@ export class MovementDataNormal extends MovementData {
             if(this.hasTeleportID)
                 this.teleportID = reader.readByte("teleportID")
 
-            //TODO: Compressed waypoints
             const flags = size > 1 ?
                 reader.readBytes(Math.floor((size - 2) / 4 + 1), "flags") :
                 undefined!
 
-            let lastX = reader.readInt16("lastX")
-            let lastZ = reader.readInt16("lastZ")
+            let lastX = reader.readInt16("firstX")
+            let lastZ = reader.readInt16("firstZ")
             this.waypoints.push(vec2(lastX, lastZ))
             
             for(let i = 1, flag = 0; i < size; i++){
@@ -1122,14 +1134,44 @@ export class MovementDataNormal extends MovementData {
             if(this.hasTeleportID)
                 writer.writeByte(this.teleportID)
 
-            //TODO: Compressed waypoints
-
             const size = this.waypoints.length
             const count = Math.floor((size - 2) / 4 + 1)
-            writer.writePad(count, 'flags')
-            for(const waypoint of this.waypoints){
-                writer.writeInt16(Math.floor(getX(waypoint)), 'lastX')
-                writer.writeInt16(Math.floor(getZ(waypoint)), 'lastZ')
+            
+            //writer.writePad(count, 'flags')
+            const flagsPosition = writer.position
+            const flags = writer.buffer.subarray(flagsPosition, flagsPosition + count)
+            writer.position += count
+
+            let prevWaypoint  = this.waypoints[0]!
+            let prevWaypointX = Math.floor(getX(prevWaypoint))
+            let prevWaypointZ = Math.floor(getZ(prevWaypoint))
+
+            writer.writeInt16(prevWaypointX, 'firstX')
+            writer.writeInt16(prevWaypointZ, 'firstZ')
+
+            for(let i = 1, j = 0; i < this.waypoints.length; i++){
+
+                const waypoint  = this.waypoints[i]!
+                const waypointX = Math.floor(getX(waypoint))
+                const waypointZ = Math.floor(getZ(waypoint))
+                
+                const relativeX = waypointX - prevWaypointX;
+                const flagX = relativeX <= SByte_MaxValue && relativeX >= SByte_MinValue
+                if(flagX) writer.writeSByte(relativeX, 'lastX offset')
+                else      writer.writeInt16(waypointX, 'lastX')
+                setBitFlagLE(flags, j, flagX)
+                j++
+
+                const relativeZ = waypointZ - prevWaypointZ;
+                const flagZ = relativeZ <= SByte_MaxValue && relativeZ >= SByte_MinValue
+                if(flagZ) writer.writeSByte(relativeZ, 'lastZ offset')
+                else      writer.writeInt16(waypointZ, 'lastZ')
+                setBitFlagLE(flags, j, flagZ)
+                j++
+
+                prevWaypoint  = waypoint
+                prevWaypointX = waypointX
+                prevWaypointZ = waypointZ
             }
         }
     }
@@ -1264,9 +1306,22 @@ export class S2C_StopAnimation extends GamePacket {
     //uchar flags;
 }
 export class PausePacket extends GamePacket {
-    //ulong clientID;
-    //int pauseTimeRemaining;
-    //bool tournamentPause:1;
+    public override _type(){ return Type.PausePacket }
+        
+    public clientID: number = 0 //ulong clientID;
+    public pauseTimeRemaining: number = 0 //int pauseTimeRemaining;
+    public tournamentPause: boolean = false //bool tournamentPause:1;
+
+    public override _read(reader: Reader): void {
+        this.clientID = reader.readUInt32('clientID')
+        this.pauseTimeRemaining = reader.readInt32('pauseTimeRemaining')
+        this.tournamentPause = reader.readBool('tournamentPause')
+    }
+    public override _write(writer: Writer): void {
+        writer.writeUInt32(this.clientID, 'clientID')
+        writer.writeInt32(this.pauseTimeRemaining, 'pauseTimeRemaining')
+        writer.writeBool(this.tournamentPause, 'tournamentPause')
+    }
 }
 export class S2C_OnEnterTeamVisiblity extends GamePacket {
     //uchar team;
@@ -1696,6 +1751,11 @@ export class SynchVersionC2S extends GamePacket {
         this.clientNetID = reader.readUInt32("clientNetID")
         this.versionString = reader.readFixedString(256)
     }
+    public override _write(writer: Writer){
+        writer.writeFloat(this.time_LastClient, "time_LastClient")
+        writer.writeUInt32(this.clientNetID, "clientNetID")
+        writer.writeFixedString(256, this.versionString, "versionString")
+    }
 }
 
 export class World_SendCamera_Server extends GamePacket {
@@ -1987,6 +2047,9 @@ export class World_LockCamera_Server extends GamePacket {
     //ulong clientID;
 }
 export class C2S_ClientReady extends GamePacket {
+    public override _type(){ return Type.C2S_ClientReady }
+    public override _write(writer: Writer): void {}
+    public override _read(reader: Reader): void {}
 }
 export class C2S_OnTipEvent extends GamePacket {
     //uchar tipEvent;
@@ -2169,8 +2232,19 @@ export class AI_TargetS2C extends GamePacket {
     //ulong targetID;
 }
 export class ResumePacket extends GamePacket {
-    //ulong clientID;
-    //bool delayed:1;
+    public override _type(){ return Type.ResumePacket }
+
+    public clientID: number = 0 //ulong clientID;
+    public delayed: boolean = false //bool delayed:1;
+
+    public override _read(reader: Reader){
+        this.clientID = reader.readUInt32('clientID')
+        this.delayed = reader.readBool('delayed')
+    }
+    public override _write(writer: Writer){
+        writer.writeUInt32(this.clientID, 'clientID')
+        writer.writeBool(this.delayed, 'delayed')
+    }
 }
 export class SyncMissionStartTimeS2C extends GamePacket {
     //float startTime;

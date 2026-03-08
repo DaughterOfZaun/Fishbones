@@ -5,6 +5,7 @@ import { logger } from './utils/log'
 import { console_log, ExitPromptError, input } from './ui/remote/remote'
 import { registerShutdownHandler, setInsideUI, shutdown, shutdownOptions, unwrapAbortError } from './utils/process/process'
 import { repair } from './utils/data/repair'
+import { cleanup } from './utils/data/cleanup'
 //import * as umplex from './network/umplex'
 import type { AbortOptions } from '@libp2p/interface'
 import { args } from './utils/args'
@@ -51,6 +52,12 @@ async function index(opts: Required<AbortOptions>){
     } catch(err) {
         console_log(tr('Repairing of some critical component has failed.', {}))
         throw err
+    }
+
+    try {
+        await cleanup(opts)
+    } catch(err) {
+        console_log(tr('Out-of-date data cleanup failed.', {}), Bun.inspect(err))
     }
 
     const port = args.port.value
