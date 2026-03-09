@@ -153,7 +153,9 @@ views = {
 "CustomGameSetup": NodePath("Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup"),
 "CustomsBrowser": NodePath("Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser"),
 "DirectConnect": NodePath("Container/TabContainer/#DirectConnect"),
+"DiskSpaceWarning": NodePath("Container/TabContainer/#Install/VBoxContainer/CenterContainer/#DiskSpaceWarning"),
 "GatheringLobby": NodePath("Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby"),
+"Install": NodePath("Container/TabContainer/#Install"),
 "Masteries": NodePath("Container/TabContainer/#Masteries"),
 "MergeRequests": NodePath("Container/TabContainer/#MergeRequests"),
 "ProfilePanel": NodePath("Container/TabContainer/MarginContainer1/HBoxContainer1/VBoxContainer2/MarginContainer/VBoxContainer/#ProfilePanel"),
@@ -165,17 +167,18 @@ select = ExtResource("5_w48qg")
 checkbox = ExtResource("6_vivmo")
 input = ExtResource("7_2cqfq")
 embedded_js = "res://embedded/index-0.0.3.36.js"
-embedded_exe = "res://embedded/bun-1.3.5-linux-x64-baseline.exe"
-embedded_lib_0 = "res://embedded/node_datachannel-bfgv6pn8.node"
-embedded_file_0 = "res://embedded/7zzs-2501-linux-x64.exe"
+embedded_exe = "res://embedded/bun-1.3.10-windows-x64-baseline.exe"
+embedded_lib_0 = "res://embedded/node_datachannel-8fg8wz1b.node"
+embedded_file_0 = "res://embedded/7za-2501-windows-x64.exe"
 embedded_file_1 = "res://embedded/ChildrenOfTheGrave-Gameserver.7z.torrent"
-embedded_file_2 = "res://embedded/aria2c-1.36.0-linux-x64.exe"
-embedded_file_3 = "res://embedded/d3dx9_39.dll"
-embedded_file_4 = "res://embedded/dotnet-sdk-10.0.103-linux-x64.tar.gz.torrent"
-embedded_file_5 = "res://embedded/modded_levels_paste_on_client.7z.torrent"
-embedded_file_6 = "res://embedded/playable_client_126.7z.torrent"
+embedded_file_2 = "res://embedded/PortableGit-2.52.0-64-bit.7z.exe.torrent"
+embedded_file_3 = "res://embedded/aria2c-1.37.0-win-64bit-build1.exe"
+embedded_file_4 = "res://embedded/d3dx9_39.dll"
+embedded_file_5 = "res://embedded/dotnet-sdk-10.0.103-win-x64.zip.torrent"
+embedded_file_6 = "res://embedded/modded_levels_paste_on_client.7z.torrent"
+embedded_file_7 = "res://embedded/playable_client_126.7z.torrent"
 container = NodePath("MariginContainer")
-bars_container = NodePath("ConsoleContainer/VBoxContainer/BarsContainer")
+bars_container = NodePath("Container/TabContainer/#Install/VBoxContainer/BarsContainer")
 show_console_toggle = NodePath("VBoxContainer/ShowConsoleToggle")
 console_container = NodePath("ConsoleContainer")
 console = NodePath("ConsoleContainer/VBoxContainer/PanelContainer/MarginContainer/Console")
@@ -370,6 +373,119 @@ text = "PLAY"
 layout_mode = 2
 text = "TEST"
 
+[node name="#Install" type="MarginContainer" parent="Container/TabContainer" unique_id=745769612]
+visible = false
+layout_mode = 2
+script = ExtResource("13_2cqfq")
+metadata/_tab_index = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Container/TabContainer/#Install" unique_id=1286358378]
+layout_mode = 2
+
+[node name="CenterContainer" type="Control" parent="Container/TabContainer/#Install/VBoxContainer" unique_id=1796260900]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/#Install/VBoxContainer/CenterContainer" unique_id=1909692620]
+visible = false
+custom_minimum_size = Vector2(132, 0)
+layout_mode = 0
+offset_left = 506.0
+offset_top = 252.0
+offset_right = 638.0
+offset_bottom = 283.0
+
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#Install/VBoxContainer/CenterContainer/PanelContainer" unique_id=999808883]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Container/TabContainer/#Install/VBoxContainer/CenterContainer/PanelContainer/MarginContainer" unique_id=509385133]
+layout_mode = 2
+text = "Installing..."
+horizontal_alignment = 1
+
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#Install/VBoxContainer/CenterContainer" unique_id=142728288]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="Panel" parent="Container/TabContainer/#Install/VBoxContainer/CenterContainer/MarginContainer" unique_id=2111670037]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#Install/VBoxContainer/CenterContainer/MarginContainer" unique_id=1107722111]
+layout_mode = 2
+
+[node name="#TroubleshootingGuide" type="RichTextLabel" parent="Container/TabContainer/#Install/VBoxContainer/CenterContainer/MarginContainer/MarginContainer" unique_id=1151623892]
+layout_mode = 2
+bbcode_enabled = true
+
+[node name="#DiskSpaceWarning" type="PanelContainer" parent="Container/TabContainer/#Install/VBoxContainer/CenterContainer" unique_id=576755778]
+visible = false
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.25
+anchor_top = 0.5
+anchor_right = 0.75
+anchor_bottom = 0.5
+offset_top = -77.5
+offset_bottom = 77.5
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("13_2cqfq")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Container/TabContainer/#Install/VBoxContainer/CenterContainer/#DiskSpaceWarning" unique_id=1056939058]
+layout_mode = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/#Install/VBoxContainer/CenterContainer/#DiskSpaceWarning/VBoxContainer" unique_id=383068334]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#Install/VBoxContainer/CenterContainer/#DiskSpaceWarning/VBoxContainer/PanelContainer" unique_id=941296978]
+layout_mode = 2
+
+[node name="#Title" type="Label" parent="Container/TabContainer/#Install/VBoxContainer/CenterContainer/#DiskSpaceWarning/VBoxContainer/PanelContainer/MarginContainer" unique_id=997371672]
+layout_mode = 2
+text = "Insufficient disk space"
+horizontal_alignment = 1
+
+[node name="MarginContainer1" type="MarginContainer" parent="Container/TabContainer/#Install/VBoxContainer/CenterContainer/#DiskSpaceWarning/VBoxContainer" unique_id=512521176]
+layout_mode = 2
+
+[node name="#Message" type="RichTextLabel" parent="Container/TabContainer/#Install/VBoxContainer/CenterContainer/#DiskSpaceWarning/VBoxContainer/MarginContainer1" unique_id=444234635]
+custom_minimum_size = Vector2(0, 69)
+layout_mode = 2
+text = "3.12 GB more disk space required on C:"
+fit_content = true
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MarginContainer2" type="MarginContainer" parent="Container/TabContainer/#Install/VBoxContainer/CenterContainer/#DiskSpaceWarning/VBoxContainer" unique_id=1220419274]
+layout_mode = 2
+
+[node name="Panel" type="Panel" parent="Container/TabContainer/#Install/VBoxContainer/CenterContainer/#DiskSpaceWarning/VBoxContainer/MarginContainer2" unique_id=1186407636]
+self_modulate = Color(1, 1, 1, 0.25)
+layout_mode = 2
+
+[node name="#Retry" type="Button" parent="Container/TabContainer/#Install/VBoxContainer/CenterContainer/#DiskSpaceWarning/VBoxContainer/MarginContainer2" unique_id=1988552514]
+layout_mode = 2
+size_flags_horizontal = 8
+text = "Retry ↻"
+
+[node name="HSeparator" type="HSeparator" parent="Container/TabContainer/#Install/VBoxContainer" unique_id=1110585966]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="BarsContainer" type="VBoxContainer" parent="Container/TabContainer/#Install/VBoxContainer" unique_id=1426232879]
+custom_minimum_size = Vector2(0, 101)
+layout_mode = 2
+
+[node name="MarginContainer" parent="Container/TabContainer/#Install/VBoxContainer/BarsContainer" unique_id=133600379 instance=ExtResource("3_h2yge")]
+visible = false
+layout_mode = 2
+
 [node name="#DirectConnect" type="MarginContainer" parent="Container/TabContainer" unique_id=1497345757]
 visible = false
 layout_mode = 2
@@ -378,7 +494,7 @@ theme_override_constants/margin_top = 12
 theme_override_constants/margin_right = 12
 theme_override_constants/margin_bottom = 12
 script = ExtResource("13_2cqfq")
-metadata/_tab_index = 2
+metadata/_tab_index = 3
 
 [node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/#DirectConnect" unique_id=331272436]
 layout_mode = 2
@@ -523,7 +639,7 @@ text = "Connect"
 [node name="MarginContainer1" type="MarginContainer" parent="Container/TabContainer" unique_id=356379136]
 visible = false
 layout_mode = 2
-metadata/_tab_index = 3
+metadata/_tab_index = 4
 
 [node name="HBoxContainer1" type="HBoxContainer" parent="Container/TabContainer/MarginContainer1" unique_id=1772493885]
 layout_mode = 2
@@ -1904,7 +2020,7 @@ layout_mode = 2
 theme_override_constants/margin_left = 0
 theme_override_constants/margin_right = 0
 script = ExtResource("13_2cqfq")
-metadata/_tab_index = 4
+metadata/_tab_index = 5
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="Container/TabContainer/#ChampionSelect" unique_id=295309296]
 layout_mode = 2
@@ -2302,7 +2418,7 @@ theme_override_constants/margin_top = 0
 theme_override_constants/margin_right = 0
 theme_override_constants/margin_bottom = 0
 script = ExtResource("13_2cqfq")
-metadata/_tab_index = 5
+metadata/_tab_index = 6
 
 [node name="HBoxContainer" type="HBoxContainer" parent="Container/TabContainer/#MergeRequests" unique_id=1354150527]
 layout_mode = 2
@@ -2443,7 +2559,7 @@ size_flags_horizontal = 3
 visible = false
 layout_mode = 2
 script = ExtResource("13_2cqfq")
-metadata/_tab_index = 6
+metadata/_tab_index = 7
 
 [node name="VBoxContainer" type="VBoxContainer" parent="Container/TabContainer/#Masteries" unique_id=478896742]
 layout_mode = 2
@@ -2824,19 +2940,6 @@ theme_override_font_sizes/bold_font_size = 12
 theme_override_font_sizes/bold_italics_font_size = 12
 theme_override_font_sizes/italics_font_size = 12
 theme_override_font_sizes/mono_font_size = 12
-
-[node name="BarsContainer" type="VBoxContainer" parent="ConsoleContainer/VBoxContainer" unique_id=833793596]
-custom_minimum_size = Vector2(0, 101)
-layout_mode = 2
-
-[node name="HSeparator" type="HSeparator" parent="ConsoleContainer/VBoxContainer/BarsContainer" unique_id=1356604664]
-visible = false
-layout_mode = 2
-theme_override_constants/separation = 24
-
-[node name="MarginContainer" parent="ConsoleContainer/VBoxContainer/BarsContainer" unique_id=82120699 instance=ExtResource("3_h2yge")]
-visible = false
-layout_mode = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1494956748]
 layout_mode = 1

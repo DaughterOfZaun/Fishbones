@@ -87,7 +87,7 @@ export function createBar(operation: string, filename: string, size: number = 0)
         createInfiniteBar(operation, filename)
 }
 
-export function console_log(...args: (string | number)[]){
+export function console_log(...args: (string | number | boolean)[]){
     if(multibar.isActive) multibar.log(args.join(' ') + '\n')
     else console.log(...args)
     logger.log(...args)

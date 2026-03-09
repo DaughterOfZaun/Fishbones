@@ -117,7 +117,17 @@ const ABORT_ERR = 20
 const ERR_UNHANDLED_ERROR = 'ERR_UNHANDLED_ERROR'
 
 //process.on('exit', () => shutdown('event'))
-process.on('uncaughtException', (err: Error & { code?: string, context?: Error & { code?: number } }) => {
+type AdvancedError = Error & {
+    code?: string,
+    context?: Error & {
+        code?: number
+    },
+    syscall?: string
+    errno?: number
+    fd?: number
+}
+process.on('uncaughtException', (err: AdvancedError) => {
+
     if(
         //err.message.startsWith('Unhandled error. (') &&
         //err.message.endsWith(')') &&
@@ -125,16 +135,23 @@ process.on('uncaughtException', (err: Error & { code?: string, context?: Error &
         err.context?.code === ABORT_ERR//&&
         //err.context?.name === 'AbortError' &&
         //err.context?.message === 'The operation was aborted.'
-    ){ /* Ignore */ } else {
-        //const unwrapped = unwrapAbortError(err)
-        //if(unwrapped instanceof ExitPromptError){
-            //TODO: Investigate.
-        //    shutdown('exception')
-        //} else {
-            console_log(tr('An unexpected exception occurred:', {}), Bun.inspect(err))
-            shutdown('exception')
-        //}
-    }
+    ) return
+
+    if(
+        err.code == 'EPIPE'
+        && err.errno == -32
+        //&& (err.syscall == 'send' || err.syscall == 'write')
+        //&& err.fd == 15
+    ) return
+
+    //const unwrapped = unwrapAbortError(err)
+    //if(unwrapped instanceof ExitPromptError){
+        //TODO: Investigate.
+    //    shutdown('exception')
+    //} else {
+        console_log(tr('An unexpected exception occurred:', {}), Bun.inspect(err))
+        shutdown('exception')
+    //}
 })
 
 //src: signal-exit/signals.js

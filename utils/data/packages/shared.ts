@@ -23,6 +23,7 @@ export abstract class PkgInfo {
     abstract zipInfoHashV2: string
     abstract zipSize: number
     //abstract zipHash: string
+    abstract size: number
 
     abstract dir: string
     abstract zip: string

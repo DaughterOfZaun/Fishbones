@@ -15,6 +15,7 @@ export class Args {
     mr = new Parameter<number>('mr', false, 0, tr('Select a merge request to test'))
     //origin = new Parameter<string>('origin', false, '', tr('Set a repository origin'))
     installModPack = new Option('install-modpack', true, tr('Install the package with additional levels'))
+    spaceCheck = new Option('space-check', true, tr('Perform a free disk space check'))
 
     repair = new Option('repair', true, tr('(Debug) Download+Unpack+Build missing files'))
     download = new Option('download', true, tr('(Debug) Download missing files'))

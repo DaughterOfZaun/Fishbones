@@ -15,10 +15,12 @@ export const gsPkg = new class extends PkgInfoCSProj implements PkgInfoGit {
     zipInfoHashV1 = '83155823dd0deb73cab3127dfbcfeb4091050f4f'
     zipInfoHashV2 = 'b84a60529bca79815d8858ec6430d180590b37516a8a84af8d4c1c97a0ce7bfd'
     zipSize = 16682132
+    size = 356730226
     
     dir = path.join(downloads, this.dirName)
     zip = path.join(downloads, this.zipName)
     zipTorrentEmbedded = embedded.gsPkgZipTorrent
+    zipTorrentName = `${this.zipName}.torrent`
     zipTorrent = `${this.zip}.torrent`
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
     zipMega = 'https://mega.nz/file/Oz5lDKiQ#RWwgpmkdUn1MrqLg8p8idkPj8Z0mxzFYgPzCmAi55Is'

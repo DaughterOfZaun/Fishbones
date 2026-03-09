@@ -2,7 +2,7 @@ import { build } from "./build"
 import { download, appendPartialDownloadFileExt, repairAria2, seed } from "./download/download"
 import { gcPkg, gitPkg, gsPkg, modPck1, type PkgInfo, repairTorrents, sdkPkg } from "./packages"
 import { console_log, createBar, currentExe, extractFile } from "../../ui/remote/remote"
-import { console_log_fs_err, cwd, downloads, fs_chmod, fs_copyFile, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_overwrite, fs_removeFile, fs_rmdir, fs_truncate, fs_writeFile, rwx_rx_rx } from './fs'
+import { console_log_fs_err, cwd, downloads, fs_chmod, fs_copyFile, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_overwrite, fs_removeFile, fs_rmdir, fs_stat, fs_statfs, fs_truncate, fs_writeFile, rwx_rx_rx } from './fs'
 import { readTrackersTxt } from "./download/trackers"
 import { appendPartialUnpackFileExt, DataError, repair7z, unpack } from "./unpack"
 import { TerminationError, unwrapAbortError } from "../process/process"
@@ -18,6 +18,10 @@ import { checkForUpdates, fbPkg, isNewVersionAvailable, prev_fbPkg, repairSelfPa
 import { spawn } from "node:child_process"
 import * as maps from './constants/maps'
 import { tr } from "../translation"
+import { DeferredView, render } from "../../ui/remote/view"
+import { button, form, label } from "../../ui/remote/types"
+import { VERSION } from "../constants-build"
+import type { StatsFs } from "node:fs"
 
 const DOTNET_INSTALL_CORRUPT_EXIT_CODES = [ 130, 131, 142, ]
 
@@ -30,9 +34,166 @@ function throwAnyRejection(results: PromiseSettledResult<unknown>[]){
 }
 
 export async function repair(opts: Required<AbortOptions>){
+    const view = render('Install', form({}), opts)
+    const res = await repairImpl(view, opts)
+    view.resolve()
+    return res
+}
+
+const checkFileSize = async (path: string, size: number, opts: Required<AbortOptions>) => {
+    const existingFileSize = (await fs_stat(path, opts, false))?.size ?? 0
+    const result = Math.max(0, size - existingFileSize)
+    //console_log('checkFileSize', existingFileSize, 'vs', size, '=', result)
+    return result
+}
+
+const checkDirSize = async (checkUnpackBy: string, zipPath: string, size: number, opts: Required<AbortOptions>) => {
+    const [ dirExists, zipBeingUnpacked ] = await Promise.all([
+        fs_exists(checkUnpackBy, opts, false),
+        fs_exists(appendPartialUnpackFileExt(zipPath), opts, false),
+    ])
+    const result = (!dirExists || zipBeingUnpacked) ? size : 0
+    //console_log('checkDirSize', dirExists, 'and', zipBeingUnpacked, 'vs', size, '=', result)
+    return result
+}
+
+const formatSize = (v: number) => {
+    let str = ''
+    if(v >= 999_995_000) str = `${(v / 1_000_000_000).toFixed(2)} GB`
+    else if(v > 999_995) str = `${(v / 1_000_000).toFixed(2)} MB`
+    else if(v > 999) str = `${(v / 1_000).toFixed(2)} KB`
+    else str = `${v.toFixed(2)} B`
+    return str
+}
+
+const checkDriveSizeAndGetErrorMsg = (fsStats: StatsFs | undefined, root: string, sizeRequired: number) => {
+    if(!fsStats) return
+    const spaceAvaible = fsStats.bavail * fsStats.bsize
+    const spaceDeficit = sizeRequired - spaceAvaible
+    //console_log('checkDriveSizeAndGetErrorMsg', spaceAvaible, 'vs', spaceDeficit)
+    if(spaceDeficit > 0){
+        return tr('{size} more disk space required on {path}', {
+            size: formatSize(spaceDeficit),
+            path: root,
+        })
+    }
+}
+
+async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>){
     //console.log('Running data check and repair...')
 
     await fs_ensureDir(downloads, opts)
+
+    while(args.spaceCheck.enabled){
+
+        const downloadsRoot = path.parse(downloads).root
+        const gcInstallRoot = path.parse(gcPkg.dir).root
+        const isSingleRoot = downloadsRoot == gcInstallRoot
+        
+        //TODO: Extract embeds sizes.
+        let [
+            downloadsStats,
+            gcInstallDirStats,
+            downloadsSizeRequired,
+            gcInstallDirSizeRequired,
+        ] = await Promise.all([
+
+            fs_statfs(downloads, opts),
+            //(!isSingleRoot) ?
+            fs_statfs(gcPkg.dir, opts)
+            //: Promise.resolve(undefined)
+            ,
+            Promise.all([
+                
+                checkFileSize(path.join(downloads, path.basename(embedded.s7zExe)), 3759224, opts),
+                checkFileSize(path.join(downloads, path.basename(embedded.ariaExe)), 9926088, opts),
+                checkFileSize(path.join(downloads, path.basename(embedded.bunExe)), 103547344, opts),
+                
+                checkFileSize(path.join(downloads, 'aria2.dht6.dat'), 9240, opts),
+                checkFileSize(path.join(downloads, 'aria2.dht.dat'), 10080, opts),
+                
+                ...((args.update.enabled) ? [
+                    checkDirSize(gsPkg.checkUnpackBy, gsPkg.zip, gsPkg.size, opts),
+                ] : [
+                    checkDirSize(gsPkg.checkUnpackBy, gsPkg.zip, gsPkg.size, opts),
+                    checkFileSize(gsPkg.zip, gsPkg.zipSize, opts),
+                    checkFileSize(gcPkg.zipTorrent, 14564, opts),
+                ]),
+                
+                checkFileSize(path.join(downloads, 'config.json'), 64, opts),
+                checkFileSize(path.join(downloads, path.basename(embedded.d3dx9_39_dll)), 3851784, opts),
+                
+                checkDirSize(sdkPkg.checkUnpackBy, sdkPkg.zip, sdkPkg.size, opts),
+                checkFileSize(sdkPkg.zip, sdkPkg.zipSize, opts),
+                checkFileSize(sdkPkg.zipTorrent, 49220, opts),
+
+                checkDirSize(fbPkg.checkUnpackBy, fbPkg.zip, 220201496, opts),
+                checkFileSize(fbPkg.zip, 81561932, opts),
+                checkFileSize(fbPkg.zipTorrent, 25399, opts),
+                
+                checkFileSize(path.join(downloads, `index-${VERSION}.js`), 14896347, opts),
+                checkFileSize(path.join(downloads, 'mastery-pages.json'), 1494, opts),
+                checkFileSize(path.join(downloads, 'log.txt'), 1834, opts),
+                
+                ...((args.installModPack.enabled) ? [
+                    //checkDirSize(modPck1.checkUnpackBy, modPck1.zip, modPck1.size, opts),
+                    checkFileSize(modPck1.zip, modPck1.zipSize, opts),
+                    checkFileSize(modPck1.zipTorrent, 37085, opts),
+                ] : []),
+
+                checkFileSize(path.join(downloads, path.basename(embedded.dataChannelLib)), 10231328, opts),
+                
+                //checkDirSize(gcPkg.checkUnpackBy, gcPkg.zip, gcPkg.size, opts),
+                checkFileSize(gcPkg.zip, gcPkg.zipSize, opts),
+                checkFileSize(gcPkg.zipTorrent, 90417, opts),
+
+                ...((os.platform() === 'win32') ? [
+                    checkDirSize(gitPkg.checkUnpackBy, gitPkg.zip, gitPkg.size, opts),
+                    checkFileSize(gitPkg.zip, gitPkg.zipSize, opts),
+                    checkFileSize(gitPkg.zipTorrent, 24284, opts),
+                ] : []),
+
+                checkFileSize(path.join(downloads, 'trackers.txt'), 809, opts),
+            ])
+            .then(results => results.reduce((a, v) => a + v, 0)),
+
+            Promise.all([
+                checkDirSize(gcPkg.checkUnpackBy, gcPkg.zip, gcPkg.size, opts),
+                ...((args.installModPack.enabled) ? [
+                    checkDirSize(modPck1.lockFile, modPck1.zip, modPck1.size, opts)
+                ] :[])
+            ])
+            .then(results => results.reduce((a, v) => a + v, 0)),
+        ])
+
+        downloadsSizeRequired *= 1.1
+        gcInstallDirSizeRequired *= 1.1
+
+        let msg: string | undefined
+        if(!isSingleRoot)
+            msg = ([
+                checkDriveSizeAndGetErrorMsg(downloadsStats, downloadsRoot, downloadsSizeRequired),
+                checkDriveSizeAndGetErrorMsg(gcInstallDirStats, gcInstallRoot, gcInstallDirSizeRequired),
+            ]).filter(msg => msg).join('\n')
+        else
+            msg = checkDriveSizeAndGetErrorMsg(downloadsStats, downloadsRoot, downloadsSizeRequired + gcInstallDirSizeRequired)
+
+        if(msg){
+            const view = render('DiskSpaceWarning', form({
+                'Retry': button(() => view.resolve()),
+                'Message': label(msg),
+            }), opts, [
+                {
+                    //HACK:
+                    regex: /.\/DiskSpaceWarning\/Retry:pressed/,
+                    listener: () => view.resolve(),
+                }
+            ])
+            await view.promise
+            continue
+        }
+        break
+    }
 
     let results: PromiseSettledResult<unknown>[]
     results = await Promise.allSettled([

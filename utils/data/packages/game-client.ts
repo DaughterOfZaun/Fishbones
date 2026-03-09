@@ -14,6 +14,7 @@ export const gcPkg = new class extends PkgInfoExe {
     zipInfoHashV1 = '875201f4a9920ffd7c9bff6c9a2ad59e28f041ae'
     zipInfoHashV2 = '6ccbb2911b07b2c084beb666d22018159845b3eae180b989d75b354af39c8af3'
     zipSize = 898175547
+    size = 2472089243
 
     release = '0.0.0.51' //TODO: Are you sure about that?
     dir = process.platform == 'win32' ?
@@ -22,6 +23,7 @@ export const gcPkg = new class extends PkgInfoExe {
     
     zip = path.join(downloads, this.zipName)
     zipTorrentEmbedded = embedded.gcZipTorrent
+    zipTorrentName = `${this.zipName}.torrent`
     zipTorrent = `${this.zip}.torrent`
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
     zipMega = 'https://mega.nz/file/uqRmkCKC#nJFZ2hAYqTq5q-T1PExXPpu0aX4ALjjZj2SZ4q9yCpk'

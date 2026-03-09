@@ -18,11 +18,13 @@ export const modPck1 = new class ModPackOne extends PkgInfo {
     zipInfoHashV1 = '986b97c5128d152e2ee2b4017eb72cdb6bcfb028'
     zipInfoHashV2 = '0b5d812062a7bfc045d6e0dba9e2259c9839643e1d9781bf235599c4b33fff20'
     zipSize = 180297724
+    size = 928982413
 
     zip = path.join(downloads, this.zipName)
     dir = path.join(path.dirname(gcPkg.dir), this.dirName)
 
     zipTorrentEmbedded = embedded.modPck1ZipTorrent
+    zipTorrentName = `${this.zipName}.torrent`
     zipTorrent = `${this.zip}.torrent`
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
     zipMega = 'https://mega.nz/file/ruZDDKTB#XNxrd3gr2GdxhqYPdgAWG2dT4sxBv9Q1mzMT1M-rjLc'

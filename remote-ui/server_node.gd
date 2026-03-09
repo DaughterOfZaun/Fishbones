@@ -104,9 +104,9 @@ var handlers: Dictionary[Variant, InputHandler] = {}
 var active_bars_count := 0
 func inc_active_bars_count(by: int) -> void:
     active_bars_count += by
-    bars_container.visible = active_bars_count > 0
-    console_container.visible = active_bars_count > 0 || show_console_toggle.button_pressed
-    show_console_toggle.visible = active_bars_count <= 0
+    #bars_container.visible = active_bars_count > 0
+    #console_container.visible = active_bars_count > 0 || show_console_toggle.button_pressed
+    #show_console_toggle.visible = active_bars_count <= 0
 
 func get_named_arg(args: PackedStringArray, name: String, default: String) -> String:
     var arg_index := args.find(name)

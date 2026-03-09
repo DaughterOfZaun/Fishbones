@@ -30,6 +30,7 @@ export const gitPkg = new class extends PkgInfoExe {
     exeDir = path.join(this.dir, 'bin')
     exe = path.join(this.exeDir, 'git.exe')
 
+    size = 411542732
     zipSize = 60238232
     zipInfoHashV1 = '8d7c5f9f582510706226509d0e44fb0045b0caaf'
     zipInfoHashV2 = '5a23f2797b1993e221b348749a23a54cc84be1969a03aed63add65eb7e30670c'

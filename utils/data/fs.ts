@@ -1,5 +1,5 @@
 //import path from 'node:path'
-import { promises as fs, Stats, type MakeDirectoryOptions, type RmDirOptions, type RmOptions } from "node:fs"
+import { promises as fs, Stats, StatsFs, type MakeDirectoryOptions, type RmDirOptions, type RmOptions } from "node:fs"
 import type { AbortOptions } from '@libp2p/interface'
 import { console_log } from '../../ui/remote/remote'
 import { cwd, downloads } from '../log'
@@ -207,6 +207,18 @@ export async function fs_stat(path: string, opts: Required<AbortOptions>, log = 
     } catch(err){
         if(log)
             console_log_fs_err(tr('Reading file stats failed', {}), path, err)
+    }
+    opts.signal.throwIfAborted()
+    return result
+}
+
+export async function fs_statfs(path: string, opts: Required<AbortOptions>, log = true){
+    let result: StatsFs | undefined
+    try {
+        result = await fs.statfs(path)
+    } catch(err){
+        if(log)
+            console_log_fs_err(tr('Reading filesystem stats failed', {}), path, err)
     }
     opts.signal.throwIfAborted()
     return result
