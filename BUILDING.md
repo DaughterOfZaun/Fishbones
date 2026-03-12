@@ -9,10 +9,12 @@
 - Download [directx_Jun2010_redist.exe](https://download.microsoft.com/download/8/4/a/84a35bf1-dafe-4ae8-82af-ad2ae20b6b14/directx_Jun2010_redist.exe) and extract `Aug2008_d3dx9_39_x64.cab/d3dx9_39.dll` to `./thirdparty/directx_Jun2010_redist/Aug2008_d3dx9_39_x64` as `d3dx9_39.dll`
 - Download [trackers_best.txt](https://raw.githubusercontent.com/ngosang/trackerslist/master/trackers_best.txt) to `./thirdparty` as `trackers.txt`
 - Run `./dist/Godot_v4.6-stable_win64.exe`
-    - Navigate `Import` -> select `./remote-ui/project.godot` -> `Open` -> `Import`
-    - Navigate `Editor` -> `Manage Export Templates` -> `Install from File` -> select `Godot_v4.6-stable_export_templates.tpz` -> Open
-- Run a command
+  - Navigate `Import` -> select `./remote-ui/project.godot` -> `Open` -> `Import`
+  - Navigate `Editor` -> `Manage Export Templates` -> `Install from File` -> select `Godot_v4.6-stable_export_templates.tpz` -> Open
+- Run the following command
+
 ```bash
-./thirdparty/bun-1.3.10-windows-x64-baseline.exe run ./build.ts install embeds protons bun godot release windows 0.0.3.36
+./thirdparty/bun-1.3.10-windows-x64-baseline.exe run ./build.ts install patch-modules embeds protons bun godot release windows 0.0.3.36
 ```
+
 - Run `./dist/Fishbones.exe`
