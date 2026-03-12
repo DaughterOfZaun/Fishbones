@@ -7,7 +7,8 @@ import type { PeerDiscovery, PeerDiscoveryEvents, PeerId, PeerInfo, Startable, C
 import type { AddressManager } from '@libp2p/interface-internal'
 import type { GossipSub, GossipsubMessage, GossipsubOpts } from '@chainsafe/libp2p-gossipsub'
 import type { PinningService } from '../../../network/libp2p/pinning'
-//import { console_log } from '../../../ui/remote/remote'
+import type { TimeService } from '../../../utils/proxy/time'
+import { console_log } from '../../../ui/remote/remote'
 
 export const TOPIC = '_peer-discovery._p2p._pubsub'
 
@@ -15,8 +16,8 @@ const s = 1000
 const m = 60*s
 const h = 60*m
 
-const TTL_MARGIN = 30*s
-const RECORD_LIFETIME = 1*h
+const TTL_MARGIN = 7.5*s
+const RECORD_LIFETIME = 15*m
 const REANNOUNCE_INTERVAL = RECORD_LIFETIME - TTL_MARGIN
 
 export interface PubsubPeerDiscoveryInit {
@@ -31,6 +32,7 @@ export interface PubSubPeerDiscoveryComponents {
     peerStore: PeerStore
     events: TypedEventTarget<Libp2pEvents>
     pinning: PinningService
+    time: TimeService
 }
 
 export interface PubSubPeerDiscoveryEvents {
@@ -151,6 +153,7 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
             publicKey: publicKeyToProtobuf(peerId.publicKey),
             addrs: announce ? am.getAddresses().map(ma => ma.bytes) : [],
             data: announce && this.data ? this.data : undefined,
+            timestamp: BigInt(this.components.time.now()),
         })
         
         //if (pubsub.getSubscribers(topic).length === 0) {
@@ -185,23 +188,23 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
 
             //console_log('PUBSUB', 'onMessage', event.detail.msgId, peerId.toString())
 
+            const now = this.components.time.now()
+            const timeRemaining = RECORD_LIFETIME - (now - Number(peer.timestamp ?? now))
+            if(timeRemaining <= 0) return
+
             const oldPWD = this.peers.get(peerId.toString())
             if(oldPWD){
                 clearTimeout(oldPWD.timeout)
                 this.components.pinning.unpin(oldPWD.msgIdStr)
             }
 
-            if (peer.addrs && peer.addrs.length > 0){
-                
+            if (peer.addrs.length > 0){
+
                 const newPWD: PeerIdWithDataAndMessage = {
                     id: peerId,
                     data: peer.data,
                     msgIdStr,
-                    timeout: setTimeout(() => {
-                        this.peers.delete(peerId.toString())
-                        this.components.pinning.unpin(msgIdStr)
-                        if(peer.data) this.safeDispatchEvent('update')
-                    }, RECORD_LIFETIME)
+                    timeout: setTimeout(() => this.removePeer(newPWD), timeRemaining)
                 }
                 this.components.pinning.pin(msgIdStr)
 
@@ -219,10 +222,8 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
 
             if(peer.addrs.length > 0){
                 const multiaddrs = peer.addrs.map(b => multiaddr(b))
-
                 //for(const ma of multiaddrs)
                 //    console_log('onMessage', event.detail.msgId, ma.toString())
-
                 //this.components.peerStore.merge(peerId, { multiaddrs })
                 const detail: PeerInfo = { id: peerId, multiaddrs, }
                 this.safeDispatchEvent<PeerInfo>('peer', { detail })
@@ -235,5 +236,20 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
     onSelfUpdate = (): void => {
         if(this.announced)
             this.broadcast(true)
+    }
+
+    public removeRecord(peerId: PeerId){
+        const peerIdStr = peerId.toString()
+        const peer = this.peers.get(peerIdStr)
+        if(peer){
+            this.removePeer(peer)
+            clearTimeout(peer.timeout)
+        }
+    }
+
+    private removePeer(peer: PeerIdWithDataAndMessage){
+        this.peers.delete(peer.id.toString())
+        this.components.pinning.unpin(peer.msgIdStr)
+        if(peer.data) this.safeDispatchEvent('update')
     }
 }

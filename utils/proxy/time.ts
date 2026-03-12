@@ -10,7 +10,7 @@ export function time(){
 }
 
 const timeSync = NtpTimeSync.getInstance()
-class TimeService implements Startable {
+export class TimeService implements Startable {
 
     syncInterval: ReturnType<typeof setInterval> | null = null
     //lastResult: NtpTimeResult | null = null

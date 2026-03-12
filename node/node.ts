@@ -335,6 +335,11 @@ async function setup(node: LibP2PNode, opts: Required<AbortOptions>){
         return connection!
     }
 
+    node.addEventListener('connection:fail', (event) => {
+        const peerId = event.detail
+        node.services.pubsubPeerDiscovery.removeRecord(peerId)
+    })
+
     await node.start()
 }
 
