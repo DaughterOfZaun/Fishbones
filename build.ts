@@ -1,13 +1,19 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { $ } from 'bun'
+import { $, type BunPlugin } from 'bun'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { NAME, OUTDIR, OUTFILE, VERSION_REGEX } from './utils/constants-build'
 import { config, type Config } from './utils/data/embedded/config'
 //import { ariaPkg } from './utils/data/packages/aria2'
 
-const GODOT_EXE = './dist/Godot_v4.6-stable_linux.x86_64'
+const GODOT_EXE =
+    process.argv.includes('linux') ? './dist/Godot_v4.6-stable_linux.x86_64' :
+        process.argv.includes('windows') ? './dist/Godot_v4.6-stable_win64.exe' :
+            undefined;
+
+if (GODOT_EXE === undefined)
+    throw new Error('Platform not specified or not supported')
 
 const release = process.argv.includes('release') ? 'release' : 'debug'
 
@@ -18,19 +24,19 @@ const indexJS = `./${OUTDIR}/index-${version}.js`
 
 const platform =
     process.argv.includes('linux') ? 'linux' :
-    process.argv.includes('windows') ? 'windows' :
-    undefined!
-if(platform === undefined)
+        process.argv.includes('windows') ? 'windows' :
+            undefined!
+if (platform === undefined)
     throw new Error('Platform not specified or not supported')
 
-const target: Bun.Build.Target =
-    (platform === 'linux') ? `bun-linux-x64-baseline` as Bun.Build.Target :
-    (platform === 'windows') ? `bun-windows-x64-baseline` :
-    undefined!
+const target: Bun.Build.CompileTarget =
+    (platform === 'linux') ? `bun-linux-x64-baseline` :
+        (platform === 'windows') ? `bun-windows-x64-baseline` :
+            undefined!
 
-if(process.argv.includes('server')){
+if (process.argv.includes('server')) {
     await Bun.build({
-        entrypoints: [ './node/server.ts' ],
+        entrypoints: ['./node/server.ts'],
         sourcemap: 'inline',
         outdir: OUTDIR,
         env: 'disable',
@@ -43,38 +49,33 @@ if(process.argv.includes('server')){
     process.exit()
 }
 
-async function fs_ensureDir(path: string){
+async function fs_ensureDir(path: string) {
     try { await fs.mkdir(path) }
-    catch(err){
-        if(err != null && typeof err == 'object' &&
-            'code' in err && err['code'] == 'EEXIST'){ /* Ignore. */ }
+    catch (err) {
+        if (err != null && typeof err == 'object' &&
+            'code' in err && err['code'] == 'EEXIST') { /* Ignore. */ }
         else throw err
     }
 }
 
-async function build_embeds(){
+let embeddedJson: Record<string, string> = {}
+let embedFileCopies: { from: string, to: string }[] = []
 
-    await fs_ensureDir('./remote-ui/embedded/')
-    await $`rm ./remote-ui/embedded/*`.quiet().nothrow()
-
+async function generate_embeds_json() {
     config['indexJS'] = indexJS
 
-    const embeddedJson: Record<string, string> = {}
-    for(const [key, keyConfig] of Object.entries(config as Config)){
+    for (const [key, keyConfig] of Object.entries(config as Config)) {
         let from =
             (typeof keyConfig === 'string') ? keyConfig :
-            (platform in keyConfig) ? keyConfig[platform]! : ''
+                (platform in keyConfig) ? keyConfig[platform]! : ''
 
-        if(from){
+        if (from) {
             from = path.resolve(from)
             let fileName = path.basename(from)
-            if(!path.extname(fileName)) fileName += '.exe'
+            if (!path.extname(fileName)) fileName += '.exe'
             const to = `./remote-ui/embedded/${fileName}`
             embeddedJson[key] = to.replace('./remote-ui/', 'res://')
-            //console.log(`ln -sf "${from}" "${to}"`)
-            if(process.platform == 'linux')
-                 await $`ln -sf ${from} ${to}`
-            else await $`cp ${from} ${to}`
+            embedFileCopies.push({ from, to })
         } else {
             embeddedJson[key] = ''
         }
@@ -82,6 +83,18 @@ async function build_embeds(){
 
     await fs_ensureDir('./dist')
     await fs.writeFile('./dist/embedded.json', JSON.stringify(embeddedJson, null, 4), 'utf8')
+}
+
+async function build_embeds() {
+    await fs_ensureDir('./remote-ui/embedded/')
+    await $`rm ./remote-ui/embedded/*`.quiet().nothrow()
+
+    for (const { from, to } of embedFileCopies) {
+        //console.log(`ln -sf "${from}" "${to}"`)
+        if (process.platform == 'linux')
+            await $`ln -sf ${from} ${to}`
+        else await $`cp ${from} ${to}`
+    }
 
     let tscn = await fs.readFile('./remote-ui/main.tscn', 'utf8')
     const embeddedFiles = Object.entries(embeddedJson)
@@ -97,32 +110,32 @@ async function build_embeds(){
     await fs.writeFile('./remote-ui/main.tscn', tscn, 'utf8')
 }
 
-if(process.argv.includes('embeds'))
-    await build_embeds()
+if (process.argv.includes('embeds'))
+    await generate_embeds_json()
 
-if(process.argv.includes('bun')){
-    if(platform === 'windows' && process.platform == 'linux'){
+if (process.argv.includes('bun')) {
+    if (platform === 'windows' && process.platform == 'linux') {
         await $`mv node_modules node_modules_linux_npm`
         await $`mv node_modules_win_npm node_modules`
     }
-    if(process.argv.includes('install')){
+    if (process.argv.includes('install')) {
         await $`bun install --linker hoisted`
     }
-    if(process.argv.includes('patch-modules')){
+    if (process.argv.includes('patch-modules')) {
         await patch_npm_modules()
     }
-    if(process.argv.includes('libutp')){
+    if (process.argv.includes('libutp')) {
         await build_libUTP()
     }
-    if(process.argv.includes('protons')){
+    if (process.argv.includes('protons')) {
         const protons = './node_modules/protons/dist/bin/protons.js'
         const messageDir = './message'
         await Promise.all(
             (await fs.readdir(messageDir))
-            .filter(file => file.endsWith('.proto'))
-            .map(async (file) => {
-                return $`bun run ${protons} ${`${messageDir}/${file}`}`
-            })
+                .filter(file => file.endsWith('.proto'))
+                .map(async (file) => {
+                    return $`bun run ${protons} ${`${messageDir}/${file}`}`
+                })
         )
     }
     // if(process.argv.includes('thirdparty')){
@@ -137,26 +150,30 @@ if(process.argv.includes('bun')){
     // }
     try {
         await Bun.build({
-            entrypoints: [ './index.ts' ],
+            entrypoints: ['./index.ts'],
             sourcemap: 'inline',
             outdir: OUTDIR,
             env: 'disable',
             target: 'bun',
             minify: false,
+            packages: "bundle",
             define: {
                 'process.env.VERSION': `"${version}"`
-            }
+            },
         })
         await fs.rename(`./${OUTDIR}/index.js`, indexJS)
     } finally {
-        if(platform === 'windows' && process.platform == 'linux'){
+        if (platform === 'windows' && process.platform == 'linux') {
             await $`mv node_modules node_modules_win_npm`
             await $`mv node_modules_linux_npm node_modules`
         }
     }
 }
 
-if(process.argv.includes('godot')){
+if (process.argv.includes('embeds'))
+    await build_embeds()
+
+if (process.argv.includes('godot')) {
 
     const file = './remote-ui/project.godot'
     let proj = await fs.readFile(file, 'utf8')
@@ -168,7 +185,7 @@ if(process.argv.includes('godot')){
     await build_godot_exe()
 }
 
-async function build_godot_exe(){
+async function build_godot_exe() {
     const preset = ({
         windows: 'Windows Desktop',
         linux: 'Linux Desktop',
@@ -180,23 +197,23 @@ async function build_godot_exe(){
     --quiet`
 }
 
-async function build_godot_pck(){
+async function build_godot_pck() {
     await $`${GODOT_EXE} \
     --export-pack 'Windows Desktop' ../dist/RemoteUI.pck \
     --path ./remote-ui \
     --headless`
 }
 
-async function build_libUTP(){
+async function build_libUTP() {
     $.cwd('./node_modules/utp-native/deps/libutp')
     try {
         const objs = ['utp_internal.o', 'utp_utils.o', 'utp_hash.o', 'utp_callbacks.o', 'utp_api.o', 'utp_packedsockaddr.o',]
-        if(platform === 'windows'){
+        if (platform === 'windows') {
             //zig build-lib -dynamic -lc -lc++ -target x86_64-windows-gnu -lws2_32
             const gpp = `x86_64-w64-mingw32-g++ -Wall -DPOSIX -g -fno-exceptions -O3 -fPIC -fno-rtti -Wno-sign-compare -fpermissive` // -D_DEBUG -DUTP_DEBUG_LOGGING
             await Promise.all(objs.map(async (obj) => $`${{ raw: gpp }} -c -o ${obj} ${obj.replace(/\.o$/, '.cpp')}`))
             await $`${{ raw: gpp }} -o libutp.dll -shared ${{ raw: objs.join(' ') }} -lws2_32 -static -static-libgcc -static-libstdc++`
-        } else if(platform === 'linux'){
+        } else if (platform === 'linux') {
             const gpp = `g++ -Wall -DPOSIX -g -fno-exceptions -O3 -fPIC -fno-rtti -Wno-sign-compare -fpermissive` // -D_DEBUG -DUTP_DEBUG_LOGGING
             await Promise.all(objs.map(async (obj) => $`${{ raw: gpp }} -c -o ${obj} ${obj.replace(/\.o$/, '.cpp')}`))
             await $`${{ raw: gpp }} -o libutp.so -shared ${{ raw: objs.join(' ') }}`
@@ -206,18 +223,18 @@ async function build_libUTP(){
     }
 }
 
-async function patch_npm_modules(){
+async function patch_npm_modules() {
     await Promise.all([
         patch_achingbrain_ssdp(),
         patch_node_datachannel(),
         patch_node_datachannel_again(),
         patch_ipshipyard_node_datachannel(),
         patch_simple_peer(),
-        patch_rendezvous(),
+        //patch_rendezvous(),
     ])
 }
 
-async function patch_ipshipyard_node_datachannel(){
+async function patch_ipshipyard_node_datachannel() {
     const file = './node_modules/@ipshipyard/node-datachannel/dist/esm/lib/node-datachannel.mjs'
     let js = await fs.readFile(file, 'utf8')
     js = js.replace(`
@@ -238,7 +255,7 @@ import nodeDataChannel from "../../../build/Release/node_datachannel.node";
     await fs.writeFile(file, js, 'utf8')
 }
 
-async function patch_node_datachannel(){
+async function patch_node_datachannel() {
     const file = './node_modules/webrtc-polyfill/node_modules/node-datachannel/lib/node-datachannel.js'
     let js = await fs.readFile(file, 'utf8')
     js = js.replace(`
@@ -255,7 +272,7 @@ import nodeDataChannel from "../build/Release/node_datachannel.node";
     await fs.writeFile(file, js, 'utf8')
 }
 
-async function patch_node_datachannel_again(){
+async function patch_node_datachannel_again() {
     //const file = './node_modules/webrtc-polyfill/lib/Blob.js'
     const file = './node_modules/webrtc-polyfill/lib/RTCDataChannel.js'
     let js = await fs.readFile(file, 'utf8')
@@ -264,7 +281,7 @@ async function patch_node_datachannel_again(){
     await fs.writeFile(file, js, 'utf8')
 }
 
-async function patch_achingbrain_ssdp(){
+async function patch_achingbrain_ssdp() {
     const file = './node_modules/@achingbrain/ssdp/dist/src/ssdp.js'
     let js = await fs.readFile(file, 'utf8')
     js = js.replace(`import { createRequire } from 'node:module';`, '')
@@ -277,7 +294,7 @@ import { name, version } from '../../package.json';
     await fs.writeFile(file, js, 'utf8')
 }
 
-async function patch_simple_peer(){
+async function patch_simple_peer() {
     const file = './node_modules/@thaunknown/simple-peer/lite.js'
     let js = await fs.readFile(file, 'utf8')
     js = js.replace(
@@ -287,7 +304,7 @@ async function patch_simple_peer(){
     await fs.writeFile(file, js, 'utf8')
 }
 
-async function patch_rendezvous(){
+async function patch_rendezvous() {
     const file = './node_modules/@canvas-js/libp2p-rendezvous/lib/server/RegistrationStore.js'
     let js = await fs.readFile(file, 'utf8')
     js = js.replace(
