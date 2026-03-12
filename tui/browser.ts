@@ -210,7 +210,7 @@ function getChoices(node: LibP2PNode){
     const pspd = node.services.pubsubPeerDiscovery
 
     return Object.fromEntries(
-        pspd.getPeersWithData()
+        pspd.getListOfReachablePeersWithData()
             .flatMap(pwd => peerInfoToChoices(node, pwd))
             .map(choice => [ choice.$id!, choice ])
     )

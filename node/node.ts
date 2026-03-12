@@ -52,12 +52,14 @@ export type LibP2PNode = Awaited<ReturnType<typeof createNodeInternal>> & {
         events: TypedEventTarget<Libp2pEvents>
         peerStore: PeerStore
     }
-} & TypedEventTarget<Libp2pEvents & {
+} & TypedEventTarget<LibP2PEvents>
+
+export type LibP2PEvents = Libp2pEvents & {
     'same-program-peer:discovery': CustomEvent<PeerId>
     //'connection:progress': OpenConnectionProgressEvents
     'connection:begin': CustomEvent<PeerId>
     'connection:fail': CustomEvent<PeerId>
-}>
+}
 
 export async function createNode(port: number, opts: Required<AbortOptions>){
     const node = await (createNodeInternal(port, opts) as Promise<LibP2PNode>)
@@ -335,10 +337,11 @@ async function setup(node: LibP2PNode, opts: Required<AbortOptions>){
         return connection!
     }
 
-    node.addEventListener('connection:fail', (event) => {
-        const peerId = event.detail
-        node.services.pubsubPeerDiscovery.removeRecord(peerId)
-    })
+    // It might be better to retransmit, in case someone else manages to connect.
+    //node.addEventListener('connection:fail', (event) => {
+    //    const peerId = event.detail
+    //    node.services.pubsubPeerDiscovery.removeRecord(peerId)
+    //})
 
     await node.start()
 }

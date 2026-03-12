@@ -3,22 +3,25 @@ import { TypedEventEmitter, peerDiscoverySymbol } from '@libp2p/interface'
 import { peerIdFromPublicKey } from '@libp2p/peer-id'
 import { multiaddr } from '@multiformats/multiaddr'
 import { Peer as PBPeer } from '../../../message/peer'
-import type { PeerDiscovery, PeerDiscoveryEvents, PeerId, PeerInfo, Startable, ComponentLogger, Logger, PeerStore, PublishResult, TypedEventTarget, Libp2pEvents } from '@libp2p/interface'
-import type { AddressManager } from '@libp2p/interface-internal'
+import type { PeerDiscovery, PeerDiscoveryEvents, PeerId, PeerInfo, Startable, ComponentLogger, Logger, PeerStore, PublishResult, TypedEventTarget } from '@libp2p/interface'
+import type { AddressManager, ConnectionManager } from '@libp2p/interface-internal'
 import type { GossipSub, GossipsubMessage, GossipsubOpts } from '@chainsafe/libp2p-gossipsub'
 import type { PinningService } from '../../../network/libp2p/pinning'
 import type { TimeService } from '../../../utils/proxy/time'
-import { console_log } from '../../../ui/remote/remote'
+//import { console_log } from '../../../ui/remote/remote'
+import type { LibP2PEvents } from '../../../node/node'
 
 export const TOPIC = '_peer-discovery._p2p._pubsub'
 
-const s = 1000
+const ms = 1
+const s = 1000*ms
 const m = 60*s
 const h = 60*m
 
 const TTL_MARGIN = 7.5*s
 const RECORD_LIFETIME = 15*m
 const REANNOUNCE_INTERVAL = RECORD_LIFETIME - TTL_MARGIN
+const POSITIVELY_REACHABLE_TIMEOUT = 100*ms
 
 export interface PubsubPeerDiscoveryInit {
     topic?: string
@@ -30,13 +33,15 @@ export interface PubSubPeerDiscoveryComponents {
     addressManager: AddressManager
     logger: ComponentLogger
     peerStore: PeerStore
-    events: TypedEventTarget<Libp2pEvents>
+    connectionManager: ConnectionManager
+    events: TypedEventTarget<LibP2PEvents>
     pinning: PinningService
     time: TimeService
 }
 
 export interface PubSubPeerDiscoveryEvents {
     add: CustomEvent<PeerIdWithData>
+    remove: CustomEvent<PeerIdWithData>
     update: CustomEvent<void>
 }
 
@@ -51,7 +56,13 @@ interface PeerIdWithDataAndMessage {
     id: PeerId
     data?: PBPeer.AdditionalData
     timeout?: ReturnType<typeof setTimeout>
-    msgIdStr: string
+    msgIdStr: string,
+    status: Status,
+}
+enum Status {
+    Unknown,
+    Reachable,
+    Unreachable,
 }
 
 export function pubsubPeerDiscovery (init: PubsubPeerDiscoveryInit = {}): (components: PubSubPeerDiscoveryComponents) => PubSubPeerDiscovery {
@@ -63,8 +74,29 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
     public readonly [Symbol.toStringTag] = '@libp2p/pubsub-peer-discovery'
 
     private peers = new Map<string, PeerIdWithDataAndMessage>()
-    getPeersWithData(): PeerIdWithData[] {
-        return [...this.peers.values().filter(peer => !!peer.data)] as PeerIdWithData[]
+    getListOfReachablePeersWithData(): PeerIdWithData[] {
+        return [...this.peers.values().filter(peer => this.isInList(peer))] as PeerIdWithData[]
+    }
+    private isInList(peer?: PeerIdWithDataAndMessage){
+        return !!peer && peer.status == Status.Reachable && !!peer.data
+    }
+    private updatePeer(peerId: PeerId, cb: (peer: PeerIdWithDataAndMessage | undefined) => PeerIdWithDataAndMessage){
+    
+        const oldPeer = this.peers.get(peerId.toString())
+        const oldInList = this.isInList(oldPeer)
+        const newPeer = cb(oldPeer)
+        const newInList = this.isInList(newPeer)
+    
+        if(newPeer) this.peers.set(peerId.toString(), newPeer)
+        else this.peers.delete(peerId.toString())
+
+        if(oldInList || newInList){
+            this.safeDispatchEvent('update', { detail: newPeer })
+            if(!oldInList && newInList)
+                this.safeDispatchEvent('add', { detail: newPeer })
+            if(oldInList && !newInList)
+                this.safeDispatchEvent('remove', { detail: oldPeer })
+        }
     }
     
     private readonly topic: string
@@ -91,9 +123,12 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
             throw new Error('PubSub not configured')
         }
 
-        this.components.
+        const events = this.components.events
         events.addEventListener('self:peer:update', this.onSelfUpdate)
         pubsub.addEventListener('gossipsub:message', this.onMessage)
+        events.addEventListener('connection:begin', this.onConnectionBegin)
+        events.addEventListener('connection:fail', this.onConnectionFail)
+        events.addEventListener('peer:connect', this.onPeerConnect)
         pubsub.subscribe(this.topic)
 
         this.announce()
@@ -112,9 +147,12 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
         this.deannounce()
         await this.lastPublishPromise
 
-        this.components.
+        const events = this.components.events
         events.removeEventListener('self:peer:update', this.onSelfUpdate)
         pubsub.removeEventListener('gossipsub:message', this.onMessage)
+        events.removeEventListener('connection:begin', this.onConnectionBegin)
+        events.removeEventListener('connection:fail', this.onConnectionFail)
+        events.removeEventListener('peer:connect', this.onPeerConnect)
         pubsub.unsubscribe(this.topic)
     }
 
@@ -192,30 +230,47 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
             const timeRemaining = RECORD_LIFETIME - (now - Number(peer.timestamp ?? now))
             if(timeRemaining <= 0) return
 
-            const oldPWD = this.peers.get(peerId.toString())
-            if(oldPWD){
-                clearTimeout(oldPWD.timeout)
-                this.components.pinning.unpin(oldPWD.msgIdStr)
-            }
+            this.updatePeer(peerId, (oldPWD) => {
 
-            if (peer.addrs.length > 0){
-
-                const newPWD: PeerIdWithDataAndMessage = {
-                    id: peerId,
-                    data: peer.data,
-                    msgIdStr,
-                    timeout: setTimeout(() => this.removePeer(newPWD), timeRemaining)
+                if(oldPWD){
+                    this.components.pinning.unpin(oldPWD.msgIdStr)
+                    clearTimeout(oldPWD.timeout)
                 }
-                this.components.pinning.pin(msgIdStr)
 
-                this.peers.set(peerId.toString(), newPWD)
+                if (peer.addrs.length > 0){
 
-                if(!oldPWD?.data && newPWD.data) this.safeDispatchEvent('add', { detail: newPWD })
-                if(oldPWD?.data || newPWD.data) this.safeDispatchEvent('update')
-            } else {
-                this.peers.delete(peerId.toString())
-                if(oldPWD?.data) this.safeDispatchEvent('update')
-            }
+                    const newPWD: PeerIdWithDataAndMessage = {
+                        id: peerId,
+                        data: peer.data,
+                        msgIdStr,
+                        timeout: undefined!,
+                        status: undefined!,
+                    }
+
+                    this.components.pinning.pin(newPWD.msgIdStr)
+                    newPWD.timeout = setTimeout(() => this.updatePeer(peerId, (peer) => {
+                        if(peer){
+                            this.components.pinning.unpin(peer.msgIdStr)
+                            clearTimeout(peer.timeout)
+                        }
+                        return undefined!
+                    }), timeRemaining)
+                    
+                    newPWD.status = oldPWD?.status ?? Status.Unknown
+                    if(newPWD.status == Status.Unknown){
+                        const cm = this.components.connectionManager
+                        if(cm.getConnections(peerId))
+                            newPWD.status = Status.Reachable
+                        else if(cm.getDialQueue().find(dial => dial.peerId == peerId)) //TODO: Should I check the status?
+                            newPWD.status = Status.Unreachable
+                        else
+                            setTimeout(this.onPositiveTimeout, POSITIVELY_REACHABLE_TIMEOUT, { detail: peerId })
+                    }
+
+                    return newPWD
+                }
+                return undefined!
+            })
 
             if (peerId.equals(this.components.peerId)) return
             this.log('discovered peer %p on %s', peerId, msg.topic)
@@ -238,18 +293,35 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
             this.broadcast(true)
     }
 
-    public removeRecord(peerId: PeerId){
-        const peerIdStr = peerId.toString()
-        const peer = this.peers.get(peerIdStr)
-        if(peer){
-            this.removePeer(peer)
-            clearTimeout(peer.timeout)
-        }
+    onPositiveTimeout = ({ detail: peerId }: CustomEvent<PeerId>) => {
+        this.updatePeer(peerId, (peer) => {
+            if(peer?.status == Status.Unknown)
+                peer.status = Status.Reachable
+            return peer!
+        })
     }
 
-    private removePeer(peer: PeerIdWithDataAndMessage){
-        this.peers.delete(peer.id.toString())
-        this.components.pinning.unpin(peer.msgIdStr)
-        if(peer.data) this.safeDispatchEvent('update')
+    onConnectionBegin = ({ detail: peerId }: CustomEvent<PeerId>) => {
+        this.updatePeer(peerId, (peer) => {
+            if(peer?.status == Status.Unknown)
+                peer.status = Status.Unreachable
+            return peer!
+        })
+    }
+
+    onPeerConnect = ({ detail: peerId }: CustomEvent<PeerId>) => {
+        this.updatePeer(peerId, (peer) => {
+            if(peer)
+                peer.status = Status.Reachable
+            return peer!
+        })
+    }
+
+    onConnectionFail = ({ detail: peerId }: CustomEvent<PeerId>) => {
+        this.updatePeer(peerId, (peer) => {
+            if(peer)
+                peer.status = Status.Unreachable
+            return peer!
+        })
     }
 }

@@ -40,6 +40,6 @@ export class TimeService implements Startable {
     }
 
     public now(){
-        return Date.now() + this.lastResult_offset
+        return Math.round(Date.now() + this.lastResult_offset)
     }
 }
