@@ -44,9 +44,7 @@ const cache = new Map(table.map(row => [ row[0], row.slice(1) ]))
 //void fs.writeFile('cache.json', JSON.stringify(Object.fromEntries(cache.entries()), null, 4), 'utf8')
 
 export function tr(str: string, obj?: Record<string, string | number>){
-    
-    if(!obj) return str
-    
+    //if(!obj) return str
     str = cache.get(str)?.[usedLocaleIndex] ?? str
     if(obj)
     for(const [key, value] of Object.entries(obj)){

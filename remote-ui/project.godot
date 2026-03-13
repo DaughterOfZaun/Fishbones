@@ -22,7 +22,7 @@ config/quit_on_go_back=false
 config/features=PackedStringArray("4.6", "GL Compatibility")
 run/low_processor_mode=true
 boot_splash/bg_color=Color(0, 0, 0, 1)
-boot_splash/image="uid://bjf478761547q"
+boot_splash/image="res://icons/splash-logo.png"
 config/icon="uid://otwgmcv7cmt7"
 config/windows_native_icon="res://icons/icon.ico"
 

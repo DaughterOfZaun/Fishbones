@@ -88,7 +88,7 @@ speed_scale = 0.5
 
 [node name="#Label" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer"]
 layout_mode = 2
-text = " Joining the game... "
+text = "Joining the game..."
 
 [node name="Control" type="Control" parent="PanelContainer"]
 layout_mode = 2

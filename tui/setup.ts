@@ -48,7 +48,8 @@ export async function setup(game: Game, server: LocalServer, opts: Required<Abor
         Champions: button(() => { server.champions.uinput(opts).catch(() => { /* Ignore */ }) }),
         SummonerSpells: button(() => { server.spells.uinput(opts).catch(() => { /* Ignore */ }) }),
 
-        Host: button(() => view.resolve()),
+        PlayAlone: button(() => { game.isPrivate = true; view.resolve() }),
+        PublishGame: button(() => { game.isPrivate = false; view.resolve() }),
         Quit: button(() => view.reject(new AbortPromptError()))
     }), opts)
 

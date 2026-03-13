@@ -3,6 +3,7 @@ import { createBar } from "../../ui/remote/remote"
 import type { AbortOptions } from "@libp2p/interface"
 import { fs_exists, fs_readdir, fs_readFile, fs_removeFile, fs_writeFile, type ReadWriteFileOpts } from "./fs"
 import { killIfActive, spawn, successfulTermination, type ChildProcess } from "../process/process"
+import { tr } from "../translation"
 import { args } from "../args"
 import path from 'node:path'
 
@@ -74,7 +75,7 @@ export async function build(pkg: PkgInfoCSProj, opts: Required<AbortOptions>){
     }
     
     //console_log(`Building ${pkg.dllName}...`)
-    const bar = createBar('Building', pkg.dllName)
+    const bar = createBar(tr('Building'), pkg.dllName)
     
     const nugetConfig = path.join(pkg.dir, 'NuGet.Config')
 
