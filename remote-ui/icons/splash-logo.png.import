@@ -3,11 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bjf478761547q"
-valid=false
+path="res://.godot/imported/splash-logo.png-f38f25bc29e66e2e18acd10d8ca5839d.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://icons/splash-logo.png"
+dest_files=["res://.godot/imported/splash-logo.png-f38f25bc29e66e2e18acd10d8ca5839d.ctex"]
 
 [params]
 

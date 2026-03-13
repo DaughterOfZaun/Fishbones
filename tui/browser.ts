@@ -33,14 +33,15 @@ type Lobby = (game: Game, opts: Required<AbortOptions>) => Promise<void>
 type Setup = (game: LocalGame, server: LocalServer, opts: Required<AbortOptions>) => Promise<void>
 export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts: Required<AbortOptions>){
 
-    const ps = node.services.pubsub
     const name = '' //getUsername(node.peerId.toString())
     const pspd = node.services.pubsubPeerDiscovery
 
+    let notificationsEnabled = true
     pspd.addEventListener('add', notifyRoomAdded)
     function notifyRoomAdded(event: CustomEvent<PeerIdWithData>){
         const pwd = event.detail
         
+        if(!notificationsEnabled) return
         if(pwd.id.toString() === node.peerId.toString()) return
 
         const choices = peerInfoToChoices(node, pwd)
@@ -62,8 +63,8 @@ export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts
             Rooms: list(
                 {}, //getChoices(node),
                 args.allowInternet.enabled ?
-                    tr('No games\nWait longer or host your own') :
-                    tr('No games on local network\nWait longer or host your own'),
+                    tr('No games') + '\n' + tr('Wait longer or host your own') :
+                    tr('No games on local network') + '\n' + tr('Wait longer or host your own'),
             ),
             Host: button(() => view.resolve(['host'])),
             Quit: button(() => view.resolve(['quit'])),
@@ -95,12 +96,12 @@ export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts
             }
         })
 
+        notificationsEnabled = true
         const { 0: action, 1: param } = await view.promise
-        if(action == 'host' && ps.isStarted() == false){
+        notificationsEnabled = false
+
+        if(action == 'host'){
             await hostLocal(node, name, lobby, setup, opts)
-        }
-        if(action == 'host' && ps.isStarted() == true){
-            await hostRemote(node, name, lobby, setup, opts)
         }
         if(action == 'join'){
             await joinRemote(param, name, lobby, opts)
@@ -112,28 +113,8 @@ export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts
 }
 
 async function hostLocal(node: LibP2PNode, name: string, lobby: Lobby, setup: Setup, opts: Required<AbortOptions>){
-    
-    const server = new LocalServer(node)
-    const game = new LocalGame(node, server)
-
-    try {
-        await setup(game, server, opts)
-    } catch(error) {
-        if(error instanceof AbortPromptError) return
-        throw error
-    }
-    
-    try {
-        await game.startListening(opts)
-        await game.join(name, undefined, opts)
-        await lobby(game, opts)
-    } finally {
-        game.stopListening()
-    }
-}
-
-async function hostRemote(node: LibP2PNode, name: string, lobby: Lobby, setup: Setup, opts: Required<AbortOptions>){
     const pspd = node.services.pubsubPeerDiscovery
+    const ps = node.services.pubsub
 
     const server = new LocalServer(node)
     const game = new LocalGame(node, server)
@@ -145,32 +126,34 @@ async function hostRemote(node: LibP2PNode, name: string, lobby: Lobby, setup: S
         throw error
     }
     
-    let data: Peer.AdditionalData
     let prevPlayerCount = 0
+    let data: Peer.AdditionalData = {
+        name: name,
+        serverSettings: server.encode(),
+        gameInfos: [ game.encode() ],
+    }
     try {
         await game.startListening(opts)
         await game.join(name, undefined, opts)
-        data = {
-            name: name,
-            serverSettings: server.encode(),
-            gameInfos: [ game.encode() ],
-        }
-        pspd.setData(data)
 
-        game.addEventListener('update', update)
-        game.addEventListener('start', start)
-        game.addEventListener('stop', stop)
-        
+        if(ps.isStarted() && !game.isPrivate){
+            game.addEventListener('update', update)
+            game.addEventListener('start', start)
+            game.addEventListener('stop', stop)
+            pspd.setData(data)
+        }
+
         await lobby(game, opts)
 
     } finally {
         game.stopListening()
 
-        game.removeEventListener('update', update)
-        game.removeEventListener('start', start)
-        game.removeEventListener('stop', stop)
-        
-        pspd.setData(null)
+        if(ps.isStarted() && !game.isPrivate){
+            game.removeEventListener('update', update)
+            game.removeEventListener('start', start)
+            game.removeEventListener('stop', stop)
+            pspd.setData(null)
+        }
     }
 
     function update(){
@@ -210,7 +193,7 @@ function getChoices(node: LibP2PNode){
     const pspd = node.services.pubsubPeerDiscovery
 
     return Object.fromEntries(
-        pspd.getPeersWithData()
+        pspd.getListOfReachablePeersWithData()
             .flatMap(pwd => peerInfoToChoices(node, pwd))
             .map(choice => [ choice.$id!, choice ])
     )

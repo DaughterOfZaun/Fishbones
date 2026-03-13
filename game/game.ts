@@ -71,6 +71,8 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     public readonly features = new FeaturesEnabled()
     public readonly commit = new HexStringValue()
 
+    public isPrivate: boolean = false
+
     protected player?: GamePlayer
     public getPlayer(id?: PlayerId){
         return (id === undefined) ? this.player : this.players.get(id)

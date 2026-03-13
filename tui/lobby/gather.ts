@@ -2,7 +2,7 @@ import { LocalGame } from "../../game/game-local";
 import type { GamePlayer, PlayerId, PPP } from "../../game/game-player";
 import { SwitchViewError } from "../tui";
 import { BOTS, players, PLAYERS, Team, type Context } from "./lobby";
-import { button, checkbox, form, icon, inq2gd, label, option, type Form } from "../../ui/remote/types";
+import { bar, button, checkbox, form, icon, inq2gd, label, option, type Form } from "../../ui/remote/types";
 import { render } from "../../ui/remote/view";
 import { champions, AIChampion, AIDifficulty } from "../../utils/data/constants/champions";
 import { getName } from "../../utils/namegen/namegen";
@@ -10,8 +10,13 @@ import { popup } from "../../ui/remote/remote";
 import { mapsById } from "../../utils/data/constants/maps";
 import { tr } from "../../utils/translation";
 
-//export async function lobby(game: Game, opts: Required<AbortOptions>){}
+const ms = 1
+const s = 1000*ms
 
+const GATHERING_TIMEOUT = 30*s
+const GATHERING_TIMEOUT_TICK = 1*s
+
+//export async function lobby(game: Game, opts: Required<AbortOptions>){}
 export async function lobby_gather(ctx: Context){
     const { game } = ctx
     const localGame = game instanceof LocalGame ? game : undefined!
@@ -50,11 +55,17 @@ export async function lobby_gather(ctx: Context){
         //Bots: list(players(game, team, BOTS, makePlayerForm)),
     })
 
+    let gatheringTimeout = (!game.isPrivate) ? GATHERING_TIMEOUT : 0
+
     const view = render('GatheringLobby', form({
         Quit: button(() => view.reject(new SwitchViewError({ cause: null }))),
-        Start: button(() => localGame.start(), !localGame || !game.areAllPlayersFullyConnected()),
+        Start: button(
+            () => { if(gatheringTimeout <= 0) localGame.start() },
+            !localGame || !game.areAllPlayersFullyConnected() || gatheringTimeout > 0,
+        ),
         Explanation: { $type: 'base', visible: false },
         Autofill: button(autofill, !localGame || mapInfo.bots.length === 0),
+        GatheringProgress: bar(0, 0, 100, gatheringTimeout <= 0),
         Team1: team(0),
         Team2: team(1),
     }), ctx, [
@@ -90,7 +101,7 @@ export async function lobby_gather(ctx: Context){
         view.get('Team2/Bots').setItems(players(game, Team.Purple, BOTS, makePlayerForm))
         view.get('Team1/Join').update(button(undefined, game.getPlayer()?.team.value == Team.Blue))
         view.get('Team2/Join').update(button(undefined, game.getPlayer()?.team.value == Team.Purple))
-        view.get('Start').update(button(undefined, !localGame || allPlayersAreFullyConnected))
+        view.get('Start').update(button(undefined, !localGame || allPlayersAreFullyConnected || gatheringTimeout > 0))
         view.get('Explanation').update({ $type: 'base', visible: allPlayersAreFullyConnected },)
     }
 
@@ -111,6 +122,27 @@ export async function lobby_gather(ctx: Context){
         const playersMax = Math.max(...playerCounts, game.playersMax.value ?? 0)
         const countsToAdd = playerCounts.map(playersCount => Math.max(0, playersMax - playersCount))
         localGame.addBots(countsToAdd)
+    }
+
+    if(gatheringTimeout > 0){
+        const gatheringTickInterval = setInterval(() => {
+            gatheringTimeout -= GATHERING_TIMEOUT_TICK
+            if(gatheringTimeout > 0){
+                view.update(form({
+                    GatheringProgress: bar((1 - gatheringTimeout / GATHERING_TIMEOUT) * 100),
+                }))
+            } else {
+                gatheringTimeout = 0
+                clearInterval(gatheringTickInterval)
+                view.update(form({
+                    GatheringProgress: { $type: 'progress-bar', value: 0, disabled: true },
+                    Start: { $type: 'button', disabled: false },
+                }))
+            }
+        }, GATHERING_TIMEOUT_TICK)
+        view.addCleanupCallback(() => {
+            clearInterval(gatheringTickInterval)
+        })
     }
 
     return view.promise

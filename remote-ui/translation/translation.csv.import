@@ -6,12 +6,14 @@ uid="uid://bgmm3awfhlomc"
 
 [deps]
 
-files=["res://translation/translation.en_US.translation", "res://translation/translation.it_IT.translation", "res://translation/translation.ru_RU.translation", "res://translation/translation.pt_BR.translation"]
+files=["res://translation/translation.en_US.translation", "res://translation/translation.it_IT.translation", "res://translation/translation.ru_RU.translation", "res://translation/translation.pt_BR.translation", "res://translation/translation.zh_CN.translation"]
 
 source_file="res://translation/translation.csv"
-dest_files=["res://translation/translation.en_US.translation", "res://translation/translation.it_IT.translation", "res://translation/translation.ru_RU.translation", "res://translation/translation.pt_BR.translation"]
+dest_files=["res://translation/translation.en_US.translation", "res://translation/translation.it_IT.translation", "res://translation/translation.ru_RU.translation", "res://translation/translation.pt_BR.translation", "res://translation/translation.zh_CN.translation"]
 
 [params]
 
-compress=true
+compress=0
 delimiter=0
+unescape_keys=false
+unescape_translations=true

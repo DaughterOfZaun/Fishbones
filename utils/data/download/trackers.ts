@@ -68,6 +68,6 @@ export async function downloadTrackersTxt(opts: Required<AbortOptions>){
         return txt
     }
     if(lastError){
-        console_log(tr('Downloading torrent-tracker list failed:\n', {}), Bun.inspect(lastError))
+        console_log(tr('Downloading torrent-tracker list failed:', {}), Bun.inspect(lastError))
     }
 }

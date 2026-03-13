@@ -49,23 +49,6 @@ export class PinningService {
     private monkeyPatch(){
         const pubsub = this.components.pubsub
 
-        const pubsub_mcache = pubsub['mcache'] as MessageCache
-        const pubsub_mcache_getWithIWantCount = pubsub_mcache.getWithIWantCount.bind(pubsub_mcache)
-        pubsub_mcache.getWithIWantCount = (msgIdStr: string, p: string) => {
-            
-            let msgwiwc = pubsub_mcache_getWithIWantCount(msgIdStr, p)
-
-            if(!msgwiwc){
-                const pmsg = this.pinnedMessages.get(msgIdStr)
-                if(pmsg){
-                    const count = (pmsg.iwantCounts.get(p) ?? 0) + 1
-                    pmsg.iwantCounts.set(p, count)
-                    msgwiwc = { msg: pmsg.msg, count }
-                }
-            }
-            return msgwiwc
-        }
-
         const pubsub_pushGossip = (pubsub['pushGossip'] as PubSubPushGossip).bind(pubsub)
         const pubsub_sendSubscriptions = (pubsub['sendSubscriptions'] as PubSubSendSubscriptions).bind(pubsub)
         pubsub['sendSubscriptions'] = (peerIdStr: PeerIdStr, topics: string[], subscribe: boolean): void => {
@@ -129,6 +112,23 @@ export class PinningService {
                     pubsub_sendRpc(peerIdStr, rpc)
                 }
             }
+        }
+
+        const pubsub_mcache = pubsub['mcache'] as MessageCache
+        const pubsub_mcache_getWithIWantCount = pubsub_mcache.getWithIWantCount.bind(pubsub_mcache)
+        pubsub_mcache.getWithIWantCount = (msgIdStr: string, p: string) => {
+            
+            let msgwiwc = pubsub_mcache_getWithIWantCount(msgIdStr, p)
+
+            if(!msgwiwc){
+                const pmsg = this.pinnedMessages.get(msgIdStr)
+                if(pmsg){
+                    const count = (pmsg.iwantCounts.get(p) ?? 0) + 1
+                    pmsg.iwantCounts.set(p, count)
+                    msgwiwc = { msg: pmsg.msg, count }
+                }
+            }
+            return msgwiwc
         }
     }
 

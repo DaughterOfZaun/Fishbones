@@ -85,7 +85,15 @@ export interface Texture extends Id {
     texture?: string,
 }
 
-export type Config = Base | Form | Tabs | List | Label | LineEdit | TextEdit | Button | Checkbox | Option | Texture
+export interface ProgressBar extends Id {
+    $type: 'progress-bar',
+    disabled?: boolean,
+    min_value?: number,
+    max_value?: number,
+    value?: number,
+}
+
+export type Config = Base | Form | Tabs | List | Label | LineEdit | TextEdit | Button | Checkbox | Option | Texture | ProgressBar
 
 export interface View {
     //path: string
@@ -114,6 +122,7 @@ export const checkbox = (button_pressed?: boolean, toggled?: (on: boolean) => vo
 export const button = (pressed?: () => void, disabled?: boolean) => ({ $type: 'button' as const, disabled, $listeners: { pressed } })
 export const option = (options?: { id: number, text: string }[], selected?: number, item_selected?: (index: number) => void, disabled?: boolean) => ({ $type: 'option' as const, disabled, selected, options, $listeners: { selected: item_selected } })
 export const texture = (texture?: string) => ({ $type: 'texture' as const, texture })
+export const bar = (value?: number, min_value?: number, max_value?: number, disabled?: boolean) => ({ $type: 'progress-bar' as const, disabled, value, min_value, max_value })
 export const icon = (icon?: string, placeholderText?: string, disabled?: boolean, pressed?: boolean) => ({
     $type: 'button' as const,
     text: (!icon) ? placeholderText : undefined,

@@ -21,6 +21,7 @@
 [ext_resource type="AudioStream" uid="uid://bahat51jj7lgm" path="res://sounds/air_event_invited_1.mp3" id="16_2cqfq"]
 [ext_resource type="AudioStream" uid="uid://cycatf0rllipp" path="res://sounds/air_event_invited3.mp3" id="17_cegan"]
 [ext_resource type="AudioStream" uid="uid://dbweirv317212" path="res://sounds/join_chat.mp3" id="18_cegan"]
+[ext_resource type="Texture2D" uid="uid://bjf478761547q" path="res://icons/splash-logo.png" id="22_ryguw"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_kek77"]
 shader = ExtResource("7_kek77")
@@ -137,6 +138,26 @@ _data = {
 &"slow_flicker": SubResource("Animation_q4b70")
 }
 
+[sub_resource type="Animation" id="Animation_ryguw"]
+resource_name = "FadeOut"
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:self_modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.25),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 1), Color(1, 1, 1, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_1u8w0"]
+_data = {
+&"FadeOut": SubResource("Animation_ryguw")
+}
+
 [node name="Control" type="ColorRect" unique_id=324559708 node_paths=PackedStringArray("views", "container", "bars_container", "show_console_toggle", "console_container", "console", "popup")]
 anchors_preset = 15
 anchor_right = 1.0
@@ -166,7 +187,7 @@ spinner = ExtResource("4_ycdy4")
 select = ExtResource("5_w48qg")
 checkbox = ExtResource("6_vivmo")
 input = ExtResource("7_2cqfq")
-embedded_js = "res://embedded/index-0.0.3.36.js"
+embedded_js = "res://embedded/index-0.0.3.37.js"
 embedded_exe = "res://embedded/bun-1.3.10-windows-x64-baseline.exe"
 embedded_lib_0 = "res://embedded/node_datachannel-8fg8wz1b.node"
 embedded_file_0 = "res://embedded/7za-2501-windows-x64.exe"
@@ -240,18 +261,18 @@ current_tab = 0
 tabs_visible = false
 deselect_enabled = true
 
-[node name="CenterContainer1" type="CenterContainer" parent="Container/TabContainer" unique_id=1856042970]
+[node name="#Loading" type="CenterContainer" parent="Container/TabContainer" unique_id=1229734443]
 layout_mode = 2
 metadata/_tab_index = 0
 
-[node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/CenterContainer1" unique_id=674393106]
+[node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/#Loading" unique_id=674393106]
 custom_minimum_size = Vector2(132, 0)
 layout_mode = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/CenterContainer1/PanelContainer" unique_id=1392029582]
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#Loading/PanelContainer" unique_id=1392029582]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="Container/TabContainer/CenterContainer1/PanelContainer/MarginContainer" unique_id=922019604]
+[node name="Label" type="Label" parent="Container/TabContainer/#Loading/PanelContainer/MarginContainer" unique_id=922019604]
 layout_mode = 2
 text = "Loading..."
 horizontal_alignment = 1
@@ -1044,7 +1065,6 @@ visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 8.0
-theme_override_constants/separation = 16
 script = ExtResource("13_2cqfq")
 metadata/_tab_index = 1
 
@@ -1057,6 +1077,7 @@ layout_mode = 2
 size_flags_vertical = 3
 
 [node name="Control1" type="Control" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1" unique_id=1979699701]
+custom_minimum_size = Vector2(58, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -1395,29 +1416,49 @@ theme_override_font_sizes/font_size = 14
 text = "BYPASS: Connect the client to the local server directly."
 
 [node name="Control2" type="Control" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer1" unique_id=47378758]
+custom_minimum_size = Vector2(58, 0)
 layout_mode = 2
 size_flags_horizontal = 3
+
+[node name="Control2" type="Control" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup" unique_id=2077086528]
+custom_minimum_size = Vector2(0, 58)
+layout_mode = 2
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup" unique_id=969390058]
 layout_mode = 2
 size_flags_vertical = 8
 
-[node name="#Quit" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer2" unique_id=624823508]
+[node name="Control" type="Control" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer2" unique_id=2115542282]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.75
+
+[node name="#PlayAlone" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer2" unique_id=1563798344]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.25
+text = "Play Alone"
+
+[node name="HBoxContainer3" type="HBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup" unique_id=465397663]
+layout_mode = 2
+size_flags_vertical = 8
+
+[node name="#Quit" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer3" unique_id=1646563387]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 0.25
 text = "Quit"
 
-[node name="Control" type="Control" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer2" unique_id=2115542282]
+[node name="Control" type="Control" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer3" unique_id=1607261570]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 0.5
 
-[node name="#Host" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer2" unique_id=1563798344]
+[node name="#PublishGame" type="Button" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/HBoxContainer3" unique_id=1682634605]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 0.25
-text = "Host Game"
+text = "Publish Game"
 
 [node name="#GatheringLobby" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer" unique_id=1924330484]
 visible = false
@@ -1813,6 +1854,19 @@ text = "You cannot start the game until all players are fully connected (☑)"
 horizontal_alignment = 1
 autowrap_mode = 3
 
+[node name="Label" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/HBoxContainer/#Start" unique_id=248820714]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 191.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "30s"
+horizontal_alignment = 2
+vertical_alignment = 1
+
 [node name="#Explanation" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/HBoxContainer/#Start" unique_id=615810919]
 custom_minimum_size = Vector2(31, 31)
 layout_mode = 1
@@ -1829,6 +1883,18 @@ theme_override_fonts/font = ExtResource("13_getpj")
 text = "⚠"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="#GatheringProgress" type="ProgressBar" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/HBoxContainer/#Start" unique_id=1517726455]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -4.0
+grow_horizontal = 2
+grow_vertical = 0
+value = 66.67
+show_percentage = false
 
 [node name="VBoxContainer2" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1" unique_id=931569882]
 layout_mode = 2
@@ -3092,3 +3158,19 @@ Downloading and installing the full version takes place in the background.
 You can watch the process by clicking the [>_ ] button on the right side of the screen."
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=1115391706]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("22_ryguw")
+expand_mode = 1
+stretch_mode = 4
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="TextureRect" unique_id=584753564]
+libraries/ = SubResource("AnimationLibrary_1u8w0")
+autoplay = &"FadeOut"

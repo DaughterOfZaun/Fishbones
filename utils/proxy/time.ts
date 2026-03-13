@@ -10,7 +10,7 @@ export function time(){
 }
 
 const timeSync = NtpTimeSync.getInstance()
-class TimeService implements Startable {
+export class TimeService implements Startable {
 
     syncInterval: ReturnType<typeof setInterval> | null = null
     //lastResult: NtpTimeResult | null = null
@@ -40,6 +40,6 @@ class TimeService implements Startable {
     }
 
     public now(){
-        return Date.now() + this.lastResult_offset
+        return Math.round(Date.now() + this.lastResult_offset)
     }
 }
