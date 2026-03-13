@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import { $, type BunPlugin } from 'bun'
+import { $ } from 'bun'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { NAME, OUTDIR, OUTFILE, VERSION_REGEX } from './utils/constants-build'
@@ -8,10 +8,9 @@ import { config, type Config } from './utils/data/embedded/config'
 //import { ariaPkg } from './utils/data/packages/aria2'
 
 const GODOT_EXE =
-    process.argv.includes('linux') ? './dist/Godot_v4.6-stable_linux.x86_64' :
-        process.argv.includes('windows') ? './dist/Godot_v4.6-stable_win64.exe' :
-            undefined;
-
+    process.platform == 'linux' ? './dist/Godot_v4.6-stable_linux.x86_64' :
+        process.platform == 'win32' ? './dist/Godot_v4.6-stable_win64.exe' :
+            undefined!
 if (GODOT_EXE === undefined)
     throw new Error('Platform not specified or not supported')
 
