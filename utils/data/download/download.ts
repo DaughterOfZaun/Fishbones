@@ -160,7 +160,7 @@ export async function stopAria2(opts: Required<AbortOptions>){
 
 export async function download(pkg: PkgInfo, opts: Required<AbortOptions>){
 
-    if(!args.download.enabled){
+    if(!args.download.value){
         console.log(`Pretending to download ${pkg.zipName}...`)
         //await new Promise<void>(res => { if(Math.random() === 0) res() })
         //throw new Error('Unable to download file, offline mode enabled')
@@ -173,7 +173,7 @@ export async function download(pkg: PkgInfo, opts: Required<AbortOptions>){
     
         const webSeeds = []
         if(pkg.zipWebSeeds) webSeeds.push(...pkg.zipWebSeeds)
-        if(pkg.zipMega && args.megaDownload.enabled){
+        if(pkg.zipMega && args.megaDownload.value){
             await MegaProxy.start(opts)
             webSeeds.push(MegaProxy.getURL(pkg))
         }
@@ -190,11 +190,11 @@ export async function download(pkg: PkgInfo, opts: Required<AbortOptions>){
                     //'bt-hash-check-seed': 'false',
                 }
                 let b64
-                if(args.torrentDownload.enabled && pkg.zipTorrent && (
+                if(args.torrentDownload.value && pkg.zipTorrent && (
                     b64 = await fs_readFile(pkg.zipTorrent, { ...opts, encoding: 'base64' })
                 )){
                     gid = await aria2.addTorrent(aria2conn, b64, webSeeds, aria2args)
-                } else if(args.torrentDownload.enabled && pkg.zipMagnet){
+                } else if(args.torrentDownload.value && pkg.zipMagnet){
                     gid = await aria2.addUri(aria2conn, [ pkg.zipMagnet, ...webSeeds], aria2args)
                 } else {
                     gid = await aria2.addUri(aria2conn, webSeeds, aria2args)
@@ -213,7 +213,7 @@ export async function download(pkg: PkgInfo, opts: Required<AbortOptions>){
             await fs_removeFile(lockfile, opts)
             
         } finally {
-            if(pkg.zipMega && args.megaDownload.enabled){
+            if(pkg.zipMega && args.megaDownload.value){
                 MegaProxy.ungetURL()
             }
         }

@@ -80,7 +80,7 @@ interface UnpackablePkgInfo {
 export async function unpack(pkg: UnpackablePkgInfo, opts: Required<AbortOptions>){
     const opts_rf = { ...opts, recursive: true, force: true }
     
-    if(!args.unpack.enabled){
+    if(!args.unpack.value){
         console.log(`Pretending to unpack ${pkg.zipName}...`)
         return
     }

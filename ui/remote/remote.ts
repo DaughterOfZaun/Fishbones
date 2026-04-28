@@ -18,7 +18,7 @@ import * as jrpc from './jrpc'
 
 export { type SelectChoice as Choice, AbortPromptError, ExitPromptError }
 
-export const jsonRpcDisabled = !args.jRPCUI.enabled
+export const jsonRpcDisabled = !args.jRPCUI.value
 export const currentExe = args.jRPCUI.value
 
 if(!jsonRpcDisabled){

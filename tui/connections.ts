@@ -149,7 +149,7 @@ export async function connections(node: LibP2PNode, opts: Required<AbortOptions>
         }
     })
 
-    if(args.allowInternet.enabled){
+    if(args.allowInternet.value){
         //fbPeers.set(serverPeerID, new FBPeerInfo(PeerType.Server))
         updatePeerStatus(view, serverPeerID, PeerStatus.Connecting, getPing)
     }

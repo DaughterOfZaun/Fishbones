@@ -8,9 +8,8 @@ import { repair } from './utils/data/repair'
 import { cleanup } from './utils/data/cleanup'
 //import * as umplex from './network/umplex'
 import type { AbortOptions } from '@libp2p/interface'
-import { args } from './utils/args'
+import { args, loadConfig } from './utils/args'
 import * as pages from './tui/masteries/pages'
-import { loadConfig } from './utils/config'
 import { startup } from './tui/startup'
 import { mrs } from './tui/mrs'
 import { tr } from './utils/translation'
@@ -19,33 +18,22 @@ logger.log(`${'-'.repeat(35)} ${TITLE} started ${'-'.repeat(35)}`)
 
 async function index(opts: Required<AbortOptions>){
     
-    if(args.setup.enabled){
+    if(args.setup.value){
         
         await loadConfig(opts)
         await startup(opts)
 
-        if(args.port.enabled){ //TODO: Rework.
-            const passed = await input({
-                message: `Enter ${args.port.desc}`,
-                default: args.port.value.toString()
-            })
-            const parsed = parseInt(passed)
-            if(isFinite(parsed) && parsed > 0)
-                args.port.value = parsed
-        }
-
-        if(args.mr.enabled){
-            args.mr.enabled = false
+        if(args.selectMR.value){
+            args.selectMR.set(false)
             const selected = await mrs(opts)
             if(selected){
-                args.mr.enabled = true
-                args.mr.value = selected
-                args.update.enabled = true
+                args.mrNumber.set(selected)
+                args.update.set(true)
             }
         }
     }
 
-    if(args.repair.enabled) try {
+    if(args.repair.value) try {
         const result = await repair(opts)
         if(result?.mustExit) return
     } catch(err) {

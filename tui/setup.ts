@@ -1,5 +1,5 @@
 import type { AbortOptions } from "@libp2p/interface";
-import { isSpellCrashDetected } from "../game/game";
+import { args } from "../utils/args";
 import type { LocalGame } from "../game/game-local";
 import { render } from "../ui/remote/view";
 import { Features, PlayerCount, TickRate } from "../utils/constants";
@@ -9,7 +9,7 @@ import { combinations, combinations_findIndex as combinations_findIndex, KnownCl
 
 export async function setup(game: LocalGame, opts: Required<AbortOptions>){
     
-    game.features.set(Features.SPELLS_DISABLED, isSpellCrashDetected())
+    game.features.set(Features.SPELLS_DISABLED, args.spellCrashDetected.value)
 
     let index = 0
     let combo: Combination = undefined!

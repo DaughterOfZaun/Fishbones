@@ -1,14 +1,13 @@
 //@ts-expect-error: Cannot find module or its corresponding type declarations.
 import csv from '../remote-ui/translation/translation.csv' with { type: 'text' }
 import { setLocale } from '../ui/remote/remote'
-import { withProperty } from './config'
 import { args } from './args'
 
 export const LOCALE_STR = 'locale'
 export const AUTO_LOCALE = 'auto'
 export const DEFAULT_LOCALE = 'en_US'
 
-const config = withProperty(LOCALE_STR, AUTO_LOCALE, locale => setUsedLocale(locale))
+args.usedLocale.on('change', locale => setUsedLocale(locale))
 
 const CSV_COLUMN_REGEX = /(?:"((?:""|[^"]|\n)*)")?(,|\n|$)/g
 

@@ -68,7 +68,7 @@ export class LocalGame extends Game {
                 bot.team.value = team
                 //this.assignTeamTo(bot)
                 bot.champion.value = champion
-                bot.difficulty.value = 2 //HACK: Advanced.
+                bot.difficulty.value = 0 //HACK: Newbie.
 
                 peersRequests.push({
                     playerId,

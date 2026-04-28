@@ -2,7 +2,7 @@ import { build } from "./build"
 import { download, appendPartialDownloadFileExt, repairAria2, seed } from "./download/download"
 import { gcPkg, gc420Pkg, gitPkg, gsPkg, gs420Pkg, modPck1, type PkgInfo, repairTorrents, sdkPkg, type PkgInfoCSProj } from "./packages"
 import { console_log, createBar, currentExe, extractFile } from "../../ui/remote/remote"
-import { console_log_fs_err, cwd, downloads, fs_chmod, fs_copyFile, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_overwrite, fs_readdir, fs_removeFile, fs_rmdir, fs_stat, fs_statfs, fs_truncate, fs_writeFile, rwx_rx_rx } from './fs'
+import { console_log_fs_err, cwd, downloads, fs_chmod, fs_copyFile, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_overwrite, fs_readdir, fs_readFile, fs_removeFile, fs_rmdir, fs_stat, fs_statfs, fs_truncate, fs_writeFile, rwx_rx_rx } from './fs'
 import { readTrackersTxt } from "./download/trackers"
 import { appendPartialUnpackFileExt, DataError, repair7z, unpack } from "./unpack"
 import { TerminationError, unwrapAbortError } from "../process/process"
@@ -26,6 +26,7 @@ import { ClientDataInfoV126 } from "./packages/game-client"
 import { BrokenWingsDataInfo } from "./packages/game-server"
 import { ClientDataInfoV420 } from "./packages/game-client-420"
 import { ChronobreakDataInfo } from "./packages/game-server-420"
+import { champions } from "./constants/champions"
 
 const DOTNET_INSTALL_CORRUPT_EXIT_CODES = [ 130, 131, 142, ]
 
@@ -89,9 +90,10 @@ async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>
 
     await fs_ensureDir(downloads, opts)
 
-    args.installModPack.enabled &&= args.installS1Client.enabled //HACK?
+    if(!args.installS1Client.value)
+        args.installModPack.set(false) //HACK?
 
-    while(args.spaceCheck.enabled){
+    while(args.spaceCheck.value){
 
         const downloadsRoot = path.parse(downloads).root
         const gcInstallRoot = path.parse(gcPkg.dir).root
@@ -120,8 +122,8 @@ async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>
                 checkFileSize(path.join(downloads, 'aria2.dht.dat'), 10080, opts),
                 
                 ...(
-                    (args.installS1Server.enabled) ? (
-                        (args.update.enabled) ? [
+                    (args.installS1Server.value) ? (
+                        (args.update.value) ? [
                             checkDirSize(gsPkg.checkUnpackBy, gsPkg.zip, gsPkg.size, opts),
                         ] : [
                             checkDirSize(gsPkg.checkUnpackBy, gsPkg.zip, gsPkg.size, opts),
@@ -131,7 +133,7 @@ async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>
                     ) : []
                 ),
                 ...(
-                    (args.installS4Server.enabled) ? [
+                    (args.installS4Server.value) ? [
                         checkDirSize(gs420Pkg.checkUnpackBy, gs420Pkg.zip, gs420Pkg.size, opts),
                         checkFileSize(gs420Pkg.zip, gs420Pkg.zipSize, opts),
                         checkFileSize(gc420Pkg.zipTorrent, 20022, opts),
@@ -153,7 +155,7 @@ async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>
                 checkFileSize(path.join(downloads, 'mastery-pages.json'), 1494, opts),
                 checkFileSize(path.join(downloads, 'log.txt'), 1834, opts),
                 
-                ...((args.installModPack.enabled) ? [
+                ...((args.installModPack.value) ? [
                     //checkDirSize(modPck1.checkUnpackBy, modPck1.zip, modPck1.size, opts),
                     checkFileSize(modPck1.zip, modPck1.zipSize, opts),
                     checkFileSize(modPck1.zipTorrent, 37085, opts),
@@ -176,13 +178,13 @@ async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>
             .then(results => results.reduce((a, v) => a + v, 0)),
 
             Promise.all([
-                ...((args.installS1Client.enabled) ? [
+                ...((args.installS1Client.value) ? [
                     checkDirSize(gcPkg.checkUnpackBy, gcPkg.zip, gcPkg.size, opts),
                 ] :[]),
-                ...((args.installModPack.enabled) ? [
+                ...((args.installModPack.value) ? [
                     checkDirSize(modPck1.lockFile, modPck1.zip, modPck1.size, opts),
                 ] :[]),
-                ...((args.installS4Client.enabled) ? [
+                ...((args.installS4Client.value) ? [
                     checkDirSize(gc420Pkg.checkUnpackBy, gc420Pkg.zip, gc420Pkg.size, opts),
                 ] :[]),
             ])
@@ -225,7 +227,7 @@ async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>
         repair7z(opts), //.catch((err) => { console_log(tr('Restoring 7z archiver executable failed:', {}), Bun.inspect(err)); throw err }),
         repairAria2(opts), //.catch((err) => { console_log(tr('Restoring Aria2 downloader executable failed:', {}), Bun.inspect(err)); throw err }),
         (async () => {
-            if(args.upgrade.enabled)
+            if(args.upgrade.value)
                 return checkForUpdates(opts).catch(err => { console_log(tr('Update check failed:', {}), Bun.inspect(err)) })
         })(),
     ])
@@ -273,16 +275,16 @@ async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>
             .then(() => { repairArchived_sdkPkg_opts = null })
     results = await Promise.allSettled([
 
-        !(args.torrentDownload.enabled) ? Promise.resolve() :
+        !(args.torrentDownload.value) ? Promise.resolve() :
         repairSelfPackage(opts).catch(err => {
             console_log(tr(`Restoring launcher package failed:`), Bun.inspect(err))
         }),
 
-        !(args.installS1Server.enabled) ? Promise.resolve() :
+        !(args.installS1Server.value) ? Promise.resolve() :
         Promise.allSettled([
             repairArchived_sdkPkg_opts,
             (async () => {
-                if(args.update.enabled || args.mr.enabled){
+                if(args.update.value || args.mrNumber.value !== undefined){
                     try {
                         if(os.platform() === 'win32'){
                             await repairArchived(gitPkg, opts)
@@ -314,7 +316,7 @@ async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>
             await fs_ensureDir(gsPkg.infoDir, opts)
         }),
 
-        !(args.installS4Server.enabled) ? Promise.resolve() :
+        !(args.installS4Server.value) ? Promise.resolve() :
         Promise.allSettled([
             repairArchived_sdkPkg_opts,
             repairArchived(gs420Pkg, opts),
@@ -330,32 +332,56 @@ async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>
             await fs_moveFile(path.join(levelsDir, 'map11'), path.join(levelsDir, 'Map11'), opts, false)
         }),
 
-        !(args.installS1Client.enabled) ? Promise.resolve() :
+        !(args.installS1Client.value) ? Promise.resolve() :
         Promise.allSettled([
             
             repairArchived(gcPkg, opts).then(async () => {
 
                 gcExeIsMissing = false
 
-                //await fs_ensureDir(gcPkg.exeDir, opts)
-                const d3dx9_39_dll_name = 'd3dx9_39.dll'
-                const d3dx9_39_dll_src = path.join(downloads, d3dx9_39_dll_name)
-                const d3dx9_39_dll_dst = path.join(gcPkg.exeDir, d3dx9_39_dll_name)
-                if(!await fs_exists(d3dx9_39_dll_dst, opts, true)){
-                    await extractFile(embedded.d3dx9_39_dll, d3dx9_39_dll_src, opts)
-                    await fs_copyFile(d3dx9_39_dll_src, d3dx9_39_dll_dst, opts) //HACK: To bypass "Access denied" error.
-                }
-                //await ensureSymlink()
+                Promise.allSettled([
+                    (async () => {
+                        //await fs_ensureDir(gcPkg.exeDir, opts)
+                        const d3dx9_39_dll_name = 'd3dx9_39.dll'
+                        const d3dx9_39_dll_src = path.join(downloads, d3dx9_39_dll_name)
+                        const d3dx9_39_dll_dst = path.join(gcPkg.exeDir, d3dx9_39_dll_name)
+                        if(!await fs_exists(d3dx9_39_dll_dst, opts, true)){
+                            await extractFile(embedded.d3dx9_39_dll, d3dx9_39_dll_src, opts)
+                            await fs_copyFile(d3dx9_39_dll_src, d3dx9_39_dll_dst, opts) //HACK: To bypass "Access denied" error.
+                        }
+                        //await ensureSymlink()
+                    })(),
+                    (async () => {
+                        const fontconfig_path = path.join(gcPkg.exeDir, 'DATA', 'Menu', 'fontconfig_en_US.txt')
+                        let fontconfig = await fs_readFile(fontconfig_path, { ...opts, encoding: 'utf8' })
+                        if(!fontconfig) return
+                            fontconfig = fontconfig.trim() + '\n'
+                        let fontconfig_changed = false
+                        const gsInfo = new BrokenWingsDataInfo(gsPkg.dir)
+                        const bots = new Set([gsInfo.bots, ...Object.values(gsInfo.maps).map(map => map.bots)].flat())
+                        for(const short of bots){
+                            const name = champions.find(champ => champ.short == short)?.name ?? short
+                            if(!fontconfig.includes(`"game_bot_${short}"`)){
+                                fontconfig += `tr "game_bot_${short}" = "${name} Bot"` + '\n'
+                                fontconfig_changed = true
+                            }
+                        }
+                        if(fontconfig_changed)
+                            await fs_writeFile(fontconfig_path, fontconfig, { ...opts, encoding: 'utf8' })
+                    })(),
+                ]).then((results) => {
+                    throwAnyRejection(results)
+                })
             }),
             
-            !(args.installModPack.enabled && modFileIsMissing) ? Promise.resolve() :
+            !(args.installModPack.value && modFileIsMissing) ? Promise.resolve() :
             repairArchived(modPck1, { ...opts, ignoreUnpacked: true }),
 
         ]).then(async (results) => {
 
             throwAnyRejection(results)
 
-            if (args.installModPack.enabled && modFileIsMissing){
+            if (args.installModPack.value && modFileIsMissing){
                 const bar = createBar(tr('Moving'), modPck1.name)
                 try {
                     await fs_overwrite(modPck1.dir, gcPkg.dir, opts)
@@ -370,7 +396,7 @@ async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>
             }
         }),
 
-        !(args.installS4Client.enabled) ? Promise.resolve() :
+        !(args.installS4Client.value) ? Promise.resolve() :
         repairArchived(gc420Pkg, opts).then(() => {
             gc420ExeIsMissing = false
         }),
@@ -393,7 +419,7 @@ async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>
 
     //TODO: await fs.cp(gsPkg.gcDir, gcPkg.exeDir, { recursive: true })
 
-    if(args.torrentDownload.enabled){
+    if(args.torrentDownload.value){
         //TODO: Seed all downloaded packages.
         const packages = [ gcPkg, gitPkg, modPck1, sdkPkg, fbPkg ]
         void Promise.allSettled(

@@ -7,7 +7,7 @@ import { PeerMap } from '@libp2p/peer-collections'
 import type { PeerIdWithData } from '../network/libp2p/discovery/pubsub-discovery'
 import type { Peer } from '../message/peer'
 import { LocalGame } from '../game/game-local'
-import { type Game, isSpellCrashDetected } from '../game/game'
+import { type Game } from '../game/game'
 import { render } from '../ui/remote/view'
 import { button, form, label, list, type Base, type Button, type Checkbox, type Form, type Label } from '../ui/remote/types'
 import { getUsername } from '../utils/namegen/namegen'
@@ -60,7 +60,7 @@ export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts
         const view = render<Action>('CustomsBrowser', form({
             Rooms: list(
                 {}, //getChoices(node),
-                args.allowInternet.enabled ?
+                args.allowInternet.value ?
                     tr('No games') + '\n' + tr('Wait longer or host your own') :
                     tr('No games on local network') + '\n' + tr('Wait longer or host your own'),
             ),
@@ -279,7 +279,7 @@ function gameInfoToChoice(
     ;(choice.fields!.Cheats as Checkbox).visible = game.features.isCheatsEnabled
 
     const commitHashMismatch = game.features.isHalfPingEnabled && game.commit.value != gsPkg.gitRevision
-    const dangerOfCrash = game.features.isSpellsEnabled && game.spells.value.length > 0 && isSpellCrashDetected()
+    const dangerOfCrash = game.features.isSpellsEnabled && game.spells.value.length > 0 && args.spellCrashDetected.value
     const clientUnavaible = combinations_find(game.clientVersion, KnownServers.Unknown) == undefined
 
     let explanation = ''

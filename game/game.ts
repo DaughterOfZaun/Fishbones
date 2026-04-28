@@ -31,12 +31,7 @@ import { firewall } from '../utils/proxy/proxy-firewall'
 import { fs_readdir, fs_readFile } from '../utils/data/fs'
 import { gcPkg } from '../utils/data/packages'
 import path from 'node:path'
-
-import { withProperty } from "../utils/config"
-const SPELL_CRASH_DETECTED = 'game-client-spell-crash-detected'
-const config = withProperty(SPELL_CRASH_DETECTED, false)
-export const isSpellCrashDetected = () => config[SPELL_CRASH_DETECTED]
-const setSpellCrashDetected = () => config[SPELL_CRASH_DETECTED] = true
+import { args } from '../utils/args'
 
 export const versionNumber = versionFromString(VERSION)
 
@@ -586,7 +581,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                     r3dLogTxtContent?.includes('Function: Spellbook::AvatarInit') &&
                     r3dLogTxtContent?.includes('Expression: spellName != "" || !"Avatar spell not found!"')
                 ){
-                    setSpellCrashDetected()
+                    args.spellCrashDetected.save(true)
                     isSpellCrash = true
                 }
             }

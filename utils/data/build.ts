@@ -71,7 +71,7 @@ export async function build(pkg: PkgInfoCSProj, opts: Required<AbortOptions>){
 
     const fs_opts: ReadWriteFileOpts = { ...opts, encoding: 'utf8', rethrow: false }
 
-    if(!args.build.enabled){
+    if(!args.build.value){
         console.log(`Pretending to build ${pkg.dllName}...`)
         return
     }

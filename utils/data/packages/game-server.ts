@@ -4,12 +4,11 @@ import embedded from '../embedded/embedded'
 import type { ServerDataInfo } from '../constants/client-server-combinations'
 import { gdrive, magnet, PkgInfoCSProj, type PkgInfoGit } from './shared'
 import { HARDCODED_HTTP_SERVER_URL } from '../../constants-build'
-import { withProperty } from '../../config'
+import { args } from '../../args'
 import { tr } from '../../translation'
 import { sdkPkg } from './sdk'
 
-export const REMOTE_IDX = 'game-server-git-remote-index'
-const config = withProperty(REMOTE_IDX, 0, index => gsPkg.setRemoteByIndex(index))
+args.remoteIdx.on('change', index => gsPkg.setRemoteByIndex(index))
 
 export const gsPkg = new class extends PkgInfoCSProj implements PkgInfoGit {
     name = tr('Game Server')

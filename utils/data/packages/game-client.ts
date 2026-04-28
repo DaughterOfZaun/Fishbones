@@ -3,16 +3,17 @@ import { downloads } from '../fs'
 import embedded from '../embedded/embedded'
 import { gdrive, magnet, PkgInfoExe } from './shared'
 import { HARDCODED_HTTP_SERVER_URL } from '../../constants-build'
-import { withProperty } from '../../config'
+import { args } from '../../args'
 import { tr } from '../../translation'
 import type { ClientExeInfo, ClientDataInfo } from '../constants/client-server-combinations'
 
-export const GC_LOCATION = 'game-client-location'
 export const GC_LOCATION_AUTO = 'auto'
 export const GC_LOCATION_C_DRIVE = 'C'
 export const GC_LOCATION_DOWNLOADS = 'Fishbones_Data'
 export const GC_LOCATION_CUSTOM = '...'
-const config = withProperty(GC_LOCATION, GC_LOCATION_AUTO, location => gcPkg.setDirLocation(location))
+
+args.gcLocation.on('change', location => gcPkg.setDirLocation(location))
+
 export const gcLocationFromIndexToString = [
     GC_LOCATION_AUTO,
     GC_LOCATION_C_DRIVE,
@@ -984,4 +985,28 @@ export class ClientDataInfoV126 extends ClientDataInfoCommon implements ClientDa
             }
         },
     }
+
+    bots = [
+        //'Alistar',
+        'Annie',
+        'Ashe',
+        'Chogath',
+        'Garen',
+        'Malphite',
+        'Maokai',
+        'MasterYi',
+        'MissFortune',
+        'Nasus',
+        'Nunu',
+        //'Pantheon',
+        'Renekton',
+        'Ryze',
+        'Shen',
+        'Sivir',
+        'Soraka',
+        //'Swain',
+        'Taric',
+        'Trundle',
+        'Warwick',
+    ]
 }

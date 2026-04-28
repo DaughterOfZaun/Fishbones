@@ -148,7 +148,7 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
         },
         transports: [
             webRTCDirect({ rtcConfiguration }),
-            ...(args.allowInternet.enabled ? [
+            ...(args.allowInternet.value ? [
                 webRTC({ rtcConfiguration }),
                 circuitRelayTransport(),
                 tcp(),
@@ -168,7 +168,7 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
             identify: identify(),
             identifyPush: identifyPush(),
 
-            ...(args.allowInternet.enabled ? {
+            ...(args.allowInternet.value ? {
                 kadDHT: kadDHT({
                     protocol: '/ipfs/kad/1.0.0',
                     peerInfoMapper: removePrivateAddressesMapper
@@ -242,7 +242,7 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
 
 async function setup(node: LibP2PNode, opts: Required<AbortOptions>){
 
-    if(args.allowInternet.enabled){
+    if(args.allowInternet.value){
        await node.peerStore.patch(peerIdFromString(serverPeerIDString), {
            tags: { [`${KEEP_ALIVE}-rendezvous-server`]: { value: 1 } }
        }, opts)

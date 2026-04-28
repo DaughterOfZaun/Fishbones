@@ -3,13 +3,12 @@ import { downloads } from '../fs'
 import embedded from '../embedded/embedded'
 import { gdrive, magnet } from './shared'
 import { tr } from '../../translation'
-import { withProperty } from '../../config'
+import { args } from '../../args'
 import { ClientDataInfoCommon, GC_LOCATION_AUTO, GCPkgCommon } from './game-client'
 import { HARDCODED_HTTP_SERVER_URL } from '../../constants-build'
 import type { ClientDataInfo } from '../constants/client-server-combinations'
 
-export const GC_420_LOCATION = 'game-client-420-location'
-const config = withProperty(GC_420_LOCATION, GC_LOCATION_AUTO, location => gc420Pkg.setDirLocation(location))
+args.gc420Location.on('change', location => gc420Pkg.setDirLocation(location))
 
 export const gc420Pkg = new class extends GCPkgCommon {
 
