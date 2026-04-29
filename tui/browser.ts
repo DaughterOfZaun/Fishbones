@@ -14,7 +14,7 @@ import { getUsername } from '../utils/namegen/namegen'
 import type { PingResult } from '../network/libp2p/ping'
 import { spinner, AbortPromptError, popup } from '../ui/remote/remote'
 import { deadlyRace } from '../utils/promises'
-import { gsPkg } from '../utils/data/packages'
+import { bwPkg } from '../utils/data/packages' //TODO: Unhardcode.
 import { tr } from '../utils/translation'
 
 interface CacheEntry {
@@ -278,7 +278,7 @@ function gameInfoToChoice(
     ;(choice.fields!.Minions as Checkbox).visible = game.features.isMinionsEnabled
     ;(choice.fields!.Cheats as Checkbox).visible = game.features.isCheatsEnabled
 
-    const commitHashMismatch = game.features.isHalfPingEnabled && game.commit.value != gsPkg.gitRevision
+    const commitHashMismatch = game.features.isHalfPingEnabled && game.commit.value != bwPkg.gitRevision
     const dangerOfCrash = game.features.isSpellsEnabled && game.spells.value.length > 0 && args.spellCrashDetected.value
     const clientUnavaible = combinations_find(game.clientVersion, KnownServers.Unknown) == undefined
 

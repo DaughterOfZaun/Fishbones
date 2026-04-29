@@ -1,5 +1,5 @@
 import type { AbortOptions } from "@libp2p/interface"
-import { gcPkg } from "../data/packages/game-client"
+import { gc126Pkg } from "../data/packages/game-client-126"
 import type { GameInfo } from "../../game/game-info"
 import type { ChildProcess } from "./process"
 import {
@@ -116,7 +116,7 @@ function sendToClient<T extends BasePacket>(packet: T, fields: Partial<T> = {}, 
 }
 
 export function getLastLaunchCmd(){
-    return 'start ' + ['', gcPkg.exeName, '', '', '', launchArgs!.map(arg => arg.toString()).join(' ')].map(arg => `"${arg}"`).join(' ')
+    return 'start ' + ['', gc126Pkg.exeName, '', '', '', launchArgs!.map(arg => arg.toString()).join(' ')].map(arg => `"${arg}"`).join(' ')
 }
 
 export async function launchClient(ip: string, port: number, key: string, playerID: number, gameInfo: GameInfo, opts: Required<AbortOptions>){

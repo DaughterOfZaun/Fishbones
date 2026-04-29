@@ -2,7 +2,7 @@ import type { AbortOptions } from "@libp2p/interface"
 import { spawn, successfulTermination, TerminationError } from "../process/process"
 import { gitPkg, type PkgInfoGit } from "./packages"
 import { console_log, createBar } from "../../ui/remote/remote"
-import { fs_ensureDir, fs_exists } from "./fs"
+import { fs_ensureDir, fs_exists, fs_moveFile, fs_readdir } from "./fs"
 import { tr } from "../translation"
 import { args } from "../args"
 import path from "node:path"
@@ -32,12 +32,18 @@ export async function update(pkg: PkgInfoGit, opts: Required<AbortOptions>){
 
     if(!args.update.value && args.mrNumber.value === undefined){
         //console.log(`Pretending to update ${pkg.name}...`)
-        return false
+        //return false
     }
 
     const bar = createBar(tr('Updating'), pkg.name)
     let updated = false
     try {
+
+        // Precautions against data loss.
+        const existingEntries = await fs_readdir(pkg.dir, opts)
+        if(existingEntries.length > 0 && !existingEntries.includes('.git'))
+            await fs_moveFile(pkg.dir, `${pkg.dir}-backup-${Date.now().toString(16)}`, opts)
+
         await fs_ensureDir(pkg.dir, opts)
         
         const init = !(await fs_exists(path.join(pkg.dir, '.git'), opts))

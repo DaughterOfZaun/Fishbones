@@ -7,8 +7,8 @@ import { sdkPkg } from './sdk'
 import { HARDCODED_HTTP_SERVER_URL } from '../../constants-build'
 import type { ServerDataInfo } from '../constants/client-server-combinations'
 
-export const gs420Pkg = new class extends PkgInfoCSProj {
-    name = tr('Game Server')
+export const cbPkg = new class extends PkgInfoCSProj {
+    name = tr('Chronobreak') + ' ' + tr('Game Server')
     dirName = 'Chronobreak-GameServer'
     zipRoot = [ 'GameServer' ]
     zipHasSingleRootEntry = true
@@ -22,7 +22,7 @@ export const gs420Pkg = new class extends PkgInfoCSProj {
     
     dir = path.join(downloads, this.dirName)
     zip = path.join(downloads, this.zipName)
-    zipTorrentEmbedded = embedded.gs420PkgZipTorrent
+    zipTorrentEmbedded = embedded.cbPkgZipTorrent
     zipTorrentName = `${this.zipName}.torrent`
     zipTorrent = `${this.zip}.torrent`
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)

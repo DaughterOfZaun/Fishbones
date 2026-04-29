@@ -1,7 +1,7 @@
 import type { AbortOptions } from '@libp2p/interface'
 import { base, button, form, label, list } from '../ui/remote/types'
 import { console_log } from '../ui/remote/remote'
-import { gsPkg } from '../utils/data/packages'
+import { bwPkg } from '../utils/data/packages' //TODO: Unhardcode.
 import { render } from '../ui/remote/view'
 import { tr } from '../utils/translation'
 
@@ -37,7 +37,7 @@ export async function mrs(opts: Required<AbortOptions>){
 
     let mrs: GitLab.MergeRequest[] | undefined
     try {
-        mrs = await (await fetch(gsPkg.gitLabMRs)).json() as never
+        mrs = await (await fetch(bwPkg.gitLabMRs)).json() as never
     } catch(err) {
         console_log(tr('Fetching a list of open requests failed:', {}), Bun.inspect(err))
     }

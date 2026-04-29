@@ -29,7 +29,7 @@ import { console_log } from '../ui/remote/remote'
 import { tr } from '../utils/translation'
 import { firewall } from '../utils/proxy/proxy-firewall'
 import { fs_readdir, fs_readFile } from '../utils/data/fs'
-import { gcPkg } from '../utils/data/packages'
+import { gc126Pkg } from '../utils/data/packages' //TODO: Unhardcode.
 import path from 'node:path'
 import { args } from '../utils/args'
 
@@ -572,10 +572,10 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
 
         let isSpellCrash = false
         if(code == 253){
-            const exeDirEntries = await fs_readdir(gcPkg.exeDir, opts)
+            const exeDirEntries = await fs_readdir(gc126Pkg.exeDir, opts)
             const latestR3DLogName = exeDirEntries.filter(name => name.endsWith('_r3dlog.txt')).toSorted().at(-1)
             if(latestR3DLogName){
-                const r3dLogTxtPath = path.join(gcPkg.exeDir, latestR3DLogName)
+                const r3dLogTxtPath = path.join(gc126Pkg.exeDir, latestR3DLogName)
                 const r3dLogTxtContent = await fs_readFile(r3dLogTxtPath, { ...opts, encoding: 'utf8' })
                 if(
                     r3dLogTxtContent?.includes('Function: Spellbook::AvatarInit') &&
@@ -887,76 +887,74 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     */
     public getGameInfo(): GameInfo {
         //const this_map_value = maps.find(map => map.i == this.map.value)?.id ?? 0
-        return {
-            gameId: 0,
-            game: {
-                map: this.map.value ?? 4,
-                gameMode: this.mode.toString(),
-                mutators: Array<string>(8).fill(''),
+        
+        const isCB = this.serverVersion == KnownServers.ChronoBreak
+        const isBW = this.serverVersion == KnownServers.BrokenWings
+        const isTG = this.serverVersion == KnownServers.TestGrounds
+        
+        const info: any = {}
+        if(isBW || isCB) info.gameId = 0
+        if(isTG) info.forcedStart = 60 //TODO: Unhardcode.
+        
+        info.game = {
+            map: this.map.value ?? 1,
+            gameMode: this.mode.toString(),
+            mutators: Array<string>(8).fill(''),
+        }
+        if(isBW) info.game.dataPackage = 'AvCsharp-Scripts'
+        if(isTG) info.game.dataPackage = 'LeagueSandbox-Scripts'
 
-                ...((this.serverVersion == KnownServers.BrokenWings) ? {
-                    dataPackage: 'AvCsharp-Scripts',
-                } : {}),
-            },
-            gameInfo: {
-
-                TICK_RATE: this.tickRate.value ?? 30,
-                FORCE_START_TIMER: 60, //TODO: Unhardcode
-                IS_DAMAGE_TEXT_GLOBAL: false,
-                SUPRESS_SCRIPT_NOT_FOUND_LOGS: true,
-
-                CONTENT_PATH: 
-                    (this.serverVersion == KnownServers.ChronoBreak) ?
-                        "../../../../Content/GameClient" :
-                    (this.serverVersion == KnownServers.BrokenWings) ?
-                        "../../../../Content" :
-                    undefined!,
-                
-                ENDGAME_HTTP_POST_ADDRESS: "",
-                CHEATS_ENABLED: this.features.isCheatsEnabled,
-                MANACOSTS_ENABLED: this.features.isManacostsEnabled,
-                COOLDOWNS_ENABLED: this.features.isCooldownsEnabled,
-                MINION_SPAWNS_ENABLED: this.features.isMinionsEnabled,
-
-                ...((this.serverVersion == KnownServers.ChronoBreak) ? {
-                    USE_CACHE: true,
-                    ENABLE_CONTENT_LOADING_LOGS: false,
-                    LOG_IN_PACKETS: false,
-                    LOG_OUT_PACKETS: false,
-                    scriptAssemblies: [
-                        "ScriptsCore",
-                        "CBProject-Converted",
-                        "Chronobreak-Scripts"
-                    ],
-                } : {}),
-                
-                ...((this.serverVersion == KnownServers.BrokenWings) ? {
-                    CLIENT_VERSION: versionToString(this.clientVersion),
-                    KEEP_ALIVE_WHEN_EMPTY: false,
-                    DEPLOY_FOLDER: '',
-                    APIKEYDROPBOX: "",
-                    USERNAMEOFREPLAYMAN: "",
-                    PASSWORDOFREPLAYMAN: "",
-                    ENABLE_LAUNCHER: false,
-                    LAUNCHER_ADRESS_AND_PORT: "",
-                    AB_CLIENT: false,
-                    ENABLE_LOG_AND_CONSOLEWRITELINE: false,
-                    ENABLE_LOG_BehaviourTree: false,
-                    ENABLE_LOG_PKT: false,
-                    ENABLE_REPLAY: false,
-                    ENABLE_ALLOCATION_TRACKER: false,
-                    SCRIPT_ASSEMBLIES: [
-                        "AvLua-Converted",
-                        "AvCsharp-Scripts",
-                    ],
-                } : {}),
-            },
-            players: this.getPlayers().map((player, i) => ({
-
-                playerId: player.isBot ? -1 : (i + 1),
+        info.gameInfo = {
+            IS_DAMAGE_TEXT_GLOBAL: false,
+            CHEATS_ENABLED: this.features.isCheatsEnabled,
+            MANACOSTS_ENABLED: this.features.isManacostsEnabled,
+            COOLDOWNS_ENABLED: this.features.isCooldownsEnabled,
+            MINION_SPAWNS_ENABLED: this.features.isMinionsEnabled,
+        }
+        if(isBW || isCB) Object.assign(info.gameInfo, {
+            TICK_RATE: this.tickRate.value ?? 30,
+            FORCE_START_TIMER: 60, //TODO: Unhardcode.
+            SUPRESS_SCRIPT_NOT_FOUND_LOGS: true,
+            ENDGAME_HTTP_POST_ADDRESS: "",
+        })
+        if(isCB) info.gameInfo.CONTENT_PATH = "../../../../Content/GameClient"
+        if(isBW || isTG) info.gameInfo.CONTENT_PATH = "../../../../Content"
+        if(isBW) Object.assign(info.gameInfo, {
+            CLIENT_VERSION: versionToString(this.clientVersion),
+            KEEP_ALIVE_WHEN_EMPTY: false,
+            DEPLOY_FOLDER: '',
+            APIKEYDROPBOX: "",
+            USERNAMEOFREPLAYMAN: "",
+            PASSWORDOFREPLAYMAN: "",
+            ENABLE_LAUNCHER: false,
+            LAUNCHER_ADRESS_AND_PORT: "",
+            AB_CLIENT: false,
+            ENABLE_LOG_AND_CONSOLEWRITELINE: false,
+            ENABLE_LOG_BehaviourTree: false,
+            ENABLE_LOG_PKT: false,
+            ENABLE_REPLAY: false,
+            ENABLE_ALLOCATION_TRACKER: false,
+            SCRIPT_ASSEMBLIES: [
+                "AvLua-Converted",
+                "AvCsharp-Scripts",
+            ],
+        })
+        if(isCB) Object.assign(info.gameInfo, {
+            USE_CACHE: true,
+            ENABLE_CONTENT_LOADING_LOGS: false,
+            LOG_IN_PACKETS: false,
+            LOG_OUT_PACKETS: false,
+            scriptAssemblies: [
+                "ScriptsCore",
+                "CBProject-Converted",
+                "Chronobreak-Scripts"
+            ],
+        })
+        
+        info.players = this.getPlayers().map((player, i) => {
+            const info: any = {
                 blowfishKey, //TODO: Unhardcode. Security
                 rank: /*Rank.random() ??*/ "DIAMOND",
-                name: player.isBot ? getBotName(player.champion.toString()) : getName(player, false, true),
                 champion: player.champion.toString(), //TODO: Fix
                 team: player.team.toString().toUpperCase(),
                 skin: player.skin.value ?? 0,
@@ -966,13 +964,23 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 icon: 0, //Math.floor(Math.random() * 29),
                 talents: Object.fromEntries(player.talents.value.entries()),
                 runes,
-
-                ...((this.serverVersion == KnownServers.BrokenWings) ? {
-                    AIDifficulty: player.isBot ? (player.difficulty.value ?? 0) : undefined,
+            }
+            if(!player.isBot){
+                info.name = getName(player, false, true)
+                info.playerId = i + 1
+            } else {
+                info.name = getBotName(player.champion.toString())
+                if(isTG) info.playerId = -(i + 1)
+                else info.playerId = -1
+                if(isBW) Object.assign(info, {
+                    AIDifficulty: player.difficulty.value ?? 0,
                     useDoomSpells: false,
-                } : {}),
+                })
+                if(isTG) info.aiScript = info.champion + 'Bot'
+            }
+            return info
+        })
 
-            }))
-        } as GameInfo
+        return info
     }
 }

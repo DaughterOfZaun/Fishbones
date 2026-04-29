@@ -4,7 +4,7 @@ import embedded from '../embedded/embedded'
 import { gdrive, magnet } from './shared'
 import { tr } from '../../translation'
 import { args } from '../../args'
-import { ClientDataInfoCommon, GC_LOCATION_AUTO, GCPkgCommon } from './game-client'
+import { ClientDataInfoCommon, GC_LOCATION_AUTO, GCPkgCommon } from './game-client-126'
 import { HARDCODED_HTTP_SERVER_URL } from '../../constants-build'
 import type { ClientDataInfo } from '../constants/client-server-combinations'
 

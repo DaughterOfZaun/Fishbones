@@ -10,7 +10,7 @@ import type { GamePlayer, PlayerId, PPP } from './game-player'
 import { PeerMap } from '@libp2p/peer-collections'
 import { pbStream } from '../utils/pb-stream'
 import { combinations_find } from '../utils/data/constants/client-server-combinations'
-import { gsPkg } from '../utils/data/packages'
+import { bwPkg } from '../utils/data/packages' //TODO: Unhardcode.
 //import { logger as myLogger } from '../utils/log'
 import { tr } from '../utils/translation'
 
@@ -25,7 +25,7 @@ export class LocalGame extends Game {
     public constructor(node: LibP2PNode){
         super(node, node.peerId)
         this.playerId = this.peerIdToPlayerId(node.peerId)
-        this.commit.value = gsPkg.gitRevision
+        this.commit.value = bwPkg.gitRevision
         this.peerId = node.peerId
     }
 
@@ -50,7 +50,8 @@ export class LocalGame extends Game {
 
         const combo = combinations_find(this.clientVersion, this.serverVersion)!
         const map = combo.maps.get(this.map.value!)!
-        const bots = [...(new Set([...map.bots.keys(), ...combo.bots.keys()]).difference(new Set(existingBots))).values()]
+        const allBots = [...map.bots.keys(), ...combo.bots.keys()]
+        const bots = [...(new Set(allBots).difference(new Set(existingBots))).values()]
         const peersRequests: LobbyNotificationMessage.PeerRequests[] = []
 
         counts.forEach((count, team) => {
@@ -59,7 +60,7 @@ export class LocalGame extends Game {
                 const bot = this.players_add(playerId, undefined)
                 
                 if(bots.length === 0)
-                    bots.push(...map.bots.keys())
+                    bots.push(...allBots)
                 const champion = (bots.length > 0) ?
                     bots.splice(Math.floor(Math.random() * bots.length), 1)[0] :
                     undefined

@@ -20,11 +20,11 @@ export const config = {
     //},
 
     gc420ZipTorrent: './torrents/League of Legends_UNPACKED.7z.torrent',
-    gs420PkgZipTorrent: './torrents/Chronobreak.GameServer.7z.torrent',
+    cbPkgZipTorrent: './torrents/Chronobreak.GameServer.7z.torrent',
 
-    gcZipTorrent: './torrents/playable_client_126.7z.torrent',
-    gsPkgZipTorrent: './torrents/ChildrenOfTheGrave-Gameserver.7z.torrent',
-    gsPkgZip: {
+    gc126ZipTorrent: './torrents/playable_client_126.7z.torrent',
+    bwPkgZipTorrent: './torrents/ChildrenOfTheGrave-Gameserver.7z.torrent',
+    bwPkgZip: {
         //linux: './Fishbones_Data/ChildrenOfTheGrave-Gameserver.7z'
     },
 

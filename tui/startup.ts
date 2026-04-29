@@ -2,9 +2,9 @@ import type { AbortOptions } from "@libp2p/interface";
 import { DeferredView, render } from "../ui/remote/view";
 import { button, checkbox, form, line, option } from "../ui/remote/types";
 import { args } from "../utils/args";
-import { gsPkg } from "../utils/data/packages/game-server";
+import { bwPkg } from "../utils/data/packages/game-server-bw";
 import { AUTO_LOCALE, DEFAULT_LOCALE, systemLocale, systemLocaleSupported, tr, usedLocale } from "../utils/translation";
-import { GC_LOCATION_AUTO, GC_LOCATION_C_DRIVE, GC_LOCATION_CUSTOM, GC_LOCATION_DOWNLOADS, gcLocationFromIndexToString, gcLocationFromStringToIndex, gcPkg } from "../utils/data/packages/game-client";
+import { GC_LOCATION_AUTO, GC_LOCATION_C_DRIVE, GC_LOCATION_CUSTOM, GC_LOCATION_DOWNLOADS, gcLocationFromIndexToString, gcLocationFromStringToIndex, gc126Pkg } from "../utils/data/packages/game-client-126";
 import { gc420Pkg } from "../utils/data/packages/game-client-420";
 
 enum DownloadSource {
@@ -36,30 +36,22 @@ export async function startup(opts: Required<AbortOptions>){
         ),
         UpdateServer: checkbox(args.update.value, (on) => args.update.save(on)),
         ServerOrigin: option(
-            gsPkg.remotes.map((origin, id) => ({ id, text: origin.name })),
+            bwPkg.remotes.map((origin, id) => ({ id, text: origin.name })),
             args.remoteIdx.value,
-            (index) => {
-                //gsPkg.setRemoteByIndex(index)
-                args.remoteIdx.save(index)
-                //void saveConfig(config, safeOptions)
-            }
+            (index) => args.remoteIdx.save(index),
         ),
         //EditServerOrigins: button(),
-        ForceEnglish: {
-            $type: 'checkbox',
-            button_pressed: !systemLocaleSupported || usedLocale != systemLocale && usedLocale == DEFAULT_LOCALE,
-            disabled: !systemLocaleSupported || systemLocale === DEFAULT_LOCALE,
-            $listeners: {
-                toggled(on){
-                    const locale = on ? DEFAULT_LOCALE : AUTO_LOCALE
-                    args.usedLocale.save(locale)
-                },
-            }
-        },
+        ForceEnglish: checkbox(
+            !systemLocaleSupported || usedLocale != systemLocale && usedLocale == DEFAULT_LOCALE,
+            (on) => args.usedLocale.save(on ? DEFAULT_LOCALE : AUTO_LOCALE),
+            !systemLocaleSupported || systemLocale === DEFAULT_LOCALE,
+        ),
 
-        ...clientLocation(() => view, gcPkg, 'installS1Client', 'InstallS1Client', 'S1ClientLocation', 'S1ClientCustomLocation', 'gcLocation'),
+        ...clientLocation(() => view, gc126Pkg, 'installS1Client', 'InstallS1Client', 'S1ClientLocation', 'S1ClientCustomLocation', 'gc126Location'),
         ...clientLocation(() => view, gc420Pkg, 'installS4Client', 'InstallS4Client', 'S4ClientLocation', 'S4ClientCustomLocation', 'gc420Location'),
-        //InstallS4Server: checkbox(args.installS4Server.value, (on) => args.installS4Server.value = on),
+        
+        InstallCBServer: checkbox(args.installCBServer.value, (on) => args.installCBServer.save(on)),
+        InstallTGServer: checkbox(args.installTGServer.value, (on) => args.installTGServer.save(on)),
 
         Play: button(() => view.resolve()),
         Test: button(() => {
@@ -68,12 +60,10 @@ export async function startup(opts: Required<AbortOptions>){
         }),
     }), opts)
 
-    return view.promise.then(() => {
-        args.installS4Server.set(args.installS4Client.value) //HACK:
-    })
+    return view.promise
 }
 
-function clientLocation(getView: () => DeferredView<void>, gcPkg: { dir: string }, installS1Client: 'installS1Client' | 'installS4Client', InstallS1Client: string, S1ClientLocation: string, S1ClientCustomLocation: string, gcLocation: 'gcLocation' | 'gc420Location'){
+function clientLocation(getView: () => DeferredView<void>, gcPkg: { dir: string }, installS1Client: 'installS1Client' | 'installS4Client', InstallS1Client: string, S1ClientLocation: string, S1ClientCustomLocation: string, gcLocation: 'gc126Location' | 'gc420Location'){
     const GC_LOCATION_CUSTOM_IDX = gcLocationFromStringToIndex[GC_LOCATION_CUSTOM]!
     const index = gcLocationFromStringToIndex[args[gcLocation].value] ?? GC_LOCATION_CUSTOM_IDX
     const isCustom = index == GC_LOCATION_CUSTOM_IDX
@@ -97,7 +87,7 @@ function clientLocation(getView: () => DeferredView<void>, gcPkg: { dir: string 
             },
         ),
         [S1ClientCustomLocation]: line(gcPkg.dir, (text) => {
-            args.gcLocation.save(text)
+            args.gc126Location.save(text)
         }, isCustom),
     }
 }

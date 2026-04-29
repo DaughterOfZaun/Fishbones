@@ -3,7 +3,7 @@ import { firewall, packetsTransmittedByType } from "./utils/proxy/proxy-firewall
 import type { LibP2PNode } from "./node/node";
 import { ProxyServer } from "./utils/proxy/proxy-server";
 import { launchServer } from "./utils/process/server";
-import { gsPkg } from "./utils/data/packages";
+import { bwPkg } from "./utils/data/packages";
 import type { GameInfo } from "./game/game-info";
 import { launchClient } from "./utils/process/client";
 import { blowfishKey, LOCALHOST } from "./utils/constants";
@@ -53,7 +53,7 @@ await Promise.all([
 const opts = { signal: new AbortController().signal }
 
 console.log('reading game info')
-const gameInfo = JSON.parse(await fs.readFile(path.join(gsPkg.infoDir, `GameInfo.json`), 'utf8')) as GameInfo
+const gameInfo = JSON.parse(await fs.readFile(path.join(bwPkg.infoDir, `GameInfo.json`), 'utf8')) as GameInfo
 
 console.log('lauching server')
 const server = await launchServer(gameInfo, opts)

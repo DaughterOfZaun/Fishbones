@@ -191,7 +191,7 @@ spinner = ExtResource("4_ycdy4")
 select = ExtResource("5_w48qg")
 checkbox = ExtResource("6_vivmo")
 input = ExtResource("7_2cqfq")
-embedded_js = "res://embedded/index-0.0.3.43.js"
+embedded_js = "res://embedded/index-0.0.3.44.js"
 embedded_exe = "res://embedded/bun-1.3.10-windows-x64-baseline.exe"
 embedded_lib_0 = "res://embedded/node_datachannel-8fg8wz1b.node"
 embedded_file_0 = "res://embedded/7za-2501-windows-x64.exe"
@@ -311,12 +311,6 @@ theme_override_font_sizes/font_size = 14
 button_pressed = true
 text = "Check and download launcher updates"
 
-[node name="#InstallModPack" type="CheckBox" parent="Container/TabContainer/#Startup/VBoxContainer" unique_id=1168992880]
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-button_pressed = true
-text = "Install the additional levels package"
-
 [node name="HBoxContainer1" type="HBoxContainer" parent="Container/TabContainer/#Startup/VBoxContainer" unique_id=1325501841]
 layout_mode = 2
 
@@ -426,6 +420,15 @@ theme_override_font_sizes/font_size = 14
 placeholder_text = "C:\\..."
 editable = false
 
+[node name="#InstallModPack" type="CheckBox" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer" unique_id=1168992880]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+button_pressed = true
+text = "Install the additional levels package"
+
+[node name="HSeparator" type="HSeparator" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer" unique_id=1284263628]
+layout_mode = 2
+
 [node name="HBoxContainer5" type="HBoxContainer" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer" unique_id=870769200]
 layout_mode = 2
 
@@ -459,6 +462,16 @@ size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 14
 placeholder_text = "C:\\..."
 editable = false
+
+[node name="#InstallCBServer" type="CheckBox" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer" unique_id=181209216]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Install Chronobreak game server"
+
+[node name="#InstallTGServer" type="CheckBox" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer" unique_id=54819545]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Install/Update TestGrounds game server"
 
 [node name="CenterContainer" type="CenterContainer" parent="Container/TabContainer/#Startup" unique_id=1821376361]
 layout_mode = 1
@@ -1564,6 +1577,7 @@ popup/item_1/text = "Chronobreak (Season 1) + v4.20 (Season 4)"
 popup/item_1/id = 1
 
 [node name="#HalfPing" type="CheckBox" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/CenterContainer/HBoxContainer1/VBoxContainer/VBoxContainer" unique_id=301106331]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 14
@@ -1576,6 +1590,7 @@ theme_override_font_sizes/font_size = 14
 text = "FIREWALL: Reduces the amount of transmitted traffic. Causes crash and wired behaviours!"
 
 [node name="#Bypass" type="CheckBox" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/CenterContainer/HBoxContainer1/VBoxContainer/VBoxContainer" unique_id=508160027]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 14

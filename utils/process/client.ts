@@ -1,4 +1,3 @@
-import { gcPkg, winePkg } from "../data/packages"
 import { sanitize_bfkey } from "../constants"
 import { killSubprocess, spawn, startProcess, type ChildProcess, type SpawnOptions } from "../process/process"
 import { clients, type ClientVersion } from "../data/constants/client-server-combinations"
@@ -12,8 +11,10 @@ let clientSubprocess: ChildProcess | undefined
 
 let launchArgs: { version: ClientVersion, ip: string, port: number, key: string, clientId: number } | undefined
 export function getLastLaunchCmd(){
-    const { ip, port, key, clientId } = launchArgs!
-    return 'start ' + ['', gcPkg.exeName, '', '', '', [ip, port, key, clientId].map(arg => arg.toString()).join(' ')].map(arg => `"${arg}"`).join(' ')
+    const { version, ip, port, key, clientId } = launchArgs!
+    const gcPkg = clients[version]!
+    const gcPkg_exeName = path.basename(gcPkg.exe)
+    return 'start ' + ['', gcPkg_exeName, '', '', '', [ip, port, key, clientId].map(arg => arg.toString()).join(' ')].map(arg => `"${arg}"`).join(' ')
 }
 export async function launchClient(version: ClientVersion, ip: string, port: number, key: string, clientId: number, opts: Required<AbortOptions>){
     launchArgs = { version, ip, port, key, clientId }
@@ -67,7 +68,7 @@ export async function stopClient(opts: Required<AbortOptions>){
 
     await killSubprocess(LOG_PREFIX, prevSubprocess, opts)
 }
-
+/*
 const releaseDir = path.join(
     //'C:', 'Riot Games', 'League of Legends', 'RADS', 'solutions', 'lol_game_client_sln', 'releases', gcPkg.release,
     'C:', 'RADS', 'solutions', 'lol_game_client_sln', 'releases', gcPkg.release,
@@ -90,3 +91,4 @@ export async function ensureSymlink(){
     }
     //exec(String.raw`powershell.exe Start-Process -verb runAs cmd.exe '/k "mklink /d \"${deployDir}\" \"${gcPkg.exeDir}\""'`)
 }
+*/

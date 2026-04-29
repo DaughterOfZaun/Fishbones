@@ -1,6 +1,6 @@
 import embedded from "../embedded/embedded"
 import { downloads } from "../fs"
-import { gcPkg } from "./game-client"
+import { gc126Pkg } from "./game-client-126"
 import { gdrive, magnet, PkgInfo } from "./shared"
 import { HARDCODED_HTTP_SERVER_URL } from '../../constants-build'
 import { tr } from "../../translation"
@@ -45,7 +45,7 @@ export const modPck1 = new class ModPackOne extends PkgInfo {
 
     constructor(){
         super()
-        this.setDir(gcPkg.dir)
+        this.setDir(gc126Pkg.dir)
     }
 
     setDir(gcPkg_dir: string){
@@ -55,4 +55,4 @@ export const modPck1 = new class ModPackOne extends PkgInfo {
     }
 }
 
-gcPkg.onDirSet = modPck1.setDir.bind(modPck1)
+gc126Pkg.onDirSet = modPck1.setDir.bind(modPck1)

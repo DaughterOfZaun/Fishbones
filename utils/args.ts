@@ -113,12 +113,14 @@ export const args = new class Args {
     installModPack = new Option('install-modpack', 'game-client-modpack-levels-install-enabled', true, tr('Install the package with additional levels'))
     spaceCheck = new Option('space-check', '', true, tr('Perform a free disk space check'))
     
-    installS1Client = new Option('install-s1-client', '', true, '')
-    installS1Server = new Option('install-s1-server', '', true, '')
+    installS1Client = new Option('install-s1-client', 'game-client-126-install-enabled', true, '')
     installS4Client = new Option('install-s4-client', 'game-client-420-install-enabled', false, '')
-    installS4Server = new Option('install-s4-server', 'game-server-420-install-enabled', false, '')
+
+    installBWServer = new Option('install-brokenwings', 'brokenwings-install-enabled', true, '')
+    installCBServer = new Option('install-chronobreak', 'chronobreak-install-enabled', false, '')
+    installTGServer = new Option('install-testgrounds', 'testgrounds-install-enabled', false, '')
     
-    gcLocation = new Option('', 'game-client-location', GC_LOCATION_AUTO)
+    gc126Location = new Option('', 'game-client-location', GC_LOCATION_AUTO)
     gc420Location = new Option('', 'game-client-location', GC_LOCATION_AUTO)
 
     repair = new Option('repair', '', true, tr('(Debug) Download+Unpack+Build missing files'))

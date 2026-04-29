@@ -2,21 +2,21 @@ import path from 'node:path'
 import type { AbortOptions } from '@libp2p/interface'
 import { console_log_fs_err, downloads, fs_exists, fs_moveFile } from './fs'
 import { extractFile } from '../../ui/remote/remote'
-import { gsPkg } from './packages/game-server'
-import { gs420Pkg } from "./packages/game-server-420"
-import { gcPkg } from './packages/game-client'
+import { bwPkg } from './packages/game-server-bw'
+import { cbPkg } from "./packages/game-server-cb"
+import { gc126Pkg } from './packages/game-client-126'
 import { gc420Pkg } from './packages/game-client-420'
 import { sdkPkg } from './packages/sdk'
 import { gitPkg } from './packages/git'
 import { modPck1 } from './packages/modpack-levels'
-import { winePkg } from './packages/wine'
 import { tr } from '../translation'
 
 export type { PkgInfo, PkgInfoCSProj, PkgInfoGit } from './packages/shared'
-export { gsPkg, gs420Pkg, gcPkg, gc420Pkg, sdkPkg, gitPkg, modPck1, winePkg }
+export { bwPkg, cbPkg, gc126Pkg, gc420Pkg, sdkPkg, gitPkg, modPck1 }
 
-export const packages = [ gsPkg, gcPkg, sdkPkg, gitPkg, modPck1 ]
+export const packages = [ bwPkg, cbPkg, gc126Pkg, gc420Pkg, sdkPkg, gitPkg, modPck1 ]
 
+if(false) //TODO:
 for(const a of packages)
     for(const b of packages)
         if(a != b)

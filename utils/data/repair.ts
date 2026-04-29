@@ -1,6 +1,6 @@
 import { build } from "./build"
 import { download, appendPartialDownloadFileExt, repairAria2, seed } from "./download/download"
-import { gcPkg, gc420Pkg, gitPkg, gsPkg, gs420Pkg, modPck1, type PkgInfo, repairTorrents, sdkPkg, type PkgInfoCSProj } from "./packages"
+import { gc126Pkg, gc420Pkg, gitPkg, bwPkg, cbPkg, modPck1, type PkgInfo, repairTorrents, sdkPkg, type PkgInfoCSProj } from "./packages"
 import { console_log, createBar, currentExe, extractFile } from "../../ui/remote/remote"
 import { console_log_fs_err, cwd, downloads, fs_chmod, fs_copyFile, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_overwrite, fs_readdir, fs_readFile, fs_removeFile, fs_rmdir, fs_stat, fs_statfs, fs_truncate, fs_writeFile, rwx_rx_rx } from './fs'
 import { readTrackersTxt } from "./download/trackers"
@@ -12,7 +12,6 @@ import path from 'node:path'
 import embedded from './embedded/embedded'
 import os from 'os'
 import { runPostInstall, update } from "./update"
-//import { ensureSymlink } from "./data-client"
 import { args } from "../args"
 import { checkForUpdates, fbPkg, isNewVersionAvailable, prev_fbPkg, repairSelfPackage } from "./upgrade"
 import { spawn } from "node:child_process"
@@ -21,12 +20,13 @@ import { DeferredView, render } from "../../ui/remote/view"
 import { button, form, label } from "../../ui/remote/types"
 import { VERSION } from "../constants-build"
 import type { StatsFs } from "node:fs"
-import { clients_push, combinations_merge, combinations_push, KnownClients, KnownServers, servers_push } from "./constants/client-server-combinations"
-import { ClientDataInfoV126 } from "./packages/game-client"
-import { BrokenWingsDataInfo } from "./packages/game-server"
+import { clients_push, combinations_merge, combinations_push, KnownClients, KnownServers, servers_push, type ClientInfo, type ServerInfo } from "./constants/client-server-combinations"
+import { ClientDataInfoV126 } from "./packages/game-client-126"
+import { BrokenWingsDataInfo } from "./packages/game-server-bw"
 import { ClientDataInfoV420 } from "./packages/game-client-420"
-import { ChronobreakDataInfo } from "./packages/game-server-420"
+import { ChronobreakDataInfo } from "./packages/game-server-cb"
 import { champions } from "./constants/champions"
+import { TestGroundsDataInfo, tgPkg } from "./packages/game-server-ts"
 
 const DOTNET_INSTALL_CORRUPT_EXIT_CODES = [ 130, 131, 142, ]
 
@@ -85,6 +85,25 @@ const checkDriveSizeAndGetErrorMsg = (fsStats: StatsFs | undefined, root: string
 }
 
 let repairArchived_sdkPkg_opts: Promise<void> | null = null
+async function repairSDK(opts: Required<AbortOptions> & { ignoreUnpacked?: boolean }){
+    return repairArchived_sdkPkg_opts ??=
+        repairArchived(sdkPkg, opts)
+            .finally(() => { repairArchived_sdkPkg_opts = null })
+}
+
+let repairArchived_gitPkg_opts: Promise<void> | null = null
+async function repairGit(opts: Required<AbortOptions>){
+    if(os.platform() !== 'win32') return
+    return repairArchived_gitPkg_opts ??=
+        repairArchived_gitPkg(opts)
+            .finally(() => { repairArchived_sdkPkg_opts = null })
+}
+async function repairArchived_gitPkg(opts: Required<AbortOptions>){
+    await repairArchived(gitPkg, opts)
+    if(await fs_exists(gitPkg.postInstall, opts, false))
+        await runPostInstall(opts)
+}
+
 async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>){
     //console.log('Running data check and repair...')
 
@@ -96,7 +115,7 @@ async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>
     while(args.spaceCheck.value){
 
         const downloadsRoot = path.parse(downloads).root
-        const gcInstallRoot = path.parse(gcPkg.dir).root
+        const gcInstallRoot = path.parse(gc126Pkg.dir).root
         const isSingleRoot = downloadsRoot == gcInstallRoot
         
         //TODO: Extract embeds sizes.
@@ -109,7 +128,7 @@ async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>
 
             fs_statfs(downloads, opts),
             //(!isSingleRoot) ?
-            fs_statfs(gcPkg.dir, opts)
+            fs_statfs(gc126Pkg.dir, opts)
             //: Promise.resolve(undefined)
             ,
             Promise.all([
@@ -122,20 +141,20 @@ async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>
                 checkFileSize(path.join(downloads, 'aria2.dht.dat'), 10080, opts),
                 
                 ...(
-                    (args.installS1Server.value) ? (
+                    (args.installBWServer.value) ? (
                         (args.update.value) ? [
-                            checkDirSize(gsPkg.checkUnpackBy, gsPkg.zip, gsPkg.size, opts),
+                            checkDirSize(bwPkg.checkUnpackBy, bwPkg.zip, bwPkg.size, opts),
                         ] : [
-                            checkDirSize(gsPkg.checkUnpackBy, gsPkg.zip, gsPkg.size, opts),
-                            checkFileSize(gsPkg.zip, gsPkg.zipSize, opts),
-                            checkFileSize(gsPkg.zipTorrent, 14564, opts),
+                            checkDirSize(bwPkg.checkUnpackBy, bwPkg.zip, bwPkg.size, opts),
+                            checkFileSize(bwPkg.zip, bwPkg.zipSize, opts),
+                            checkFileSize(bwPkg.zipTorrent, 14564, opts),
                         ]
                     ) : []
                 ),
                 ...(
-                    (args.installS4Server.value) ? [
-                        checkDirSize(gs420Pkg.checkUnpackBy, gs420Pkg.zip, gs420Pkg.size, opts),
-                        checkFileSize(gs420Pkg.zip, gs420Pkg.zipSize, opts),
+                    (args.installCBServer.value) ? [
+                        checkDirSize(cbPkg.checkUnpackBy, cbPkg.zip, cbPkg.size, opts),
+                        checkFileSize(cbPkg.zip, cbPkg.zipSize, opts),
                         checkFileSize(gc420Pkg.zipTorrent, 20022, opts),
                     ] : []
                 ),
@@ -163,9 +182,9 @@ async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>
 
                 checkFileSize(path.join(downloads, path.basename(embedded.dataChannelLib)), 10231328, opts),
                 
-                //checkDirSize(gcPkg.checkUnpackBy, gcPkg.zip, gcPkg.size, opts),
-                checkFileSize(gcPkg.zip, gcPkg.zipSize, opts),
-                checkFileSize(gcPkg.zipTorrent, 90417, opts),
+                //checkDirSize(gc126Pkg.checkUnpackBy, gc126Pkg.zip, gc126Pkg.size, opts),
+                checkFileSize(gc126Pkg.zip, gc126Pkg.zipSize, opts),
+                checkFileSize(gc126Pkg.zipTorrent, 90417, opts),
 
                 ...((os.platform() === 'win32') ? [
                     checkDirSize(gitPkg.checkUnpackBy, gitPkg.zip, gitPkg.size, opts),
@@ -179,7 +198,7 @@ async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>
 
             Promise.all([
                 ...((args.installS1Client.value) ? [
-                    checkDirSize(gcPkg.checkUnpackBy, gcPkg.zip, gcPkg.size, opts),
+                    checkDirSize(gc126Pkg.checkUnpackBy, gc126Pkg.zip, gc126Pkg.size, opts),
                 ] :[]),
                 ...((args.installModPack.value) ? [
                     checkDirSize(modPck1.lockFile, modPck1.zip, modPck1.size, opts),
@@ -264,15 +283,15 @@ async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>
         return { mustExit: true }
     }
 
-    let updated = false
-    let gcExeIsMissing = !await fs_exists(gcPkg.exe, opts)
-    let gsExeIsMissing = !await fs_exists(gsPkg.dll, opts)
-    let gc420ExeIsMissing = !await fs_exists(gc420Pkg.exe, opts)
-    let gs420ExeIsMissing = !await fs_exists(gs420Pkg.dll, opts)
     let modFileIsMissing = !await fs_exists(modPck1.lockFile, opts, false)
-    repairArchived_sdkPkg_opts ??=
-        repairArchived(sdkPkg, opts)
-            .then(() => { repairArchived_sdkPkg_opts = null })
+    let gc126ExeIsMissing = !await fs_exists(gc126Pkg.exe, opts)
+    let gc420ExeIsMissing = !await fs_exists(gc420Pkg.exe, opts)
+    let bwExeIsMissing = !await fs_exists(bwPkg.dll, opts)
+    let cbExeIsMissing = !await fs_exists(cbPkg.dll, opts)
+    let tgExeIsMissing = !await fs_exists(tgPkg.dll, opts)
+    let bwUpdated = false
+    let tgUpdated = false
+
     results = await Promise.allSettled([
 
         !(args.torrentDownload.value) ? Promise.resolve() :
@@ -280,71 +299,82 @@ async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>
             console_log(tr(`Restoring launcher package failed:`), Bun.inspect(err))
         }),
 
-        !(args.installS1Server.value) ? Promise.resolve() :
+        !(args.installBWServer.value) ? Promise.resolve() :
         Promise.allSettled([
-            repairArchived_sdkPkg_opts,
+            repairSDK(opts),
             (async () => {
                 if(args.update.value || args.mrNumber.value !== undefined){
                     try {
-                        if(os.platform() === 'win32'){
-                            await repairArchived(gitPkg, opts)
-                            if(await fs_exists(gitPkg.postInstall, opts, false))
-                                await runPostInstall(opts)
-                        }
-                        const existingEntries = await fs_readdir(gsPkg.dir, opts)
-                        if(existingEntries.length > 0 && !existingEntries.includes('.git')){
-                            await fs_moveFile(gsPkg.dir, `${gsPkg.dir}-backup-${Date.now().toString(16)}`, opts)
-                        }
-                        updated = await update(gsPkg, opts)
+                        await repairGit(opts)
+                        bwUpdated = await update(bwPkg, opts)
                         return // OK
                     } catch(err) {
                         console_log(tr('Updating game server package failed:', {}), Bun.inspect(err))
                     }
                 }
-                await repairArchived(gsPkg, opts)
+                await repairArchived(bwPkg, opts)
             })(),
         ]).then(async (results) => {
             throwAnyRejection(results)
 
             // Allow packages to contain already built exe.
-            //gsExeIsMissing = !await fs_exists(gsPkg.dll, opts)
+            //gsExeIsMissing = !await fs_exists(bwPkg.dll, opts)
 
-            if(gsExeIsMissing || updated){
-                await tryBuild(gsPkg, opts)
-                gsExeIsMissing = false
+            if(bwExeIsMissing || bwUpdated){
+                await tryBuild(bwPkg, opts)
+                bwExeIsMissing = false
             }
-            await fs_ensureDir(gsPkg.infoDir, opts)
+            await fs_ensureDir(bwPkg.infoDir, opts)
         }),
 
-        !(args.installS4Server.value) ? Promise.resolve() :
+        !(args.installCBServer.value) ? Promise.resolve() :
         Promise.allSettled([
-            repairArchived_sdkPkg_opts,
-            repairArchived(gs420Pkg, opts),
+            repairSDK(opts),
+            repairArchived(cbPkg, opts),
         ]).then(async (results) => {
             throwAnyRejection(results)
-            if(gs420ExeIsMissing){
-                await tryBuild(gs420Pkg, opts)
-                gs420ExeIsMissing = false
+            if(cbExeIsMissing){
+                await tryBuild(cbPkg, opts)
+                cbExeIsMissing = false
             }
-            await fs_ensureDir(gs420Pkg.infoDir, opts)
+            await fs_ensureDir(cbPkg.infoDir, opts)
 
-            const levelsDir = path.join(gs420Pkg.dir, ...'Content/GameClient/LEVELS'.split('/'))
+            const levelsDir = path.join(cbPkg.dir, ...'Content/GameClient/LEVELS'.split('/'))
             await fs_moveFile(path.join(levelsDir, 'map11'), path.join(levelsDir, 'Map11'), opts, false)
+        }),
+
+        !(args.installTGServer.value) ? Promise.resolve() :
+        Promise.allSettled([
+            repairSDK(opts),
+            (async () => {
+                await repairGit(opts)
+                tgUpdated = await update(tgPkg, opts)
+            })(),
+        ]).then(async (results) => {
+            throwAnyRejection(results)
+            if(tgExeIsMissing || tgUpdated){
+                await tryBuild(tgPkg, opts)
+                tgExeIsMissing = false
+            }
+            await fs_ensureDir(tgPkg.infoDir, opts)
+            
+            const gsSettings = path.join(tgPkg.infoDir, 'GameServerSettings.json')
+            await fs_writeFile(gsSettings, JSON.stringify({ autoStartClient: false }, null, 4), { ...opts, encoding: 'utf8' })
         }),
 
         !(args.installS1Client.value) ? Promise.resolve() :
         Promise.allSettled([
             
-            repairArchived(gcPkg, opts).then(async () => {
+            repairArchived(gc126Pkg, opts).then(async () => {
 
-                gcExeIsMissing = false
+                gc126ExeIsMissing = false
 
                 Promise.allSettled([
                     (async () => {
-                        //await fs_ensureDir(gcPkg.exeDir, opts)
+                        //await fs_ensureDir(gc126Pkg.exeDir, opts)
                         const d3dx9_39_dll_name = 'd3dx9_39.dll'
                         const d3dx9_39_dll_src = path.join(downloads, d3dx9_39_dll_name)
-                        const d3dx9_39_dll_dst = path.join(gcPkg.exeDir, d3dx9_39_dll_name)
+                        const d3dx9_39_dll_dst = path.join(gc126Pkg.exeDir, d3dx9_39_dll_name)
                         if(!await fs_exists(d3dx9_39_dll_dst, opts, true)){
                             await extractFile(embedded.d3dx9_39_dll, d3dx9_39_dll_src, opts)
                             await fs_copyFile(d3dx9_39_dll_src, d3dx9_39_dll_dst, opts) //HACK: To bypass "Access denied" error.
@@ -352,12 +382,12 @@ async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>
                         //await ensureSymlink()
                     })(),
                     (async () => {
-                        const fontconfig_path = path.join(gcPkg.exeDir, 'DATA', 'Menu', 'fontconfig_en_US.txt')
+                        const fontconfig_path = path.join(gc126Pkg.exeDir, 'DATA', 'Menu', 'fontconfig_en_US.txt')
                         let fontconfig = await fs_readFile(fontconfig_path, { ...opts, encoding: 'utf8' })
                         if(!fontconfig) return
                             fontconfig = fontconfig.trim() + '\n'
                         let fontconfig_changed = false
-                        const gsInfo = new BrokenWingsDataInfo(gsPkg.dir)
+                        const gsInfo = new BrokenWingsDataInfo(bwPkg.dir)
                         const bots = new Set([gsInfo.bots, ...Object.values(gsInfo.maps).map(map => map.bots)].flat())
                         for(const short of bots){
                             const name = champions.find(champ => champ.short == short)?.name ?? short
@@ -384,7 +414,7 @@ async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>
             if (args.installModPack.value && modFileIsMissing){
                 const bar = createBar(tr('Moving'), modPck1.name)
                 try {
-                    await fs_overwrite(modPck1.dir, gcPkg.dir, opts)
+                    await fs_overwrite(modPck1.dir, gc126Pkg.dir, opts)
                 } finally {
                     bar.stop()
                 }
@@ -403,25 +433,29 @@ async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>
     ])
     throwAnyRejection(results)
 
-    if(!gsExeIsMissing && !gcExeIsMissing){
-        const client = clients_push(gcPkg, new ClientDataInfoV126(gcPkg.dir), KnownClients.v126, 'v1.0.0.126 (Season 1)')
-        const server = servers_push(gsPkg, new BrokenWingsDataInfo(gsPkg.dir), KnownServers.BrokenWings, tr('BrokenWings (Season 1)'))
-        combinations_push(client, server)
-        if(!modFileIsMissing)
-            Object.assign(client.maps, modPck1.maps)
-    }
-    if(!gs420ExeIsMissing && !gc420ExeIsMissing){
-        const client = clients_push(gc420Pkg, new ClientDataInfoV420(gc420Pkg.dir), KnownClients.v420, 'v4.20 (Season 4)')
-        const server = servers_push(gs420Pkg, new ChronobreakDataInfo(gs420Pkg.dir), KnownServers.ChronoBreak, tr('Chronobreak (Season 1)'))
-        combinations_push(client, server)
-    }
+    let client: ClientInfo | null = null, server: ServerInfo | null = null
+
+    client = gc126ExeIsMissing ? null : clients_push(gc126Pkg, new ClientDataInfoV126(gc126Pkg.dir), KnownClients.v126, 'v1.0.0.126 (Season 1)')
+    if(!modFileIsMissing) Object.assign(client!.maps, modPck1.maps)
+    
+    server = bwExeIsMissing ? null : servers_push(bwPkg, new BrokenWingsDataInfo(bwPkg.dir), KnownServers.BrokenWings, tr('BrokenWings (Season 1)'))
+    if(client && server) combinations_push(client, server)
+
+    client = gc420ExeIsMissing ? null : clients_push(gc420Pkg, new ClientDataInfoV420(gc420Pkg.dir), KnownClients.v420, 'v4.20 (Season 4)')
+
+    server = cbExeIsMissing ? null : servers_push(cbPkg, new ChronobreakDataInfo(cbPkg.dir), KnownServers.ChronoBreak, tr('Chronobreak (Season 1)'))
+    if(client && server) combinations_push(client, server)
+
+    server = tgExeIsMissing ? null : servers_push(tgPkg, new TestGroundsDataInfo(tgPkg.dir), KnownServers.TestGrounds, tr('TestGrounds (Season 4)'))
+    if(client && server) combinations_push(client, server)
+
     combinations_merge()
 
-    //TODO: await fs.cp(gsPkg.gcDir, gcPkg.exeDir, { recursive: true })
+    //TODO: await fs.cp(bwPkg.gcDir, gc126Pkg.exeDir, { recursive: true })
 
     if(args.torrentDownload.value){
         //TODO: Seed all downloaded packages.
-        const packages = [ gcPkg, gitPkg, modPck1, sdkPkg, fbPkg ]
+        const packages = [ gc126Pkg, gitPkg, modPck1, sdkPkg, fbPkg ]
         void Promise.allSettled(
             packages.map(async pkg => seed(pkg, opts))
         ).then((results) => {
@@ -443,15 +477,15 @@ async function tryBuild(pkg: PkgInfoCSProj, opts: Required<AbortOptions>){
         await build(pkg, opts)
     } catch(err) {
         let tryToRepairSDK = true
-        if(err instanceof Error){
-            const exception = err as ErrnoException
-            if(exception.code == 'ENOENT'){ //TODO: Investigate.
-                const desc1 = tr('SDK installation is probably corrupted')
-                const desc2 = tr('File not found')
-                console_log(`${desc1}. ${desc2}:\n`, exception.path ?? '')
-                tryToRepairSDK = true
-            }
-        }
+        //if(err instanceof Error){
+        //    const exception = err as ErrnoException
+        //    if(exception.code == 'ENOENT'){ //TODO: Investigate.
+        //        const desc1 = tr('SDK installation is probably corrupted')
+        //        const desc2 = tr('File not found')
+        //        console_log(`${desc1}. ${desc2}:\n`, exception.path ?? '')
+        //        tryToRepairSDK = true
+        //    }
+        //}
         if(err instanceof TerminationError){
             const exitCode = err.cause?.code ?? 0
             if(DOTNET_INSTALL_CORRUPT_EXIT_CODES.includes(exitCode)){
@@ -462,10 +496,7 @@ async function tryBuild(pkg: PkgInfoCSProj, opts: Required<AbortOptions>){
             }
         }
         if(tryToRepairSDK){
-            repairArchived_sdkPkg_opts ??=
-                repairArchived(sdkPkg, { ...opts, ignoreUnpacked: true })
-                    .then(() => { repairArchived_sdkPkg_opts = null })
-            await repairArchived_sdkPkg_opts
+            await repairSDK({ ...opts, ignoreUnpacked: true })
             await build(pkg, opts)
         } else
             throw err

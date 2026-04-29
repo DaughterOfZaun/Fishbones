@@ -20,6 +20,7 @@ export const KnownServers = {
     Unknown: 0 as ServerVersion,
     "BrokenWings": 1 as ServerVersion,
     "ChronoBreak": 2 as ServerVersion,
+    "TestGrounds": 3 as ServerVersion,
     Default: 1 as ServerVersion,
 }
 
@@ -31,7 +32,7 @@ export interface Combination {
     champions: Map<number, ChampionInfo>
     bots: Map<number, ChampionInfo>
 }
-interface ClientInfo extends ClientVersionInfo, ClientExeInfo, ClientDataInfo {}
+export interface ClientInfo extends ClientVersionInfo, ClientExeInfo, ClientDataInfo {}
 interface ClientVersionInfo {
     name: string
     version: ClientVersion
@@ -48,7 +49,7 @@ export interface ClientDataInfo {
         skins: Record<number, { image: string }>
     }>
 }
-interface ServerInfo extends ServerVersionInfo, ServerExeInfo, ServerDataInfo {}
+export interface ServerInfo extends ServerVersionInfo, ServerExeInfo, ServerDataInfo {}
 interface ServerVersionInfo {
     name: string
     version: ServerVersion

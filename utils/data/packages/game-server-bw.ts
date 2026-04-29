@@ -8,11 +8,12 @@ import { args } from '../../args'
 import { tr } from '../../translation'
 import { sdkPkg } from './sdk'
 
-args.remoteIdx.on('change', index => gsPkg.setRemoteByIndex(index))
+args.remoteIdx.on('change', index => bwPkg.setRemoteByIndex(index))
 
-export const gsPkg = new class extends PkgInfoCSProj implements PkgInfoGit {
-    name = tr('Game Server')
-    dirName = 'ChildrenOfTheGrave-Gameserver'
+export const bwPkg = new class extends PkgInfoCSProj implements PkgInfoGit {
+    
+    name = tr('BrokenWings') + ' ' + tr('Game Server')
+    dirName = 'ChildrenOfTheGrave-GameServer'
     makeDir = false
     zipExt = '7z'
     zipName = `${this.dirName}.${this.zipExt}`
@@ -23,7 +24,7 @@ export const gsPkg = new class extends PkgInfoCSProj implements PkgInfoGit {
     
     dir = path.join(downloads, this.dirName)
     zip = path.join(downloads, this.zipName)
-    zipTorrentEmbedded = embedded.gsPkgZipTorrent
+    zipTorrentEmbedded = embedded.bwPkgZipTorrent
     zipTorrentName = `${this.zipName}.torrent`
     zipTorrent = `${this.zip}.torrent`
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
@@ -32,7 +33,7 @@ export const gsPkg = new class extends PkgInfoCSProj implements PkgInfoGit {
         gdrive(`1p9Dz1o_tUrML6a7KdyCeoXeIjyoZ5YhG`),
         `${HARDCODED_HTTP_SERVER_URL}/${this.zipName}`,
     ]
-    zipEmbded = embedded.gsPkgZip
+    zipEmbded = embedded.bwPkgZip
 
     gitRevision = '4592f1379ddaa972ce0b5dc6cebb9caf09c812ab'
 

@@ -35,7 +35,7 @@ func on_button_gui_input(unk_event: InputEvent, child: BaseButton) -> void:
 
     if child.action_mode == BaseButton.ACTION_MODE_BUTTON_PRESS && event.pressed \
     or child.action_mode == BaseButton.ACTION_MODE_BUTTON_RELEASE && !event.pressed:
-        if event.button_index > 0 && (child.button_mask & (1 << (event.button_index - 1))) != 0:
+        if event.button_index > 0 && (child.button_mask & (1 << (event.button_index - 1))) != 0 && child.has_meta('path'):
             var path: String = child.get_meta('path')
             #print('CALL ', callback.hash(), ' ', get_path(), ':pressed')
             callback.call('call', path, 'pressed', event.button_index)

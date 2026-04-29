@@ -12,7 +12,7 @@ export const GC_LOCATION_C_DRIVE = 'C'
 export const GC_LOCATION_DOWNLOADS = 'Fishbones_Data'
 export const GC_LOCATION_CUSTOM = '...'
 
-args.gcLocation.on('change', location => gcPkg.setDirLocation(location))
+args.gc126Location.on('change', location => gc126Pkg.setDirLocation(location))
 
 export const gcLocationFromIndexToString = [
     GC_LOCATION_AUTO,
@@ -52,7 +52,7 @@ export abstract class GCPkgCommon extends PkgInfoExe implements ClientExeInfo {
     onDirSet?: (gcPkg_dir: string) => void
 }
 
-export const gcPkg = new class extends GCPkgCommon {
+export const gc126Pkg = new class extends GCPkgCommon {
 
     name = tr('Game Client')
     dirName = 'playable_client_126'
@@ -69,7 +69,7 @@ export const gcPkg = new class extends GCPkgCommon {
     dir = ''
     
     zip = path.join(downloads, this.zipName)
-    zipTorrentEmbedded = embedded.gcZipTorrent
+    zipTorrentEmbedded = embedded.gc126ZipTorrent
     zipTorrentName = `${this.zipName}.torrent`
     zipTorrent = `${this.zip}.torrent`
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)

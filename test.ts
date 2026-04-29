@@ -70,7 +70,7 @@ const peerIds = [
     node2PeerId,
 ]
 
-const gameInfo = JSON.parse(await fs.readFile('./dist/Fishbones_Data/ChildrenOfTheGrave-Gameserver/ChildrenOfTheGraveServerConsole/bin/Debug/net9.0/Settings/GameInfo.json', 'utf8')) as GameInfo
+const gameInfo = JSON.parse(await fs.readFile('./dist/Fishbones_Data/ChildrenOfTheGrave-GameServer/ChildrenOfTheGraveServerConsole/bin/Debug/net9.0/Settings/GameInfo.json', 'utf8')) as GameInfo
 
 let proxy1: ClientServerProxy
 let proxy2: ClientServerProxy

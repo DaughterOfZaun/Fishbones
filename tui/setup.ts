@@ -5,11 +5,12 @@ import { render } from "../ui/remote/view";
 import { Features, PlayerCount, TickRate } from "../utils/constants";
 import { button, checkbox, form, inq2gd, line, option } from "../ui/remote/types";
 import { AbortPromptError } from "@inquirer/core";
-import { combinations, combinations_findIndex as combinations_findIndex, KnownClients, KnownServers, type Combination } from "../utils/data/constants/client-server-combinations";
+import { combinations, KnownClients, KnownServers, type Combination } from "../utils/data/constants/client-server-combinations";
 
 export async function setup(game: LocalGame, opts: Required<AbortOptions>){
     
     game.features.set(Features.SPELLS_DISABLED, args.spellCrashDetected.value)
+    game.features.set(Features.BYPASS_ENABLED, true)
 
     let index = 0
     let combo: Combination = undefined!
@@ -62,7 +63,10 @@ export async function setup(game: LocalGame, opts: Required<AbortOptions>){
         Minions: checkbox(game.features.isMinionsEnabled, value => game.features.set(Features.MINIONS_DISABLED, !value)),
         Cheats: checkbox(game.features.isCheatsEnabled, value => game.features.set(Features.CHEATS_ENABLED, value)),
         HalfPing: checkbox(game.features.isHalfPingEnabled, value => game.features.set(Features.HALF_PING_MODE_ENABLED, value)),
-        Firewall: checkbox(game.features.isFirewallEnabled, value => game.features.set(Features.FIREWALL_ENABLED, value), false),
+        Firewall: checkbox(game.features.isFirewallEnabled, value => {
+            game.features.set(Features.FIREWALL_ENABLED, value)
+            game.features.set(Features.BYPASS_ENABLED, !value)
+        }, false),
         Bypass: checkbox(game.features.isBypassEnabled, value => game.features.set(Features.BYPASS_ENABLED, value)),
         Spells: checkbox(game.features.isSpellsEnabled, value => {
             game.features.set(Features.SPELLS_DISABLED, !value)
@@ -83,10 +87,12 @@ export async function setup(game: LocalGame, opts: Required<AbortOptions>){
                 const isDefaultVersion =
                     game.serverVersion != KnownServers.Default ||
                     game.clientVersion != KnownClients.Default
+                if(!isDefaultVersion)
+                    game.features.set(Features.FIREWALL_ENABLED, false)
                 view.update(form({
                     GameMap: gameMap(),
                     GameMode: gameMode(),
-                    Firewall: checkbox(undefined, undefined, isDefaultVersion),
+                    Firewall: checkbox(game.features.isFirewallEnabled, undefined, isDefaultVersion),
                 }))
             },
         ),

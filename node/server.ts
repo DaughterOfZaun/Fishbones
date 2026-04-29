@@ -17,6 +17,7 @@ import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string'
 import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
 import { pubsubPeerDiscovery } from '../network/libp2p/discovery/pubsub-discovery'
 import { pinning } from '../network/libp2p/pinning'
+import { time } from '../utils/proxy/time'
 //import { peerIdFromPrivateKey } from '@libp2p/peer-id'
 
 const UDP_PORT = 42451
@@ -85,6 +86,9 @@ const node = await createLibp2p({
             topic: appDiscoveryTopic,
         }),
         pinning: pinning(),
+        time: time({
+            enableSync: false,
+        })
     }
 })
 
