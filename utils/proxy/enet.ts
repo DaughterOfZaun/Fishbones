@@ -116,71 +116,71 @@ export class Reader {
         this.funcs = funcs[endianness]
     }
 
-    public readBool(name?: string){
+    public readBool(name?: string): boolean {
         return this.readByte(name) != 0
     }
-    public readSByte(name?: string){
+    public readSByte(name?: string): number {
         if(this.debug) console.log('readByte', name, this.buffer.subarray(this.position, this.position + 1))
         const result = this.funcs.readInt8.call(this.buffer, this.position);
         this.position += 1;
         return result
     }
-    public readByte(name?: string){
+    public readByte(name?: string): number {
         if(this.debug) console.log('readByte', name, this.buffer.subarray(this.position, this.position + 1))
         const result = this.funcs.readUInt8.call(this.buffer, this.position);
         this.position += 1;
         return result
     }
-    public readInt16(name?: string){
+    public readInt16(name?: string): number {
         if(this.debug) console.log('readInt16', name, this.buffer.subarray(this.position, this.position + 2))
         const result = this.funcs.readInt16.call(this.buffer, this.position);
         this.position += 2;
         return result
     }
-    public readUInt16(name?: string){
+    public readUInt16(name?: string): number {
         if(this.debug) console.log('readUInt16', name, this.buffer.subarray(this.position, this.position + 2))
         const result = this.funcs.readUInt16.call(this.buffer, this.position);
         this.position += 2;
         return result
     }
-    public readInt32(name?: string){
+    public readInt32(name?: string): number {
         if(this.debug) console.log('readUInt32', name, this.buffer.subarray(this.position, this.position + 4))
         const result = this.funcs.readInt32.call(this.buffer, this.position);
         this.position += 4;
         return result
     }
-    public readUInt32(name?: string){
+    public readUInt32(name?: string): number {
         if(this.debug) console.log('readUInt32', name, this.buffer.subarray(this.position, this.position + 4))
         const result = this.funcs.readUInt32.call(this.buffer, this.position);
         this.position += 4;
         return result
     }
-    public readInt64(name?: string){
+    public readInt64(name?: string): number {
         if(this.debug) console.log('readUInt64', name, this.buffer.subarray(this.position, this.position + 8))
         const result = this.funcs.readBigInt64.call(this.buffer, this.position);
         this.position += 8;
         return result
     }
-    public readUInt64(name?: string){
+    public readUInt64(name?: string): number {
         if(this.debug) console.log('readUInt64', name, this.buffer.subarray(this.position, this.position + 8))
         const result = this.funcs.readBigUInt64.call(this.buffer, this.position);
         this.position += 8;
         return result
     }
-    public readFloat(name?: string){
+    public readFloat(name?: string): number {
         if(this.debug) console.log('readFloat', name, this.buffer.subarray(this.position, this.position + 4))
         const result = this.funcs.readFloat.call(this.buffer, this.position);
         this.position += 4;
         return result
     }
-    public readBytes(count: number, name?: string){
+    public readBytes(count: number, name?: string): Buffer {
         if(this.debug) console.log('readBytes', name, this.buffer.subarray(this.position, this.position + count))
         console.assert(this.position + count <= this.buffer.length, `Assertion failed: this.position (${this.position}) + count (${count}) <= this.buffer.length (${this.buffer.length})`)
         const result = this.buffer.subarray(this.position, this.position + count)
         this.position += result.length
         return result
     }
-    public readFixedString(length: number, name?: string){
+    public readFixedString(length: number, name?: string): string {
         if(this.debug) console.log('readFixedString', name, this.buffer.subarray(this.position, this.position + length))
         const zeroIndex = this.buffer.indexOf(0, this.position)
         console.assert(zeroIndex <= this.position + length, `Assertion failed: zeroIndex (${zeroIndex}) <= this.position (${this.position}) + length (${length})`)
@@ -189,11 +189,11 @@ export class Reader {
         this.position += length
         return buffer.toString('utf8')
     }
-    public readString(){
+    public readString(name?: string): string {
         const zeroIndex = this.buffer.indexOf(0, this.position)
         console.assert(zeroIndex !== -1, `Assertion failed: buffer.indexOf(0) == -1`)
         const buffer = this.buffer.subarray(this.position, zeroIndex)
-        this.position += buffer.length
+        this.position += buffer.length + 1
         return buffer.toString('utf8')
     }
 }
@@ -283,6 +283,13 @@ export class Writer {
     public writeFixedString(length: number, data: string, name?: string){
         if(length % 1 != 0) throw new Error()
         console.assert(length >= data.length + 1, `Assertion failed: length (${length}) <= data.length (${ data.length }) + 1`)
+        const result = this.buffer.write(data + '\u0000', this.position, 'utf8')
+        if(this.debug) console.log('writeFixedString', name, this.buffer.subarray(this.position, this.position + length).toString('hex'))
+        this.position += length
+        return result
+    }
+    public writeString(data: string, name?: string){
+        const length = data.length + 1
         const result = this.buffer.write(data + '\u0000', this.position, 'utf8')
         if(this.debug) console.log('writeFixedString', name, this.buffer.subarray(this.position, this.position + length).toString('hex'))
         this.position += length

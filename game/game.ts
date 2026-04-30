@@ -28,10 +28,11 @@ import { VERSION, versionFromString, versionToString } from '../utils/constants-
 import { console_log } from '../ui/remote/remote'
 import { tr } from '../utils/translation'
 import { firewall } from '../utils/proxy/proxy-firewall'
-import { fs_readdir, fs_readFile } from '../utils/data/fs'
+import { fs_ensureDir, fs_readdir, fs_readFile, fs_writeFile } from '../utils/data/fs'
 import { gc126Pkg } from '../utils/data/packages' //TODO: Unhardcode.
 import path from 'node:path'
 import { args } from '../utils/args'
+import { INI } from '../utils/data/ini'
 
 export const versionNumber = versionFromString(VERSION)
 
@@ -539,6 +540,33 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         }
 
         try {
+            if(this.clientVersion == KnownClients.v126){
+                await Promise.all(
+                    [...this.players.values()]
+                    .filter(player => player.isBot)
+                    .map(async (player) => {
+                        const champion = player.champion.toString()
+                        const scriptsDir = path.join(gc126Pkg.dir, 'DATA', 'Characters', champion, 'Scripts')
+                        const spellsInibin = path.join(scriptsDir, `${champion}BotSummonerSpells.inibin`)
+                        const summoner1 = (player.spell1.value !== undefined) ? player.spell1.toString() : ''
+                        const summoner2 = (player.spell1.value !== undefined) ? player.spell2.toString() : ''
+                        const ini = new INI()
+                        ini.push(1262429119, summoner1)
+                        ini.push(1262429120, summoner2)
+                        ini.push(1960928736, summoner1)
+                        ini.push(1960928737, summoner2)
+                        ini.push(2721268055, summoner1)
+                        ini.push(2721268056, summoner2)
+                        ini.push(3491215323, summoner1)
+                        ini.push(3491215324, summoner2)
+                        ini.push(3858056187, summoner1)
+                        ini.push(3858056188, summoner2)
+                        const buffer = ini.toBuffer()
+                        await fs_ensureDir(scriptsDir, opts)
+                        await fs_writeFile(spellsInibin, buffer, { ...opts, encoding: 'binary' })
+                    })
+                )
+            }
             const proc = await launchClient(this.clientVersion, ip, port, key, clientId, opts)
             proc.once('exit', this.onClientExit)
             return true

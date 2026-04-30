@@ -81,7 +81,7 @@ export async function fs_copyFile(src: string, dest: string, opts: Required<Abor
     return result
 }
 
-export type TextBufferEncoding = 'utf8' | 'base64'
+export type TextBufferEncoding = 'utf8' | 'base64' | 'binary'
 export type ReadWriteFileOpts = /*TextBufferEncoding |*/ { encoding: TextBufferEncoding, rethrow?: boolean } & Required<AbortOptions>
 export async function fs_readFile(path: string, opts: ReadWriteFileOpts, log = true): Promise<string | undefined> {
     let result = undefined
@@ -97,7 +97,7 @@ export async function fs_readFile(path: string, opts: ReadWriteFileOpts, log = t
     return result
 }
 
-export async function fs_writeFile(path: string, data: string, opts: ReadWriteFileOpts, log = true): Promise<boolean> {
+export async function fs_writeFile(path: string, data: string | Buffer, opts: ReadWriteFileOpts, log = true): Promise<boolean> {
     let result = false
     try {
         await fs.writeFile(path, data, opts.encoding)
