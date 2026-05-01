@@ -9,6 +9,8 @@ import sampleNames from './names.json'
 import type { PeerId } from '@libp2p/interface'
 import { PeerMap } from '@libp2p/peer-collections'
 import { peerIdFromString } from '@libp2p/peer-id'
+//import type { GamePlayer } from '../../game/game-player'
+import { profileIcons } from '../data/constants/profile-icons'
 import { tr } from '../translation'
 
 const chain = new Foswig(2, sampleNames)
@@ -60,11 +62,27 @@ export function getPseudonym(playerId: number, isMe: boolean, short = false){
     return tr('Anonymous')
 }
 
-type GamePlayer = { id: number, peerId?: PeerId }
-export function getName(player: GamePlayer, isMe: boolean, short = false){
+type GamePlayer1 = { id: number, peerId?: PeerId }
+export function getName(player: GamePlayer1, isMe: boolean, short = false){
     return player.peerId ?
         getUsername(player.peerId, short) :
         getPseudonym(player.id, isMe, short)
+}
+
+type GamePlayer2 = { name: { value?: string } }
+export function getCustomUsername(player: GamePlayer2, championName?: string){
+    return player.name.value || (
+        championName ?
+            tr('Anonymous {champion}', { champion: championName }) :
+            tr('Anonymous')
+    )
+}
+
+type GamePlayer3 = { icon: { value?: number } }
+export function getCustomIconPath(player: GamePlayer3, championIcon?: string){
+    return (player.icon.value !== undefined) ?
+        `${profileIcons}:${player.icon.value}` :
+        `${championIcon}`
 }
 
 function formatUInt32(i: number){

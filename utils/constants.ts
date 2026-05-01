@@ -53,6 +53,19 @@ export class BooleanValue extends ValueDesc<boolean, boolean>{
     }
 }
 
+export class IntegerValue extends ValueDesc<number, number>{
+    encode(): number {
+        return this.value!
+    }
+    decodeInplace(v: number): boolean {
+        if(v % 1 == 0){
+            this.value = v
+            return true
+        }
+        return false
+    }
+}
+
 export class FloatValue extends ValueDesc<number, number>{
     encode(): number {
         return this.value!

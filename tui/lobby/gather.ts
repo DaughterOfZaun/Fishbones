@@ -5,8 +5,8 @@ import { BOTS, players, PLAYERS, Team, type Context } from "./lobby";
 import { bar, base, button, checkbox, form, icon, inq2gd, label, option, type Form } from "../../ui/remote/types";
 import { render } from "../../ui/remote/view";
 import { combinations_find, KnownServers } from "../../utils/data/constants/client-server-combinations";
-import { AIChampion, AIDifficulty } from "../../utils/data/constants/champions";
-import { getName } from "../../utils/namegen/namegen";
+import { AIDifficulty } from "../../utils/data/constants/champions";
+import { getCustomIconPath, getCustomUsername, getName } from "../../utils/namegen/namegen";
 import { popup } from "../../ui/remote/remote";
 import { tr } from "../../utils/translation";
 import { sortInplace } from "../../utils/helpers";
@@ -34,23 +34,26 @@ export async function lobby_gather(ctx: Context){
         })
 
     const makePlayerForm = (player: GamePlayer): Form => {
-
-        const { name: championName, icon: iconPath } =
+        
+        const { name: championName, icon: championIcon } =
             (player.champion.value !== undefined) ?
                 champions.get(player.champion.value!)! : {}
 
         if(!player.isBot){
+            const iconPath = getCustomIconPath(player, championIcon)
+            const username = getCustomUsername(player, championName)
             const isMe = game.getPlayer() === player
             const playerId = getName(player, isMe)
             return form({
+                Username: label(username),
                 Name: label(playerId),
-                Icon: icon(iconPath, championName),
+                Icon: icon(iconPath),
                 Kick: button(undefined, !localGame || isMe),
                 Online: checkbox(player.fullyConnected.value),
             })
         } else {
             return form({
-                Icon: icon(iconPath, championName),
+                Icon: icon(championIcon, championName),
                 Champion: option(botsItems, player.champion.value, undefined, !localGame),
                 Difficulty: option(inq2gd(AIDifficulty.choices), player.difficulty.value, undefined, !localGame),
                 Kick: button(undefined, !localGame),

@@ -10,6 +10,7 @@ import type { Game } from "../../game/game";
 import { SwitchViewError } from "../tui";
 import { sortInplace } from "../../utils/helpers";
 //import { LocalGame } from "../../game/game-local";
+import { tr } from "../../utils/translation";
 
 function makePlayerForm(player: GamePlayer, game: Game): Form {
     
@@ -29,18 +30,37 @@ function makePlayerForm(player: GamePlayer, game: Game): Form {
     const spellInfo2 = (player.spell2.value !== undefined) ? spells.get(player.spell2.value) : undefined
     const spellIcon2 = spellInfo2?.icon ?? ''
     const spellName2 = spellInfo2?.name ?? ''
-    
-    const isMe = game.getPlayer() === player
-    const playerId = player.isBot ? getBotName(championName) : getName(player, isMe)
-    //const statusText = (player.lock.value || player.isBot) ? 'Locked' : 'Chooses...'
 
-    return form({
-        Name: label(playerId),
-        Status: label(championName),
+    const common = {
         Icon: icon(championIcon, championName),
         SummonerSpell1: icon(spellIcon1, spellName1),
         SummonerSpell2: icon(spellIcon2, spellName2),
-    })
+    }
+
+    if(!player.isBot){
+        let username = player.name.value || (
+            championName ?
+                tr('Anonymous {champion}', { champion: championName }) :
+                tr('Anonymous')
+        )
+        const isMe = game.getPlayer() === player
+        const playerId = getName(player, isMe)
+        return form({
+            Username: label(username),
+            Name: label(playerId),
+            Status: label(championName),
+            ...common,
+        })
+    } else {
+        const playerId = getBotName(championName)
+        const username = playerId
+        return form({
+            Username: label(username),
+            Name: label(playerId),
+            Status: label(championName),
+            ...common,
+        })
+    }
 }
 
 export async function lobby_pick(ctx: Context){

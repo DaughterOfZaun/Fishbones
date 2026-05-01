@@ -55,6 +55,13 @@ async function index(opts: Required<AbortOptions>){
         //umplex.shutdown()
     })
 
+    node.services.pubsubPeerDiscovery.setData({
+        name: args.username.value,
+        icon: args.usericon.value,
+        serverSettings: undefined,
+        gameInfos: [],
+    })
+
     await Promise.all([
         pages.load(opts),
     ])

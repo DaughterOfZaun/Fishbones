@@ -75,6 +75,7 @@ export class LocalGame extends Game {
                     playerId,
                     joinRequest: {
                         name: bot.name.encode(),
+                        icon: bot.icon.encode(),
                     },
                     pickRequest: {
                         team: bot.team.encode(),

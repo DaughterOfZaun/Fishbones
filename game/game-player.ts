@@ -1,5 +1,5 @@
 import type { ValueDesc } from '../utils/data/constants/values/desc'
-import { BooleanValue, FloatValue, Lock, Name, Team } from '../utils/constants'
+import { BooleanValue, FloatValue, IntegerValue, Lock, Name, Team } from '../utils/constants'
 import { SummonerSpell } from '../utils/data/constants/spells'
 import { Champion, Skin, AIDifficulty, Talents } from '../utils/data/constants/champions'
 import { type PeerId, type Stream } from '@libp2p/interface'
@@ -10,7 +10,7 @@ import { tr } from '../utils/translation'
 
 export type PlayerId = number & { readonly brand: unique symbol }
 
-const pickableKeys = ["team", "champion", "spell1", "spell2", "lock", "difficulty", "skin", "talents", "fullyConnected"] as const
+const pickableKeys = [ "team", "champion", "spell1", "spell2", "lock", "difficulty", "skin", "talents", "fullyConnected" ] as const
 export type KeysByValue<T, V> = Exclude<{ [K in keyof T]: T[K] extends V ? K : undefined }[keyof T], undefined>
 export type PPP = KeysByValue<GamePlayer, ValueDesc<unknown, unknown>>
 export class GamePlayer {
@@ -19,6 +19,7 @@ export class GamePlayer {
     public readonly peerId?: PeerId
     
     public readonly name = new Name(tr('Player'))
+    public readonly icon = new IntegerValue(undefined)
 
     stream?: WriteonlyMessageStream<LobbyNotificationMessage, Stream>
     
@@ -44,12 +45,14 @@ export class GamePlayer {
     public get isBot(){ return this.difficulty.value !== undefined }
 
     public encode(ppp?: PPP): PickRequest {
-        return ppp ? ({ [ppp]: this[ppp].encode() }) :
+        const req = (ppp) ?
+            ({ [ppp]: this[ppp].encode() }) :
             Object.fromEntries(
                 pickableKeys
                 .filter(key => this[key].value !== undefined)
                 .map(key => [key, this[key].encode()])
             )
+        return req as PickRequest
     }
     public decodeInplace(prs: PickRequest): boolean {
         //console.log(JSON.stringify({ method: 'console.log', params: [ JSON.stringify(prs) ] }))

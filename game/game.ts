@@ -17,11 +17,11 @@ import { launchServer, stopServer, getRunningServerPort } from '../utils/process
 import { safeOptions, shutdownOptions, TerminationError } from '../utils/process/process'
 import { Deferred } from '../utils/promises'
 import { logger } from '../utils/log'
-import { getBotName, getName } from '../utils/namegen/namegen'
+import { getBotName, getCustomUsername, getName } from '../utils/namegen/namegen'
 import { GameMap, maps } from '../utils/data/constants/maps'
 import { GameMode } from '../utils/data/constants/modes'
 import { runes } from '../utils/data/constants/runes'
-import { ChampionsEnabled } from '../utils/data/constants/champions'
+import { champions, ChampionsEnabled } from '../utils/data/constants/champions'
 import { SummonerSpellsEnabled } from '../utils/data/constants/spells'
 import { KnownClients, KnownServers, type ClientVersion, type ServerVersion } from '../utils/data/constants/client-server-combinations'
 import { VERSION, versionFromString, versionToString } from '../utils/constants-build'
@@ -183,13 +183,13 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     }
 
     private joiningPromise: Deferred<boolean> | null = null
-    public async join(name: string, password: u|string, opts: Required<AbortOptions>){
+    public async join(name: string, icon: number, password: u|string, opts: Required<AbortOptions>){
 
         //if(!this.connected) return false
         if(this.joined) return true
 
         this.stream_write({
-            joinRequest: { name, password, version: versionNumber },
+            joinRequest: { name, icon, password, version: versionNumber },
         })
 
         this.joiningPromise = new Deferred<boolean>(opts)
@@ -209,9 +209,13 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     private handleJoinRequest(player: GamePlayer, req: LobbyRequestMessage.JoinRequest){
         void this.handleJoinRequestAsync(player, req, shutdownOptions)
     }
-    private async handleJoinRequestAsync(player: GamePlayer, { name }: LobbyRequestMessage.JoinRequest, opts: Required<AbortOptions>){
+    private async handleJoinRequestAsync(player: GamePlayer, req: LobbyRequestMessage.JoinRequest, opts: Required<AbortOptions>){
         
-        player.name.decodeInplace(name)
+        if(req.name !== undefined)
+            player.name.decodeInplace(req.name)
+        if(req.icon !== undefined)
+            player.icon.decodeInplace(req.icon)
+
         this.assignTeamTo(player)
 
         if(!this.features.isHalfPingEnabled){
@@ -239,6 +243,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                     playerId: player.id,
                     joinRequest: {
                         name: player.name.encode(),
+                        icon: player.icon.encode(),
                         info: await this.getPeerInfo(player, opts),
                     },
                     pickRequest: player.encode(),
@@ -259,6 +264,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                             playerId: player.id,
                             joinRequest: {
                                 name: player.name.encode(),
+                                icon: player.icon.encode(),
                                 isMe,
                                 info,
                             },
@@ -291,7 +297,10 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     }
     private async handleJoinResponseAsync(player: GamePlayer, res: LobbyNotificationMessage.JoinRequest, opts: Required<AbortOptions>){
         
-        player.name.decodeInplace(res.name)
+        if(res.name !== undefined)
+            player.name.decodeInplace(res.name)
+        if(res.icon !== undefined)
+            player.icon.decodeInplace(res.icon)
 
         if(res.isMe){
             this.player = player
@@ -980,24 +989,36 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         })
         
         info.players = this.getPlayers().map((player, i) => {
+
+            console.assert(
+                typeof player.champion.value == 'number',
+                'Assertion failed: typeof player.champion.value == \'number\'',
+            )
+            const champion = champions.find(info => info.i == player.champion.value!)!
+            console.assert(!!champion, 'Assertion failed: !!champion')
+            const { name: championName, short: championShort } = champion
+
             const info: any = {
                 blowfishKey, //TODO: Unhardcode. Security
                 rank: /*Rank.random() ??*/ "DIAMOND",
-                champion: player.champion.toString(), //TODO: Fix
+                champion: championShort,
                 team: player.team.toString().toUpperCase(),
                 skin: player.skin.value ?? 0,
                 summoner1: (player.spell1.value !== undefined) ? player.spell1.toString() : '',
                 summoner2: (player.spell1.value !== undefined) ? player.spell2.toString() : '',
                 ribbon: 2, // Unused
-                icon: 0, //Math.floor(Math.random() * 29),
+                //icon: Math.floor(Math.random() * 29),
                 talents: Object.fromEntries(player.talents.value.entries()),
                 runes,
             }
             if(!player.isBot){
-                info.name = getName(player, false, true)
+                //info.name = getName(player, false, true)
+                info.name = getCustomUsername(player, championName)
+                info.icon = player.icon.value ?? 0
                 info.playerId = i + 1
             } else {
-                info.name = getBotName(player.champion.toString())
+                info.name = getBotName(championName)
+                info.icon = 0
                 if(isTG) info.playerId = -(i + 1)
                 else info.playerId = -1
                 if(isBW) Object.assign(info, {

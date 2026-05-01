@@ -4,7 +4,7 @@ import { console_log } from "../ui/remote/remote";
 import { logger } from "../utils/log";
 import { NAME } from "../utils/constants-build";
 import { render, DeferredView } from "../ui/remote/view";
-import { button, form, label, list, text } from "../ui/remote/types";
+import { button, form, icon, label, list, text } from "../ui/remote/types";
 import { getUsername } from "../utils/namegen/namegen";
 import { PeerMap } from "@libp2p/peer-collections";
 import type { PingResult } from "../network/libp2p/ping";
@@ -26,6 +26,8 @@ type MasteriesPage = (opts: Required<AbortOptions>) => Promise<void> | void
 export async function profilePanel(node: LibP2PNode, masteries: MasteriesPage, opts: Required<AbortOptions>){
     
     const view = render('ProfilePanel', form({
+        Icon: icon(`res://images/profile-icons-128x128.png:${args.usericon.value}`),
+        Username: label(args.username.value),
         Name: label(getUsername(node.peerId)),
         Edit: button(() => void masteries(opts)),
         //Status: label(''),

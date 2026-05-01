@@ -169,7 +169,8 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
         }
     }
     private data: PBPeer.AdditionalData | null | undefined = undefined
-    public setData(data: PBPeer.AdditionalData | null | undefined): void {
+    public getData(): typeof this.data { return this.data }
+    public setData(data: typeof this.data): void {
         this.data = data
         if(this.announced)
             this.broadcast(true)

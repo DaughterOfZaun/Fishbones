@@ -9,6 +9,7 @@ message Peer {
 
     message AdditionalData {
         string name = 1;
+        optional uint32 icon = 4;
         ServerSettings server_settings = 2;
         message ServerSettings {
            string name = 1;
@@ -32,8 +33,11 @@ message Peer {
             //repeated int32 spells = 10;
             //repeated int32 items = 11;
             //repeated int32 bots = 13;
-            //uint32 tickRate = 12;
+            //uint32 tick_rate = 12;
             optional bytes commit = 14;
+            optional int32 client_version = 15;
+            optional int32 server_version = 16;
+            //repeated uint32 client_mods = 17;
         }
     }
 }

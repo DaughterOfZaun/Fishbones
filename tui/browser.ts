@@ -32,7 +32,9 @@ type Lobby = (game: Game, opts: Required<AbortOptions>) => Promise<void>
 type Setup = (game: LocalGame, opts: Required<AbortOptions>) => Promise<void>
 export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts: Required<AbortOptions>){
 
-    const name = '' //getUsername(node.peerId.toString())
+    //const name = getUsername(node.peerId)
+    const name = args.username.value
+    const icon = args.usericon.value
     const pspd = node.services.pubsubPeerDiscovery
 
     let notificationsEnabled = true
@@ -99,10 +101,10 @@ export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts
         notificationsEnabled = false
 
         if(action == 'host'){
-            await hostLocal(node, name, lobby, setup, opts)
+            await hostLocal(node, name, icon, lobby, setup, opts)
         }
         if(action == 'join'){
-            await joinRemote(param, name, lobby, opts)
+            await joinRemote(param, name, icon, lobby, opts)
         }
         if(action == 'quit'){
             break loop
@@ -110,7 +112,7 @@ export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts
     }
 }
 
-async function hostLocal(node: LibP2PNode, name: string, lobby: Lobby, setup: Setup, opts: Required<AbortOptions>){
+async function hostLocal(node: LibP2PNode, name: string, icon: number, lobby: Lobby, setup: Setup, opts: Required<AbortOptions>){
     const pspd = node.services.pubsubPeerDiscovery
     const ps = node.services.pubsub
 
@@ -125,20 +127,19 @@ async function hostLocal(node: LibP2PNode, name: string, lobby: Lobby, setup: Se
     
     let prevPlayerCount = 0
     const { gameInfo, serverSettings } = game.encode()
-    let data: Peer.AdditionalData = {
-        name: name,
+    let data: PartialAdditionalData = {
         serverSettings,
         gameInfos: [ gameInfo ],
     }
     try {
         await game.startListening(opts)
-        await game.join(name, undefined, opts)
+        await game.join(name, icon, undefined, opts)
 
         if(ps.isStarted() && !game.isPrivate){
             game.addEventListener('update', update)
             game.addEventListener('start', start)
             game.addEventListener('stop', stop)
-            pspd.setData(data)
+            pspd_setData(data)
         }
 
         await lobby(game, opts)
@@ -150,7 +151,7 @@ async function hostLocal(node: LibP2PNode, name: string, lobby: Lobby, setup: Se
             game.removeEventListener('update', update)
             game.removeEventListener('start', start)
             game.removeEventListener('stop', stop)
-            pspd.setData(null)
+            pspd_setData(null)
         }
     }
 
@@ -159,14 +160,23 @@ async function hostLocal(node: LibP2PNode, name: string, lobby: Lobby, setup: Se
         gi.players = game.getPlayersCount()
         if(gi.players != prevPlayerCount){
             prevPlayerCount = gi.players
-            pspd.setData(game.isJoinable() ? data : null)
+            pspd_setData(game.isJoinable() ? data : null)
         }
     }
-    function start(){ pspd.setData(game.isJoinable() ? data: null) }
-    function stop(){ pspd.setData(game.isJoinable() ? data : null) }
+    function start(){ pspd_setData(game.isJoinable() ? data: null) }
+    function stop(){ pspd_setData(game.isJoinable() ? data : null) }
+
+    type PartialAdditionalData = Pick<Peer.AdditionalData, 'serverSettings' | 'gameInfos'>
+    function pspd_setData(data: PartialAdditionalData | null){
+        if(data == null)
+            data = { serverSettings: undefined, gameInfos: [] }
+        const existingData = pspd.getData()
+        Object.assign(existingData!, data)
+        pspd.setData(existingData)
+    }
 }
 
-async function joinRemote(game: RemoteGame, name: string, lobby: Lobby, opts: Required<AbortOptions>){
+async function joinRemote(game: RemoteGame, name: string, icon: number, lobby: Lobby, opts: Required<AbortOptions>){
     try {
         await deadlyRace([
             async (opts) => spinner({ message: tr('Connecting to host...') }, opts),
@@ -176,7 +186,7 @@ async function joinRemote(game: RemoteGame, name: string, lobby: Lobby, opts: Re
             await game.password.uinput(opts)
         await deadlyRace([
             async (opts) => spinner({ message: tr('Joining the game...') }, opts),
-            async (opts) => game.join(name, game.password.encode(), opts)
+            async (opts) => game.join(name, icon, game.password.encode(), opts)
         ], opts)
         await lobby(game, opts)
     } catch(err) {
@@ -192,6 +202,7 @@ function getChoices(node: LibP2PNode){
 
     return Object.fromEntries(
         pspd.getListOfReachablePeersWithData()
+            .filter(pwd => pwd.data?.serverSettings && pwd.data?.gameInfos && pwd.data?.gameInfos.length > 0)
             .flatMap(pwd => peerInfoToChoices(node, pwd))
             .map(choice => [ choice.$id!, choice ])
     )

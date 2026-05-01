@@ -32,12 +32,6 @@ shader_parameter/tint_color = Color(0, 0, 0, 0)
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_efxa6"]
 
-[sub_resource type="ButtonGroup" id="ButtonGroup_dg77c"]
-
-[sub_resource type="ButtonGroup" id="ButtonGroup_efxa6"]
-
-[sub_resource type="ButtonGroup" id="ButtonGroup_ycdy4"]
-
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vivmo"]
 content_margin_left = 0.0
 content_margin_top = 0.0
@@ -91,6 +85,12 @@ Button/styles/focus = SubResource("StyleBoxEmpty_vivmo")
 Button/styles/hover = SubResource("StyleBoxEmpty_ycdy4")
 Button/styles/normal = SubResource("StyleBoxFlat_w48qg")
 Button/styles/pressed = SubResource("StyleBoxFlat_ycdy4")
+
+[sub_resource type="ButtonGroup" id="ButtonGroup_dg77c"]
+
+[sub_resource type="ButtonGroup" id="ButtonGroup_efxa6"]
+
+[sub_resource type="ButtonGroup" id="ButtonGroup_ycdy4"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_w48qg"]
 
@@ -191,7 +191,7 @@ spinner = ExtResource("4_ycdy4")
 select = ExtResource("5_w48qg")
 checkbox = ExtResource("6_vivmo")
 input = ExtResource("7_2cqfq")
-embedded_js = "res://embedded/index-0.0.3.44.js"
+embedded_js = "res://embedded/index-0.0.3.45.js"
 embedded_exe = "res://embedded/bun-1.3.10-windows-x64-baseline.exe"
 embedded_lib_0 = "res://embedded/node_datachannel-8fg8wz1b.node"
 embedded_file_0 = "res://embedded/7za-2501-windows-x64.exe"
@@ -263,11 +263,12 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_efxa6")
 tab_alignment = 1
-current_tab = 0
+current_tab = 1
 tabs_visible = false
 deselect_enabled = true
 
 [node name="#Loading" type="CenterContainer" parent="Container/TabContainer" unique_id=1229734443]
+visible = false
 layout_mode = 2
 metadata/_tab_index = 0
 
@@ -284,7 +285,6 @@ text = "Loading..."
 horizontal_alignment = 1
 
 [node name="#Startup" type="Control" parent="Container/TabContainer" unique_id=693992296]
-visible = false
 layout_mode = 2
 script = ExtResource("13_2cqfq")
 metadata/_tab_index = 1
@@ -485,6 +485,48 @@ mouse_filter = 2
 [node name="HBoxContainer" type="VBoxContainer" parent="Container/TabContainer/#Startup/CenterContainer" unique_id=1172641993]
 layout_mode = 2
 
+[node name="#ProfilePanel" type="PanelContainer" parent="Container/TabContainer/#Startup/CenterContainer/HBoxContainer" unique_id=108459964]
+custom_minimum_size = Vector2(223, 0)
+layout_mode = 2
+script = ExtResource("13_2cqfq")
+
+[node name="VBoxContainer" type="HBoxContainer" parent="Container/TabContainer/#Startup/CenterContainer/HBoxContainer/#ProfilePanel" unique_id=1948452597]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="#Icon" type="Button" parent="Container/TabContainer/#Startup/CenterContainer/HBoxContainer/#ProfilePanel/VBoxContainer" unique_id=2106620646]
+custom_minimum_size = Vector2(58, 58)
+layout_mode = 2
+theme = SubResource("Theme_dg77c")
+icon_alignment = 1
+expand_icon = true
+
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#Startup/CenterContainer/HBoxContainer/#ProfilePanel/VBoxContainer" unique_id=836427848]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="#Username" type="LineEdit" parent="Container/TabContainer/#Startup/CenterContainer/HBoxContainer/#ProfilePanel/VBoxContainer/MarginContainer" unique_id=339863319]
+layout_mode = 2
+size_flags_vertical = 4
+text = "Summoner's Name"
+
+[node name="#Name" type="Label" parent="Container/TabContainer/#Startup/CenterContainer/HBoxContainer/#ProfilePanel/VBoxContainer/MarginContainer/#Username" unique_id=195454927]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 16.0
+offset_bottom = 16.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_vertical = 1
+theme_override_colors/font_color = Color(0.735357, 0.735357, 0.735357, 1)
+theme_override_font_sizes/font_size = 8
+text = "Summoner's Name"
+clip_text = true
+text_overrun_behavior = 3
+
 [node name="#Play" type="Button" parent="Container/TabContainer/#Startup/CenterContainer/HBoxContainer" unique_id=1135184104]
 custom_minimum_size = Vector2(132, 53)
 layout_mode = 2
@@ -494,6 +536,51 @@ text = "PLAY"
 [node name="#Test" type="Button" parent="Container/TabContainer/#Startup/CenterContainer/HBoxContainer" unique_id=519427674]
 layout_mode = 2
 text = "TEST"
+
+[node name="Counterweight" type="Control" parent="Container/TabContainer/#Startup/CenterContainer/HBoxContainer" unique_id=306394560]
+custom_minimum_size = Vector2(0, 23)
+layout_mode = 2
+
+[node name="#IconPicker" type="AspectRatioContainer" parent="Container/TabContainer/#Startup" unique_id=1649946184]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("13_2cqfq")
+
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#Startup/#IconPicker" unique_id=282280886]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/#Startup/#IconPicker/MarginContainer" unique_id=1680826563]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#Startup/#IconPicker/MarginContainer/PanelContainer" unique_id=1731860907]
+layout_mode = 2
+
+[node name="#Icons" type="GridContainer" parent="Container/TabContainer/#Startup/#IconPicker/MarginContainer/PanelContainer/MarginContainer" unique_id=2143473357]
+layout_mode = 2
+size_flags_horizontal = 6
+size_flags_vertical = 6
+theme_override_constants/h_separation = 0
+theme_override_constants/v_separation = 0
+columns = 6
+script = ExtResource("14_yaehf")
+
+[node name="Icon" type="Button" parent="Container/TabContainer/#Startup/#IconPicker/MarginContainer/PanelContainer/MarginContainer/#Icons" unique_id=1554504664]
+custom_minimum_size = Vector2(58, 58)
+layout_mode = 2
+theme = SubResource("Theme_dg77c")
+icon_alignment = 1
+expand_icon = true
 
 [node name="#Install" type="MarginContainer" parent="Container/TabContainer" unique_id=745769612]
 visible = false
@@ -1715,10 +1802,24 @@ size_flags_horizontal = 3
 [node name="HBoxContainer" type="HBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team1/ScrollContainer/VBoxContainer1/#Players/HBoxContainer/MarginContainer2" unique_id=202816483]
 layout_mode = 2
 
-[node name="#Name" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team1/ScrollContainer/VBoxContainer1/#Players/HBoxContainer/MarginContainer2/HBoxContainer" unique_id=1918015079]
+[node name="#Username" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team1/ScrollContainer/VBoxContainer1/#Players/HBoxContainer/MarginContainer2/HBoxContainer" unique_id=1861824023]
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 6
+text = "Summoner's Name"
+text_overrun_behavior = 3
+
+[node name="#Name" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team1/ScrollContainer/VBoxContainer1/#Players/HBoxContainer/MarginContainer2/HBoxContainer/#Username" unique_id=2023893371]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 16.0
+offset_bottom = 16.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_vertical = 1
+theme_override_colors/font_color = Color(0.735357, 0.735357, 0.735357, 1)
+theme_override_font_sizes/font_size = 8
 text = "Summoner's Name"
 clip_text = true
 text_overrun_behavior = 3
@@ -1875,10 +1976,24 @@ size_flags_horizontal = 3
 [node name="HBoxContainer" type="HBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team2/ScrollContainer/VBoxContainer1/#Players/HBoxContainer/MarginContainer2" unique_id=2117082392]
 layout_mode = 2
 
-[node name="#Name" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team2/ScrollContainer/VBoxContainer1/#Players/HBoxContainer/MarginContainer2/HBoxContainer" unique_id=1354992930]
+[node name="#Username" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team2/ScrollContainer/VBoxContainer1/#Players/HBoxContainer/MarginContainer2/HBoxContainer" unique_id=709144079]
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 6
+text = "Summoner's Name"
+text_overrun_behavior = 3
+
+[node name="#Name" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3/#Team2/ScrollContainer/VBoxContainer1/#Players/HBoxContainer/MarginContainer2/HBoxContainer/#Username" unique_id=872522831]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 16.0
+offset_bottom = 16.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_vertical = 1
+theme_override_colors/font_color = Color(0.735357, 0.735357, 0.735357, 1)
+theme_override_font_sizes/font_size = 8
 text = "Summoner's Name"
 clip_text = true
 text_overrun_behavior = 3
@@ -1973,11 +2088,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 4
 text = "Add Bot"
-
-[node name="Control" type="Control" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby/MarginContainer/HBoxContainer3" unique_id=1515737681]
-visible = false
-layout_mode = 2
-size_flags_horizontal = 3
 
 [node name="HBoxContainer" type="HBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby" unique_id=1915715981]
 layout_mode = 2
@@ -2195,9 +2305,24 @@ size_flags_horizontal = 3
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="#Name" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/VBoxContainer2/MarginContainer/VBoxContainer/#ProfilePanel/VBoxContainer/MarginContainer/VBoxContainer" unique_id=626724916]
+[node name="#Username" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/VBoxContainer2/MarginContainer/VBoxContainer/#ProfilePanel/VBoxContainer/MarginContainer/VBoxContainer" unique_id=215589526]
 layout_mode = 2
 size_flags_vertical = 1
+text = "Summoner's Name"
+text_overrun_behavior = 3
+
+[node name="#Name" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/VBoxContainer2/MarginContainer/VBoxContainer/#ProfilePanel/VBoxContainer/MarginContainer/VBoxContainer/#Username" unique_id=626724916]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 16.0
+offset_bottom = 16.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_vertical = 1
+theme_override_colors/font_color = Color(0.735357, 0.735357, 0.735357, 1)
+theme_override_font_sizes/font_size = 8
 text = "Summoner's Name"
 clip_text = true
 text_overrun_behavior = 3
@@ -2282,9 +2407,24 @@ size_flags_horizontal = 3
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="#Name" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/VBoxContainer2/MarginContainer/VBoxContainer/#ConnectionsPanel/VBoxContainer/#Connections/ScrollContainer/VBoxContainer/MarginContainer/MarginContainer/VBoxContainer" unique_id=1753470051]
+[node name="#Username" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/VBoxContainer2/MarginContainer/VBoxContainer/#ConnectionsPanel/VBoxContainer/#Connections/ScrollContainer/VBoxContainer/MarginContainer/MarginContainer/VBoxContainer" unique_id=1374775596]
 layout_mode = 2
 size_flags_vertical = 1
+text = "Summoner's Name"
+text_overrun_behavior = 3
+
+[node name="#Name" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/VBoxContainer2/MarginContainer/VBoxContainer/#ConnectionsPanel/VBoxContainer/#Connections/ScrollContainer/VBoxContainer/MarginContainer/MarginContainer/VBoxContainer/#Username" unique_id=769401445]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 16.0
+offset_bottom = 16.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_vertical = 1
+theme_override_colors/font_color = Color(0.735357, 0.735357, 0.735357, 1)
+theme_override_font_sizes/font_size = 8
 text = "Summoner's Name"
 clip_text = true
 text_overrun_behavior = 3
@@ -2416,9 +2556,24 @@ size_flags_horizontal = 3
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="#Name" type="Label" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer/ScrollContainer/#Team1/PanelContainer/HBoxContainer/MarginContainer/VBoxContainer" unique_id=1732429108]
+[node name="#Username" type="Label" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer/ScrollContainer/#Team1/PanelContainer/HBoxContainer/MarginContainer/VBoxContainer" unique_id=1377352120]
 layout_mode = 2
 size_flags_vertical = 1
+text = "Summoner's Name"
+text_overrun_behavior = 3
+
+[node name="#Name" type="Label" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer/ScrollContainer/#Team1/PanelContainer/HBoxContainer/MarginContainer/VBoxContainer/#Username" unique_id=495455227]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 16.0
+offset_bottom = 16.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_vertical = 1
+theme_override_colors/font_color = Color(0.735357, 0.735357, 0.735357, 1)
+theme_override_font_sizes/font_size = 8
 text = "Summoner's Name"
 clip_text = true
 text_overrun_behavior = 3
@@ -2556,11 +2711,12 @@ mouse_filter = 2
 
 [node name="#SearchBar" type="LineEdit" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer2/MarginContainer/TopContainer" unique_id=1401168650]
 layout_mode = 1
-anchors_preset = 10
+anchors_preset = 1
+anchor_left = 1.0
 anchor_right = 1.0
-offset_left = 450.0
+offset_left = -185.0
 offset_bottom = 31.0
-grow_horizontal = 2
+grow_horizontal = 0
 placeholder_text = "Search"
 emoji_menu_enabled = false
 clear_button_enabled = true
@@ -2714,9 +2870,25 @@ size_flags_horizontal = 3
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="#Name" type="Label" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer3/ScrollContainer/#Team2/PanelContainer/HBoxContainer/MarginContainer/VBoxContainer" unique_id=1718116643]
+[node name="#Username" type="Label" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer3/ScrollContainer/#Team2/PanelContainer/HBoxContainer/MarginContainer/VBoxContainer" unique_id=729640416]
 layout_mode = 2
 size_flags_vertical = 1
+text = "Summoner's Name"
+horizontal_alignment = 2
+text_overrun_behavior = 3
+
+[node name="#Name" type="Label" parent="Container/TabContainer/#ChampionSelect/HBoxContainer2/VBoxContainer3/ScrollContainer/#Team2/PanelContainer/HBoxContainer/MarginContainer/VBoxContainer/#Username" unique_id=1339536902]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 16.0
+offset_bottom = 16.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_vertical = 1
+theme_override_colors/font_color = Color(0.735357, 0.735357, 0.735357, 1)
+theme_override_font_sizes/font_size = 8
 text = "Summoner's Name"
 horizontal_alignment = 2
 clip_text = true
@@ -3443,6 +3615,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="TextureRect" type="TextureRect" parent="." unique_id=1115391706]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

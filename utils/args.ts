@@ -87,8 +87,8 @@ class Option<T> {
         this.emit('change', to)
     }
     
-    public save(to: T){
-        this.set(to)
+    public save(to: T = this.value){
+        this.set(to!)
         console.assert(!!this.name, 'Assertion failed: !!this.name')
         config[this.name] = this.value
         saveConfigInBackground()
@@ -137,8 +137,19 @@ export const args = new class Args {
 
     spellCrashDetected = new Option('', 'game-client-spell-crash-detected', false)
 
-    get all(): Option<any>[] {
-        return Object.values(this).filter(v => v instanceof Option)
+    username = new Option('', 'user-name', 'Anonymous')
+    usericon = new Option('', 'user-icon-index', 0)
+
+    all: Option<any>[]
+    constructor(){
+        this.all = Object.values(this).filter(v => v instanceof Option)
+    }
+
+    public save(){
+        for(const arg of args.all)
+            if(arg.name)
+                config[arg.name] = arg.value
+        saveConfigInBackground()
     }
 }
 

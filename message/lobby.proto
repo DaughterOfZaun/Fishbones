@@ -26,6 +26,7 @@ message LobbyRequestMessage {
     optional ConnectedToRequest connected_to = 5;
     message JoinRequest {
         string name = 1;
+        optional uint32 icon = 4;
         optional string password = 2;
         optional uint32 version = 3;
     }
@@ -57,6 +58,7 @@ message LobbyNotificationMessage {
     }
     message JoinRequest {
         string name = 1;
+        optional uint32 icon = 4;
         optional bool is_me = 2;
         optional PeerInfo info = 3;
         message PeerInfo {

@@ -131,6 +131,11 @@ export const icon = (icon?: string, placeholderText?: string, disabled?: boolean
     disabled,
     icon,
 })
+export const icon_button = (icon?: string, pressed?: () => void) => ({
+    $type: 'button' as const,
+    $listeners: { pressed },
+    icon,
+})
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function typeTest(){

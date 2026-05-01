@@ -1,10 +1,11 @@
 import type { AbortOptions } from "@libp2p/interface";
 import { DeferredView, render } from "../ui/remote/view";
-import { button, checkbox, form, line, option } from "../ui/remote/types";
+import { base, button, checkbox, form, icon, icon_button, line, list, option } from "../ui/remote/types";
 import { args } from "../utils/args";
 import { bwPkg } from "../utils/data/packages/game-server-bw";
 import { AUTO_LOCALE, DEFAULT_LOCALE, systemLocale, systemLocaleSupported, tr, usedLocale } from "../utils/translation";
 import { GC_LOCATION_AUTO, GC_LOCATION_C_DRIVE, GC_LOCATION_CUSTOM, GC_LOCATION_DOWNLOADS, gcLocationFromIndexToString, gcLocationFromStringToIndex, gc126Pkg } from "../utils/data/packages/game-client-126";
+import { profileIcons, profileIconsCount } from "../utils/data/constants/profile-icons";
 import { gc420Pkg } from "../utils/data/packages/game-client-420";
 
 enum DownloadSource {
@@ -53,14 +54,54 @@ export async function startup(opts: Required<AbortOptions>){
         InstallCBServer: checkbox(args.installCBServer.value, (on) => args.installCBServer.save(on)),
         InstallTGServer: checkbox(args.installTGServer.value, (on) => args.installTGServer.save(on)),
 
+        ProfilePanel: form({
+            Icon: icon_button(
+                `${profileIcons}:${args.usericon.value}`,
+                () => view.update(form({
+                    IconPicker: base(true),
+                })),
+            ),
+            Username: line(
+                args.username.value,
+                (text) => args.username.set(text)
+            ),
+        }),
+        IconPicker: form({
+            Icons: list(
+                Object.fromEntries(
+                    Array(profileIconsCount).fill(0).map((v, i) => {
+                        return [ i, icon(`${profileIcons}:${i}`) ]
+                    })
+                )
+            )
+        }, {
+            visible: false,
+        },),
+
         Play: button(() => view.resolve()),
         Test: button(() => {
             args.selectMR.set(true)
             view.resolve()
         }),
-    }), opts)
+    }), opts, [
+        {
+            regex: /^\.\/IconPicker\/Icons\/(?<index>\d+):pressed$/,
+            listener: function (m){
+                const index = parseInt(m.groups!.index!)
+                args.usericon.set(index)
+                view.update(form({
+                    IconPicker: base(false),
+                    ProfilePanel: form({
+                        Icon: icon(`${profileIcons}:${index}`),
+                    }),
+                }))
+            }
+        }
+    ])
 
-    return view.promise
+    return view.promise.then(() => {
+        args.save()
+    })
 }
 
 function clientLocation(getView: () => DeferredView<void>, gcPkg: { dir: string }, installS1Client: 'installS1Client' | 'installS4Client', InstallS1Client: string, S1ClientLocation: string, S1ClientCustomLocation: string, gcLocation: 'gc126Location' | 'gc420Location'){
