@@ -7,6 +7,7 @@ import { AUTO_LOCALE, DEFAULT_LOCALE, systemLocale, systemLocaleSupported, tr, u
 import { GC_LOCATION_AUTO, GC_LOCATION_C_DRIVE, GC_LOCATION_CUSTOM, GC_LOCATION_DOWNLOADS, gcLocationFromIndexToString, gcLocationFromStringToIndex, gc126Pkg } from "../utils/data/packages/game-client-126";
 import { profileIcons, profileIconsCount } from "../utils/data/constants/profile-icons";
 import { gc420Pkg } from "../utils/data/packages/game-client-420";
+import { sanitize_str } from "../utils/data/constants/values/inputable";
 
 enum DownloadSource {
     Torrents_and_Mega = 3,
@@ -63,7 +64,13 @@ export async function startup(opts: Required<AbortOptions>){
             ),
             Username: line(
                 args.username.value,
-                (text) => args.username.set(text)
+                (input) => {
+                    const text = sanitize_str(input)
+                    view.get('ProfilePanel/Username').update({
+                        $type: 'line', self_modulate: (!input || input != text) ? '#db7676' : '#ffffff'
+                    })
+                    args.username.set(text || args.username.defaultValue)
+                }
             ),
         }),
         IconPicker: form({

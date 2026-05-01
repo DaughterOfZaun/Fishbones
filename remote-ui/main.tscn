@@ -263,12 +263,11 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxEmpty_efxa6")
 tab_alignment = 1
-current_tab = 1
+current_tab = 0
 tabs_visible = false
 deselect_enabled = true
 
 [node name="#Loading" type="CenterContainer" parent="Container/TabContainer" unique_id=1229734443]
-visible = false
 layout_mode = 2
 metadata/_tab_index = 0
 
@@ -285,6 +284,7 @@ text = "Loading..."
 horizontal_alignment = 1
 
 [node name="#Startup" type="Control" parent="Container/TabContainer" unique_id=693992296]
+visible = false
 layout_mode = 2
 script = ExtResource("13_2cqfq")
 metadata/_tab_index = 1
@@ -509,6 +509,7 @@ size_flags_horizontal = 3
 layout_mode = 2
 size_flags_vertical = 4
 text = "Summoner's Name"
+max_length = 16
 
 [node name="#Name" type="Label" parent="Container/TabContainer/#Startup/CenterContainer/HBoxContainer/#ProfilePanel/VBoxContainer/MarginContainer/#Username" unique_id=195454927]
 visible = false
@@ -1096,8 +1097,22 @@ text_overrun_behavior = 3
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="#Owner" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer/MarginContainer2" unique_id=1956623708]
+[node name="#Username" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer/MarginContainer2" unique_id=1956623708]
 layout_mode = 2
+text = "Owner"
+text_overrun_behavior = 3
+
+[node name="#Owner" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/#Rooms/ScrollContainer/VBoxContainer/HBoxContainer3/HBoxContainer/MarginContainer2/#Username" unique_id=1859716833]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 16.0
+offset_bottom = 16.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.735357, 0.735357, 0.735357, 1)
+theme_override_font_sizes/font_size = 8
 text = "Owner"
 text_overrun_behavior = 3
 
@@ -3615,7 +3630,6 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="TextureRect" type="TextureRect" parent="." unique_id=1115391706]
-visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

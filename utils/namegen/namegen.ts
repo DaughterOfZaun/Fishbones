@@ -27,7 +27,7 @@ for(const [i, peerIdString] of officialServers.entries()){
     cache.set(peerId, tr(`Official Server #{i_plus_one}`, { i_plus_one: i + 1 }))
 }
 
-export function getUsername(peerId: PeerId, short = false){
+export function getUsername(peerId: PeerId, hashtag = false){
     let name = cache.get(peerId)
     if(!name){
         let j = 4
@@ -49,33 +49,39 @@ export function getUsername(peerId: PeerId, short = false){
         }
         cache.set(peerId, name)
     }
-    if(short) return name.replace(/ #.*/, '') //HACK:
+    //if(!hashtag) return name.replace(/ #.*/, '') //HACK:
     return name
 }
 
-export function getPseudonym(playerId: number, isMe: boolean, short = false){
-    if(!short) {
-        const hashtag = formatUInt32(playerId)
-        if(isMe) return tr('Anonymous #{hashtag} (You)', { hashtag })
-        else return tr('Anonymous #{hashtag}', { hashtag })
-    }
-    return tr('Anonymous')
+export function getPseudonym(playerId: number, isMe: boolean, hashtag = false){
+    return hashtag ? tr('Unknown #UNK') : tr('Unknown')
+    //if(hashtag){
+    //    const hashtag = formatUInt32(playerId)
+    //    if(isMe) return tr('Anonymous #{hashtag} (You)', { hashtag })
+    //    else return tr('Anonymous #{hashtag}', { hashtag })
+    //}
+    //return tr('Anonymous')
 }
 
 type GamePlayer1 = { id: number, peerId?: PeerId }
-export function getName(player: GamePlayer1, isMe: boolean, short = false){
+export function getName(player: GamePlayer1, isMe: boolean, hashtag = false){
     return player.peerId ?
-        getUsername(player.peerId, short) :
-        getPseudonym(player.id, isMe, short)
+        getUsername(player.peerId, hashtag) :
+        getPseudonym(player.id, isMe, hashtag)
 }
 
-type GamePlayer2 = { name: { value?: string } }
-export function getCustomUsername(player: GamePlayer2, championName?: string){
-    return player.name.value || (
-        championName ?
-            tr('Anonymous {champion}', { champion: championName }) :
+type GamePlayer2 = { id?: number, name: { value?: string } }
+export function getCustomUsername(player: GamePlayer2, championName?: string, hashtag = false){
+    const name = player.name.value || (
+        //championName ?
+        //  tr('Anonymous {champion}', { champion: championName }) :
             tr('Anonymous')
     )
+    if(hashtag && player.id !== undefined){
+        const hashtag = formatUInt32(player.id)
+        return `${name} #${hashtag}`
+    }
+    return name
 }
 
 type GamePlayer3 = { icon: { value?: number } }

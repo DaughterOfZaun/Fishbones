@@ -41,9 +41,9 @@ export async function lobby_gather(ctx: Context){
 
         if(!player.isBot){
             const iconPath = getCustomIconPath(player, championIcon)
-            const username = getCustomUsername(player, championName)
+            const username = getCustomUsername(player, championName, true)
             const isMe = game.getPlayer() === player
-            const playerId = getName(player, isMe)
+            const playerId = getName(player, isMe, true)
             return form({
                 Username: label(username),
                 Name: label(playerId),
@@ -121,7 +121,8 @@ export async function lobby_gather(ctx: Context){
     function notifyPlayerJoined(event: CustomEvent<GamePlayer>){
         const player = event.detail
         popup({
-            message: getName(player, false),
+            //message: getName(player, false, true),
+            message: getCustomUsername(player, undefined, true),
             title: tr('New player joined'),
             sound: 'join_chat',
         })

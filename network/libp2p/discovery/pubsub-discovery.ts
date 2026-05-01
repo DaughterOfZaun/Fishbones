@@ -42,7 +42,7 @@ export interface PubSubPeerDiscoveryComponents {
 export interface PubSubPeerDiscoveryEvents {
     add: CustomEvent<PeerIdWithData>
     remove: CustomEvent<PeerIdWithData>
-    update: CustomEvent<void>
+    update: CustomEvent<PeerIdWithData>
 }
 
 type MemoryCache = GossipsubOpts['messageCache']
@@ -80,7 +80,7 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
     private isInList(peer?: PeerIdWithDataAndMessage){
         return !!peer && peer.status == Status.Reachable && !!peer.data
     }
-    private updatePeer(peerId: PeerId, cb: (peer: PeerIdWithDataAndMessage | undefined) => PeerIdWithDataAndMessage){
+    private updatePeer(peerId: PeerId, cb: (peer: PeerIdWithDataAndMessage | undefined) => (PeerIdWithDataAndMessage | undefined)){
     
         const oldPeer = this.peers.get(peerId.toString())
         const oldInList = this.isInList(oldPeer)
@@ -91,7 +91,7 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
         else this.peers.delete(peerId.toString())
 
         if(oldInList || newInList){
-            this.safeDispatchEvent('update', { detail: newPeer })
+            this.safeDispatchEvent('update', { detail: newPeer || oldPeer })
             if(!oldInList && newInList)
                 this.safeDispatchEvent('add', { detail: newPeer })
             if(oldInList && !newInList)
@@ -254,7 +254,7 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
                             this.components.pinning.unpin(peer.msgIdStr)
                             clearTimeout(peer.timeout)
                         }
-                        return undefined!
+                        return undefined
                     }), timeRemaining)
                     
                     newPWD.status = oldPWD?.status ?? Status.Unknown
@@ -270,7 +270,7 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
 
                     return newPWD
                 }
-                return undefined!
+                return undefined
             })
 
             if (peerId.equals(this.components.peerId)) return

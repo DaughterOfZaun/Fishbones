@@ -1012,7 +1012,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 runes,
             }
             if(!player.isBot){
-                //info.name = getName(player, false, true)
+                //info.name = getName(player, false, false)
                 info.name = getCustomUsername(player, championName)
                 info.icon = player.icon.value ?? 0
                 info.playerId = i + 1

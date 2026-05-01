@@ -3,7 +3,7 @@ import { PLAYERS, BOTS, Team, type Context, players } from "./lobby";
 import { base, button, form, icon, label, line, list, texture, type Button, type Form } from "../../ui/remote/types";
 import { render } from "../../ui/remote/view";
 import { combinations_find, KnownServers } from "../../utils/data/constants/client-server-combinations";
-import { getBotName, getName } from "../../utils/namegen/namegen";
+import { getBotName, getCustomUsername, getName } from "../../utils/namegen/namegen";
 import { option_pages } from "../masteries";
 import { page, pages } from "../masteries/pages";
 import type { Game } from "../../game/game";
@@ -38,13 +38,9 @@ function makePlayerForm(player: GamePlayer, game: Game): Form {
     }
 
     if(!player.isBot){
-        let username = player.name.value || (
-            championName ?
-                tr('Anonymous {champion}', { champion: championName }) :
-                tr('Anonymous')
-        )
+        let username = getCustomUsername(player, championName, true)
         const isMe = game.getPlayer() === player
-        const playerId = getName(player, isMe)
+        const playerId = getName(player, isMe, true)
         return form({
             Username: label(username),
             Name: label(playerId),

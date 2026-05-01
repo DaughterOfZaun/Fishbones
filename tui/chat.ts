@@ -2,7 +2,7 @@ import { TypedEventEmitter, type AbortOptions } from "@libp2p/interface";
 import { type DeferredView, render } from "../ui/remote/view";
 import type { Deferred } from '../utils/promises'
 import type { ChatEventDetail, Game } from "../game/game";
-import { getName } from "../utils/namegen/namegen";
+import { getCustomUsername, getName } from "../utils/namegen/namegen";
 import { form, line, text } from "../ui/remote/types";
 import type { GamePlayer } from "../game/game-player";
 import { tr } from "../utils/translation";
@@ -52,14 +52,16 @@ export const chat = new class Chat extends TypedEventEmitter<ChatEvents> {
     public bind(view: Deferred<any>, game: Game){
         view.addEventListener(game, 'joined', (event: CustomEvent<GamePlayer>) => {
             const player = event.detail
-            const isMe = game.getPlayer() === player
-            const name = getName(player, isMe)
+            //const isMe = game.getPlayer() === player
+            //const name = getName(player, isMe, true)
+            const name = getCustomUsername(player, undefined, true)
             chat.append((`[color=gray]${tr(`{name} joined the lobby`, { name })}[/color]`))
         })
         view.addEventListener(game, 'chat', (event: CustomEvent<ChatEventDetail>) => {
             const { player, message } = event.detail
-            const isMe = game.getPlayer() === player
-            const name = getName(player, isMe)
+            //const isMe = game.getPlayer() === player
+            //const name = getName(player, isMe, true)
+            const name = getCustomUsername(player, undefined, true)
             chat.append(`${name}: ${message}`)
         })
         view.addEventListener(chat, 'line', (event: CustomEvent<string>) => {

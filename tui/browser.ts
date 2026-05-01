@@ -10,7 +10,7 @@ import { LocalGame } from '../game/game-local'
 import { type Game } from '../game/game'
 import { render } from '../ui/remote/view'
 import { button, form, label, list, type Base, type Button, type Checkbox, type Form, type Label } from '../ui/remote/types'
-import { getUsername } from '../utils/namegen/namegen'
+import { getCustomUsername, getUsername } from '../utils/namegen/namegen'
 import type { PingResult } from '../network/libp2p/ping'
 import { spinner, AbortPromptError, popup } from '../ui/remote/remote'
 import { deadlyRace } from '../utils/promises'
@@ -239,6 +239,7 @@ function gameInfoToChoice(
     if(!cacheEntry || !game || !choice){
         game = new RemoteGame(node, pwd.id)
         choice = form({
+            Username: label(),
             Owner: label(),
             Name: label(),
             Ping: label(),
@@ -276,7 +277,8 @@ function gameInfoToChoice(
 
     const getPing = game.node.services.ping.getPing.bind(game.node.services.ping);
 
-    ;(choice.fields!.Owner as Label).text = getUsername(pwd.id)
+    ;(choice.fields!.Username as Label).text = getCustomUsername({ name: { value: pwd.data?.name } })
+    ;(choice.fields!.Owner as Label).text = getUsername(pwd.id, true)
     ;(choice.fields!.Ping as Label).text = getPing(pwd.id)?.toFixed()?.concat(' ' + tr('ms')) ?? ''
     ;(choice.fields!.Name as Label).text = game.name.toString()
     ;(choice.fields!.Slots as Label).text = `${players}/${playersMax}`

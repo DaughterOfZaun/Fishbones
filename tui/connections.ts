@@ -5,20 +5,23 @@ import { logger } from "../utils/log";
 import { NAME } from "../utils/constants-build";
 import { render, DeferredView } from "../ui/remote/view";
 import { button, form, icon, label, list, text } from "../ui/remote/types";
-import { getUsername } from "../utils/namegen/namegen";
+import { getCustomIconPath, getCustomUsername, getUsername } from "../utils/namegen/namegen";
 import { PeerMap } from "@libp2p/peer-collections";
 import type { PingResult } from "../network/libp2p/ping";
 import { args } from "../utils/args";
 import { tr } from "../utils/translation";
+import type { PeerIdWithData } from "../network/libp2p/discovery/pubsub-discovery";
 
 //enum PeerType { Undetermined, Player, Server }
 enum PeerStatus { Disconnected, Connecting, Connected, ConnectionFailed }
 const fbPeers = new PeerMap<FBPeerInfo>()
 class FBPeerInfo {
     constructor(
-        //public type = PeerType.Undetermined,
+        public name: string | undefined = undefined,
+        public icon: number | undefined = undefined,
+        public ping: number | undefined = undefined,
         public status = PeerStatus.Disconnected,
-        public shownInUI = false,
+        //public type = PeerType.Undetermined,
     ){}
 }
 
@@ -28,7 +31,7 @@ export async function profilePanel(node: LibP2PNode, masteries: MasteriesPage, o
     const view = render('ProfilePanel', form({
         Icon: icon(`res://images/profile-icons-128x128.png:${args.usericon.value}`),
         Username: label(args.username.value),
-        Name: label(getUsername(node.peerId)),
+        Name: label(getUsername(node.peerId, true)),
         Edit: button(() => void masteries(opts)),
         //Status: label(''),
     }), opts)
@@ -43,37 +46,47 @@ const peerStatusToString = {
     [PeerStatus.ConnectionFailed]: tr('Connection failed'),
 }
 
-function updatePeerStatus(view: DeferredView<void>, peerId: PeerId, status: PeerStatus, getPing: (peerId: PeerId) => number | undefined){
-    let info = fbPeers.get(peerId)
+function updatePeer(view: DeferredView<void>, peerId: PeerId, patch: Partial<FBPeerInfo>, getPing: (peerId: PeerId) => number | undefined){
+    
+    let info = fbPeers.get(peerId)!
     if(!info){
         info = new FBPeerInfo()
         fbPeers.set(peerId, info)
     }
 
-    const prevStatus = info.status
+    let { status, ping, name: nameStr, icon: iconIdx } = patch
+
+    ping ??= getPing(peerId)
+    status ??= info.status
+    nameStr ??= info.name
+    iconIdx ??= info.icon
+
+    if(status != info.status && info.status == PeerStatus.Disconnected){
+        view.get('Connections').add(peerId.toString(), getForm(true))
+    } else if(status != info.status && status == PeerStatus.Disconnected){
+        view.get('Connections').remove(peerId.toString())
+    } else if(
+           iconIdx != info.icon
+        || nameStr != info.name
+        || status != info.status
+        || ping != info.ping
+    ){
+        view.get(`Connections/${peerId.toString()}`).update(getForm())
+    }
+
+    info.ping = ping
     info.status = status
+    info.name = nameStr
+    info.icon = iconIdx
 
-    const pingString = (info.status !== prevStatus && info.status == PeerStatus.Connected) ?
-        getPing(peerId)?.toFixed()?.concat('' + tr('ms')) ?? '' :
-        ''
-
-    if(info.status == PeerStatus.Disconnected){
-        if(info.shownInUI){
-            info.shownInUI = false
-            view.get('Connections').remove(peerId.toString())
-        }
-    } else if(!info.shownInUI){
-        info.shownInUI = true
-        view.get('Connections').add(peerId.toString(), form({
-            Name: label(getUsername(peerId)),
-            Status: label(peerStatusToString[info.status]),
-            Ping: label(pingString),
-        }))
-    } else if(info.status != prevStatus){
-        view.get(`Connections/${peerId.toString()}`).update(form({
-            Status: label(peerStatusToString[info.status]),
-            //Ping: label(pingString),
-        }))
+    function getForm(full = false){
+        return form({
+            Icon: (full || iconIdx != info.icon) ? icon(getCustomIconPath({ icon: { value: iconIdx } })) : undefined!,
+            Username: (full || nameStr != info.name) ? label(getCustomUsername({ name: { value: nameStr } })) : undefined!,
+            Name: (full) ? label(getUsername(peerId, true)) : undefined!,
+            Status: (full || status != info.status) ? label(peerStatusToString[status!]) : undefined!,
+            Ping: (full || ping != info.ping) ? label(ping?.toFixed()?.concat('' + tr('ms')) ?? '') : undefined!,
+        })
     }
 }
 
@@ -100,14 +113,14 @@ export async function connections(node: LibP2PNode, opts: Required<AbortOptions>
     function onPeerDiscoveredByMechanism(event: CustomEvent<PeerId>){
         const peerId = event.detail
         if(!fbPeers.has(peerId)){
-            updatePeerStatus(view, peerId, PeerStatus.Disconnected, getPing)
+            updatePeer(view, peerId, {}, getPing)
         }
     }
 
     view.addEventListener(node, 'connection:begin', (evt: CustomEvent<PeerId>) => {
         const peerId = evt.detail
         if(fbPeers.has(peerId)){
-            updatePeerStatus(view, peerId, PeerStatus.Connecting, getPing)
+            updatePeer(view, peerId, { status: PeerStatus.Connecting }, getPing)
         }
     })
 
@@ -115,14 +128,14 @@ export async function connections(node: LibP2PNode, opts: Required<AbortOptions>
         const peerId = evt.detail
         if(fbPeers.has(peerId)){
             //updatePeerStatus(view, peerId, PeerStatus.ConnectionFailed, getPing)
-            updatePeerStatus(view, peerId, PeerStatus.Disconnected, getPing)
+            updatePeer(view, peerId, { status: PeerStatus.Disconnected }, getPing)
         }
     })
 
     view.addEventListener(node, 'peer:connect', (evt: CustomEvent<PeerId>) => {
         const peerId = evt.detail
         if(fbPeers.has(peerId)){
-            updatePeerStatus(view, peerId, PeerStatus.Connected, getPing)
+            updatePeer(view, peerId, { status: PeerStatus.Connected }, getPing)
             //pingService.ping(peerId).catch(() => { /* Ignore */ })
         }
     })
@@ -130,7 +143,7 @@ export async function connections(node: LibP2PNode, opts: Required<AbortOptions>
     view.addEventListener(node, 'peer:identify', (evt: CustomEvent<IdentifyResult>) => {
         const { peerId, agentVersion } = evt.detail
         if(agentVersion?.includes(NAME)){
-            updatePeerStatus(view, peerId, PeerStatus.Connected, getPing)
+            updatePeer(view, peerId, { status: PeerStatus.Connected }, getPing)
             //pingService.ping(peerId).catch(() => { /* Ignore */ })
         }
     })
@@ -138,22 +151,28 @@ export async function connections(node: LibP2PNode, opts: Required<AbortOptions>
     view.addEventListener(node, 'peer:disconnect', (evt: CustomEvent<PeerId>) => {
         const peerId = evt.detail
         if(fbPeers.has(peerId)){
-            updatePeerStatus(view, peerId, PeerStatus.Disconnected, getPing)
+            updatePeer(view, peerId, { status: PeerStatus.Disconnected }, getPing)
         }
     })
 
     view.addEventListener(node.services.ping, 'ping', (event: CustomEvent<PingResult>) => {
         const { peerId, ms } = event.detail
-        const info = fbPeers.get(peerId)
-        if(info && info.shownInUI){
-            view.get(`Connections/${peerId.toString()}/Ping`)
-                .update(label(ms?.toFixed()?.concat(' ' + tr('ms')) ?? ''))
+        if(fbPeers.has(peerId)){
+            updatePeer(view, peerId, { ping: ms }, getPing)
         }
+    })
+
+    view.addEventListener(node.services.pubsubPeerDiscovery, 'update', (event: CustomEvent<PeerIdWithData>) => {
+        const peerId = event.detail?.id
+        const name = event.detail?.data?.name
+        const icon = event.detail?.data?.icon
+        if(peerId !== undefined && (name !== undefined || icon !== undefined))
+            updatePeer(view, peerId, { name, icon }, getPing)
     })
 
     if(args.allowInternet.value){
         //fbPeers.set(serverPeerID, new FBPeerInfo(PeerType.Server))
-        updatePeerStatus(view, serverPeerID, PeerStatus.Connecting, getPing)
+        updatePeer(view, serverPeerID, { status: PeerStatus.Connecting }, getPing)
     }
 
     return view.promise
@@ -201,13 +220,13 @@ async function connectByPeerInfoString(node: LibP2PNode, view: DeferredView<void
     
     const getPing = node.services.ping.getPing.bind(node.services.ping)
 
-    updatePeerStatus(view, peerId, PeerStatus.Connecting, getPing)
+    updatePeer(view, peerId, { status: PeerStatus.Connecting }, getPing)
     try {
         logger.log('Connecting to', peerId.toString())
         await node.dial(peerId, opts)
-        updatePeerStatus(view, peerId, PeerStatus.Connected, getPing)
+        updatePeer(view, peerId, { status: PeerStatus.Connected }, getPing)
     } catch(err) {
         console_log(tr('Connecting via key failed:', {}), Bun.inspect(err))
-        updatePeerStatus(view, peerId, PeerStatus.ConnectionFailed, getPing)
+        updatePeer(view, peerId, { status: PeerStatus.ConnectionFailed }, getPing)
     }
 }
