@@ -235,7 +235,6 @@ export const firewall = <T extends Proxy>(proxy: T, enabled: boolean, callbacks?
 
     let latestSyncID = 0
 
-    const missiles = new Map<number, Missile>()
     const units = new Map<number, Unit>()
     const getUnit = (id: number) => {
         let unit = units.get(id)
@@ -246,6 +245,17 @@ export const firewall = <T extends Proxy>(proxy: T, enabled: boolean, callbacks?
             units.set(id, unit)
         }
         return { unit, unitCreated }
+    }
+
+    const missiles = new Map<number, Missile>()
+    const getMissile = (id: number) => {
+        let missile = missiles.get(id) as ChainMissile
+        const missileCreated = !missile
+        if(missileCreated){
+            missile = new ChainMissile(id)
+            missiles.set(missile.id, missile)
+        }
+        return { missile, missileCreated }
     }
 
     const fragments = new Map<number, Fragment>()
@@ -373,13 +383,7 @@ export const firewall = <T extends Proxy>(proxy: T, enabled: boolean, callbacks?
                     
                     messageStreamIdx = MISSILE_REPLICATION_STREAM_IDX
 
-                    let missile = missiles.get(message.senderNetID) as ChainMissile
-                    const missileCreated = !missile
-                    if(missileCreated){
-                        missile = new ChainMissile(message.senderNetID)
-                        missiles.set(missile.id, missile)
-                    }
-
+                    const { missile, missileCreated } = getMissile(message.senderNetID)
                     console.assert(
                         missile instanceof ChainMissile,
                         'Assertion failed: missile instanceof ChainMissile'

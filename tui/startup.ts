@@ -5,6 +5,7 @@ import { args } from "../utils/args";
 import { bwPkg } from "../utils/data/packages/game-server-bw";
 import { AUTO_LOCALE, DEFAULT_LOCALE, systemLocale, systemLocaleSupported, tr, usedLocale } from "../utils/translation";
 import { GC_LOCATION_AUTO, GC_LOCATION_C_DRIVE, GC_LOCATION_CUSTOM, GC_LOCATION_DOWNLOADS, gcLocationFromIndexToString, gcLocationFromStringToIndex, gc126Pkg } from "../utils/data/packages/game-client-126";
+import { WINE_CMD_AUTO, WINE_CMD_AUTO_IDX, WINE_CMD_AUTO_TEMPLATE, WINE_CMD_CUSTOM_IDX } from "../utils/data/packages/wine";
 import { profileIcons, profileIconsCount } from "../utils/data/constants/profile-icons";
 import { gc420Pkg } from "../utils/data/packages/game-client-420";
 import { sanitize_str } from "../utils/data/constants/values/inputable";
@@ -17,6 +18,8 @@ enum DownloadSource {
 }
 
 export async function startup(opts: Required<AbortOptions>){
+
+    const isAuto = args.wineCommand.value == WINE_CMD_AUTO
 
     let view: DeferredView<void>
     view = render('Startup', form({
@@ -52,8 +55,32 @@ export async function startup(opts: Required<AbortOptions>){
         ...clientLocation(() => view, gc126Pkg, 'installS1Client', 'InstallS1Client', 'S1ClientLocation', 'S1ClientCustomLocation', 'gc126Location'),
         ...clientLocation(() => view, gc420Pkg, 'installS4Client', 'InstallS4Client', 'S4ClientLocation', 'S4ClientCustomLocation', 'gc420Location'),
         
+        InstallBWServer: checkbox(args.installBWServer.value, (on) => args.installBWServer.save(on)),
         InstallCBServer: checkbox(args.installCBServer.value, (on) => args.installCBServer.save(on)),
         InstallTGServer: checkbox(args.installTGServer.value, (on) => args.installTGServer.save(on)),
+
+        LinuxSpecificOptions: base(process.platform == 'linux'),
+        WineCommandType: option(
+            [
+                { id: WINE_CMD_AUTO_IDX, text: tr("automatic command") },
+                { id: WINE_CMD_CUSTOM_IDX, text: tr("custom command") },
+            ],
+            isAuto ? WINE_CMD_AUTO_IDX : WINE_CMD_CUSTOM_IDX,
+            (index) => {
+                const isAuto = index == WINE_CMD_AUTO_IDX
+                if(isAuto) args.wineCommand.save(WINE_CMD_AUTO)
+                view.get('WineCustomCommand').update(line(
+                    isAuto ? WINE_CMD_AUTO_TEMPLATE : undefined,
+                    undefined,
+                    !isAuto,
+                ))
+            }
+        ),
+        WineCustomCommand: line(
+            isAuto ? WINE_CMD_AUTO_TEMPLATE : args.wineCommand.value,
+            (template) => args.wineCommand.set(template),
+            !isAuto,
+        ),
 
         ProfilePanel: form({
             Icon: icon_button(

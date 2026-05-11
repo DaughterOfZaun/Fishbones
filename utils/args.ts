@@ -10,6 +10,8 @@ const safeOptions = { signal: (new AbortController()).signal }
 
 //import { GC_LOCATION_AUTO } from "./data/packages/game-client"
 const GC_LOCATION_AUTO = 'auto'
+//import { WINE_CMD_AUTO } from "./data/packages/wine"
+const WINE_CMD_AUTO = 'auto'
 
 //import { tr } from "./translation"
 const tr = (str: string) => str
@@ -23,7 +25,7 @@ class Option<T> {
     public readonly name: string
     public readonly desc?: string
 
-    public _value!: T
+    private _value!: T
     public get value(){ return this._value }
     private set value(on){ this._value = on }
 
@@ -122,6 +124,8 @@ export const args = new class Args {
     
     gc126Location = new Option('', 'game-client-location', GC_LOCATION_AUTO)
     gc420Location = new Option('', 'game-client-location', GC_LOCATION_AUTO)
+
+    wineCommand = new Option('', 'wine-command', WINE_CMD_AUTO)
 
     repair = new Option('repair', '', true, tr('(Debug) Download+Unpack+Build missing files'))
     download = new Option('download', '', true, tr('(Debug) Download missing files'))

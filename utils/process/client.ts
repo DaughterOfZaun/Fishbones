@@ -1,8 +1,9 @@
 import { sanitize_bfkey } from "../constants"
 import { killSubprocess, spawn, startProcess, type ChildProcess, type SpawnOptions } from "../process/process"
 import { clients, type ClientVersion } from "../data/constants/client-server-combinations"
+import { WINE_CMD_AUTO, WINE_CMD_AUTO_TEMPLATE } from "../data/packages/wine"
 import type { AbortOptions } from "@libp2p/interface"
-import fs from 'node:fs/promises'
+import { args } from "../args"
 import path from 'node:path'
 
 const LOG_PREFIX = 'CLIENT'
@@ -25,7 +26,7 @@ export async function relaunchClient(opts: Required<AbortOptions>){
     const gcPkg = clients[version]!
 
     const gcArgs = ['8394', 'LoLLauncher.exe', 'unknown', ([ip, port.toString(), sanitize_bfkey(key), clientId.toString()]).join(' ')]
-    //const gcArgsStr = gcArgs.map(a => `"${a}"`).join(' ')
+    const gcArgsStr = gcArgs.map(a => `"${a}"`).join(' ')
     //console.log('%s %s', gcPkg.exe, gcArgsStr)
     //logger.log('%s %s', gcPkg.exe, gcArgsStr)
 
@@ -44,13 +45,24 @@ export async function relaunchClient(opts: Required<AbortOptions>){
         //exe = path.join(deployDir, gcPkg.exeName)
         clientSubprocess = spawn(exe, gcArgs, spawnOpts)
     } else if(process.platform == 'linux'){
-        //clientSubprocess = spawn(
-        //    'flatpak', [ 'run', '--command=bottles-cli', 'com.usebottles.bottles',
-        //        'run', '-b', 'DeusEx', '-e', exe, gcArgsStr ], spawnOpts) //TODO: cwd
-        //clientSubprocess = spawn('bottles-cli', ['run', '-b', 'DeusEx', '-p', 'League of Legends', '--args-replace', gcArgs], spawnOpts)
-        //clientSubprocess = spawn(winePkg.exe, [ exe, ...gcArgs ], spawnOpts)
+
         process.env['WINEDEBUG'] = '-all'
-        clientSubprocess = spawn('wine', [ exe, ...gcArgs ], spawnOpts)
+        
+        const template = args.wineCommand.value == WINE_CMD_AUTO ? WINE_CMD_AUTO_TEMPLATE : args.wineCommand.value
+        const tempArgs = [ ...template.matchAll(/(['"])(?:\\\1|.)*?\1|(?:\\ |[^ ])+/g).map(m => m[0]) ]
+        const [ wineExe, ...wineArgs ] = tempArgs.flatMap(arg => {
+            if(arg == '{exe}') return [ exe ]
+            if(arg == '{args}') return gcArgs
+            if(arg.startsWith("'") && arg.endsWith("'") ||
+               arg.startsWith('"') && arg.endsWith('"'))
+               arg = arg.slice(1, -1)
+            arg = arg.replaceAll('{exe}', exe)
+            arg = arg.replaceAll('{args}', gcArgsStr)
+            arg = arg.replaceAll(/\\(.)/g, '$1')
+            return arg
+        })
+        clientSubprocess = spawn(wineExe ?? 'wine', wineArgs, spawnOpts)
+        
     } else throw new Error(`Unsupported platform: ${process.platform}`)
 
     await startProcess(LOG_PREFIX, clientSubprocess, 'stderr', (chunk) => {

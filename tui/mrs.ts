@@ -4,6 +4,7 @@ import { console_log } from '../ui/remote/remote'
 import { bwPkg } from '../utils/data/packages' //TODO: Unhardcode.
 import { render } from '../ui/remote/view'
 import { tr } from '../utils/translation'
+import { sortInplace } from '../utils/helpers'
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 namespace GitLab {
@@ -43,6 +44,9 @@ export async function mrs(opts: Required<AbortOptions>){
     }
     
     if(mrs && mrs.length > 0){
+
+        sortInplace(mrs, mr => mr.reference, 'dsc')
+
         view.get('List').setItems(
             Object.fromEntries(
                 mrs.map(mr => {

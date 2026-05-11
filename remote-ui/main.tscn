@@ -191,7 +191,7 @@ spinner = ExtResource("4_ycdy4")
 select = ExtResource("5_w48qg")
 checkbox = ExtResource("6_vivmo")
 input = ExtResource("7_2cqfq")
-embedded_js = "res://embedded/index-0.0.3.45.js"
+embedded_js = "res://embedded/index-0.0.3.46.js"
 embedded_exe = "res://embedded/bun-1.3.10-windows-x64-baseline.exe"
 embedded_lib_0 = "res://embedded/node_datachannel-8fg8wz1b.node"
 embedded_file_0 = "res://embedded/7za-2501-windows-x64.exe"
@@ -334,39 +334,6 @@ popup/item_1/id = 1
 popup/item_2/text = "mega.nz"
 popup/item_2/id = 2
 
-[node name="HBoxContainer2" type="HBoxContainer" parent="Container/TabContainer/#Startup/VBoxContainer" unique_id=1060523629]
-layout_mode = 2
-
-[node name="#UpdateServer" type="CheckBox" parent="Container/TabContainer/#Startup/VBoxContainer/HBoxContainer2" unique_id=1000858407]
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-button_pressed = true
-text = "Download game server updates from"
-
-[node name="#ServerOrigin" type="OptionButton" parent="Container/TabContainer/#Startup/VBoxContainer/HBoxContainer2" unique_id=1047268999]
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-selected = 0
-fit_to_longest_item = false
-item_count = 2
-popup/item_0/text = "skelsoft"
-popup/item_0/id = 0
-popup/item_1/text = "ice-cream-man"
-popup/item_1/id = 1
-
-[node name="Label" type="Label" parent="Container/TabContainer/#Startup/VBoxContainer/HBoxContainer2" unique_id=613748429]
-visible = false
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-text = "repo"
-
-[node name="#EditServerOrigins" type="Button" parent="Container/TabContainer/#Startup/VBoxContainer/HBoxContainer2" unique_id=1199140290]
-visible = false
-custom_minimum_size = Vector2(28, 0)
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-text = "✍"
-
 [node name="#ForceEnglish" type="CheckBox" parent="Container/TabContainer/#Startup/VBoxContainer" unique_id=297896498]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
@@ -390,7 +357,6 @@ layout_mode = 2
 [node name="#InstallS1Client" type="CheckBox" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer/HBoxContainer3" unique_id=1092683829]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
-disabled = true
 button_pressed = true
 text = "Install 1st season game client to"
 
@@ -399,7 +365,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 14
 selected = 0
-fit_to_longest_item = false
 item_count = 1
 popup/item_0/text = "automatic location"
 popup/item_0/id = 0
@@ -426,7 +391,46 @@ theme_override_font_sizes/font_size = 14
 button_pressed = true
 text = "Install the additional levels package"
 
-[node name="HSeparator" type="HSeparator" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer" unique_id=1284263628]
+[node name="#InstallBWServer" type="CheckBox" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer" unique_id=1425063044]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+button_pressed = true
+text = "Install ChildrenOfTheGrave game server"
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer" unique_id=1060523629]
+layout_mode = 2
+
+[node name="#UpdateServer" type="CheckBox" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer/HBoxContainer2" unique_id=1000858407]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+button_pressed = true
+text = "Download game server updates from"
+
+[node name="#ServerOrigin" type="OptionButton" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer/HBoxContainer2" unique_id=1047268999]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+selected = 0
+item_count = 2
+popup/item_0/text = "skelsoft"
+popup/item_0/id = 0
+popup/item_1/text = "ice-cream-man"
+popup/item_1/id = 1
+
+[node name="Label" type="Label" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer/HBoxContainer2" unique_id=613748429]
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "repo"
+
+[node name="#EditServerOrigins" type="Button" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer/HBoxContainer2" unique_id=1199140290]
+visible = false
+custom_minimum_size = Vector2(28, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "✍"
+
+[node name="HSeparator1" type="HSeparator" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer" unique_id=1284263628]
 layout_mode = 2
 
 [node name="HBoxContainer5" type="HBoxContainer" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer" unique_id=870769200]
@@ -442,7 +446,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 14
 selected = 0
-fit_to_longest_item = false
 item_count = 1
 popup/item_0/text = "automatic location"
 popup/item_0/id = 0
@@ -472,6 +475,48 @@ text = "Install Chronobreak game server"
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 text = "Install/Update TestGrounds game server"
+
+[node name="#LinuxSpecificOptions" type="VBoxContainer" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer" unique_id=2003036681]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="HSeparator2" type="HSeparator" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer/#LinuxSpecificOptions" unique_id=1985624944]
+layout_mode = 2
+
+[node name="HBoxContainer7" type="HBoxContainer" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer/#LinuxSpecificOptions" unique_id=138069418]
+layout_mode = 2
+
+[node name="#UseWine" type="CheckBox" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer/#LinuxSpecificOptions/HBoxContainer7" unique_id=154231713]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+disabled = true
+button_pressed = true
+text = "Use WINE to run game client with an"
+
+[node name="#WineCommandType" type="OptionButton" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer/#LinuxSpecificOptions/HBoxContainer7" unique_id=260540928]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+selected = 0
+item_count = 1
+popup/item_0/text = "automatic command"
+popup/item_0/id = 0
+
+[node name="HBoxContainer8" type="HBoxContainer" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer/#LinuxSpecificOptions" unique_id=721722671]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="Padding" type="CheckBox" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer/#LinuxSpecificOptions/HBoxContainer8" unique_id=1773815000]
+self_modulate = Color(1, 1, 1, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+
+[node name="#WineCustomCommand" type="LineEdit" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer/#LinuxSpecificOptions/HBoxContainer8" unique_id=1709048909]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+placeholder_text = "C:\\..."
+editable = false
 
 [node name="CenterContainer" type="CenterContainer" parent="Container/TabContainer/#Startup" unique_id=1821376361]
 layout_mode = 1
