@@ -6,6 +6,8 @@ import { Features, PlayerCount, TickRate } from "../utils/constants";
 import { button, checkbox, form, inq2gd, line, option } from "../ui/remote/types";
 import { AbortPromptError } from "@inquirer/core";
 import { combinations, KnownClients, KnownServers, type Combination } from "../utils/data/constants/client-server-combinations";
+import { champions } from "../utils/data/constants/champions";
+import { spells } from "../utils/data/constants/spells";
 
 export async function setup(game: LocalGame, opts: Required<AbortOptions>){
     
@@ -72,6 +74,7 @@ export async function setup(game: LocalGame, opts: Required<AbortOptions>){
             game.features.set(Features.SPELLS_DISABLED, !value)
             //view.get('SummonerSpells').update(button(undefined, !value))
         }),
+        AllChampions: checkbox(game.features.isAllChampionsEnabled, value => game.features.set(Features.ALL_CHAMPIONS_ENABLED, value)),
         
         //Champions: button(() => { server.champions.uinput(opts).catch(() => { /* Ignore */ }) }),
         //SpellsEnabled: checkbox(server.spells.value.length > 0, value => { server.spells.value = value ? [] : [] })
@@ -104,9 +107,15 @@ export async function setup(game: LocalGame, opts: Required<AbortOptions>){
 
     await view.promise
 
-    game.spells.value = combo.spells.keys().toArray()
-    game.champions.value = combo.champions.keys().toArray()
-
     if(!game.features.isSpellsEnabled)
         game.spells.value = []
+    else if(!game.features.isAllChampionsEnabled)
+        game.spells.value = combo.spells.keys().toArray()
+    else
+        game.spells.value = spells.keys().toArray()
+
+    if(!game.features.isAllChampionsEnabled)
+        game.champions.value = combo.champions.keys().toArray()
+    else
+        game.champions.value = champions.keys().toArray()
 }

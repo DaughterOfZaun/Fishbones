@@ -1368,7 +1368,6 @@ layout_mode = 2
 size_flags_vertical = 3
 
 [node name="Control1" type="Control" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/CenterContainer/HBoxContainer1" unique_id=1979699701]
-custom_minimum_size = Vector2(58, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -1602,6 +1601,7 @@ size_flags_horizontal = 3
 text = "password"
 
 [node name="VBoxContainer2" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/CenterContainer/HBoxContainer1/VBoxContainer/HBoxContainer1" unique_id=1463321053]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 0
@@ -1641,7 +1641,7 @@ theme_override_constants/margin_left = -4
 theme_override_constants/margin_top = -4
 theme_override_constants/margin_bottom = -4
 
-[node name="#Spells" type="CheckBox" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/CenterContainer/HBoxContainer1/VBoxContainer/HBoxContainer1/VBoxContainer2/VBoxContainer4/MarginContainer" unique_id=745062714]
+[node name="Spells" type="CheckBox" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/CenterContainer/HBoxContainer1/VBoxContainer/HBoxContainer1/VBoxContainer2/VBoxContainer4/MarginContainer" unique_id=745062714]
 layout_mode = 2
 size_flags_horizontal = 3
 button_pressed = true
@@ -1665,6 +1665,12 @@ text = "Features"
 
 [node name="GridContainer" type="GridContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/CenterContainer/HBoxContainer1/VBoxContainer/HBoxContainer1/VBoxContainer5" unique_id=107875189]
 layout_mode = 2
+
+[node name="#Spells" type="CheckBox" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/CenterContainer/HBoxContainer1/VBoxContainer/HBoxContainer1/VBoxContainer5/GridContainer" unique_id=1889401151]
+layout_mode = 2
+size_flags_horizontal = 3
+button_pressed = true
+text = "Summoner Spells"
 
 [node name="#Manacosts" type="CheckBox" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/CenterContainer/HBoxContainer1/VBoxContainer/HBoxContainer1/VBoxContainer5/GridContainer" unique_id=1898871958]
 layout_mode = 2
@@ -1734,7 +1740,7 @@ text = "HALF-PING: Trying to lower the ping and equalize it for everyone. Causes
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 14
-text = "FIREWALL: Reduces the amount of transmitted traffic. Causes crash and wired behaviours!"
+text = "Reduce the amount of transmitted traffic. Causes crash and wired behaviours!"
 
 [node name="#Bypass" type="CheckBox" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/CenterContainer/HBoxContainer1/VBoxContainer/VBoxContainer" unique_id=508160027]
 visible = false
@@ -1743,8 +1749,13 @@ size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 14
 text = "BYPASS: Connect the client to the local server directly."
 
+[node name="#AllChampions" type="CheckBox" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/CenterContainer/HBoxContainer1/VBoxContainer/VBoxContainer" unique_id=889816407]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 14
+text = "Allow to choose any champion. Causes missing spells and passives!"
+
 [node name="Control2" type="Control" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/CenterContainer/HBoxContainer1" unique_id=47378758]
-custom_minimum_size = Vector2(58, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 
