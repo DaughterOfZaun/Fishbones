@@ -476,7 +476,7 @@ async function tryBuild(pkg: PkgInfoCSProj, opts: Required<AbortOptions>){
     try {
         await build(pkg, opts)
     } catch(err) {
-        let tryToRepairSDK = true
+        let tryToRepairSDK = false
         //if(err instanceof Error){
         //    const exception = err as ErrnoException
         //    if(exception.code == 'ENOENT'){ //TODO: Investigate.

@@ -11,12 +11,11 @@ export const DESCRIPTION = "Yet another LeagueSandbox launcher with a twist"
 export const COPYRIGHT = "AGPLv3"
 export const VERSION_REGEX = /(\d+)\.(\d+)\.(\d+)\.(\d+)/
 
-//const SERVER_IP = '127.0.0.1'
-const SERVER_IP = '195.133.146.185'
-export const HARDCODED_HTTP_SERVER_URL = `http://${SERVER_IP}:3000`
+export const HARDCODED_SERVER_IP = '195.133.146.185'
+export const HARDCODED_HTTP_SERVER_URL = `http://${HARDCODED_SERVER_IP}:3000`
 export const HARDCODED_ANNOUNCE_URLS = [
-    `udp://${SERVER_IP}:6969/announce`,
-    `http://${SERVER_IP}:6969/announce`,
+    `udp://${HARDCODED_SERVER_IP}:6969/announce`,
+    `http://${HARDCODED_SERVER_IP}:6969/announce`,
 ]
 
 const discoveryTopic = '_peer-discovery._p2p._pubsub'

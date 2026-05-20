@@ -2,10 +2,12 @@
 
 import { createLibp2p } from 'libp2p'
 import { pinning } from '../network/libp2p/pinning'
-import { patchedCrypto } from '../utils/crypto'
+import { patchedCrypto as crypto } from '../utils/crypto'
 
 import { noise } from '@chainsafe/libp2p-noise'
 import { yamux } from '@chainsafe/libp2p-yamux'
+//import { mplex } from '@libp2p/mplex'
+//import { tls } from '@libp2p/tls'
 
 //import { rendezvousClient } from "@canvas-js/libp2p-rendezvous/client"
 import { GossipSub, gossipsub, type GossipSubComponents } from '@chainsafe/libp2p-gossipsub'
@@ -14,10 +16,11 @@ import { identify, identifyPush } from '@libp2p/identify'
 import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
 import { mdns } from '@libp2p/mdns'
 import { uPnPNAT } from '@libp2p/upnp-nat'
-import { autoNATv2 } from '@libp2p/autonat-v2'
+import { autoNAT } from '@libp2p/autonat'
+//import { autoNATv2 } from '@libp2p/autonat-v2'
 import { pubsubPeerDiscovery } from '../network/libp2p/discovery/pubsub-discovery'
 import { customPing } from '../network/libp2p/ping'
-import { logger as loggerClass } from '../utils/log'
+import { downloads, logger as loggerClass } from '../utils/log'
 import { proxy } from '../utils/proxy/strategy-libp2p'
 import { time } from '../utils/proxy/time'
 
@@ -25,8 +28,10 @@ import { keychain } from '@libp2p/keychain'
 import { LevelDatastore } from 'datastore-level'
 
 import { circuitRelayTransport } from '@libp2p/circuit-relay-v2'
-import { tcp } from '@libp2p/tcp'
 import { webRTC, webRTCDirect } from '@libp2p/webrtc'
+import { webSockets } from '@libp2p/websockets'
+import { dcutr } from '@libp2p/dcutr'
+import { tcp } from '@libp2p/tcp'
 
 import { loadOrCreateSelfKey } from '@libp2p/config'
 import { isPeerId, KEEP_ALIVE, type AbortOptions, type ComponentLogger, type Connection, type Libp2pEvents, type Logger, type PeerId, type PeerInfo, type PeerStore, type PrivateKey, type Startable, type TypedEventTarget } from '@libp2p/interface'
@@ -40,9 +45,11 @@ import type { ConnectionManager, TransportManager } from '@libp2p/interface-inte
 
 import { console_log } from '../ui/remote/remote'
 import { args } from '../utils/args'
-import { appDiscoveryTopic, NAME, rtcConfiguration, VERSION } from '../utils/constants-build'
+import { appDiscoveryTopic, HARDCODED_SERVER_IP, NAME, rtcConfiguration, VERSION } from '../utils/constants-build'
 import { deadlyRace, Deferred } from '../utils/promises'
 import { tr } from '../utils/translation'
+
+import path from 'node:path'
 
 export type LibP2PNode = Awaited<ReturnType<typeof createNodeInternal>> & {
     components: {
@@ -102,9 +109,13 @@ function log(type: string, name: string, ...args: any[]): boolean {
 export const serverPeerIDString = '12D3KooWHHyaqcTuPvphwifkP2su2Qis2wWKLZhaobc9cB5qXQak'
 export const serverPeerID = peerIdFromString(serverPeerIDString)
 export const serverPeerMultiddrStrings = [
-    `/ip4/195.133.146.185/udp/42451/webrtc-direct/certhash/uEiBYh4UvCuTLl07oUNUl_1CNkWJAver2h7jLVdZmE0anig/p2p/${serverPeerIDString}`,
-    `/ip4/195.133.146.185/tcp/41463/p2p/${serverPeerIDString}`,
+    `/ip4/${HARDCODED_SERVER_IP}/udp/42451/webrtc-direct/certhash/uEiBYh4UvCuTLl07oUNUl_1CNkWJAver2h7jLVdZmE0anig/p2p/${serverPeerIDString}`,
+    `/ip4/${HARDCODED_SERVER_IP}/tcp/41463/p2p/${serverPeerIDString}`,
 ]
+
+const maxPeerAddrsToDial = 25
+const perTransportDialTimeout = 10 * 1000
+const dialTimeout = maxPeerAddrsToDial * perTransportDialTimeout
 
 async function createNodeInternal(port: number, opts: Required<AbortOptions>){
 
@@ -113,24 +124,24 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
     const keychainInit = { pass: 'yes-i-know-its-very-secure' } //TODO: Password.
 
     let datastore: LevelDatastore | undefined
-        //datastore = new LevelDatastore(path.join(downloads, 'datastore'))
+      //datastore = new LevelDatastore(path.join(downloads, 'datastore'))
     try {
         await datastore?.open()
     } catch(err) {
         console_log(tr('Failed to open data store:', {}), Bun.inspect(err))
         datastore = undefined
+    } finally {
+        opts?.signal?.throwIfAborted()
     }
-
-    opts?.signal?.throwIfAborted()
 
     let privateKey: PrivateKey | undefined
     if(datastore) try {
         privateKey = await loadOrCreateSelfKey(datastore, keychainInit)
     } catch(err) {
         console_log(tr('Failed to load private key:', {}), Bun.inspect(err))
+    } finally {
+        opts?.signal?.throwIfAborted()
     }
-
-    opts?.signal?.throwIfAborted()
 
     const node = await createLibp2p({
         nodeInfo: {
@@ -141,25 +152,32 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
         addresses: {
             listen: [
                 `/ip4/0.0.0.0/udp/0/webrtc-direct`,
+                //`/ip4/0.0.0.0/tcp/0/ws`,
+                `/ip4/0.0.0.0/tcp/0`,
+                `/ip6/::/udp/0/webrtc-direct`,
+                //`/ip6/::/tcp/0/ws`,
+                `/ip6/::/tcp/0`,
                 ...Array<string>(3).fill('/p2p-circuit'),
-                //`/ip4/0.0.0.0/tcp/0`,
-                '/webrtc',
+                `/webrtc`,
             ]
         },
         transports: [
-            webRTCDirect({ rtcConfiguration }),
             ...(args.allowInternet.value ? [
-                webRTC({ rtcConfiguration }),
                 circuitRelayTransport(),
-                tcp(),
+                webRTC({ rtcConfiguration }),
             ] : []),
+            webRTCDirect({ rtcConfiguration }),
+            //webSockets(),
+            tcp(),
         ],
         connectionEncrypters: [
-            noise({
-                crypto: patchedCrypto
-            })
+            noise({ crypto }),
+            //tls(),
         ],
-        streamMuxers: [ yamux() ],
+        streamMuxers: [
+            yamux(),
+            //mplex(),
+        ],
         connectionGater: {
             denyDialMultiaddr: () => false,
         },
@@ -167,7 +185,6 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
             ping: customPing(),
             identify: identify(),
             identifyPush: identifyPush(),
-
             ...(args.allowInternet.value ? {
                 kadDHT: kadDHT({
                     protocol: '/ipfs/kad/1.0.0',
@@ -182,7 +199,6 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
                 //}),
                 bootstrap: bootstrap({
                     list: [
-                        //TODO: Unhardcode.
                         ...serverPeerMultiddrStrings,
                         //src: https://github.com/ipfs/helia/blob/main/packages/helia/src/utils/bootstrappers.ts
                         '/dnsaddr/bootstrap.libp2p.io/p2p/QmNnooDu7bfjPFoTZYxMNLWUQJyrVwtbZg5gBMjTezGAJN',
@@ -196,8 +212,10 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
                 //    topic: appDiscoveryTopic,
                 //    autodial: true,
                 //}),
-                autoNATv2: autoNATv2(),
+                //autoNATv2: autoNATv2(),
+                autoNAT: autoNAT(),
                 uPnPNAT: uPnPNAT(),
+                dcutr: dcutr(),
             } : {}),
 
             //logger: customLogger,
@@ -233,6 +251,10 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
         connectionMonitor: {
             //enabled: false,
         },
+        connectionManager: {
+            maxPeerAddrsToDial,
+            dialTimeout,
+        }
     })
 
     opts?.signal?.throwIfAborted()
@@ -317,7 +339,7 @@ async function setup(node: LibP2PNode, opts: Required<AbortOptions>){
         const options_onProgress = options.onProgress
         options.onProgress = (event) => {
             //node.safeDispatchEvent('connection:progress', event)
-            if(event.type === 'dial-queue:add-to-dial-queue' && node.getConnections(peer).length === 0){
+            if(node.getConnections(peer).length === 0 && event.type === 'dial-queue:add-to-dial-queue'){
                 node.safeDispatchEvent('connection:begin', { detail: peer })
             }
             options_onProgress?.(event)
@@ -331,7 +353,7 @@ async function setup(node: LibP2PNode, opts: Required<AbortOptions>){
             error = err as Error
         }
 
-        if(error && node.getConnections(peer).length === 0){
+        if(node.getConnections(peer).length === 0 /*&& error*/){
             node.safeDispatchEvent('connection:fail', { detail: peer })
         }
 
@@ -344,6 +366,16 @@ async function setup(node: LibP2PNode, opts: Required<AbortOptions>){
     //    const peerId = event.detail
     //    node.services.pubsubPeerDiscovery.removeRecord(peerId)
     //})
+
+    const tm = node.components.transportManager
+    for(const transport of tm.getTransports()){
+        const transport_dial = transport.dial.bind(transport)
+        transport.dial = (ma, opts) => {
+            const timeout = AbortSignal.timeout(perTransportDialTimeout)
+            opts.signal = opts.signal ? AbortSignal.any([ opts.signal, timeout ]) : timeout
+            return transport_dial(ma, opts)
+        }
+    }
 
     await node.start()
 }
