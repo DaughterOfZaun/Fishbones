@@ -1,5 +1,5 @@
 import { decrypt, encrypt } from './utils/proxy/blowfish'
-import { Writer } from './utils/proxy/enet'
+import { Writer } from './utils/binary'
 import * as PKT from './utils/proxy/pkt'
 import { replacer } from './utils/proxy/utils'
 

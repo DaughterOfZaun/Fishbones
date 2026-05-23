@@ -1,4 +1,4 @@
-import { Writer } from "../proxy/enet"
+import { Writer } from "../binary"
 
 const DEBUG = false
 

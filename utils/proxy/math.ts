@@ -1,4 +1,4 @@
-import { Reader, Writer } from "./enet"
+import { Reader, Writer } from "../binary"
 
 const arraybuffer1 = new ArrayBuffer(2*4)
 const int16array1 = new Int16Array(arraybuffer1)

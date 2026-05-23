@@ -1,5 +1,5 @@
 import fs from 'node:fs/promises'
-import { Reader, Writer } from './utils/proxy/enet'
+import { Reader, Writer } from './utils/binary'
 import { INI } from './utils/data/ini'
 import { Buffer } from 'node:buffer'
 import { parseArgs } from 'util'

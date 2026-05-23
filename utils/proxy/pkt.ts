@@ -1,6 +1,6 @@
 import { getBitFlagLE, getX, getXi, getZ, getZi, ivec2, setBitFlagLE, uInt32Tofloat32, vec2, Vector2, Vector2Int, Vector3 } from "./math";
 import type { AIState, Orders, Teams } from "./enums";
-import { Reader, Writer } from "./enet";
+import { Reader, Writer } from "../binary";
 import { replacer, type bool, type float, type int, type uint } from "./utils";
 
 const SByte_MaxValue = +127
@@ -1886,7 +1886,7 @@ export class C2S_OnTutorialPopupClosed extends GamePacket {
 export class SpawnMinionS2C extends GamePacket {
     public _type(){ return Type.SpawnMinionS2C }
 
-    public netObjID: number = 0 //ulong netObjID;
+    public netObjID: bigint = 0n //ulong netObjID;
     //uchar netNodeID;
     //struct r3dPoint3D pos;
     //int skinID;

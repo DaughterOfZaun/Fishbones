@@ -1,4 +1,5 @@
-import { Acknowledge, Connect, Protocol, ProtocolFlag, ProtocolHeader, Reader, Send, SendFragment, SendReliable, SendUnreliable, VerifyConnect, Version, Writer } from "./enet"
+import { Acknowledge, Connect, Protocol, ProtocolFlag, ProtocolHeader, Send, SendFragment, SendReliable, SendUnreliable, VerifyConnect, Version } from "./enet"
+import { Reader, Writer } from '../binary'
 
 const HEARTBEAT_INTERVAL = 1000 / 15
 
