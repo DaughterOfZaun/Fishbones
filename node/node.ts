@@ -49,7 +49,7 @@ import { appDiscoveryTopic, HARDCODED_SERVER_IP, NAME, rtcConfiguration, VERSION
 import { deadlyRace, Deferred } from '../utils/promises'
 import { tr } from '../utils/translation'
 
-import path from 'node:path'
+import { anySignal } from 'any-signal'
 
 export type LibP2PNode = Awaited<ReturnType<typeof createNodeInternal>> & {
     components: {
@@ -368,12 +368,44 @@ async function setup(node: LibP2PNode, opts: Required<AbortOptions>){
     //})
 
     const tm = node.components.transportManager
+    //const transport = tm
     for(const transport of tm.getTransports()){
         const transport_dial = transport.dial.bind(transport)
-        transport.dial = (ma, opts) => {
-            const timeout = AbortSignal.timeout(perTransportDialTimeout)
-            opts.signal = opts.signal ? AbortSignal.any([ opts.signal, timeout ]) : timeout
-            return transport_dial(ma, opts)
+        transport.dial = async (ma, opts) => {
+            
+            //const calledByDialQueue = typeof (opts as any)['priority'] === 'number' && opts?.signal
+            //if(!calledByDialQueue)
+            //    return transport_dial(ma, opts)
+            
+            //const controller = new AbortController()
+            const timeoutSignal = AbortSignal.timeout(perTransportDialTimeout)
+            const signal = anySignal(opts?.signal ? [ opts.signal, timeoutSignal ] : [ timeoutSignal ])
+            //const error = new TimeoutError('Forced connection timeout expired')
+
+            //const timeout = setTimeout(() => {
+            //    console_log('OPTS.SIGNAL.ABORTED:', opts?.signal?.aborted ?? 'undefined')
+            //    controller.abort(error)
+            //}, perTransportDialTimeout)
+
+            //return transport_dial(ma, { ...opts, signal }).finally(() => {
+            //    clearTimeout(timeout)
+            //})
+
+            let result: Connection
+            try {
+                result = await transport_dial(ma, { ...opts, signal })
+                //clearTimeout(timeout)
+                signal.clear()
+            } catch(err) {
+                //if(controller.signal.aborted){
+                //    result = { status: 'closed' } as Connection
+                //} else {
+                    //clearTimeout(timeout)
+                    signal.clear()
+                    throw err
+                //}
+            }
+            return result
         }
     }
 

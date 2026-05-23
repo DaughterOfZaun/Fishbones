@@ -113,131 +113,160 @@ async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>
         args.installModPack.set(false) //HACK?
 
     while(args.spaceCheck.value){
-
-        const downloadsRoot = path.parse(downloads).root
-        const gcInstallRoot = path.parse(gc126Pkg.dir).root
-        const isSingleRoot = downloadsRoot == gcInstallRoot
-        
-        //TODO: Extract embeds sizes.
-        let [
-            downloadsStats,
-            gcInstallDirStats,
-            downloadsSizeRequired,
-            gcInstallDirSizeRequired,
-        ] = await Promise.all([
-
-            fs_statfs(downloads, opts),
-            //(!isSingleRoot) ?
-            fs_statfs(gc126Pkg.dir, opts)
-            //: Promise.resolve(undefined)
-            ,
-            Promise.all([
-                
-                checkFileSize(path.join(downloads, path.basename(embedded.s7zExe)), 3759224, opts),
-                checkFileSize(path.join(downloads, path.basename(embedded.ariaExe)), 9926088, opts),
-                checkFileSize(path.join(downloads, path.basename(embedded.bunExe)), 103547344, opts),
-                
-                checkFileSize(path.join(downloads, 'aria2.dht6.dat'), 9240, opts),
-                checkFileSize(path.join(downloads, 'aria2.dht.dat'), 10080, opts),
-                
-                ...(
-                    (args.installBWServer.value) ? (
-                        (args.update.value) ? [
-                            checkDirSize(bwPkg.checkUnpackBy, bwPkg.zip, bwPkg.size, opts),
-                        ] : [
-                            checkDirSize(bwPkg.checkUnpackBy, bwPkg.zip, bwPkg.size, opts),
-                            checkFileSize(bwPkg.zip, bwPkg.zipSize, opts),
-                            checkFileSize(bwPkg.zipTorrent, 14564, opts),
-                        ]
-                    ) : []
-                ),
-                ...(
-                    (args.installCBServer.value) ? [
-                        checkDirSize(cbPkg.checkUnpackBy, cbPkg.zip, cbPkg.size, opts),
-                        checkFileSize(cbPkg.zip, cbPkg.zipSize, opts),
-                        checkFileSize(gc420Pkg.zipTorrent, 20022, opts),
-                    ] : []
-                ),
-                
-                checkFileSize(path.join(downloads, 'config.json'), 64, opts),
-                checkFileSize(path.join(downloads, path.basename(embedded.d3dx9_39_dll)), 3851784, opts),
-                
-                checkDirSize(sdkPkg.checkUnpackBy, sdkPkg.zip, sdkPkg.size, opts),
-                checkFileSize(sdkPkg.zip, sdkPkg.zipSize, opts),
-                checkFileSize(sdkPkg.zipTorrent, 49220, opts),
-
-                checkDirSize(fbPkg.checkUnpackBy, fbPkg.zip, 220201496, opts),
-                checkFileSize(fbPkg.zip, 81561932, opts),
-                checkFileSize(fbPkg.zipTorrent, 25399, opts),
-                
-                checkFileSize(path.join(downloads, `index-${VERSION}.js`), 14896347, opts),
-                checkFileSize(path.join(downloads, 'mastery-pages.json'), 1494, opts),
-                checkFileSize(path.join(downloads, 'log.txt'), 1834, opts),
-                
-                ...((args.installModPack.value) ? [
-                    //checkDirSize(modPck1.checkUnpackBy, modPck1.zip, modPck1.size, opts),
-                    checkFileSize(modPck1.zip, modPck1.zipSize, opts),
-                    checkFileSize(modPck1.zipTorrent, 37085, opts),
-                ] : []),
-
-                checkFileSize(path.join(downloads, path.basename(embedded.dataChannelLib)), 10231328, opts),
-                
-                //checkDirSize(gc126Pkg.checkUnpackBy, gc126Pkg.zip, gc126Pkg.size, opts),
-                checkFileSize(gc126Pkg.zip, gc126Pkg.zipSize, opts),
-                checkFileSize(gc126Pkg.zipTorrent, 90417, opts),
-
-                ...((os.platform() === 'win32') ? [
-                    checkDirSize(gitPkg.checkUnpackBy, gitPkg.zip, gitPkg.size, opts),
-                    checkFileSize(gitPkg.zip, gitPkg.zipSize, opts),
-                    checkFileSize(gitPkg.zipTorrent, 24284, opts),
-                ] : []),
-
-                checkFileSize(path.join(downloads, 'trackers.txt'), 809, opts),
-            ])
-            .then(results => results.reduce((a, v) => a + v, 0)),
-
-            Promise.all([
-                ...((args.installS1Client.value) ? [
-                    checkDirSize(gc126Pkg.checkUnpackBy, gc126Pkg.zip, gc126Pkg.size, opts),
-                ] :[]),
-                ...((args.installModPack.value) ? [
-                    checkDirSize(modPck1.lockFile, modPck1.zip, modPck1.size, opts),
-                ] :[]),
-                ...((args.installS4Client.value) ? [
-                    checkDirSize(gc420Pkg.checkUnpackBy, gc420Pkg.zip, gc420Pkg.size, opts),
-                ] :[]),
-            ])
-            .then(results => results.reduce((a, v) => a + v, 0)),
-        ])
-
-        downloadsSizeRequired *= 1.1
-        gcInstallDirSizeRequired *= 1.1
-
-        let msg: string | undefined
-        if(!isSingleRoot)
-            msg = ([
-                checkDriveSizeAndGetErrorMsg(downloadsStats, downloadsRoot, downloadsSizeRequired),
-                checkDriveSizeAndGetErrorMsg(gcInstallDirStats, gcInstallRoot, gcInstallDirSizeRequired),
-            ]).filter(msg => msg).join('\n')
-        else
-            msg = checkDriveSizeAndGetErrorMsg(downloadsStats, downloadsRoot, downloadsSizeRequired + gcInstallDirSizeRequired)
-
+        const msg = await checkFreeSpaceAndGetErrorMsg(opts)
         if(msg){
-            const view = render('DiskSpaceWarning', form({
-                'Retry': button(() => view.resolve()),
-                'Message': label(msg),
-            }), opts, [
-                {
-                    //HACK:
-                    regex: /.\/DiskSpaceWarning\/Retry:pressed/,
-                    listener: () => view.resolve(),
-                }
-            ])
-            await view.promise
+            await retryPrompt(tr('Insufficient disk space'), msg, opts)
             continue
         }
         break
     }
+
+    while(true){
+        try {
+            return await repairOrThrow(opts)
+        } catch(err){
+            if(opts.signal.aborted) throw err //TODO: Should I put this in all try-catch blocks?
+            await retryPrompt(
+                tr('Repairing failed'),
+                tr('Repairing of some critical component has failed.'),
+                opts,
+            )
+            //continue
+        }
+        //break
+    }
+}
+
+//TODO: Rework.
+async function checkFreeSpaceAndGetErrorMsg(opts: Required<AbortOptions>){
+
+    const downloadsRoot = path.parse(downloads).root
+    const gcInstallRoot = path.parse(gc126Pkg.dir).root
+    const isSingleRoot = downloadsRoot == gcInstallRoot
+    
+    //TODO: Extract embeds sizes.
+    let [
+        downloadsStats,
+        gcInstallDirStats,
+        downloadsSizeRequired,
+        gcInstallDirSizeRequired,
+    ] = await Promise.all([
+
+        fs_statfs(downloads, opts),
+        //(!isSingleRoot) ?
+        fs_statfs(gc126Pkg.dir, opts)
+        //: Promise.resolve(undefined)
+        ,
+        Promise.all([
+            
+            checkFileSize(path.join(downloads, path.basename(embedded.s7zExe)), 3759224, opts),
+            checkFileSize(path.join(downloads, path.basename(embedded.ariaExe)), 9926088, opts),
+            checkFileSize(path.join(downloads, path.basename(embedded.bunExe)), 103547344, opts),
+            
+            checkFileSize(path.join(downloads, 'aria2.dht6.dat'), 9240, opts),
+            checkFileSize(path.join(downloads, 'aria2.dht.dat'), 10080, opts),
+            
+            ...(
+                (args.installBWServer.value) ? (
+                    (args.update.value) ? [
+                        checkDirSize(bwPkg.checkUnpackBy, bwPkg.zip, bwPkg.size, opts),
+                    ] : [
+                        checkDirSize(bwPkg.checkUnpackBy, bwPkg.zip, bwPkg.size, opts),
+                        checkFileSize(bwPkg.zip, bwPkg.zipSize, opts),
+                        checkFileSize(bwPkg.zipTorrent, 14564, opts),
+                    ]
+                ) : []
+            ),
+            ...(
+                (args.installCBServer.value) ? [
+                    checkDirSize(cbPkg.checkUnpackBy, cbPkg.zip, cbPkg.size, opts),
+                    checkFileSize(cbPkg.zip, cbPkg.zipSize, opts),
+                    checkFileSize(gc420Pkg.zipTorrent, 20022, opts),
+                ] : []
+            ),
+            
+            checkFileSize(path.join(downloads, 'config.json'), 64, opts),
+            checkFileSize(path.join(downloads, path.basename(embedded.d3dx9_39_dll)), 3851784, opts),
+            
+            checkDirSize(sdkPkg.checkUnpackBy, sdkPkg.zip, sdkPkg.size, opts),
+            checkFileSize(sdkPkg.zip, sdkPkg.zipSize, opts),
+            checkFileSize(sdkPkg.zipTorrent, 49220, opts),
+
+            checkDirSize(fbPkg.checkUnpackBy, fbPkg.zip, 220201496, opts),
+            checkFileSize(fbPkg.zip, 81561932, opts),
+            checkFileSize(fbPkg.zipTorrent, 25399, opts),
+            
+            checkFileSize(path.join(downloads, `index-${VERSION}.js`), 14896347, opts),
+            checkFileSize(path.join(downloads, 'mastery-pages.json'), 1494, opts),
+            checkFileSize(path.join(downloads, 'log.txt'), 1834, opts),
+            
+            ...((args.installModPack.value) ? [
+                //checkDirSize(modPck1.checkUnpackBy, modPck1.zip, modPck1.size, opts),
+                checkFileSize(modPck1.zip, modPck1.zipSize, opts),
+                checkFileSize(modPck1.zipTorrent, 37085, opts),
+            ] : []),
+
+            checkFileSize(path.join(downloads, path.basename(embedded.dataChannelLib)), 10231328, opts),
+            
+            //checkDirSize(gc126Pkg.checkUnpackBy, gc126Pkg.zip, gc126Pkg.size, opts),
+            checkFileSize(gc126Pkg.zip, gc126Pkg.zipSize, opts),
+            checkFileSize(gc126Pkg.zipTorrent, 90417, opts),
+
+            ...((os.platform() === 'win32') ? [
+                checkDirSize(gitPkg.checkUnpackBy, gitPkg.zip, gitPkg.size, opts),
+                checkFileSize(gitPkg.zip, gitPkg.zipSize, opts),
+                checkFileSize(gitPkg.zipTorrent, 24284, opts),
+            ] : []),
+
+            checkFileSize(path.join(downloads, 'trackers.txt'), 809, opts),
+        ])
+        .then(results => results.reduce((a, v) => a + v, 0)),
+
+        Promise.all([
+            ...((args.installS1Client.value) ? [
+                checkDirSize(gc126Pkg.checkUnpackBy, gc126Pkg.zip, gc126Pkg.size, opts),
+            ] :[]),
+            ...((args.installModPack.value) ? [
+                checkDirSize(modPck1.lockFile, modPck1.zip, modPck1.size, opts),
+            ] :[]),
+            ...((args.installS4Client.value) ? [
+                checkDirSize(gc420Pkg.checkUnpackBy, gc420Pkg.zip, gc420Pkg.size, opts),
+            ] :[]),
+        ])
+        .then(results => results.reduce((a, v) => a + v, 0)),
+    ])
+
+    downloadsSizeRequired *= 1.1
+    gcInstallDirSizeRequired *= 1.1
+
+    let msg: string | undefined
+    if(!isSingleRoot)
+        msg = ([
+            checkDriveSizeAndGetErrorMsg(downloadsStats, downloadsRoot, downloadsSizeRequired),
+            checkDriveSizeAndGetErrorMsg(gcInstallDirStats, gcInstallRoot, gcInstallDirSizeRequired),
+        ]).filter(msg => msg).join('\n')
+    else
+        msg = checkDriveSizeAndGetErrorMsg(downloadsStats, downloadsRoot, downloadsSizeRequired + gcInstallDirSizeRequired)
+
+    return msg
+}
+
+async function retryPrompt(title: string, msg: string, opts: Required<AbortOptions>){
+    const view = render('DiskSpaceWarning', form({
+        'Retry': button(() => view.resolve()),
+        'Title': label(title),
+        'Message': label(msg),
+    }), opts, [
+        {
+            //HACK:
+            regex: /.\/DiskSpaceWarning\/Retry:pressed/,
+            listener: () => view.resolve(),
+        }
+    ])
+    return view.promise
+}
+
+async function repairOrThrow(opts: Required<AbortOptions>){
 
     let results: PromiseSettledResult<unknown>[]
     results = await Promise.allSettled([
@@ -304,15 +333,16 @@ async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>
             repairSDK(opts),
             (async () => {
                 if(args.update.value || args.mrNumber.value !== undefined){
-                    try {
+                    //try {
                         await repairGit(opts)
                         bwUpdated = await update(bwPkg, opts)
-                        return // OK
-                    } catch(err) {
-                        console_log(tr('Updating game server package failed:', {}), Bun.inspect(err))
-                    }
+                    //    return // OK
+                    //} catch(err) {
+                    //    console_log(tr('Updating game server package failed:', {}), Bun.inspect(err))
+                    //}
+                } else {
+                    await repairArchived(bwPkg, opts)
                 }
-                await repairArchived(bwPkg, opts)
             })(),
         ]).then(async (results) => {
             throwAnyRejection(results)

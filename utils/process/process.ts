@@ -114,6 +114,7 @@ export const callShutdownHandlers = (force: boolean, source: ShutdownSource) => 
 }
 
 const ABORT_ERR = 20
+const TIMEOUT_ERR = 23
 const ERR_UNHANDLED_ERROR = 'ERR_UNHANDLED_ERROR'
 
 //process.on('exit', () => shutdown('event'))
@@ -135,6 +136,15 @@ process.on('uncaughtException', (err: AdvancedError) => {
         err.context?.code === ABORT_ERR//&&
         //err.context?.name === 'AbortError' &&
         //err.context?.message === 'The operation was aborted.'
+    ) return
+
+    if(
+        //err.message.startsWith('Unhandled error. (') &&
+        //err.message.endsWith(')') &&
+        err.code === ERR_UNHANDLED_ERROR &&
+        err.context?.code === TIMEOUT_ERR//&&
+        //err.context?.name === 'TimeoutError' &&
+        //err.context?.message === 'The operation timed out.'
     ) return
 
     if(

@@ -41,7 +41,7 @@ async function index(opts: Required<AbortOptions>){
         throw err
     }
 
-    try {
+    if(args.cleanup.value) try {
         await cleanup(opts)
     } catch(err) {
         console_log(tr('Out-of-date data cleanup failed.', {}), Bun.inspect(err))

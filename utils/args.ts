@@ -131,6 +131,7 @@ export const args = new class Args {
     download = new Option('download', '', true, tr('(Debug) Download missing files'))
     unpack = new Option('unpack', '', true, tr('(Debug) Unpack missing files'))
     build = new Option('build', '', true, tr('(Debug) Build missing files'))
+    cleanup = new Option('cleanup', '', true)
 
     setup = new Option('setup', '', true, tr('Ask about custom arguments at startup'))
 

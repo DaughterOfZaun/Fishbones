@@ -5,14 +5,17 @@ import { promises as fs } from 'node:fs'
 import path from 'node:path'
 import { NAME, OUTDIR, OUTFILE, VERSION_REGEX } from './utils/constants-build'
 import { config, type Config } from './utils/data/embedded/config'
+import { Reader, sizeof, Writer } from './utils/binary'
 //import { ariaPkg } from './utils/data/packages/aria2'
 
-const GODOT_EXE =
-    process.platform == 'linux' ? './dist/Godot_v4.6-stable_linux.x86_64' :
-        process.platform == 'win32' ? './dist/Godot_v4.6-stable_win64.exe' :
+const GODOT_EDITOR_EXE =
+    process.platform == 'linux' ? './dist/Godot_v4.6.3-stable_linux.x86_64' :
+        process.platform == 'win32' ? './dist/Godot_v4.6.3-stable_win64.exe' :
             undefined!
-if (GODOT_EXE === undefined)
+if (GODOT_EDITOR_EXE === undefined)
     throw new Error('Platform not specified or not supported')
+
+const GODOT_TEMPLATES_DIR = path.join(process.env['HOME'] ?? '~', '.local/share/godot/export_templates/4.6.3.stable')
 
 const release = process.argv.includes('release') ? 'release' : 'debug'
 
@@ -20,6 +23,7 @@ const version = process.argv.find(arg => VERSION_REGEX.test(arg))
 console.assert(typeof version === 'string')
 
 const indexJS = `./${OUTDIR}/index-${version}.js`
+const indexJSMap = `./${OUTDIR}/index-${version}.js.map`
 
 const platform =
     process.argv.includes('linux') ? 'linux' :
@@ -27,6 +31,17 @@ const platform =
             undefined!
 if (platform === undefined)
     throw new Error('Platform not specified or not supported')
+
+// Godot's packed file magic header ("GDPC" in ASCII).
+const GODOT_PACK_HEADER_MAGIC = 0x43504447
+const GODOT_TEMPLATE_EXE = ({
+    windows: path.join(GODOT_TEMPLATES_DIR, `${platform}_${release}_x86_64.exe`),
+    linux: path.join(GODOT_TEMPLATES_DIR, `${platform}_${release}.x86_64`),
+} as const)[platform]
+const godot_preset = ({
+    windows: 'Windows Desktop',
+    linux: 'Linux Desktop',
+} as const)[platform]
 
 const target: Bun.Build.CompileTarget =
     (platform === 'linux') ? `bun-linux-x64-baseline` :
@@ -36,11 +51,11 @@ const target: Bun.Build.CompileTarget =
 if (process.argv.includes('server')) {
     await Bun.build({
         entrypoints: ['./node/server.ts'],
-        sourcemap: 'inline',
+        sourcemap: 'linked',
         outdir: OUTDIR,
         env: 'disable',
         target: 'bun',
-        minify: false,
+        minify: true,
         compile: {
             target,
         },
@@ -61,7 +76,9 @@ let embeddedJson: Record<string, string> = {}
 let embedFileCopies: { from: string, to: string }[] = []
 
 async function generate_embeds_json() {
+
     config['indexJS'] = indexJS
+    config['indexJSMap'] = indexJSMap
 
     for (const [key, keyConfig] of Object.entries(config as Config)) {
         let from =
@@ -97,10 +114,11 @@ async function build_embeds() {
 
     let tscn = await fs.readFile('./remote-ui/main.tscn', 'utf8')
     const embeddedFiles = Object.entries(embeddedJson)
-        .filter(([key, file]) => !!file && !['bunExe', 'indexJS', 'dataChannelLib'].includes(key))
+        .filter(([key, file]) => !!file && !['bunExe', 'indexJS', 'indexJSMap', 'dataChannelLib'].includes(key))
         .map(([key, file]) => file)
         .toSorted()
     tscn = tscn.replace(/^embedded_js = ".*"$/m, `embedded_js = "${embeddedJson['indexJS']}"`)
+    tscn = tscn.replace(/^embedded_js_map = ".*"$/m, `embedded_js_map = "${embeddedJson['indexJSMap']}"`)
     tscn = tscn.replace(/^embedded_exe = ".*"$/m, `embedded_exe = "${embeddedJson['bunExe']}"`)
     tscn = tscn.replace(/^embedded_lib_0 = ".*"$/m, `embedded_lib_0 = "${embeddedJson['dataChannelLib']}"`)
     tscn = tscn.replace(/(embedded_file_\w+ = ".*"\n)+/g, embeddedFiles.map((file, i) => {
@@ -150,17 +168,18 @@ if (process.argv.includes('bun')) {
     try {
         await Bun.build({
             entrypoints: ['./index.ts'],
-            sourcemap: 'inline',
+            sourcemap: 'linked',
             outdir: OUTDIR,
             env: 'disable',
             target: 'bun',
-            minify: false,
+            minify: true,
             packages: "bundle",
             define: {
                 'process.env.VERSION': `"${version}"`
             },
         })
         await fs.rename(`./${OUTDIR}/index.js`, indexJS)
+        await fs.rename(`./${OUTDIR}/index.js.map`, indexJSMap)
     } finally {
         if (platform === 'windows' && process.platform == 'linux') {
             await $`mv node_modules node_modules_win_npm`
@@ -172,6 +191,9 @@ if (process.argv.includes('bun')) {
 if (process.argv.includes('embeds'))
     await build_embeds()
 
+const relative_exe_path = path.join('..', OUTDIR, OUTFILE)
+const relative_pck_path = relative_exe_path.replace('.exe', '') + '.pck'
+
 if (process.argv.includes('godot')) {
 
     const file = './remote-ui/project.godot'
@@ -180,27 +202,66 @@ if (process.argv.includes('godot')) {
     proj = proj.replace(/^(config\/version)="(.*?)"$/m, `$1="${version}"`)
     await fs.writeFile(file, proj, 'utf8')
 
-    //await build_godot_pck()
-    await build_godot_exe()
+    if(platform == 'windows'){
+        await build_godot_exe(relative_exe_path)
+    } else {
+        await build_godot_pck(relative_pck_path)
+        process.argv.push('append-pck') //HACK:
+    }
 }
 
-async function build_godot_exe() {
-    const preset = ({
-        windows: 'Windows Desktop',
-        linux: 'Linux Desktop',
-    } as const)[platform]
-    await $`${GODOT_EXE} \
-    --export-${{ raw: release }} ${preset} ${path.join('..', OUTDIR, OUTFILE)} \
+if (process.argv.includes('append-pck')) {
+
+    const template_exe_path = GODOT_TEMPLATE_EXE.replace('..', '.') //HACK:
+    const pck_path = relative_pck_path.replace('..', '.')
+    const exe_path = relative_exe_path.replace('..', '.')
+
+    const template = await fs.readFile(template_exe_path)
+    const pck = await fs.readFile(pck_path)
+    
+    const template_size = template.length //Math.ceil(template.length / 8) * 8
+    const pck_size = pck.length //Math.ceil(pck.length / 8) * 8
+    
+    const exe = Buffer.alloc(template_size + pck_size + sizeof.uint64 + sizeof.uint32)
+    
+    const endianness = 'LE'
+
+    const writer = new Writer(exe, endianness)
+    writer.writeBytes(template)
+    //writer.writePad(template_size - template.length)
+    writer.writeBytes(pck)
+    //writer.writePad(pck_size - pck.length)
+    writer.writeUInt64(pck_size)
+    writer.writeUInt32(GODOT_PACK_HEADER_MAGIC)
+
+    //const reader = new Reader(exe, endianness)
+    //reader.position = exe.length
+    //reader.position -= 4
+    //console.assert(reader.readUInt32() == GODOT_PACK_HEADER_MAGIC, `Assertion failed: 1`)
+    //reader.position -= 4
+    //reader.position -= 8
+    //console.assert(reader.readUInt64() == BigInt(pck_size), `Assertion failed: 2`)
+    //reader.position -= 8
+    //reader.position -= pck_size
+    //console.assert(reader.readUInt32() == GODOT_PACK_HEADER_MAGIC, `Assertion failed: 3`)
+
+    await fs.writeFile(exe_path, exe)
+}
+
+async function build_godot_exe(outfile: string) {
+    await $`${GODOT_EDITOR_EXE} \
+    --export-${{ raw: release }} ${godot_preset} ${outfile} \
     --path ./remote-ui \
     --headless\
     --quiet`
 }
 
-async function build_godot_pck() {
-    await $`${GODOT_EXE} \
-    --export-pack 'Windows Desktop' ../dist/RemoteUI.pck \
+async function build_godot_pck(outfile: string) {
+    await $`${GODOT_EDITOR_EXE} \
+    --export-pack ${godot_preset} ${outfile} \
     --path ./remote-ui \
-    --headless`
+    --headless\
+    --quiet`
 }
 
 async function build_libUTP() {

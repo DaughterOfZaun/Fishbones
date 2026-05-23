@@ -12,8 +12,8 @@ export const config = {
     //},
 
     s7zExe: {
-        windows: './thirdparty/7z/7za-2501-windows-x64.exe',
-        linux: './thirdparty/7z/7zzs-2501-linux-x64.exe',
+        windows: './thirdparty/7z/7za-2601-windows-x64.exe',
+        linux: './thirdparty/7z/7zzs-2601-linux-x64.exe',
     },
     //s7zDll: {
     //    windows: './node_modules/7z-bin/bin/win/x64/7z.dll',
@@ -50,11 +50,12 @@ export const config = {
     //icon: './remote-ui/icons/icon.png',
 
     bunExe: {
-        windows: './thirdparty/bun/bun-1.3.10-windows-x64-baseline.exe',
-        linux: './thirdparty/bun/bun-1.3.10-linux-x64-baseline.exe',
+        windows: './thirdparty/bun/bun-1.3.14-windows-x64-baseline.exe',
+        linux: './thirdparty/bun/bun-1.3.14-linux-x64-baseline.exe',
     },
 
     indexJS: './dist/index.js',
+    indexJSMap: './dist/index.js.map',
 
     //trackersTxt: './thirdparty/trackers.txt',
 

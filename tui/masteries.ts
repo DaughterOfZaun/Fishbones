@@ -91,7 +91,7 @@ export function prerender(opts: Required<AbortOptions>){
         }),
         Trees: list(
             Object.fromEntries(
-                byPos.map((info, i) => [ `${i}_${info.name}`, tree(info) ])
+                byPos.map(info => [ getTreeElementName(info), tree(info) ])
             )
         ),
         Requirements: list(
@@ -113,7 +113,7 @@ export function prerender(opts: Required<AbortOptions>){
         })
     }), opts, [
         {
-            regex: /^\.\/Trees\/(?<treeIndex>\d+)_(?<treeName>\w+)\/Grid\/(?<cellIndex>\d+)_(?<masteryID>\d+)\/Icon:pressed/,
+            regex: /^\.\/Trees\/(?<treeIndex>\d+)(?:_(?<treeName>.+))?\/Grid\/(?<cellIndex>\d+)_(?<masteryID>\d+)\/Icon:pressed/,
             listener: onCellPressed
         }
     ], true)
@@ -128,7 +128,7 @@ function setPage(index: number){
         Points: label(page.points.toString()),
         Trees: list(
             Object.fromEntries(
-                byPos.map(info => [ `${info.index}_${info.name}`, tree(info) ])
+                byPos.map(info => [ getTreeElementName(info), tree(info) ])
             )
         ),
     }))
@@ -206,6 +206,7 @@ export function show(opts: Required<AbortOptions>){
 
 function getTreeElementName(tree: RuntimeTreeInfo){
     return `${tree.index}_${tree.name}`
+    //return `${tree.index}`
 }
 function getTreeElement(tree: RuntimeTreeInfo){
     return view.get(`Trees/${getTreeElementName(tree)}`)

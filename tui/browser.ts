@@ -178,17 +178,19 @@ async function hostLocal(node: LibP2PNode, name: string, icon: number, lobby: Lo
 
 async function joinRemote(game: RemoteGame, name: string, icon: number, lobby: Lobby, opts: Required<AbortOptions>){
     try {
-        await deadlyRace([
+        const isConnected = await deadlyRace([
             async (opts) => spinner({ message: tr('Connecting to host...') }, opts),
             async (opts) => game.connect(opts),
         ], opts)
-        if(game.password.isSet)
-            await game.password.uinput(opts)
-        await deadlyRace([
-            async (opts) => spinner({ message: tr('Joining the game...') }, opts),
-            async (opts) => game.join(name, icon, game.password.encode(), opts)
-        ], opts)
-        await lobby(game, opts)
+        if(isConnected){
+            if(game.password.isSet)
+                await game.password.uinput(opts)
+            await deadlyRace([
+                async (opts) => spinner({ message: tr('Joining the game...') }, opts),
+                async (opts) => game.join(name, icon, game.password.encode(), opts)
+            ], opts)
+            await lobby(game, opts)
+        }
     } catch(err) {
         if(err instanceof AbortPromptError){ /* Ignore. */ }
         else throw err

@@ -65,12 +65,12 @@ function updatePeer(view: DeferredView<void>, peerId: PeerId, patch: Partial<FBP
         view.get('Connections').add(peerId.toString(), getForm(true))
     } else if(status != info.status && status == PeerStatus.Disconnected){
         view.get('Connections').remove(peerId.toString())
-    } else if(
+    } else if(status != PeerStatus.Disconnected && (
            iconIdx != info.icon
         || nameStr != info.name
         || status != info.status
         || ping != info.ping
-    ){
+    )){
         view.get(`Connections/${peerId.toString()}`).update(getForm())
     }
 

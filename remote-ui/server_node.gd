@@ -49,11 +49,13 @@ func just_show_view(view: Control) -> void:
 var handlers: Dictionary[Variant, InputHandler] = {}
 
 @export_file var embedded_js: String
+@export_file var embedded_js_map: String
 @export_file var embedded_exe: String
 @export_file var embedded_lib_0: String
 
 @onready var embedded_libs: Array[String] = [
     embedded_js,
+    embedded_js_map,
     embedded_exe,
     embedded_lib_0,
 ]
@@ -161,9 +163,9 @@ func _ready() -> void:
         #print(embedded_file.get_file(), ' ', embedded_file_mod_time, ' vs ', extracted_file_mod_time)
         #if current_exe_mod_time > extracted_file_mod_time:
         if !FileAccess.file_exists(extracted_file):
-            err = DirAccess.copy_absolute(embedded_file, extracted_file); #assert(err == OK)
+            err = DirAccess.copy_absolute(embedded_file, extracted_file); assert(err == OK)
             if extracted_file.get_extension() == "exe":
-                err = FileAccess.set_unix_permissions(extracted_file, rwx); #assert(err == OK)
+                err = FileAccess.set_unix_permissions(extracted_file, rwx); assert(err == OK)
 
     exe_args.append_array([ extracted_js ])
     exe_args.append_array(OS.get_cmdline_user_args())
@@ -177,8 +179,8 @@ func _ready() -> void:
     
     var system_locale := OS.get_locale()
     var system_lang := OS.get_locale_language()
-    #var system_locale := "pt_BR"
-    #var system_lang := "pt"
+    #var system_locale := "zh_CN"
+    #var system_lang := "zh"
 
     var auto_locale: String = default_locale
     if supported_locales.has(system_locale):
