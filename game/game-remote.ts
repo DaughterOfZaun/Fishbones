@@ -23,7 +23,7 @@ export class RemoteGame extends Game {
         if(this.connected) return true
         try {
             const connection = await obtainConnection(this.node, this.ownerId, opts)
-            const stream = await connection.newStream([ LOBBY_PROTOCOL ], opts)
+            const stream = await connection.newStream([ LOBBY_PROTOCOL ], { ...opts, runOnLimitedConnection: false })
             this.stream = pbStream(stream).pb(LobbyNotificationMessage, LobbyRequestMessage)
             this.handleOutgoingStream({ stream, connection })
             this.connected = true

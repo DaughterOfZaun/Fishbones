@@ -34,7 +34,7 @@ import { dcutr } from '@libp2p/dcutr'
 import { tcp } from '@libp2p/tcp'
 
 import { loadOrCreateSelfKey } from '@libp2p/config'
-import { isPeerId, KEEP_ALIVE, type AbortOptions, type ComponentLogger, type Connection, type Libp2pEvents, type Logger, type PeerId, type PeerInfo, type PeerStore, type PrivateKey, type Startable, type TypedEventTarget } from '@libp2p/interface'
+import { isPeerId, KEEP_ALIVE, type AbortOptions, type AddressSorter, type ComponentLogger, type Connection, type Libp2pEvents, type Logger, type PeerId, type PeerInfo, type PeerStore, type PrivateKey, type Startable, type TypedEventTarget } from '@libp2p/interface'
 import { PeerMap, PeerSet } from '@libp2p/peer-collections'
 import { peerIdFromCID, peerIdFromString } from '@libp2p/peer-id'
 import { PeerRecord, RecordEnvelope } from '@libp2p/peer-record'
@@ -50,6 +50,10 @@ import { deadlyRace, Deferred } from '../utils/promises'
 import { tr } from '../utils/translation'
 
 import { anySignal } from 'any-signal'
+
+import { reliableTransportsFirst, certifiedAddressesFirst, circuitRelayAddressesLast, publicAddressesFirst, loopbackAddressLast } from '../node_modules/libp2p/src/connection-manager/address-sorter.ts'
+//import { sortInplace } from '../utils/helpers.ts'
+import { sleep } from 'bun'
 
 export type LibP2PNode = Awaited<ReturnType<typeof createNodeInternal>> & {
     components: {
@@ -116,6 +120,18 @@ export const serverPeerMultiddrStrings = [
 const maxPeerAddrsToDial = 25
 const perTransportDialTimeout = 10 * 1000
 const dialTimeout = maxPeerAddrsToDial * perTransportDialTimeout
+const dcutrDefaultTimeout = 5000
+const dcutrDefaultRetries = 3
+const dcutrTimeout = dcutrDefaultTimeout * dcutrDefaultRetries
+const addressSorter: AddressSorter = (a, b) => {
+    let v = 0
+    if(v == 0) v = -loopbackAddressLast(a, b) // loopbackAddressesFirst
+    if(v == 0) v = -publicAddressesFirst(a, b) // privateAddressesFirst
+    if(v == 0) v = circuitRelayAddressesLast(a, b) // unlimitedAddressesFirst
+    if(v == 0) v = certifiedAddressesFirst(a, b)
+    if(v == 0) v = reliableTransportsFirst(a, b)
+    return v as (-1 | 0 | 1)
+}
 
 async function createNodeInternal(port: number, opts: Required<AbortOptions>){
 
@@ -254,6 +270,7 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
         connectionManager: {
             maxPeerAddrsToDial,
             dialTimeout,
+            addressSorter,
         }
     })
 
@@ -329,6 +346,21 @@ async function setup(node: LibP2PNode, opts: Required<AbortOptions>){
     //})
 
     const cm = node.components.connectionManager
+
+    //const cm_getConnections = cm.getConnections.bind(cm)
+    //cm.getConnections = (peerId?) => {
+    //    const connections = cm_getConnections(peerId)
+    //    connections.sort((a, b) => {
+    //        const c = { multiaddr: a.remoteAddr, isCertified: false }
+    //        const d = { multiaddr: b.remoteAddr, isCertified: false }
+    //        return addressSorter(c, d)
+    //    })
+    //    sortInplace(connections, (conn) => {
+    //        return node.services.ping.getPing(conn.remotePeer, conn.id) ?? 0
+    //    })
+    //    return connections
+    //}
+
     const cm_openConnection = cm.openConnection.bind(cm)
     cm.openConnection = async (peer, options) => {
 
@@ -592,8 +624,15 @@ export async function obtainConnection(node: LibP2PNode, peerId: PeerId, opts: R
     let connection = getExistingConnection(node, peerId)
     if(!connection){
         connection = await deadlyRace([
-            async (opts) => tryConnectTo(node, peerId, opts, addrs),
-            async (opts) => waitForConnectionFrom(node, peerId, opts),
+            async (opts) => {
+                const connection = await tryConnectTo(node, peerId, opts, addrs)
+                if(connection.limits){
+                    await sleep(dcutrTimeout) // Sleep to give ourselves a chance to wait for the unlimited connection to be established.
+                    opts.signal.throwIfAborted()
+                }
+                return connection
+            },
+            async (opts) => waitForConnection(node, peerId, { ...opts, unlimited: true }),
         ], opts)
     }
     return connection
@@ -616,11 +655,12 @@ async function tryConnectTo(node: LibP2PNode, peerId: PeerId, opts: Required<Abo
     return connection
 }
 
-async function waitForConnectionFrom(node: LibP2PNode, peerId: PeerId, opts: Required<AbortOptions>){
+async function waitForConnection(node: LibP2PNode, peerId: PeerId, opts: Required<AbortOptions> & { unlimited?: boolean }){
     const deferred = new Deferred<Connection>(opts)
     deferred.addEventListener(node, 'connection:open', (event: CustomEvent<Connection>) => {
         const connection = event.detail
         if(connection.remotePeer.toString() === peerId.toString())
+        if(!connection.limits || opts.unlimited !== true)
             deferred.resolve(connection)
     })
     return deferred.promise
