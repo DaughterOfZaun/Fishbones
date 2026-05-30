@@ -2,19 +2,21 @@ import path from 'node:path'
 import type { AbortOptions } from '@libp2p/interface'
 import { console_log_fs_err, downloads, fs_exists, fs_moveFile } from './fs'
 import { extractFile } from '../../ui/remote/remote'
-import { bwPkg } from './packages/game-server-bw'
-import { cbPkg } from "./packages/game-server-cb"
 import { gc126Pkg } from './packages/game-client-126'
 import { gc420Pkg } from './packages/game-client-420'
-import { sdkPkg } from './packages/sdk'
+import { bwPkg } from './packages/game-server-bw'
+import { cbPkg } from "./packages/game-server-cb"
+import { tgPkg } from './packages/game-server-ts'
 import { gitPkg } from './packages/git'
 import { modPck1 } from './packages/modpack-levels'
+import { sdkPkg } from './packages/sdk'
+import { fbPkg } from './upgrade'
 import { tr } from '../translation'
 
 export type { PkgInfo, PkgInfoCSProj, PkgInfoGit } from './packages/shared'
 export { bwPkg, cbPkg, gc126Pkg, gc420Pkg, sdkPkg, gitPkg, modPck1 }
 
-export const packages = [ bwPkg, cbPkg, gc126Pkg, gc420Pkg, sdkPkg, gitPkg, modPck1 ]
+export const packages = [ gc126Pkg, gc420Pkg, bwPkg, cbPkg, tgPkg, gitPkg, modPck1, sdkPkg, fbPkg ]
 
 if(false) //TODO:
 for(const a of packages)

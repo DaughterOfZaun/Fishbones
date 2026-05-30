@@ -296,11 +296,15 @@ type PkgToSeed = {
     zipTorrent: string
 }
 export async function seed(pkg: PkgToSeed, opts: Required<AbortOptions>){
-    if(pkg.zipSize && !await fs_exists_and_size_eq(pkg.zip, pkg.zipSize, opts)) return
+    
+    if(!pkg.zipTorrent) return
     if(!pkg.zipSize && !await fs_exists(pkg.zip, opts)) return
-    await startAria2(opts)
+    if(pkg.zipSize && !await fs_exists_and_size_eq(pkg.zip, pkg.zipSize, opts)) return
+    
     const b64 = await fs_readFile(pkg.zipTorrent, { ...opts, encoding: 'base64', rethrow: true })
     if(!b64) return
+    
+    await startAria2(opts)
     await aria2.addTorrent(aria2conn, b64, [], {
         dir: downloads,
         //out: pkg.zipName,

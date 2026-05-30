@@ -1,6 +1,6 @@
 import { build } from "./build"
 import { download, appendPartialDownloadFileExt, repairAria2, seed } from "./download/download"
-import { gc126Pkg, gc420Pkg, gitPkg, bwPkg, cbPkg, modPck1, type PkgInfo, repairTorrents, sdkPkg, type PkgInfoCSProj } from "./packages"
+import { gc126Pkg, gc420Pkg, gitPkg, bwPkg, cbPkg, modPck1, type PkgInfo, repairTorrents, sdkPkg, type PkgInfoCSProj, packages } from "./packages"
 import { console_log, createBar, currentExe, extractFile } from "../../ui/remote/remote"
 import { console_log_fs_err, cwd, downloads, fs_chmod, fs_copyFile, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_overwrite, fs_readdir, fs_readFile, fs_removeFile, fs_rmdir, fs_stat, fs_statfs, fs_truncate, fs_writeFile, rwx_rx_rx } from './fs'
 import { readTrackersTxt } from "./download/trackers"
@@ -274,14 +274,12 @@ async function repairOrThrow(opts: Required<AbortOptions>){
         repairTorrents(opts).catch((err) => { console_log(tr('Restoring torrent files failed:', {}), Bun.inspect(err)) }),
         repair7z(opts), //.catch((err) => { console_log(tr('Restoring 7z archiver executable failed:', {}), Bun.inspect(err)); throw err }),
         repairAria2(opts), //.catch((err) => { console_log(tr('Restoring Aria2 downloader executable failed:', {}), Bun.inspect(err)); throw err }),
-        (async () => {
-            if(args.upgrade.value)
-                return checkForUpdates(opts).catch(err => { console_log(tr('Update check failed:', {}), Bun.inspect(err)) })
-        })(),
+        !(args.upgrade.value) ? Promise.resolve() :
+        checkForUpdates(opts).catch(err => { console_log(tr('Update check failed:', {}), Bun.inspect(err)) }),
     ])
     throwAnyRejection(results)
 
-    if(prev_fbPkg && isNewVersionAvailable()){
+    if(prev_fbPkg && isNewVersionAvailable()) try {
 
         // A hack to speed up download.
         if(await fs_exists(prev_fbPkg.zip, opts) && !await fs_exists(fbPkg.zip, opts)){
@@ -310,6 +308,9 @@ async function repairOrThrow(opts: Required<AbortOptions>){
         }).unref()
 
         return { mustExit: true }
+    
+    } catch(err) {
+        console_log(tr(`Restoring launcher package failed:`), Bun.inspect(err))
     }
 
     let modFileIsMissing = !await fs_exists(modPck1.lockFile, opts, false)
@@ -333,16 +334,15 @@ async function repairOrThrow(opts: Required<AbortOptions>){
             repairSDK(opts),
             (async () => {
                 if(args.update.value || args.mrNumber.value !== undefined){
-                    //try {
+                    try {
                         await repairGit(opts)
                         bwUpdated = await update(bwPkg, opts)
-                    //    return // OK
-                    //} catch(err) {
-                    //    console_log(tr('Updating game server package failed:', {}), Bun.inspect(err))
-                    //}
-                } else {
-                    await repairArchived(bwPkg, opts)
+                        return // OK
+                    } catch(err) {
+                        console_log(tr('Updating game server package failed:', {}), Bun.inspect(err))
+                    }
                 }
+                await repairArchived(bwPkg, opts)
             })(),
         ]).then(async (results) => {
             throwAnyRejection(results)
@@ -484,8 +484,6 @@ async function repairOrThrow(opts: Required<AbortOptions>){
     //TODO: await fs.cp(bwPkg.gcDir, gc126Pkg.exeDir, { recursive: true })
 
     if(args.torrentDownload.value){
-        //TODO: Seed all downloaded packages.
-        const packages = [ gc126Pkg, gitPkg, modPck1, sdkPkg, fbPkg ]
         void Promise.allSettled(
             packages.map(async pkg => seed(pkg, opts))
         ).then((results) => {
