@@ -10,6 +10,23 @@ export const sizeof = {
     int: 32 / 8,
 }
 
+export function bytesToUInt32(bytes: Record<number, number>){
+    return 0
+        | bytes[3]! << 8 * 0
+        | bytes[2]! << 8 * 1
+        | bytes[1]! << 8 * 2
+        | bytes[0]! << 8 * 3
+}
+
+export function uInt32ToBytes(num: number){
+    return [
+        (num >> 8 * 3) & 0xFF,
+        (num >> 8 * 2) & 0xFF,
+        (num >> 8 * 1) & 0xFF,
+        (num >> 8 * 0) & 0xFF,
+    ]
+}
+
 const funcs = function(){
     const buffer = Buffer.from([])
     return {
