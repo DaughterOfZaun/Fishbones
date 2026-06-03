@@ -65,6 +65,7 @@ message LobbyNotificationMessage {
             bytes public_key = 1;
             repeated bytes addrs = 2;
         }
+        optional uint32 server_port = 4;
     }
     message ChatRequest {
         string message = 1;

@@ -116,11 +116,11 @@ class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
                 msg.destination.packetsReceived += 1
                 this.pendingRequests.delete(msgId)
 
-                const { host, port } = msg.destination
-                console.log(`Received response from ${host}:${port}`)
-                const observedHost = uInt32ToBytes(pkt.observed!.host).join('.')
-                const observerdPort = pkt.observed!.port
-                console.log(`Observed host:port is ${observedHost}:${observerdPort}`)
+                //const { host, port } = msg.destination
+                //console.log(`Received response from ${host}:${port}`)
+                //const observedHost = uInt32ToBytes(pkt.observed!.host).join('.')
+                //const observerdPort = pkt.observed!.port
+                //console.log(`Observed host:port is ${observedHost}:${observerdPort}`)
             }
         }
     }

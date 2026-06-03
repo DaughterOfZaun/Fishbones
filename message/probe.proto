@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+message Packet {
+    optional Ping ping = 1;
+    message Ping {
+        bytes data = 1;
+        Action action = 2;
+        enum Action {
+            None = 0;
+            Request = 1;
+            Response = 2;
+            Confirmation = 3;
+        }
+        optional Observed observed = 3;
+        message Observed {
+            uint32 host = 1;
+            uint32 port = 2;
+        }
+    }
+}

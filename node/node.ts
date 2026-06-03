@@ -20,6 +20,7 @@ import { autoNAT } from '@libp2p/autonat'
 //import { autoNATv2 } from '@libp2p/autonat-v2'
 import { pubsubPeerDiscovery } from '../network/libp2p/discovery/pubsub-discovery'
 import { customPing } from '../network/libp2p/ping'
+import { probe } from '../network/libp2p/probe'
 import { downloads, logger as loggerClass } from '../utils/log'
 import { proxy } from '../utils/proxy/strategy-libp2p'
 import { time } from '../utils/proxy/time'
@@ -198,7 +199,10 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
             denyDialMultiaddr: () => false,
         },
         services: {
+            
             ping: customPing(),
+            probe: probe(),
+
             identify: identify(),
             identifyPush: identifyPush(),
             ...(args.allowInternet.value ? {
