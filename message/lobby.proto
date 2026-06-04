@@ -27,6 +27,7 @@ message LobbyRequestMessage {
     message JoinRequest {
         string name = 1;
         optional uint32 icon = 4;
+        optional uint32 port = 5;
         optional string password = 2;
         optional uint32 version = 3;
     }
@@ -42,7 +43,7 @@ message LobbyNotificationMessage {
     optional State switch_state_request = 1;
     optional LaunchRequest launch_request = 2;
     message LaunchRequest {
-        fixed64 ip = 1; //127.0.0.1
+        fixed32 ip = 1; //127.0.0.1
         uint32 port = 2; // 5119
         bytes key = 3; //17BLOhi6KZsTtldTsizvHg==
         uint32 client_id = 4; // 1
@@ -59,13 +60,14 @@ message LobbyNotificationMessage {
     message JoinRequest {
         string name = 1;
         optional uint32 icon = 4;
+        optional uint32 port = 5;
         optional bool is_me = 2;
+        optional bool is_owner = 6;
         optional PeerInfo info = 3;
         message PeerInfo {
             bytes public_key = 1;
             repeated bytes addrs = 2;
         }
-        optional uint32 server_port = 4;
     }
     message ChatRequest {
         string message = 1;

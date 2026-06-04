@@ -12,20 +12,22 @@ const DATA_SIZE = 32
 const ATTEMPTS_COUNT = 3
 const ATTEMPTS_INTERVAL = 1000
 
-interface ProbeInit {}
+class ProbeInit {
+    port: number = 0
+}
 interface ProbeEvents {}
 interface ProbeComponents {
     peerStore: PeerStore
 }
 
-export function probe(init: ProbeInit = {}): (components: ProbeComponents) => Probe {
+export function probe(init = new ProbeInit()): (components: ProbeComponents) => Probe {
   return (components) => new Probe(init, components)
 }
 
 class Peer {
     constructor(
         public readonly peerId: PeerId,
-        public address?: Address,
+        public addresses?: Address[],
     ){}
 }
 
@@ -51,7 +53,10 @@ type Socket = Bun.udp.Socket<'buffer'>
 type ReceiveFlags = Bun.udp.ReceiveFlags
 class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
     
-    private port = 0
+    private _port = 0
+    private set port(to: number){ this._port = to }
+    public get port(){ return this._port }
+
     private socket: Socket | null = null
     private readonly peers = new PeerMap<Peer>()
     private readonly pendingRequests = new Map<string, Message>()
@@ -61,9 +66,11 @@ class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
         private readonly components: ProbeComponents,
     ){
         super()
+        this.port = this.init.port
     }
 
     async start(){
+        if(this.socket) return
         this.socket = await udpSocket<'buffer'>({
             hostname: '0.0.0.0', port: this.port,
             socket: {
@@ -75,8 +82,10 @@ class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
         this.port = this.socket.address.port
     }
 
-    public getPort(){
-        return this.port
+    stop(){
+        if(!this.socket) return
+        this.socket?.close()
+        this.socket = null
     }
 
     //drain = (socket: Socket) => {}
@@ -140,8 +149,17 @@ class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
             }
         }
 
+        let peer = this.peers.get(peerId)
+        if(!peer){
+            peer = new Peer(peerId)
+            this.peers.set(peerId, peer)
+        }
+
         const msgs = new Map<string, Message>()
         const addresses = [...hosts].map(host => new Address(host, port))
+
+        peer.addresses = addresses
+
         for(let attempt = 0; attempt < ATTEMPTS_COUNT; attempt++){
 
             for(const addr of addresses){
@@ -163,37 +181,33 @@ class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
 
                 addr.packetsSent++
             }
+
             await sleep(ATTEMPTS_INTERVAL)
         }
         
         for(const [ msgId, msg ] of msgs.entries()){
             this.pendingRequests.delete(msgId)
         }
-
-        sortInplace(addresses, (addr) => {
-            const MAX_PING = ATTEMPTS_COUNT * ATTEMPTS_INTERVAL
-            const addr_packetsLost = addr.packetsSent - addr.packetsReceived
-            return (addr.totalPing + addr_packetsLost * MAX_PING) / addr.packetsSent
-        }, 'asc')
-
-        let peer = this.peers.get(peerId)
-        if(!peer){
-            peer = new Peer(peerId)
-            this.peers.set(peerId, peer)
-        }
-        peer.address = addresses.at(0)
     }
 
-    public getIPv4Addr(peerId: PeerId){
-        const addr = this.peers.get(peerId)?.address
+    public getBestIPv4Address(peerId: PeerId){
+
+        const peer = this.peers.get(peerId)
+        const addresses = peer?.addresses
+        if(!addresses) return
+
+        sortInplace(addresses, (addr) => {
+            //const MAX_PING = ATTEMPTS_COUNT * ATTEMPTS_INTERVAL
+            //const addr_packetsLost = addr.packetsSent - addr.packetsReceived
+            //return (addr.totalPing + addr_packetsLost * MAX_PING) / addr.packetsSent
+            if(addr.packetsReceived == 0) return Infinity
+            return addr.totalPing / addr.packetsReceived
+        }, 'asc')
+
+        const addr = addresses.at(0)
         if(addr && addr.packetsReceived > 0){
             const { host, port } = addr
             return { host, port }
         }
-    }
-
-    stop(){
-        this.socket?.close()
-        this.socket = null
     }
 }

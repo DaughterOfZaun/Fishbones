@@ -34,7 +34,7 @@ import path from 'node:path'
 import { args } from '../utils/args'
 import { INI } from '../utils/data/ini'
 
-export const versionNumber = versionFromString(VERSION)
+export const version = versionFromString(VERSION)
 
 interface GameEvents {
     update: CustomEvent,
@@ -188,9 +188,9 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         //if(!this.connected) return false
         if(this.joined) return true
 
-        this.stream_write({
-            joinRequest: { name, icon, password, version: versionNumber },
-        })
+        const port = this.node.services.probe.port
+        const joinRequest = { name, icon, password, version, port }
+        this.stream_write({ joinRequest })
 
         this.joiningPromise = new Deferred<boolean>(opts)
         return this.joiningPromise.promise
@@ -215,6 +215,8 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             player.name.decodeInplace(req.name)
         if(req.icon !== undefined)
             player.icon.decodeInplace(req.icon)
+        if(req.port !== undefined)
+            player.port = req.port
 
         this.assignTeamTo(player)
 
@@ -245,6 +247,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                         name: player.name.encode(),
                         icon: player.icon.encode(),
                         info: await this.getPeerInfo(player, opts),
+                        port: player.port,
                     },
                     pickRequest: player.encode(),
                 }]
@@ -259,13 +262,15 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 peersRequests: await Promise.all(
                     [...this.players.values()].map(async player => {
                         const isMe = player === newPlayer
+                        const isOwner = this.node.peerId == this.ownerId
                         const info = (!isMe) ? await this.getPeerInfo(player, opts) : undefined
                         return {
                             playerId: player.id,
                             joinRequest: {
                                 name: player.name.encode(),
                                 icon: player.icon.encode(),
-                                isMe,
+                                port: player.port,
+                                isMe, isOwner,
                                 info,
                             },
                             pickRequest: player.encode(),
@@ -301,13 +306,18 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             player.name.decodeInplace(res.name)
         if(res.icon !== undefined)
             player.icon.decodeInplace(res.icon)
+        if(res.port !== undefined)
+            player.port = res.port
 
         if(res.isMe){
             this.player = player
             this.joiningPromise!.resolve(true)
             this.joiningPromise = null
             this.joined = true
-        } else if(
+            return
+        }
+        
+        if(
             player.stream === undefined // We are not the game owner
             //TODO: && this.player?.fullyConnected.value === true
             && player.peerId && (res.info?.addrs.length ?? 0) > 0
@@ -317,6 +327,12 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             this.stream_write({
                 connectedTo: { playerId: player.id },
             })
+        }
+
+        if(player.peerId && player.port){
+            void this.node.services.probe
+                .ping(player.peerId, player.port)
+                .catch(err => { /* Ignore */ })
         }
     }
 
@@ -388,7 +404,9 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         if(this.features.isHalfPingEnabled) return
 
         try {
-            const proc = await launchServer(this.serverVersion, this.getGameInfo(), opts)
+            this.node.services.probe.stop()
+            const port = this.node.services.probe.port
+            const proc = await launchServer(this.serverVersion, this.getGameInfo(), opts, port)
             proc.once('exit', this.onServerExit)
             
             this.proxyServer = firewall(new ProxyServer(this.node), this.features.isFirewallEnabled)
@@ -419,7 +437,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             {
                 peersRequests: [],
                 launchRequest: {
-                    ip: 0n,
+                    ip: 0,
                     port: 0,
                     key: text2arr(blowfishKey),
                     clientId: i++,
@@ -436,6 +454,9 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
 
         this.proxyClientServer?.stop()
         this.proxyClientServer = undefined
+
+        void this.node.services.probe.start()
+            .catch(err => { /* Ignore. */ })
 
         if(this.node.peerId.equals(this.ownerId))
         this.broadcast(
@@ -529,11 +550,19 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         //const { port, clientId } = res
         const { clientId } = res
         
-        const ip = LOCALHOST
-        let port = getRunningServerPort()!
+        let host = LOCALHOST
+        let port: number | undefined
 
-        if(this.features.isBypassEnabled && port){
-            // Do nothing. Connect directly to the server.
+        if(this.features.isBypassEnabled){
+            port = getRunningServerPort()
+            if(port){ /* Do nothing. Connect directly to the server */ }
+            else {
+                const addr = this.node.services.probe.getBestIPv4Address(this.ownerId)
+                if(addr){
+                    host = addr.host
+                    port = addr.port
+                }
+            }
         } else
         if(this.features.isHalfPingEnabled){
             const proxy = this.proxyClientServer!
@@ -541,7 +570,9 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             if(res.delay){
                 proxy.setDelay(res.delay)
             }
-        } else {
+        }
+        
+        if(!port){
             //TODO: try-catch
             this.proxyClient = firewall(new ProxyClient(this.node), this.features.isFirewallEnabled)
             await this.proxyClient.connect(this.ownerId, this.proxyServer, opts)
@@ -576,7 +607,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                     })
                 )
             }
-            const proc = await launchClient(this.clientVersion, ip, port, key, clientId, opts)
+            const proc = await launchClient(this.clientVersion, host, port, key, clientId, opts)
             proc.once('exit', this.onClientExit)
             return true
         } catch(err) {
@@ -874,6 +905,8 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                     if(res.joinRequest.isMe){
                         peerId = this.node.peerId
                         joinedSelf = true
+                    } else if(res.joinRequest.isOwner){
+                        peerId = this.ownerId
                     } else if(res.joinRequest.info){
                         const publicKey = publicKeyFromProtobuf(res.joinRequest.info.publicKey)
                         peerId = peerIdFromPublicKey(publicKey)

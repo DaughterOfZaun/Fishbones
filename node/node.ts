@@ -201,7 +201,9 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
         services: {
             
             ping: customPing(),
-            probe: probe(),
+            probe: probe({
+                port: 5119
+            }),
 
             identify: identify(),
             identifyPush: identifyPush(),

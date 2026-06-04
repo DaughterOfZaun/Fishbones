@@ -14,12 +14,15 @@ const pickableKeys = [ "team", "champion", "spell1", "spell2", "lock", "difficul
 export type KeysByValue<T, V> = Exclude<{ [K in keyof T]: T[K] extends V ? K : undefined }[keyof T], undefined>
 export type PPP = KeysByValue<GamePlayer, ValueDesc<unknown, unknown>>
 export class GamePlayer {
+
     private readonly game: Game
     public readonly id: PlayerId
     public readonly peerId?: PeerId
     
     public readonly name = new Name(tr('Player'))
     public readonly icon = new IntegerValue(undefined)
+
+    public port?: number
 
     stream?: WriteonlyMessageStream<LobbyNotificationMessage, Stream>
     

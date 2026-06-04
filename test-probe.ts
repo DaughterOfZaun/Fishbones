@@ -34,8 +34,8 @@ await node2.dial(node1.getMultiaddrs())
 const probe1 = node1.services.probe
 const probe2 = node2.services.probe
 
-await probe2.ping(node1.peerId, probe1.getPort())
-const addr = probe2.getIPv4Addr(node1.peerId)
+await probe2.ping(node1.peerId, probe1.port)
+const addr = probe2.getBestIPv4Address(node1.peerId)
 console.log(addr)
 
 await node1.stop()
