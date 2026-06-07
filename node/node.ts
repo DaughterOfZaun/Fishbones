@@ -53,8 +53,8 @@ import { tr } from '../utils/translation'
 import { anySignal } from 'any-signal'
 
 import { reliableTransportsFirst, certifiedAddressesFirst, circuitRelayAddressesLast, publicAddressesFirst, loopbackAddressLast } from '../node_modules/libp2p/src/connection-manager/address-sorter.ts'
-//import { sortInplace } from '../utils/helpers.ts'
-import { sleep } from 'bun'
+import { sleep, fromBase64, toBase64 } from '../utils/helpers.ts'
+import { inspect } from 'node:util'
 
 export type LibP2PNode = Awaited<ReturnType<typeof createNodeInternal>> & {
     components: {
@@ -108,7 +108,7 @@ const forComponent = (name: string): Logger => {
 function log(type: string, name: string, ...args: any[]): boolean {
     //if(name !== 'libp2p:gossipsub') return true
     //// eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    return loggerClass['stream']!.write('[LIBP2P][' + type + '][' + name + ']: ' + args.map(arg => Bun.inspect(arg)).join(' ') /*util.format(...args)*/ + '\n')
+    return loggerClass['stream']!.write('[LIBP2P][' + type + '][' + name + ']: ' + args.map(arg => inspect(arg)).join(' ') /*util.format(...args)*/ + '\n')
 }
 
 export const serverPeerIDString = '12D3KooWHHyaqcTuPvphwifkP2su2Qis2wWKLZhaobc9cB5qXQak'
@@ -145,7 +145,7 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
     try {
         await datastore?.open()
     } catch(err) {
-        console_log(tr('Failed to open data store:', {}), Bun.inspect(err))
+        console_log(tr('Failed to open data store:', {}), inspect(err))
         datastore = undefined
     } finally {
         opts?.signal?.throwIfAborted()
@@ -155,7 +155,7 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
     if(datastore) try {
         privateKey = await loadOrCreateSelfKey(datastore, keychainInit)
     } catch(err) {
-        console_log(tr('Failed to load private key:', {}), Bun.inspect(err))
+        console_log(tr('Failed to load private key:', {}), inspect(err))
     } finally {
         opts?.signal?.throwIfAborted()
     }
@@ -501,12 +501,12 @@ export async function getPeerInfoString(node: LibP2PNode, opts: Required<AbortOp
     const { privateKey } = node.components
     const signedPeerRecord = await RecordEnvelope.seal(peerRecord, privateKey, opts)
     const marshaled = signedPeerRecord.marshal()
-    return marshaled.toBase64()
+    return toBase64(marshaled)
 }
 
 
 function parsePeerInfoString(str: string){
-    const buffer = Uint8Array.fromBase64(str)
+    const buffer = fromBase64(str)
     const envelope = RecordEnvelope.createFromProtobuf(buffer)
     const peerId = peerIdFromCID(envelope.publicKey.toCID())
     return { buffer, envelope, peerId }
@@ -575,8 +575,8 @@ export async function connectByPlainTextPeerInfoString(node: LibP2PNode, str: st
         //const connection = await node.dial(peerId, opts)
         //const stream = await createUUStream(connection, `/proxy/${0}`)
         //console.log('Connection established to:', connection.remoteAddr)
-        //console.log(Bun.inspect(connection))
-        //console.log(Bun.inspect(stream))
+        //console.log(inspect(connection))
+        //console.log(inspect(stream))
     }
 }
 
@@ -633,8 +633,8 @@ export async function obtainConnection(node: LibP2PNode, peerId: PeerId, opts: R
             async (opts) => {
                 const connection = await tryConnectTo(node, peerId, opts, addrs)
                 if(connection.limits){
-                    await sleep(dcutrTimeout) // Sleep to give ourselves a chance to wait for the unlimited connection to be established.
-                    opts.signal.throwIfAborted()
+                    await sleep(dcutrTimeout, opts) // Sleep to give ourselves a chance to wait for the unlimited connection to be established.
+                    //opts.signal.throwIfAborted()
                 }
                 return connection
             },

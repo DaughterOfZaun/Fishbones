@@ -7,6 +7,7 @@ import { appendPartialPackFileExt, pack } from "./unpack"
 import createTorrent from 'create-torrent'
 import fs from 'node:fs/promises'
 import { tr } from "../translation"
+import { inspect } from 'node:util'
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 namespace GitHub {
@@ -84,7 +85,7 @@ export async function checkForUpdates(opts: Required<AbortOptions>){
                         await fs.rename(zipTorrentPartial, fbPkg.zipTorrent)
                     }
                 } catch(err) {
-                    console_log(tr(`{fbPkg_zipTorrent} download failed:`, { fbPkg_zipTorrent: fbPkg.zipTorrent }), Bun.inspect(err))
+                    console_log(tr(`{fbPkg_zipTorrent} download failed:`, { fbPkg_zipTorrent: fbPkg.zipTorrent }), inspect(err))
                     fbPkg.zipTorrent = ''
                 }
             } else {
@@ -93,7 +94,7 @@ export async function checkForUpdates(opts: Required<AbortOptions>){
         }
         
     } catch(err) {
-        console_log(tr('Update check failed:', {}), Bun.inspect(err))
+        console_log(tr('Update check failed:', {}), inspect(err))
     } finally {
         bar.stop()
     }

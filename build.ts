@@ -171,8 +171,8 @@ if (process.argv.includes('bun')) {
             sourcemap: 'linked',
             outdir: OUTDIR,
             env: 'disable',
-            target: 'bun',
-            minify: true,
+            target: 'node',
+            minify: false,
             packages: "bundle",
             define: {
                 'process.env.VERSION': `"${version}"`

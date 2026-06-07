@@ -1,4 +1,4 @@
-import { sleep, udpSocket } from "bun"
+import { udpSocket, type Socket, type ReceiveFlags } from "../../utils/bun"
 import { TypedEventEmitter, type PeerId, type PeerStore, type Startable } from "@libp2p/interface"
 import { parseIPv4 } from '@chainsafe/is-ip/parse'
 import { Packet } from '../../message/probe'
@@ -6,7 +6,8 @@ import { bytesToUInt32, uInt32ToBytes } from "../../utils/binary"
 import { Circuit } from '@multiformats/multiaddr-matcher'
 import { randomBytes } from '@libp2p/crypto'
 import { PeerMap } from "@libp2p/peer-collections"
-import { sortInplace } from "../../utils/helpers"
+import { sleep, sortInplace, toBase64 } from "../../utils/helpers"
+import type { AbortOptions } from "@multiformats/multiaddr"
 
 const DATA_SIZE = 32
 const ATTEMPTS_COUNT = 3
@@ -49,8 +50,8 @@ class Message {
     ){}
 }
 
-type Socket = Bun.udp.Socket<'buffer'>
-type ReceiveFlags = Bun.udp.ReceiveFlags
+//type Socket = Bun.udp.Socket<'buffer'>
+//type ReceiveFlags = Bun.udp.ReceiveFlags
 class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
     
     private _port = 0
@@ -116,7 +117,7 @@ class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
         }
         else
         if(pkt.action == Packet.Ping.Action.Response){
-            const msgId = pkt.data.toBase64()
+            const msgId = toBase64(pkt.data)
             const msg = this.pendingRequests.get(msgId)
             if(msg){
                 msg.arrivedAt = Date.now()
@@ -134,7 +135,7 @@ class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
         }
     }
 
-    public async ping(peerId: PeerId, port: number){
+    public async ping(peerId: PeerId, port: number, opts: Required<AbortOptions>){
 
         const ps = this.components.peerStore
         const info = await ps.get(peerId)
@@ -166,7 +167,7 @@ class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
                 const { host, port } = addr
 
                 const data = randomBytes(DATA_SIZE)
-                const msgId = data.toBase64()
+                const msgId = toBase64(data)
                 const msg = new Message(addr, Date.now())
                 const encoded = Packet.encode({
                     ping: {
@@ -182,7 +183,7 @@ class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
                 addr.packetsSent++
             }
 
-            await sleep(ATTEMPTS_INTERVAL)
+            await sleep(ATTEMPTS_INTERVAL, opts)
         }
         
         for(const [ msgId, msg ] of msgs.entries()){

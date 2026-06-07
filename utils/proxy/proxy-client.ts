@@ -1,4 +1,5 @@
 import type { PeerId, AbortOptions } from "@libp2p/interface"
+import type { ProxyServer } from "./proxy-server"
 import type { LibP2PNode } from "../../node/node"
 import { Proxy } from './proxy'
 import { Role } from "./shared"
@@ -7,8 +8,9 @@ import { Role } from "./shared"
 const LOCALHOST = "127.0.0.1"
 
 import { logger } from "@libp2p/logger"
-import type { ProxyServer } from "./proxy-server"
 const log = logger('launcher:proxy-client')
+//import { logger } from '../log'
+//const log = logger.log.bind(logger, 'PROXY-CLIENT')
 
 export class ProxyClient extends Proxy {
     

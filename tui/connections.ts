@@ -11,6 +11,7 @@ import type { PingResult } from "../network/libp2p/ping";
 import { args } from "../utils/args";
 import { tr } from "../utils/translation";
 import type { PeerIdWithData } from "../network/libp2p/discovery/pubsub-discovery";
+import { inspect } from 'node:util'
 
 //enum PeerType { Undetermined, Player, Server }
 enum PeerStatus { Disconnected, Connecting, Connected, ConnectionFailed }
@@ -214,7 +215,7 @@ async function connectByPeerInfoString(node: LibP2PNode, view: DeferredView<void
     try {
         peerId = await consumePeerInfoString(node, str, opts)
     } catch(err) {
-        console_log(tr('Parsing the key failed:', {}), Bun.inspect(err))
+        console_log(tr('Parsing the key failed:', {}), inspect(err))
     }
     if(!peerId) return
     
@@ -226,7 +227,7 @@ async function connectByPeerInfoString(node: LibP2PNode, view: DeferredView<void
         await node.dial(peerId, opts)
         updatePeer(view, peerId, { status: PeerStatus.Connected }, getPing)
     } catch(err) {
-        console_log(tr('Connecting via key failed:', {}), Bun.inspect(err))
+        console_log(tr('Connecting via key failed:', {}), inspect(err))
         updatePeer(view, peerId, { status: PeerStatus.ConnectionFailed }, getPing)
     }
 }

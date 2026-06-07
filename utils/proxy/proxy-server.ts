@@ -8,6 +8,8 @@ const LOCALHOST = "127.0.0.1"
 
 import { logger } from "@libp2p/logger"
 const log = logger('launcher:proxy-server')
+//import { logger } from '../log'
+//const log = logger.log.bind(logger, 'PROXY-SERVER')
 
 export class ProxyServer extends Proxy {
 
@@ -21,8 +23,7 @@ export class ProxyServer extends Proxy {
 
         await Promise.all([
             this.strategy.createMainSocketToRemote(opts),
-            // eslint-disable-next-line @typescript-eslint/await-thenable
-            peerIds.map(async (id) => this.createPeer(id, LOCALHOST, programPort, opts)),
+            ...peerIds.map(async (id) => this.createPeer(id, LOCALHOST, programPort, opts)),
         ])
     }
     

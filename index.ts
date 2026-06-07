@@ -13,6 +13,7 @@ import * as pages from './tui/masteries/pages'
 import { startup } from './tui/startup'
 import { mrs } from './tui/mrs'
 import { tr } from './utils/translation'
+import { inspect } from 'node:util'
 
 logger.log(`${'-'.repeat(35)} ${TITLE} started ${'-'.repeat(35)}`)
 
@@ -44,7 +45,7 @@ async function index(opts: Required<AbortOptions>){
     if(args.cleanup.value) try {
         await cleanup(opts)
     } catch(err) {
-        console_log(tr('Out-of-date data cleanup failed.', {}), Bun.inspect(err))
+        console_log(tr('Out-of-date data cleanup failed.', {}), inspect(err))
     }
 
     const port = args.port.value
@@ -84,7 +85,7 @@ try {
     if(err instanceof ExitPromptError){
         shutdown('timeout')
     } else {
-        console_log(tr('A fatal error occurred:', {}), Bun.inspect(err))
+        console_log(tr('A fatal error occurred:', {}), inspect(err))
         shutdown('exception')
     }
 }

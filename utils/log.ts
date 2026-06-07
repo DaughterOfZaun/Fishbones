@@ -4,11 +4,12 @@ import {
     createWriteStream as fs_createWriteStream,
     mkdirSync as fs_mkdirSync
 } from "node:fs"
+import type { ErrnoException } from './helpers'
 
-//export const cwd = process.cwd()
-//export const cwd = path.dirname(process.execPath)
-//export const cwd = path.dirname(process.env.IS_COMPILED ? process.execPath : Bun.main)
-export let cwd = path.dirname(Bun.main)
+//export let cwd = process.cwd()
+export let cwd = path.dirname(process.execPath)
+//export let cwd = path.dirname(process.env.IS_COMPILED ? process.execPath : Bun.main)
+//export let cwd = path.dirname(Bun.main)
 export const downloadsDirName = 'Fishbones_Data'
 if(path.basename(cwd) === downloadsDirName)
     cwd = path.dirname(cwd)
@@ -29,7 +30,7 @@ export function fs_ensureDirSync(path: string){
 
 export const logger = new class Logger {
     private stream?: WriteStream
-    log(...args: (string | number | boolean)[]){
+    log(...args: (string | number | boolean | { toString(): string } | undefined)[]){
         if(!this.stream){
             //fs_ensureDirSync(downloads)
             const logTxt = path.join(downloads, 'log.txt')

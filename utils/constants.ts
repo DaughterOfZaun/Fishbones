@@ -2,6 +2,7 @@ import { PickableValue } from "./data/constants/values/pickable"
 import { InputableValue } from "./data/constants/values/inputable"
 import { Enabled } from "./data/constants/values/enabled"
 import { ValueDesc } from "./data/constants/values/desc"
+import { fromHex, toHex } from "./helpers"
 import { tr } from "./translation"
 
 export type u = undefined
@@ -78,10 +79,10 @@ export class FloatValue extends ValueDesc<number, number>{
 
 export class HexStringValue extends ValueDesc<string, Uint8Array> {
     encode(): Uint8Array {
-        return Uint8Array.fromHex(this.value!)
+        return fromHex(this.value!)
     }
     decodeInplace(v: Uint8Array): boolean {
-        this.value = v.toHex()
+        this.value = toHex(v)
         return true
     }
 }

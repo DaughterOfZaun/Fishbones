@@ -27,6 +27,7 @@ import { ClientDataInfoV420 } from "./packages/game-client-420"
 import { ChronobreakDataInfo } from "./packages/game-server-cb"
 import { champions } from "./constants/champions"
 import { TestGroundsDataInfo, tgPkg } from "./packages/game-server-ts"
+import { inspect } from 'node:util'
 
 const DOTNET_INSTALL_CORRUPT_EXIT_CODES = [ 130, 131, 142, ]
 
@@ -270,12 +271,12 @@ async function repairOrThrow(opts: Required<AbortOptions>){
 
     let results: PromiseSettledResult<unknown>[]
     results = await Promise.allSettled([
-        readTrackersTxt(opts).catch((err) => { console_log(tr('Restoring torrent trackers list failed:', {}), Bun.inspect(err)) }),
-        repairTorrents(opts).catch((err) => { console_log(tr('Restoring torrent files failed:', {}), Bun.inspect(err)) }),
-        repair7z(opts), //.catch((err) => { console_log(tr('Restoring 7z archiver executable failed:', {}), Bun.inspect(err)); throw err }),
-        repairAria2(opts), //.catch((err) => { console_log(tr('Restoring Aria2 downloader executable failed:', {}), Bun.inspect(err)); throw err }),
+        readTrackersTxt(opts).catch((err) => { console_log(tr('Restoring torrent trackers list failed:', {}), inspect(err)) }),
+        repairTorrents(opts).catch((err) => { console_log(tr('Restoring torrent files failed:', {}), inspect(err)) }),
+        repair7z(opts), //.catch((err) => { console_log(tr('Restoring 7z archiver executable failed:', {}), inspect(err)); throw err }),
+        repairAria2(opts), //.catch((err) => { console_log(tr('Restoring Aria2 downloader executable failed:', {}), inspect(err)); throw err }),
         !(args.upgrade.value) ? Promise.resolve() :
-        checkForUpdates(opts).catch(err => { console_log(tr('Update check failed:', {}), Bun.inspect(err)) }),
+        checkForUpdates(opts).catch(err => { console_log(tr('Update check failed:', {}), inspect(err)) }),
     ])
     throwAnyRejection(results)
 
@@ -310,7 +311,7 @@ async function repairOrThrow(opts: Required<AbortOptions>){
         return { mustExit: true }
     
     } catch(err) {
-        console_log(tr(`Restoring launcher package failed:`), Bun.inspect(err))
+        console_log(tr(`Restoring launcher package failed:`), inspect(err))
     }
 
     let modFileIsMissing = !await fs_exists(modPck1.lockFile, opts, false)
@@ -326,7 +327,7 @@ async function repairOrThrow(opts: Required<AbortOptions>){
 
         !(args.torrentDownload.value) ? Promise.resolve() :
         repairSelfPackage(opts).catch(err => {
-            console_log(tr(`Restoring launcher package failed:`), Bun.inspect(err))
+            console_log(tr(`Restoring launcher package failed:`), inspect(err))
         }),
 
         !(args.installBWServer.value) ? Promise.resolve() :
@@ -339,7 +340,7 @@ async function repairOrThrow(opts: Required<AbortOptions>){
                         bwUpdated = await update(bwPkg, opts)
                         return // OK
                     } catch(err) {
-                        console_log(tr('Updating game server package failed:', {}), Bun.inspect(err))
+                        console_log(tr('Updating game server package failed:', {}), inspect(err))
                     }
                 }
                 await repairArchived(bwPkg, opts)
@@ -493,7 +494,7 @@ async function repairOrThrow(opts: Required<AbortOptions>){
                 const pkg = packages[i]!
                 if(result.status === 'rejected'){
                     const err = result.reason as Error
-                    console_log(tr(`Failed to seed {pkg_zipName}:`, { pkg_zipName: pkg.zipName }), Bun.inspect(err))
+                    console_log(tr(`Failed to seed {pkg_zipName}:`, { pkg_zipName: pkg.zipName }), inspect(err))
                 }
             }
         })
@@ -612,8 +613,7 @@ async function moveFoundFilesToDir(foundPkgDir: string, pkg: PkgInfo, opts: Requ
 
     let successfullyMovedRequiredFiles = true
     await Promise.all([
-        // eslint-disable-next-line @typescript-eslint/await-thenable
-        pkg.topLevelEntries.map(async (fileName) => {
+        ...pkg.topLevelEntries.map(async (fileName) => {
             try {
                 await moveToPkgDir(fileName)
             } catch(err) {
@@ -621,8 +621,7 @@ async function moveFoundFilesToDir(foundPkgDir: string, pkg: PkgInfo, opts: Requ
                 successfullyMovedRequiredFiles = false
             }
         }),
-        // eslint-disable-next-line @typescript-eslint/await-thenable
-        pkg.topLevelEntriesOptional.map(async (fileName) => {
+        ...pkg.topLevelEntriesOptional.map(async (fileName) => {
             try {
                 await moveToPkgDir(fileName)
             } catch(err) {

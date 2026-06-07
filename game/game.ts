@@ -33,6 +33,7 @@ import { gc126Pkg } from '../utils/data/packages' //TODO: Unhardcode.
 import path from 'node:path'
 import { args } from '../utils/args'
 import { INI } from '../utils/data/ini'
+import { inspect } from 'node:util'
 
 export const version = versionFromString(VERSION)
 
@@ -126,13 +127,13 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
 
     protected cleanup(){
         stopClient(safeOptions).catch(err => {
-            logger.log(tr('An error occurred when stopping the client:'), Bun.inspect(err))
+            logger.log(tr('An error occurred when stopping the client:'), inspect(err))
         })
         this.proxyClient?.disconnect()
         this.proxyClient = undefined
 
         stopServer(safeOptions).catch(err => {
-            logger.log(tr('An error occurred when stopping the server:'), Bun.inspect(err))
+            logger.log(tr('An error occurred when stopping the server:'), inspect(err))
         })
         this.proxyServer?.stop()
         this.proxyServer = undefined
@@ -331,7 +332,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
 
         if(player.peerId && player.port){
             void this.node.services.probe
-                .ping(player.peerId, player.port)
+                .ping(player.peerId, player.port, opts)
                 .catch(err => { /* Ignore */ })
         }
     }
@@ -386,7 +387,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         this.launched = true
 
         this.launchAsync(shutdownOptions).catch(err => {
-            logger.log('Failed to launch server:', Bun.inspect(err))
+            logger.log('Failed to launch server:', inspect(err))
         })
 
         return true
@@ -413,7 +414,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             const peerIds = players.filter(p => !!p.peerId).map(p => p.peerId!)
             await this.proxyServer.start(proc.port, peerIds, opts)
         } catch(err) {
-            logger.log('Failed to start server:', Bun.inspect(err))
+            logger.log('Failed to start server:', inspect(err))
             this.onServerExit()
             return false
         }
@@ -429,7 +430,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             .sort().at(-1) ?? 0
         const delay = Math.ceil(maxPingObserved * MAX_PING_MULTIPLIER) // Its very naive of me.
 
-        console_log(tr(`An input delay of {delay}ms is set.`, { delay }))
+        //console_log(tr(`An input delay of {delay}ms is set.`, { delay }))
 
         let i = 1
         for(const player of players)
@@ -479,12 +480,12 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 this.launched = false
                 this.unlockAllPlayers()
                 stopClient(safeOptions).catch(err => {
-                    logger.log('An error occurred when stopping the client:', Bun.inspect(err))
+                    logger.log('An error occurred when stopping the client:', inspect(err))
                 })
                 this.proxyClient?.disconnect()
                 this.proxyClient = undefined
                 stopServer(safeOptions).catch(err => {
-                    logger.log('An error occurred when stopping the server:', Bun.inspect(err))
+                    logger.log('An error occurred when stopping the server:', inspect(err))
                 })
                 this.proxyServer?.stop()
                 this.proxyServer = undefined
@@ -522,7 +523,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                         this.set('serverStarted', true)
 
                     } catch(err) {
-                        logger.log('Failed to start server:', Bun.inspect(err))
+                        logger.log('Failed to start server:', inspect(err))
                         this.onServerExit()
                     }
                 }
@@ -537,7 +538,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         this.safeDispatchEvent('launch')
 
         this.handleLaunchResponseAsync(res, shutdownOptions).catch(err => {
-            logger.log('An error occurred while processing the launch notification', Bun.inspect(err))
+            logger.log('An error occurred while processing the launch notification', inspect(err))
         })
     }
     private async handleLaunchResponseAsync(res: LobbyNotificationMessage.LaunchRequest, opts: Required<AbortOptions>){
@@ -611,7 +612,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             proc.once('exit', this.onClientExit)
             return true
         } catch(err) {
-            logger.log('Failed to start client:', Bun.inspect(err))
+            logger.log('Failed to start client:', inspect(err))
             const code = (err instanceof TerminationError) ? err.cause?.code ?? null : null
             this.onClientExit(code)
             return false
@@ -619,7 +620,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     }
     public relaunch(){
         this.relaunchAsync(shutdownOptions).catch(err => {
-            logger.log('Failed to restart client:', Bun.inspect(err))
+            logger.log('Failed to restart client:', inspect(err))
         })
     }
     private async relaunchAsync(opts: Required<AbortOptions>){
@@ -628,7 +629,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             proc.once('exit', this.onClientExit)
             return true
         } catch(err) {
-            logger.log('Failed to restart client:', Bun.inspect(err))
+            logger.log('Failed to restart client:', inspect(err))
             const code = (err instanceof TerminationError) ? err.cause?.code ?? null : null
             this.onClientExit(code)
             return false

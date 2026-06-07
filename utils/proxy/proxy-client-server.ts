@@ -5,7 +5,9 @@ import { Peer, type WrappedPacket } from "./peer"
 import { Wrapped } from '../../message/proxy'
 import { Role } from "./shared"
 import { Proxy } from "./proxy"
-import { type PeerData, type SocketToProgram } from "./proxy"
+import { type SocketToProgram } from "./shared"
+import { type PeerData } from "./proxy"
+import { sleep, type ErrnoException } from "../helpers"
 
 //import { LOCALHOST } from "./constants"
 const LOCALHOST = "127.0.0.1"
@@ -74,7 +76,7 @@ export class ClientServerProxy extends Proxy {
                 }),
         ])
 
-        await Bun.sleep(1000) //HACK: By this time the main socket should be created on all machines.
+        await sleep(1000, opts) //HACK: By this time the main socket should be created on all machines.
         await this.strategy.connectSockets(opts)
     }
 

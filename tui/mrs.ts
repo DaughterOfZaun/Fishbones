@@ -5,6 +5,7 @@ import { bwPkg } from '../utils/data/packages' //TODO: Unhardcode.
 import { render } from '../ui/remote/view'
 import { tr } from '../utils/translation'
 import { sortInplace } from '../utils/helpers'
+import { inspect } from 'node:util'
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 namespace GitLab {
@@ -40,7 +41,7 @@ export async function mrs(opts: Required<AbortOptions>){
     try {
         mrs = await (await fetch(bwPkg.gitLabMRs)).json() as never
     } catch(err) {
-        console_log(tr('Fetching a list of open requests failed:', {}), Bun.inspect(err))
+        console_log(tr('Fetching a list of open requests failed:', {}), inspect(err))
     }
     
     if(mrs && mrs.length > 0){

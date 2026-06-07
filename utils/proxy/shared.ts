@@ -12,7 +12,7 @@ export interface ClosableSocket {
 }
 
 export interface SocketToRemote extends ClosableSocket {
-    send(data: Buffer, streamIdx: number): boolean
+    send(data: Buffer, streamIdx?: number): boolean
 }
 
 export interface SocketToProgram extends ClosableSocket {

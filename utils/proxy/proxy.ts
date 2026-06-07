@@ -2,6 +2,7 @@ import type { LibP2PNode } from "../../node/node"
 import type { PeerId, AbortOptions } from "@libp2p/interface"
 import { UseExistingLibP2PConnection } from "./strategy-libp2p"
 import { DEFAULT_REMOTE_STREAM_INDEX, Role, type OnDataFromProgram, type SocketToProgram, type SocketToRemote } from "./shared"
+import { udpSocket } from "../bun"
 import { Peer } from "./peer"
 
 //import { LOCALHOST } from "./constants"
@@ -9,6 +10,12 @@ const LOCALHOST = "127.0.0.1"
 
 import { logger } from "@libp2p/logger"
 const log = logger('launcher:proxy')
+//import { logger } from '../log'
+//const boundLog = logger.log.bind(logger, 'PROXY')
+//const log = Object.assign(boundLog, {
+//    trace: boundLog,
+//    error: boundLog,
+//})
 
 //import { logger as ourLogger } from "../log"
 //const ourLog = () => ourLogger.log.bind(logger, 'PROXY')
@@ -83,7 +90,7 @@ export class Proxy {
     protected async createSocketToProgram(programHost: string, programPort: number, onData: OnDataFromProgram, opts: Required<AbortOptions>): Promise<SocketToProgram> {
         let programHostLastUsed: string = programHost
         let programPortLastUsed: number = programPort
-        const socket = await Bun.udpSocket({
+        const socket = await udpSocket({
             hostname: LOCALHOST,
             socket: {
                 data: (_, data, programPort, programHost) => {

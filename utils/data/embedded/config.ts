@@ -50,8 +50,8 @@ export const config = {
     //icon: './remote-ui/icons/icon.png',
 
     bunExe: {
-        windows: './thirdparty/bun/bun-1.3.14-windows-x64-baseline.exe',
-        linux: './thirdparty/bun/bun-1.3.14-linux-x64-baseline.exe',
+        windows: './thirdparty/node/node-v26.3.0-win-x64.exe',
+        linux: './thirdparty/node/node-v26.3.0-linux-x64.exe',
     },
 
     indexJS: './dist/index.js',

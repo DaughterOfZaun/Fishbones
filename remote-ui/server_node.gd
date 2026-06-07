@@ -167,6 +167,7 @@ func _ready() -> void:
             if extracted_file.get_extension() == "exe":
                 err = FileAccess.set_unix_permissions(extracted_file, rwx); assert(err == OK)
 
+    exe_args.append('--trace-warnings')
     exe_args.append_array([ extracted_js ])
     exe_args.append_array(OS.get_cmdline_user_args())
     exe_args.append_array([ JSONRPC_GUI_ARG, current_exe ])

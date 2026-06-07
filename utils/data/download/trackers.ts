@@ -6,6 +6,7 @@ import { logger } from '../../log'
 import embeddedTrackersTxt from '../../../thirdparty/trackers.txt'
 import { HARDCODED_ANNOUNCE_URLS } from '../../constants-build'
 import { tr } from '../../translation'
+import { inspect } from 'node:util'
 
 const trackersTxtName = 'trackers.txt'
 const trackersTxt = path.join(downloads, trackersTxtName)
@@ -68,6 +69,6 @@ export async function downloadTrackersTxt(opts: Required<AbortOptions>){
         return txt
     }
     if(lastError){
-        console_log(tr('Downloading torrent-tracker list failed:', {}), Bun.inspect(lastError))
+        console_log(tr('Downloading torrent-tracker list failed:', {}), inspect(lastError))
     }
 }

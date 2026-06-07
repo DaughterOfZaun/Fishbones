@@ -1,6 +1,7 @@
 //import path from 'node:path'
 import { promises as fs, Stats, StatsFs, type MakeDirectoryOptions, type RmDirOptions, type RmOptions } from "node:fs"
 import type { AbortOptions } from '@libp2p/interface'
+import type { ErrnoException } from "../helpers"
 import { console_log } from '../../ui/remote/remote'
 import { cwd, downloads } from '../log'
 export { cwd, downloads }

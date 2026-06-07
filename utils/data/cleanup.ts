@@ -5,17 +5,28 @@ import { sdkPkg } from "./packages/sdk";
 import path from 'node:path'
 import { gitPkg } from "./packages";
 import { fbPkg } from "./upgrade";
+import { platform } from "../constants-build"
+
+const platformRegex = {
+    Windows: /win|windows|Windows/,
+    Linux: /linux|Linux/,
+}[platform]
 
 const regexes = [
-    /^dotnet-sdk-(?:.*?)-(?:win|linux)-x64(?:\.zip|\.tar\.gz)?(?:\.torrent)?$/,
+    /^dotnet-sdk-(?:.*?)-(?<platform>)-x64(?:\.zip|\.tar\.gz)?(?:\.torrent)?$/,
     /^PortableGit-(?:.*?)-64-bit.7z.exe(?:\.torrent)?$/,
-    /^bun-(?:.*?)-(?:windows|linux)-x64-baseline.exe$/,
-    /^(?:7zzs|7za)-(?:.*?)-(?:windows|linux)-x64\.exe$/,
-    /^aria2c-(?:.*?)-(?:win|linux)-(?:64bit|x64)(?:.*?)\.exe$/,
+    /^bun-(?:.*?)-(?<platform>)-x64-baseline.exe$/,
+    /^node-v(?:.*?)-(?<platform>)-x64.exe$/,
+    /^(?:7zzs|7za)-(?:.*?)-(?<platform>)-x64\.exe$/,
+    /^aria2c-(?:.*?)-(?<platform>)-(?:64bit|x64)(?:.*?)\.exe$/,
     /^node_datachannel-(?:.*?)\.node$/,
-    /^Fishbones-(?:.*?)-(Windows|Linux)-x64\.zip(?:\.torrent)?$/,
+    /^Fishbones-(?:.*?)-(?<platform>)-x64\.zip(?:\.torrent)?$/,
     /^index-(?:.*?)\.js$/,
-]
+].map(regex => {
+    const src = regex.source
+        .replaceAll('(?<platform>)', `(?:${platformRegex.source})`)
+    return new RegExp(src, regex.flags)
+})
 
 export async function cleanup(opts: Required<AbortOptions>){
     

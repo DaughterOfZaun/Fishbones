@@ -6,7 +6,8 @@ import { spawn as originalSpawn } from 'child_process'
 import { Deferred } from '../promises'
 //import { downloads } from './data-fs'
 import { tr } from '../translation'
-import net from "net"
+import { inspect } from 'node:util'
+import net from "node:net"
 
 export const ABORT_STAGE_TIMEOUT = 3_000
 export const TERMINATE_STAGE_TIMEOUT = 3_000
@@ -109,7 +110,7 @@ export function registerShutdownHandler(handler: ShutdownHandler){
 export const callShutdownHandlers = (force: boolean, source: ShutdownSource) => {
     Promise.allSettled(shutdownHandlers.map(async (handler) => handler(force, source)?.catch(logError))).catch(logError)
     function logError(err: unknown){
-        logger.log('An error occurred while calling the shutdown handler:', Bun.inspect(err))
+        logger.log('An error occurred while calling the shutdown handler:', inspect(err))
     }
 }
 
@@ -159,8 +160,8 @@ process.on('uncaughtException', (err: AdvancedError) => {
         //TODO: Investigate.
     //    shutdown('exception')
     //} else {
-        console_log(tr('An unexpected exception occurred:', {}), Bun.inspect(err))
-        shutdown('exception')
+        console_log(tr('An unexpected exception occurred:', {}), inspect(err))
+        //shutdown('exception')
     //}
 })
 

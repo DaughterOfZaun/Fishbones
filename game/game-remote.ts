@@ -36,7 +36,7 @@ export class RemoteGame extends Game {
 
     private stream?: MessageStream<LobbyNotificationMessage, LobbyRequestMessage, Stream>
     protected stream_write(req: LobbyRequestMessage){
-        //myLogger.log(Bun.inspect({ method: 'stream_write', from: this.player?.id, req }))
+        //myLogger.log(inspect({ method: 'stream_write', from: this.player?.id, req }))
         this.stream?.write(req).catch(err => this.log.error(err))
         return true
     }
@@ -46,6 +46,7 @@ export class RemoteGame extends Game {
         //if(!connection.remotePeer.equals(this.id)) return
         pipe(
             stream,
+            //@ts-expect-error: Type 'Uint8ArrayList' is not assignable to type 'Uint8ArrayList'.
             (source) => lp.decode(source),
             async (source) => {
                 for await (const data of source) {

@@ -139,6 +139,7 @@ export class LocalGame extends Game {
         try {
             await pipe(
                 stream,
+                //@ts-expect-error: Type 'Uint8ArrayList' is not assignable to type 'Uint8ArrayList'.
                 (source) => lp.decode(source),
                 async (source) => {
                     for await (const data of source) {
@@ -173,12 +174,12 @@ export class LocalGame extends Game {
     }
 
     protected stream_write(req: LobbyRequestMessage): boolean {
-        //myLogger.log(Bun.inspect({ method: 'stream_write', from: this.player?.id, req }))
+        //myLogger.log(inspect({ method: 'stream_write', from: this.player?.id, req }))
         this.handleRequest(this.playerId, req, undefined, this.peerId)
         return true
     }
     protected broadcast(msg: LobbyNotificationMessage, to: Iterable<GamePlayer>, ignore?: GamePlayer): void {
-        //myLogger.log(Bun.inspect({ method: 'broadcast', from: this.player?.id, to: [...to].map(player => player.id), ignore: ignore?.id, msg }))
+        //myLogger.log(inspect({ method: 'broadcast', from: this.player?.id, to: [...to].map(player => player.id), ignore: ignore?.id, msg }))
         for(const player of to){
             if(player === ignore) continue
             if(player.id === this.playerId){

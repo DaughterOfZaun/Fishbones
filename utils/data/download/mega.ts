@@ -13,7 +13,7 @@ import type { AbortOptions } from '@libp2p/interface'
 type Fetch = (url: string | URL | Request, opts: BunFetchRequestInit | RequestInit | undefined) => Promise<Response>
 ;(Mega.API as { fetchModule?: Fetch })['fetchModule'] = async (url, opts) => {
     if(Math.random() >= 0){
-        logger.log(LOG_PREFIX, 'fetch', Bun.inspect(url), Bun.inspect(opts))
+        logger.log(LOG_PREFIX, 'fetch', inspect(url), inspect(opts))
         //throw new Error('Test error')
     }
     //return undefined! as Response
@@ -68,12 +68,12 @@ api.request = async function request(json, cb, retryno){
         if(file){
             const res = cachedResponses.get(file)
             if(res && (Date.now() - res.time) <= CACHED_RESPONSE_LIFETIME){
-                //logger.log(LOG_PREFIX, 'cached response found', Bun.inspect(res))
+                //logger.log(LOG_PREFIX, 'cached response found', inspect(res))
                 return Promise.resolve(res.data)
             }
             return api_request(json, (err, res) => {
                 if(!err && res){
-                    //logger.log(LOG_PREFIX, 'caching response', Bun.inspect(res))
+                    //logger.log(LOG_PREFIX, 'caching response', inspect(res))
                     cachedResponses.set(file, { time: Date.now(), data: res })
                 }
                 cb?.(err, res)

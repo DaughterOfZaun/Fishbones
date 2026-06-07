@@ -3,10 +3,12 @@ import { createBar, extractFile } from '../../ui/remote/remote'
 import { killIfActive, spawn, successfulTermination, type ChildProcess } from '../process/process'
 import { rwx_rx_rx, downloads, fs_chmod, fs_ensureDir, fs_exists, fs_writeFile, fs_removeFile, fs_moveFile } from './fs'
 import type { AbortOptions } from '@libp2p/interface'
+import type { ErrnoException } from '../helpers'
 import { args } from '../args'
 import path from 'node:path'
 import embedded from './embedded/embedded'
 import { createReadStream as fs_createReadStream } from "node:fs"
+import { inspect } from 'node:util'
 import { tr } from '../translation'
 
 const s7zExe = path.join(downloads, path.basename(embedded.s7zExe))
@@ -77,6 +79,8 @@ interface UnpackablePkgInfo {
     dir: string
 }
 
+type ChildProcessWithLogPrefix = ChildProcess & { logPrefix: string }
+
 export async function unpack(pkg: UnpackablePkgInfo, opts: Required<AbortOptions>){
     const opts_rf = { ...opts, recursive: true, force: true }
     
@@ -88,7 +92,7 @@ export async function unpack(pkg: UnpackablePkgInfo, opts: Required<AbortOptions
     //console.log(`Unpacking ${pkg.zipName}...`)
     const bar = createBar(tr('Unpacking'), pkg.zipName, 100)
     
-    const s7zs: (ChildProcess & { logPrefix: string })[] = []
+    const s7zs: ChildProcessWithLogPrefix[] = []
 
     try {
     
@@ -158,15 +162,18 @@ export async function unpack(pkg: UnpackablePkgInfo, opts: Required<AbortOptions
         }
         pid++
         
+        for(const proc of s7zs)
+            handleAnyStreamError(proc)
+
         connect(s7zs.length - 1, 'stdout')
         for(let i = 0; i < s7zs.length; i++)
             connect(i, 'stderr')
 
-        function connect(i: number, src: 'stdout' | 'stderr'){
+        function connect(i: number, streamName: 'stdout' | 'stderr'){
             const proc = s7zs[i]!
-            const logPrefix = `${proc.logPrefix} [${src.toUpperCase()}]`
-            proc[src].setEncoding('utf8').on('data', (chunk: string) => {
-                onData(logPrefix, src, chunk)
+            const logPrefix = `${proc.logPrefix} [${streamName.toUpperCase()}]`
+            proc[streamName].setEncoding('utf8').on('data', (chunk: string) => {
+                onData(logPrefix, streamName, chunk)
             })
         }
 
@@ -223,7 +230,7 @@ export async function pack(pkg: { exe: string, exeName: string, zip: string, zip
     const logPrefix = `7Z ${pid} ${0}`
 
     let archiveSize = 0
-    let proc: ReturnType<typeof spawn> | undefined
+    let proc: ChildProcessWithLogPrefix | undefined
     try {
 
         const lockfile = appendPartialPackFileExt(pkg.zip)
@@ -238,6 +245,7 @@ export async function pack(pkg: { exe: string, exeName: string, zip: string, zip
         
         fs_createReadStream(pkg.exe).pipe(proc.stdin)
 
+        handleAnyStreamError(proc)
         proc.stdout.setEncoding('utf8').on('data', onData.bind(null, 'stdout'))
         proc.stderr.setEncoding('utf8').on('data', onData.bind(null, 'stderr'))
 
@@ -261,6 +269,25 @@ export async function pack(pkg: { exe: string, exeName: string, zip: string, zip
             bar.update(parseInt(m[1]))
         } else if(chunk){
             logger.log(logPrefix, `[${src.toUpperCase()}]`, chunk)
+        }
+    }
+}
+
+function handleAnyStreamError(proc: ChildProcessWithLogPrefix){
+    for(let j = 0; j < proc.stdio.length; j++){
+        const stream = proc.stdio[j]
+        if(stream){
+            const streamName =
+                (j == 0) ? 'stdin' :
+                (j == 1) ? 'stdout' :
+                (j == 2) ? 'stderr' :
+                `stream-${j}`
+            const logPrefix = `${proc.logPrefix} [${streamName.toUpperCase()}]`
+            stream.on('error', (unk_err) => {
+                const err = unk_err as ErrnoException
+                if(err.code == 'EPIPE' && err.errno == -4047 && err.syscall == 'write') return // Ignore.
+                logger.log(logPrefix, 'STREAM-ERROR', inspect(err))
+            })
         }
     }
 }

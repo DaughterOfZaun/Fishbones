@@ -208,6 +208,7 @@ export class UseExistingLibP2PConnection extends ConnectionStrategy {
 
         pipe(
             stream.source,
+            //@ts-expect-error: Type 'Uint8ArrayList' is not assignable to type 'Uint8ArrayList'.
             source => lp.decode(source),
             async source => {
                 for await (const chunk of source) {
