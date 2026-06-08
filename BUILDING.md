@@ -15,7 +15,7 @@
 - Run the following command
 
 ```bash
-bun run ./build.ts install patch-modules embeds protons bun godot release windows 0.0.3.48
+bun run ./build.ts install patch-modules embeds protons bun godot release windows 0.0.3.49
 ```
 
 - Run `./dist/Fishbones.exe`

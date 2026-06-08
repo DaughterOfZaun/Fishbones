@@ -2,7 +2,7 @@
 
 import { createLibp2p } from 'libp2p'
 import { pinning } from '../network/libp2p/pinning'
-import { patchedCrypto as crypto } from '../utils/crypto'
+//import { patchedCrypto as crypto } from '../utils/crypto'
 
 import { noise } from '@chainsafe/libp2p-noise'
 import { yamux } from '@chainsafe/libp2p-yamux'
@@ -188,7 +188,7 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
             tcp(),
         ],
         connectionEncrypters: [
-            noise({ crypto }),
+            noise({ /*crypto*/ }),
             //tls(),
         ],
         streamMuxers: [

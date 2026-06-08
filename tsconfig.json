@@ -1,10 +1,13 @@
 {
-  "extends": "@tsconfig/node26/tsconfig.json",
+  //"extends": "@tsconfig/node26/tsconfig.json",
   "compilerOptions": {
+    
     // Environment setup & latest features
-    //"lib": [ "ESNext" ], // Handled by base config.
-    //"target": "ESNext",  // Handled by base config.
-    //"module": "ESNext",  // Handled by base config.
+    "lib": [ "ESNext" ], // Handled by base config.
+    "target": "NodeNext",  // Handled by base config.
+    "module": "ESNext",  // Handled by base config.
+    "esModuleInterop": true,
+    
     "moduleDetection": "force",
     "jsx": "react-jsx",
     "allowJs": true,

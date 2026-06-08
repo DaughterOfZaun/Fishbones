@@ -8,6 +8,7 @@ import { randomBytes } from '@libp2p/crypto'
 import { PeerMap } from "@libp2p/peer-collections"
 import { sleep, sortInplace, toBase64 } from "../../utils/helpers"
 import type { AbortOptions } from "@multiformats/multiaddr"
+import { isLoopback } from '@libp2p/utils/multiaddr/is-loopback'
 
 const DATA_SIZE = 32
 const ATTEMPTS_COUNT = 3
@@ -141,7 +142,7 @@ class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
         const info = await ps.get(peerId)
         const hosts = new Set<string>()
         for(const { multiaddr: addr } of info.addresses){
-            if(!Circuit.exactMatch(addr)){
+            if(!isLoopback(addr) && !Circuit.exactMatch(addr)){
                 const component = addr.getComponents().at(0)
                 if(component?.name == 'ip4' && component.value){
                     const host = component.value
