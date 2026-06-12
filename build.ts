@@ -35,7 +35,7 @@ if (platform === undefined)
 // Godot's packed file magic header ("GDPC" in ASCII).
 const GODOT_PACK_HEADER_MAGIC = 0x43504447
 const GODOT_TEMPLATE_EXE = ({
-    windows: path.join(GODOT_TEMPLATES_DIR, `${platform}_${release}_x86_64.exe`),
+    windows: path.join(GODOT_TEMPLATES_DIR, `${platform}_${release}_x86_32.exe`),
     linux: path.join(GODOT_TEMPLATES_DIR, `${platform}_${release}.x86_64`),
 } as const)[platform]
 const godot_preset = ({
@@ -202,12 +202,12 @@ if (process.argv.includes('godot')) {
     proj = proj.replace(/^(config\/version)="(.*?)"$/m, `$1="${version}"`)
     await fs.writeFile(file, proj, 'utf8')
 
-    if(platform == 'windows'){
-        await build_godot_exe(relative_exe_path)
-    } else {
+    //if(platform == 'windows'){
+    //    await build_godot_exe(relative_exe_path)
+    //} else {
         await build_godot_pck(relative_pck_path)
         process.argv.push('append-pck') //HACK:
-    }
+    //}
 }
 
 if (process.argv.includes('append-pck')) {

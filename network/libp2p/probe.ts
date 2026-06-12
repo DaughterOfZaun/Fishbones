@@ -61,6 +61,14 @@ class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
 
     private socket: Socket | null = null
     private readonly peers = new PeerMap<Peer>()
+    private peers_get(peerId: PeerId){
+        let peer = this.peers.get(peerId)
+        if(!peer){
+            peer = new Peer(peerId)
+            this.peers.set(peerId, peer)
+        }
+        return peer
+    }
     private readonly pendingRequests = new Map<string, Message>()
 
     constructor(
@@ -102,7 +110,10 @@ class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
         }
         if(!pkt) return
 
-        if(pkt.action == Packet.Ping.Action.Request){
+        const msgId = toBase64(pkt.data)
+        const msg = this.pendingRequests.get(msgId)
+
+        if(!msg && pkt.action == Packet.Ping.Action.Request){
             const parsedIPv4Address = parseIPv4(address)
             const encoded = Packet.encode({
                 ping: {
@@ -117,22 +128,18 @@ class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
             socket.send(encoded, port, address)
         }
         else
-        if(pkt.action == Packet.Ping.Action.Response){
-            const msgId = toBase64(pkt.data)
-            const msg = this.pendingRequests.get(msgId)
-            if(msg){
-                msg.arrivedAt = Date.now()
-                const ping = msg.arrivedAt - msg.createdAt
-                msg.destination.totalPing += ping
-                msg.destination.packetsReceived += 1
-                this.pendingRequests.delete(msgId)
+        if(msg && pkt.action == Packet.Ping.Action.Response){
+            msg.arrivedAt = Date.now()
+            const ping = msg.arrivedAt - msg.createdAt
+            msg.destination.totalPing += ping
+            msg.destination.packetsReceived += 1
+            this.pendingRequests.delete(msgId)
 
-                //const { host, port } = msg.destination
-                //console.log(`Received response from ${host}:${port}`)
-                //const observedHost = uInt32ToBytes(pkt.observed!.host).join('.')
-                //const observerdPort = pkt.observed!.port
-                //console.log(`Observed host:port is ${observedHost}:${observerdPort}`)
-            }
+            //const { host, port } = msg.destination
+            //console.log(`Received response from ${host}:${port}`)
+            //const observedHost = uInt32ToBytes(pkt.observed!.host).join('.')
+            //const observerdPort = pkt.observed!.port
+            //console.log(`Observed host:port is ${observedHost}:${observerdPort}`)
         }
     }
 
@@ -142,7 +149,7 @@ class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
         const info = await ps.get(peerId)
         const hosts = new Set<string>()
         for(const { multiaddr: addr } of info.addresses){
-            if(!isLoopback(addr) && !Circuit.exactMatch(addr)){
+            if(!Circuit.exactMatch(addr) && !(isLoopback(addr) && port == this.port)){
                 const component = addr.getComponents().at(0)
                 if(component?.name == 'ip4' && component.value){
                     const host = component.value
@@ -151,16 +158,10 @@ class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
             }
         }
 
-        let peer = this.peers.get(peerId)
-        if(!peer){
-            peer = new Peer(peerId)
-            this.peers.set(peerId, peer)
-        }
-
         const msgs = new Map<string, Message>()
         const addresses = [...hosts].map(host => new Address(host, port))
-
-        peer.addresses = addresses
+        const peer = this.peers_get(peerId)
+        peer.addresses = addresses        
 
         for(let attempt = 0; attempt < ATTEMPTS_COUNT; attempt++){
 
@@ -203,7 +204,9 @@ class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
             //const addr_packetsLost = addr.packetsSent - addr.packetsReceived
             //return (addr.totalPing + addr_packetsLost * MAX_PING) / addr.packetsSent
             if(addr.packetsReceived == 0) return Infinity
-            return addr.totalPing / addr.packetsReceived
+            const avgRTT = addr.totalPing / addr.packetsReceived
+            const t = addr.packetsSent / addr.packetsReceived
+            return avgRTT * t
         }, 'asc')
 
         const addr = addresses.at(0)

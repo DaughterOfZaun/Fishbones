@@ -330,11 +330,11 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             })
         }
 
-        if(player.peerId && player.port){
-            void this.node.services.probe
-                .ping(player.peerId, player.port, opts)
-                .catch(err => { /* Ignore */ })
-        }
+        //if(player.peerId && player.port){
+        //    void this.node.services.probe
+        //        .ping(player.peerId, player.port, opts)
+        //        .catch(err => { /* Ignore */ })
+        //}
     }
 
     private handleConnectedToRequest(playerFrom: GamePlayer, req: LobbyRequestMessage.ConnectedToRequest){
@@ -439,7 +439,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 peersRequests: [],
                 launchRequest: {
                     ip: 0,
-                    port: 0,
+                    port: this.node.services.probe.port,
                     key: text2arr(blowfishKey),
                     clientId: i++,
                     delay,
@@ -558,6 +558,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             port = getRunningServerPort()
             if(port){ /* Do nothing. Connect directly to the server */ }
             else {
+                await this.node.services.probe.ping(this.ownerId, res.port, opts)
                 const addr = this.node.services.probe.getBestIPv4Address(this.ownerId)
                 if(addr){
                     host = addr.host
