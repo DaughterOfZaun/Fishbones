@@ -9,6 +9,9 @@ import { PeerMap } from "@libp2p/peer-collections"
 import { sleep, sortInplace, toBase64 } from "../../utils/helpers"
 import type { AbortOptions } from "@multiformats/multiaddr"
 import { isLoopback } from '@libp2p/utils/multiaddr/is-loopback'
+import { Peer as ENetPeer } from '../../utils/proxy/peer'
+import { Connect, ProtocolFlag, Version } from "../../utils/proxy/enet"
+import { assign } from "../../utils/proxy/utils"
 
 const DATA_SIZE = 32
 const ATTEMPTS_COUNT = 3
@@ -22,7 +25,7 @@ interface ProbeComponents {
     peerStore: PeerStore
 }
 
-export function probe(init = new ProbeInit()): (components: ProbeComponents) => Probe {
+export function probe(init?: Partial<ProbeInit>): (components: ProbeComponents) => Probe {
   return (components) => new Probe(init, components)
 }
 
@@ -71,11 +74,13 @@ class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
     }
     private readonly pendingRequests = new Map<string, Message>()
 
+    private readonly init: ProbeInit
     constructor(
-        private readonly init: ProbeInit,
+        init: Partial<ProbeInit> | undefined,
         private readonly components: ProbeComponents,
     ){
         super()
+        this.init = Object.assign(new ProbeInit(), init ?? {})
         this.port = this.init.port
     }
 
@@ -143,7 +148,7 @@ class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
         }
     }
 
-    public async ping(peerId: PeerId, port: number, opts: Required<AbortOptions>){
+    private async resetPeerAddresses(peerId: PeerId, port: number, opts: Required<AbortOptions>){
 
         const ps = this.components.peerStore
         const info = await ps.get(peerId)
@@ -158,10 +163,17 @@ class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
             }
         }
 
-        const msgs = new Map<string, Message>()
         const addresses = [...hosts].map(host => new Address(host, port))
         const peer = this.peers_get(peerId)
-        peer.addresses = addresses        
+        peer.addresses = addresses
+
+        return addresses
+    }
+
+    private async ping(peerId: PeerId, port: number, opts: Required<AbortOptions>){
+
+        const addresses = await this.resetPeerAddresses(peerId, port, opts)
+        const msgs = new Map<string, Message>()     
 
         for(let attempt = 0; attempt < ATTEMPTS_COUNT; attempt++){
 
@@ -193,11 +205,52 @@ class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
         }
     }
 
+    private async ping126(peerId: PeerId, port: number, opts: Required<AbortOptions>){
+        const addresses = await this.resetPeerAddresses(peerId, port, opts)
+        const peer = new ENetPeer({
+            name: 'prober',
+            onsend(data){},
+        })
+        const socket = await udpSocket({
+            hostname: '0.0.0.0', port: 0,
+            socket: {
+                data(socket, data, port, address, flags){
+
+                },
+            }
+        })
+        for(const addr of addresses){
+            const { host, port } = addr
+            
+            const reliableSequenceNumber = 1
+            const outgoingPeerID = 0
+            const sessionID = 0x29000000
+            const packet = assign(new Connect(), {
+                flags: ProtocolFlag.ACKNOWLEDGE,
+                channelID: 0xFF,
+                reliableSequenceNumber,
+                outgoingPeerID,
+                mtu: 1400,
+                windowSize: 32 * 1024,
+                channelCount: 7,
+                incomingBandwidth: 0,
+                outgoingBandwidth: 0,
+                packetThrottleInterval: 5000,
+                packetThrottleAcceleration: 2,
+                packetThrottleDeceleration: 2,
+                sessionID,
+            })
+        }
+    }
+
     public getBestIPv4Address(peerId: PeerId){
 
         const peer = this.peers.get(peerId)
-        const addresses = peer?.addresses
+        let addresses = peer?.addresses
         if(!addresses) return
+
+        addresses = addresses.filter(addr => addr.packetsReceived > 0)
+        if(!addresses.length) return
 
         sortInplace(addresses, (addr) => {
             //const MAX_PING = ATTEMPTS_COUNT * ATTEMPTS_INTERVAL
@@ -209,10 +262,8 @@ class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
             return avgRTT * t
         }, 'asc')
 
-        const addr = addresses.at(0)
-        if(addr && addr.packetsReceived > 0){
-            const { host, port } = addr
-            return { host, port }
-        }
+        const addr = addresses.at(0)!
+        const { host, port } = addr
+        return { host, port }
     }
 }

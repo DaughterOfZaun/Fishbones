@@ -44,11 +44,19 @@ function assign<A extends object>(a: A, b: Partial<{ [ K in keyof A ]: A[K] }>){
     return Object.assign(a, b)
 }
 
+interface PeerConfig {
+    name: string
+    onsend: (data: Buffer) => void
+    sessionId?: number
+    id?: number
+}
+
 export class Peer {
 
-    private sessionId = 0
+    private sessionId = 0x29000000
     private incomingId = 0
-    private outgoingId = version.maxPeerID
+    private outgoingId = 0
+
     private startTime = Date.now()
     private channels = new Map<number, Channel>()
     private channels_get(id: number){
@@ -61,12 +69,15 @@ export class Peer {
     }
 
     private readonly name: string
-    constructor(nameOrConfig: string | { name: string, onsend: (data: Buffer) => void }){
+    constructor(nameOrConfig: string | PeerConfig){
         if(typeof nameOrConfig == 'string'){
             this.name = nameOrConfig
         } else {
-            this.name = nameOrConfig.name
-            this.onsend = nameOrConfig.onsend
+            const config = nameOrConfig
+            this.name = config.name
+            this.onsend = config.onsend
+            this.sessionId = config.sessionId ?? this.sessionId
+            this.outgoingId = config.id ?? this.outgoingId
         }
     }
 
@@ -75,29 +86,30 @@ export class Peer {
 
     private send(packets: Protocol[]){
         console.assert(packets.length > 0)
+
+        const trackedPackets = packets.filter(packet => (packet.flags & ProtocolFlag.ACKNOWLEDGE) != 0)
+        this.trackPackets(trackedPackets)
+
         const buffer = this.writePackets(packets)
         //console.log('send', packets, this.readPackets(buffer))
         return this.onsend(buffer)
     }
 
-    private trackedPackets: Protocol[] = []
+    private trackedPackets = new Map<number, Protocol>()
     private trackPackets(packets: Protocol[]){
-        this.trackedPackets.push(...packets)
+        for(const packet of packets)
+            this.trackedPackets.set(packet.reliableSequenceNumber, packet)
         if(!this.trackerInterval)
             this.trackerInterval = setInterval(this.trackerHeartbeat, HEARTBEAT_INTERVAL)
     }
     private untrackPacket(reliableSequenceNumber: number){
-        const index = this.trackedPackets.findIndex(packet => {
-            return packet.reliableSequenceNumber == reliableSequenceNumber
-        })
-        if(index >= 0)
-            this.trackedPackets.splice(index, 1)
+        this.trackedPackets.delete(reliableSequenceNumber)
     }
     private trackerInterval?: ReturnType<typeof setInterval>
     private trackerHeartbeat = () => {
-        if(this.trackedPackets.length > 0){
+        if(this.trackedPackets.size > 0){
             //console.log('Resending', this.trackedPackets.length, 'packets')
-            this.send(this.trackedPackets) //TODO: Don't re-encode.
+            this.send(this.trackedPackets.values().toArray()) //TODO: Don't re-encode.
             //this.trackedPackets.length = 0
         } else {
             clearInterval(this.trackerInterval)
@@ -106,16 +118,13 @@ export class Peer {
     }
 
     public connect(){
-
-        this.sessionId = 0x29000000
-
         const channel = this.channels_get(0xFF)
         const reliableSequenceNumber = (++channel.reliableSequenceNumber) % (2 ** 16)
         const packet = assign(new Connect(), {
             flags: ProtocolFlag.ACKNOWLEDGE,
             channelID: channel.id,
             reliableSequenceNumber,
-            outgoingPeerID: this.incomingId,
+            outgoingPeerID: this.outgoingId,
             mtu: 1400,
             windowSize: 32 * 1024,
             channelCount: 7,
@@ -132,6 +141,7 @@ export class Peer {
     }
 
     public receivePackets(data: Buffer): WrappedPacket[] {
+
         const packets = this.readPackets(data)
         if(packets == null){
             console.log('ERROR: packets == null')
@@ -175,7 +185,7 @@ export class Peer {
         if(request instanceof Connect){
 
             this.sessionId = request.sessionID //TODO:
-            this.outgoingId = request.outgoingPeerID
+            this.incomingId = request.outgoingPeerID
 
             const channel = this.channels_get(0xFF)
             const reliableSequenceNumber = (++channel.reliableSequenceNumber) % (2 ** 16)
@@ -183,7 +193,7 @@ export class Peer {
                 flags: ProtocolFlag.ACKNOWLEDGE,
                 channelID: channel.id,
                 reliableSequenceNumber,
-                outgoingPeerID: 0,
+                outgoingPeerID: this.outgoingId,
                 mtu: 1400,
                 windowSize: 32 * 1024,
                 channelCount: 7,
@@ -200,7 +210,7 @@ export class Peer {
         else
         if(request instanceof VerifyConnect){
             this.sessionId = request_header.sessionID //TODO:
-            this.outgoingId = request.outgoingPeerID
+            this.incomingId = request.outgoingPeerID
         }
         else
         if(request instanceof Acknowledge){
@@ -245,7 +255,7 @@ export class Peer {
             const packet = this.unwrapReliablePacket(wrappedPacket)
             packets.push(packet)
         }
-        this.trackPackets(packets)
+        //this.trackPackets(packets)
         return this.send(packets)
     }
 
@@ -330,7 +340,7 @@ export class Peer {
             const packet = this.readPacket(reader)
             if(packet != null){
                 packets.push(packet)
-                if(reader.position == buffer.length){
+                if(reader.position >= buffer.length){
                     break
                 }
             } else {
