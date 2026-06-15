@@ -1,6 +1,6 @@
 import { logger } from '../log'
 import { createBar, extractFile } from '../../ui/remote/remote'
-import { killIfActive, spawn, successfulTermination, type ChildProcess } from '../process/process'
+import { killIfActive, spawn, successfulTermination, type ChildProcess, type ChildProcessWithLogPrefix } from '../process/process'
 import { rwx_rx_rx, downloads, fs_chmod, fs_ensureDir, fs_exists, fs_writeFile, fs_removeFile, fs_moveFile } from './fs'
 import type { AbortOptions } from '@libp2p/interface'
 import type { ErrnoException } from '../helpers'
@@ -78,8 +78,6 @@ interface UnpackablePkgInfo {
     dirName?: string
     dir: string
 }
-
-type ChildProcessWithLogPrefix = ChildProcess & { logPrefix: string }
 
 export async function unpack(pkg: UnpackablePkgInfo, opts: Required<AbortOptions>){
     const opts_rf = { ...opts, recursive: true, force: true }
@@ -161,9 +159,6 @@ export async function unpack(pkg: UnpackablePkgInfo, opts: Required<AbortOptions
             })
         }
         pid++
-        
-        for(const proc of s7zs)
-            handleAnyStreamError(proc)
 
         connect(s7zs.length - 1, 'stdout')
         for(let i = 0; i < s7zs.length; i++)
@@ -245,7 +240,6 @@ export async function pack(pkg: { exe: string, exeName: string, zip: string, zip
         
         fs_createReadStream(pkg.exe).pipe(proc.stdin)
 
-        handleAnyStreamError(proc)
         proc.stdout.setEncoding('utf8').on('data', onData.bind(null, 'stdout'))
         proc.stderr.setEncoding('utf8').on('data', onData.bind(null, 'stderr'))
 
@@ -269,25 +263,6 @@ export async function pack(pkg: { exe: string, exeName: string, zip: string, zip
             bar.update(parseInt(m[1]))
         } else if(chunk){
             logger.log(logPrefix, `[${src.toUpperCase()}]`, chunk)
-        }
-    }
-}
-
-function handleAnyStreamError(proc: ChildProcessWithLogPrefix){
-    for(let j = 0; j < proc.stdio.length; j++){
-        const stream = proc.stdio[j]
-        if(stream){
-            const streamName =
-                (j == 0) ? 'stdin' :
-                (j == 1) ? 'stdout' :
-                (j == 2) ? 'stderr' :
-                `stream-${j}`
-            const logPrefix = `${proc.logPrefix} [${streamName.toUpperCase()}]`
-            stream.on('error', (unk_err) => {
-                const err = unk_err as ErrnoException
-                if(err.code == 'EPIPE' && err.errno == -4047 && err.syscall == 'write') return // Ignore.
-                logger.log(logPrefix, 'STREAM-ERROR', inspect(err))
-            })
         }
     }
 }

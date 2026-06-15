@@ -558,7 +558,8 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             port = getRunningServerPort()
             if(port){ /* Do nothing. Connect directly to the server */ }
             else {
-                await this.node.services.probe.ping(this.ownerId, res.port, opts)
+                if(this.clientVersion == KnownClients.v126)
+                    await this.node.services.probe.ping126(this.ownerId, res.port, opts)
                 const addr = this.node.services.probe.getBestIPv4Address(this.ownerId)
                 if(addr){
                     host = addr.host

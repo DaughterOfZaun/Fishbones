@@ -10,8 +10,11 @@ import { sleep, sortInplace, toBase64 } from "../../utils/helpers"
 import type { AbortOptions } from "@multiformats/multiaddr"
 import { isLoopback } from '@libp2p/utils/multiaddr/is-loopback'
 import { Peer as ENetPeer } from '../../utils/proxy/peer'
-import { Connect, ProtocolFlag, Version } from "../../utils/proxy/enet"
+import { Connect, Protocol, ProtocolCommand, ProtocolFlag, VerifyConnect } from "../../utils/proxy/enet"
 import { assign } from "../../utils/proxy/utils"
+import { pushable } from 'it-pushable'
+import { logger } from "../../utils/log"
+import { inspect } from 'node:util'
 
 const DATA_SIZE = 32
 const ATTEMPTS_COUNT = 3
@@ -53,6 +56,32 @@ class Message {
         public arrivedAt?: number,
     ){}
 }
+
+const ENET_PEER = new ENetPeer({
+    name: 'temp',
+    onsend(data){},
+})
+const ENET_CONNECT_REQUEST = (() => {
+    const reliableSequenceNumber = 1
+    const outgoingPeerID = 0
+    const sessionID = 0x29000000
+    const packet = assign(new Connect(), {
+        flags: ProtocolFlag.ACKNOWLEDGE,
+        channelID: 0xFF,
+        reliableSequenceNumber,
+        outgoingPeerID,
+        mtu: 1400,
+        windowSize: 32 * 1024,
+        channelCount: 7,
+        incomingBandwidth: 0,
+        outgoingBandwidth: 0,
+        packetThrottleInterval: 5000,
+        packetThrottleAcceleration: 2,
+        packetThrottleDeceleration: 2,
+        sessionID,
+    })
+    return ENET_PEER['writePackets']([ packet ])
+})()
 
 //type Socket = Bun.udp.Socket<'buffer'>
 //type ReceiveFlags = Bun.udp.ReceiveFlags
@@ -170,7 +199,7 @@ class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
         return addresses
     }
 
-    private async ping(peerId: PeerId, port: number, opts: Required<AbortOptions>){
+    public async ping(peerId: PeerId, port: number, opts: Required<AbortOptions>){
 
         const addresses = await this.resetPeerAddresses(peerId, port, opts)
         const msgs = new Map<string, Message>()     
@@ -205,42 +234,61 @@ class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
         }
     }
 
-    private async ping126(peerId: PeerId, port: number, opts: Required<AbortOptions>){
+    public async ping126(peerId: PeerId, port: number, opts: Required<AbortOptions>){
+        
         const addresses = await this.resetPeerAddresses(peerId, port, opts)
-        const peer = new ENetPeer({
-            name: 'prober',
-            onsend(data){},
-        })
-        const socket = await udpSocket({
-            hostname: '0.0.0.0', port: 0,
-            socket: {
-                data(socket, data, port, address, flags){
 
-                },
-            }
-        })
-        for(const addr of addresses){
+        await Promise.race(addresses.map(async (addr) => {
             const { host, port } = addr
-            
-            const reliableSequenceNumber = 1
-            const outgoingPeerID = 0
-            const sessionID = 0x29000000
-            const packet = assign(new Connect(), {
-                flags: ProtocolFlag.ACKNOWLEDGE,
-                channelID: 0xFF,
-                reliableSequenceNumber,
-                outgoingPeerID,
-                mtu: 1400,
-                windowSize: 32 * 1024,
-                channelCount: 7,
-                incomingBandwidth: 0,
-                outgoingBandwidth: 0,
-                packetThrottleInterval: 5000,
-                packetThrottleAcceleration: 2,
-                packetThrottleDeceleration: 2,
-                sessionID,
+
+            type Data = { data: Buffer, port: number, address: string }
+            const queue = pushable<Data>({ objectMode: true })
+            const socket = await udpSocket({
+                //hostname: '0.0.0.0', port: 0,
+                socket: {
+                    data(socket, data, port, address, flags){
+                        queue.push({ data, port, address })
+                    },
+                }
             })
-        }
+            try {
+                opts.signal.throwIfAborted()
+                
+                //for(let attempt = 1; attempt <= ATTEMPTS_COUNT; attempt++){
+                const sentAt = Date.now()
+                //logger.log(`socket.send(${ENET_CONNECT_REQUEST.toString('hex')}, ${port}, ${host})`)
+                socket.send(ENET_CONNECT_REQUEST, port, host)
+                addr.packetsSent++
+
+                const result = await Promise.race([
+                    sleep(ATTEMPTS_INTERVAL, opts),
+                    queue.next(),
+                ])
+                //logger.log(`result?.done = ${result?.done}`)
+                const data = result?.value?.data
+                //logger.log(`result?.value?.data = ${data?.toString('hex')}`)
+                if(data){
+                    let packets: Protocol[] = []
+                    try {
+                        packets = ENET_PEER['readPackets'](data)?.packets ?? packets
+                    } catch(err){
+                        logger.log(`ENET_PEER['readPackets'](data) falied:`, inspect(err))
+                    }
+                    for(const packet of packets){
+                        //logger.log(`packet instanceof ${ProtocolCommand[packet.command]}`)
+                        if(packet instanceof VerifyConnect){
+                            //TODO: Close connection.
+                            addr.totalPing += Date.now() - sentAt
+                            addr.packetsReceived++
+                            //break
+                        }
+                    }
+                }
+                //}
+            } finally {
+                socket.close()
+            }
+        }))
     }
 
     public getBestIPv4Address(peerId: PeerId){

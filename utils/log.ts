@@ -7,7 +7,7 @@ import {
 import type { ErrnoException } from './helpers'
 
 //export let cwd = process.cwd()
-export let cwd = path.dirname(process.execPath)
+export let cwd = path.dirname(global['Bun']?.main ?? process.execPath)
 //export let cwd = path.dirname(process.env.IS_COMPILED ? process.execPath : Bun.main)
 //export let cwd = path.dirname(Bun.main)
 export const downloadsDirName = 'Fishbones_Data'
@@ -31,6 +31,7 @@ export function fs_ensureDirSync(path: string){
 export const logger = new class Logger {
     private stream?: WriteStream
     log(...args: (string | number | boolean | { toString(): string } | undefined)[]){
+        //return console.log(...args)
         if(!this.stream){
             //fs_ensureDirSync(downloads)
             const logTxt = path.join(downloads, 'log.txt')

@@ -3,6 +3,7 @@ import type { AbortOptions } from '@libp2p/interface'
 import { logger } from '../log'
 import { console_log, ExitPromptError } from '../../ui/remote/remote'
 import { spawn as originalSpawn } from 'child_process'
+import type { ErrnoException } from '../helpers'
 import { Deferred } from '../promises'
 //import { downloads } from './data-fs'
 import { tr } from '../translation'
@@ -235,8 +236,9 @@ export function unwrapAbortError(err: unknown){
 export { originalSpawn }
 const activeProcesses = new Set<ChildProcess>()
 const detachedProcesses = new Set<ChildProcess>()
+export type ChildProcessWithLogPrefix = ChildProcess & { logPrefix: string }
 export type SpawnOptions = SpawnOptionsWithoutStdio & { log: boolean, logPrefix: string, logFilter?: (chunk: string) => string }
-export function spawn(cmd: string, args: readonly string[], opts: SpawnOptions){
+export function spawn(cmd: string, args: readonly string[], opts: SpawnOptions): ChildProcessWithLogPrefix {
     logger.log('spawn', cmd, ...args)
 
     //opts = { cwd: downloads, ...opts }
@@ -264,7 +266,9 @@ export function spawn(cmd: string, args: readonly string[], opts: SpawnOptions){
         }
     }
 
-    return Object.assign(proc, { logPrefix: opts.logPrefix })
+    const procWithLogPrefix = Object.assign(proc, { logPrefix: opts.logPrefix })
+    handleAnyStreamError(procWithLogPrefix)
+    return procWithLogPrefix
 }
 
 export async function exec(cmd: string, args: string[], opts: SpawnOptions & Required<AbortOptions>){
@@ -298,4 +302,23 @@ export async function getFreePort(){
             server.close((err) => err ? reject(err) : resolve(port))
         });
     })
+}
+
+function handleAnyStreamError(proc: ChildProcessWithLogPrefix){
+    for(let j = 0; j < proc.stdio.length; j++){
+        const stream = proc.stdio[j]
+        if(stream){
+            const streamName =
+                (j == 0) ? 'stdin' :
+                (j == 1) ? 'stdout' :
+                (j == 2) ? 'stderr' :
+                `stream-${j}`
+            const logPrefix = `${proc.logPrefix} [${streamName.toUpperCase()}]`
+            stream.on('error', (unk_err) => {
+                const err = unk_err as ErrnoException
+                if(err.code == 'EPIPE' && err.errno == -4047 && err.syscall == 'write') return // Ignore.
+                logger.log(logPrefix, 'STREAM-ERROR', inspect(err))
+            })
+        }
+    }
 }

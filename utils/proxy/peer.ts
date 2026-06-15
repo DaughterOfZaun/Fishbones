@@ -54,8 +54,8 @@ interface PeerConfig {
 export class Peer {
 
     private sessionId = 0x29000000
+    private outgoingId = version.maxPeerID
     private incomingId = 0
-    private outgoingId = 0
 
     private startTime = Date.now()
     private channels = new Map<number, Channel>()
@@ -77,7 +77,7 @@ export class Peer {
             this.name = config.name
             this.onsend = config.onsend
             this.sessionId = config.sessionId ?? this.sessionId
-            this.outgoingId = config.id ?? this.outgoingId
+            this.incomingId = config.id ?? this.incomingId
         }
     }
 
@@ -124,7 +124,7 @@ export class Peer {
             flags: ProtocolFlag.ACKNOWLEDGE,
             channelID: channel.id,
             reliableSequenceNumber,
-            outgoingPeerID: this.outgoingId,
+            outgoingPeerID: this.incomingId,
             mtu: 1400,
             windowSize: 32 * 1024,
             channelCount: 7,
@@ -185,7 +185,7 @@ export class Peer {
         if(request instanceof Connect){
 
             this.sessionId = request.sessionID //TODO:
-            this.incomingId = request.outgoingPeerID
+            this.outgoingId = request.outgoingPeerID
 
             const channel = this.channels_get(0xFF)
             const reliableSequenceNumber = (++channel.reliableSequenceNumber) % (2 ** 16)
@@ -193,7 +193,7 @@ export class Peer {
                 flags: ProtocolFlag.ACKNOWLEDGE,
                 channelID: channel.id,
                 reliableSequenceNumber,
-                outgoingPeerID: this.outgoingId,
+                outgoingPeerID: this.incomingId,
                 mtu: 1400,
                 windowSize: 32 * 1024,
                 channelCount: 7,
@@ -210,7 +210,7 @@ export class Peer {
         else
         if(request instanceof VerifyConnect){
             this.sessionId = request_header.sessionID //TODO:
-            this.incomingId = request.outgoingPeerID
+            this.outgoingId = request.outgoingPeerID
         }
         else
         if(request instanceof Acknowledge){

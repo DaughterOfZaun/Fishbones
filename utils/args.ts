@@ -135,7 +135,7 @@ export const args = new class Args {
 
     setup = new Option('setup', '', true, tr('Ask about custom arguments at startup'))
 
-    jRPCUI = new Option('jrpc-ui', '', tr('(Internal) Use JSON RPC for I/O'))
+    jRPCUI = new Option('jrpc-ui', '', true, tr('(Internal) Use JSON RPC for I/O'))
     systemLocale = new Option('system-locale', '', DEFAULT_LOCALE, tr('(Internal) Specify the system locale'))
     autoLocale = new Option('auto-locale', '', DEFAULT_LOCALE, tr('(Internal) Specify the auto-suggested locale to use'))
     usedLocale = new Option('used-locale', '', DEFAULT_LOCALE, tr('(Internal) Specify the locale to use'))
