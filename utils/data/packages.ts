@@ -6,7 +6,7 @@ import { gc126Pkg } from './packages/game-client-126'
 import { gc420Pkg } from './packages/game-client-420'
 import { bwPkg } from './packages/game-server-bw'
 import { cbPkg } from "./packages/game-server-cb"
-import { tgPkg } from './packages/game-server-ts'
+import { tgPkg } from './packages/game-server-tg'
 import { gitPkg } from './packages/git'
 import { modPck1 } from './packages/modpack-levels'
 import { sdkPkg } from './packages/sdk'

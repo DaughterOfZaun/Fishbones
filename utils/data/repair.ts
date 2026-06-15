@@ -26,7 +26,7 @@ import { BrokenWingsDataInfo } from "./packages/game-server-bw"
 import { ClientDataInfoV420 } from "./packages/game-client-420"
 import { ChronobreakDataInfo } from "./packages/game-server-cb"
 import { champions } from "./constants/champions"
-import { TestGroundsDataInfo, tgPkg } from "./packages/game-server-ts"
+import { TestGroundsDataInfo, tgPkg } from "./packages/game-server-tg"
 import { inspect } from 'node:util'
 
 const DOTNET_INSTALL_CORRUPT_EXIT_CODES = [ 130, 131, 142, ]

@@ -13,29 +13,48 @@ args.remoteIdx.on('change', index => bwPkg.setRemoteByIndex(index))
 export const bwPkg = new class extends PkgInfoCSProj implements PkgInfoGit {
     
     name = tr('BrokenWings') + ' ' + tr('Game Server')
+    
+    //gitRevision = '4592f1379ddaa972ce0b5dc6cebb9caf09c812ab'
+    gitRevision = '2fab77d5f9e60c501c8efb3365b8ca207521100f'
+    
     dirName = 'ChildrenOfTheGrave-GameServer'
+    zipRoot = [ 'brokenwings-master' ] // New.
+    zipHasSingleRootEntry = true // New.
     makeDir = false
     zipExt = '7z'
-    zipName = `${this.dirName}.${this.zipExt}`
-    zipInfoHashV1 = '83155823dd0deb73cab3127dfbcfeb4091050f4f'
-    zipInfoHashV2 = 'b84a60529bca79815d8858ec6430d180590b37516a8a84af8d4c1c97a0ce7bfd'
-    zipSize = 16682132
-    size = 356730226
-    
+    //zipName = `${this.dirName}.${this.zipExt}`
+    zipName = `${this.zipRoot[0]!}-${this.gitRevision.slice(0, 8)}.${this.zipExt}`
+    //zipSize = 16682132
+    zipSize = 14091932
+    //size = 356730226
+    size = 193269646
+
     dir = path.join(downloads, this.dirName)
     zip = path.join(downloads, this.zipName)
-    zipTorrentEmbedded = embedded.bwPkgZipTorrent
-    zipTorrentName = `${this.zipName}.torrent`
-    zipTorrent = `${this.zip}.torrent`
-    zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
-    zipMega = 'https://mega.nz/file/Oz5lDKiQ#RWwgpmkdUn1MrqLg8p8idkPj8Z0mxzFYgPzCmAi55Is'
-    zipWebSeeds = [
-        gdrive(`1p9Dz1o_tUrML6a7KdyCeoXeIjyoZ5YhG`),
-        `${HARDCODED_HTTP_SERVER_URL}/${this.zipName}`,
-    ]
-    zipEmbded = embedded.bwPkgZip
 
-    gitRevision = '4592f1379ddaa972ce0b5dc6cebb9caf09c812ab'
+    // The file is embedded now, no need to download.
+    zipEmbded = embedded.bwPkgZip
+    
+    //zipTorrentEmbedded = embedded.bwPkgZipTorrent
+    //zipTorrentName = `${this.zipName}.torrent`
+    //zipTorrent = `${this.zip}.torrent`
+    //zipInfoHashV1 = '83155823dd0deb73cab3127dfbcfeb4091050f4f'
+    //zipInfoHashV2 = 'b84a60529bca79815d8858ec6430d180590b37516a8a84af8d4c1c97a0ce7bfd'
+    //zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
+    //zipMega = 'https://mega.nz/file/Oz5lDKiQ#RWwgpmkdUn1MrqLg8p8idkPj8Z0mxzFYgPzCmAi55Is'
+    //zipWebSeeds = [
+    //    gdrive(`1p9Dz1o_tUrML6a7KdyCeoXeIjyoZ5YhG`),
+    //    `${HARDCODED_HTTP_SERVER_URL}/${this.zipName}`,
+    //]
+
+    zipTorrentEmbedded = ''
+    zipTorrentName = ''
+    zipTorrent = ''
+    zipInfoHashV1 = ''
+    zipInfoHashV2 = ''
+    zipMagnet = ''
+    zipMega = ''
+    zipWebSeeds = []
 
     projName = 'ChildrenOfTheGraveServerConsole'
     csProjDir = path.join(this.dir, this.projName)

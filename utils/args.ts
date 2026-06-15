@@ -1,8 +1,9 @@
 import type { AbortOptions } from "@libp2p/interface"
+import { OUTFILE } from "./constants-build"
+import fs from 'node:fs/promises'
 import path from 'node:path'
 
 //import { downloads, fs_readFile, fs_writeFile } from "./data/fs"
-import fs from 'node:fs/promises'
 import { downloads } from "./log"
 
 //import { safeOptions } from "./process/process"
@@ -135,7 +136,7 @@ export const args = new class Args {
 
     setup = new Option('setup', '', true, tr('Ask about custom arguments at startup'))
 
-    jRPCUI = new Option('jrpc-ui', '', true, tr('(Internal) Use JSON RPC for I/O'))
+    jRPCUI = new Option('jrpc-ui', '', `../${OUTFILE}`, tr('(Internal) Use JSON RPC for I/O'))
     systemLocale = new Option('system-locale', '', DEFAULT_LOCALE, tr('(Internal) Specify the system locale'))
     autoLocale = new Option('auto-locale', '', DEFAULT_LOCALE, tr('(Internal) Specify the auto-suggested locale to use'))
     usedLocale = new Option('used-locale', '', DEFAULT_LOCALE, tr('(Internal) Specify the locale to use'))

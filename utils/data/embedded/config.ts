@@ -24,9 +24,7 @@ export const config = {
 
     gc126ZipTorrent: './torrents/playable_client_126.7z.torrent',
     bwPkgZipTorrent: './torrents/ChildrenOfTheGrave-Gameserver.7z.torrent',
-    bwPkgZip: {
-        //linux: './Fishbones_Data/ChildrenOfTheGrave-Gameserver.7z'
-    },
+    bwPkgZip: './Fishbones_Data/brokenwings-master-2fab77d5.7z',
 
     sdkForWinZipTorrent: {
         windows: './torrents/dotnet-sdk-10.0.103-win-x64.zip.torrent',

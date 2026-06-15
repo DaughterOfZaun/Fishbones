@@ -991,7 +991,8 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             ENDGAME_HTTP_POST_ADDRESS: "",
         })
         if(isCB) info.gameInfo.CONTENT_PATH = "../../../../Content/GameClient"
-        if(isBW || isTG) info.gameInfo.CONTENT_PATH = "../../../../Content"
+        if(isBW) info.gameInfo.CONTENT_PATH = "../../../../Content"
+        if(isTG) info.gameInfo.CONTENT_PATH = "../../../../Content"
         if(isBW) Object.assign(info.gameInfo, {
             CLIENT_VERSION: versionToString(this.clientVersion),
             KEEP_ALIVE_WHEN_EMPTY: false,
