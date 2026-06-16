@@ -1,4 +1,4 @@
-import { arch, platform } from "../../constants-build"
+import { arch, platform, HARDCODED_RELEASE_URL } from "../../constants-build"
 import { tr } from "../../translation"
 import { downloads } from "../fs"
 import { PkgInfo } from "./shared"
@@ -6,7 +6,7 @@ import path from 'node:path'
 
 export class FBPkgInfo extends PkgInfo {
     
-    readonly releasesURL = 'https://api.github.com/repos/DaughterOfZaun/Fishbones/releases'
+    releasesURL = HARDCODED_RELEASE_URL
 
     readonly name = tr('Launcher')
     readonly dirName = 'Fishbones'
@@ -18,14 +18,22 @@ export class FBPkgInfo extends PkgInfo {
     readonly zipExt = 'zip'
 
     // Mutable variables.
-    readonly version: string
-    readonly zipTorrentName: string
-    readonly zipName: string
-    readonly zip: string
+    private _version!: string
+    get version(){ return this._version }
+    set version(version: string){
+        this._version = version
+        this.zipName = `${this.dirName}-${this.version}-${platform}-${arch}.${this.zipExt}`
+        this.zipTorrentName = `${this.zipName}.torrent`
+        this.zipTorrent = path.join(downloads, this.zipTorrentName)
+        this.zip = path.join(downloads, this.zipName)
+    }
+    zipName!: string
+    zipTorrentName!: string
+    zipTorrent!: string
+    zip!: string
     
     size = 0 //TODO:
     zipSize!: number
-    zipTorrent: string
     zipWebSeeds: string[] = []
     
     zipTorrentEmbedded = ''
@@ -42,12 +50,11 @@ export class FBPkgInfo extends PkgInfo {
 
     checkUnpackBy = this.exe
 
+    versionFileName = 'version.bin'
+    versionFile = path.join(downloads, this.versionFileName)
+
     constructor(version: string){
         super()
         this.version = version
-        this.zipName = `${this.dirName}-${this.version}-${platform}-${arch}.${this.zipExt}`
-        this.zipTorrentName = `${this.zipName}.torrent`
-        this.zipTorrent = path.join(downloads, this.zipTorrentName)
-        this.zip = path.join(downloads, this.zipName)
     }
 }

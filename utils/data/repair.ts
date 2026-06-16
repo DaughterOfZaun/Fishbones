@@ -280,7 +280,7 @@ async function repairOrThrow(opts: Required<AbortOptions>){
     ])
     throwAnyRejection(results)
 
-    if(prev_fbPkg && isNewVersionAvailable()) try {
+    if(args.upgrade.value && isNewVersionAvailable()) try {
 
         // A hack to speed up download.
         if(await fs_exists(prev_fbPkg.zip, opts) && !await fs_exists(fbPkg.zip, opts)){
@@ -617,7 +617,8 @@ async function moveFoundFilesToDir(foundPkgDir: string, pkg: PkgInfo, opts: Requ
             try {
                 await moveToPkgDir(fileName)
             } catch(err) {
-                console_log_fs_err(tr('Moving required file failed', {}), fileName, err)
+                const filePath = path.join(foundPkgDir, fileName)
+                console_log_fs_err(tr('Moving required file failed', {}), filePath, err)
                 successfullyMovedRequiredFiles = false
             }
         }),
@@ -625,7 +626,8 @@ async function moveFoundFilesToDir(foundPkgDir: string, pkg: PkgInfo, opts: Requ
             try {
                 await moveToPkgDir(fileName)
             } catch(err) {
-                console_log_fs_err(tr('Moving optional file failed', {}), fileName, err)
+                const filePath = path.join(foundPkgDir, fileName)
+                console_log_fs_err(tr('Moving optional file failed', {}), filePath, err)
             }
         }),
     ])

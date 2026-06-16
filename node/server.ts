@@ -18,6 +18,7 @@ import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
 import { pubsubPeerDiscovery } from '../network/libp2p/discovery/pubsub-discovery'
 import { pinning } from '../network/libp2p/pinning'
 import { time } from '../utils/proxy/time'
+import type { PrivateKey } from '@libp2p/interface'
 //import { peerIdFromPrivateKey } from '@libp2p/peer-id'
 
 const UDP_PORT = 42451
@@ -26,8 +27,8 @@ const TCP_PORT = 41463
 const KEY_FILE = './key.txt'
 const KEY_ENCODING = 'base64pad'
 
-let keyString
-let privateKey
+let keyString: string
+let privateKey: PrivateKey
 try {
     keyString = await fs.readFile(KEY_FILE, 'utf8')
     privateKey = privateKeyFromRaw(uint8ArrayFromString(keyString, KEY_ENCODING))
@@ -37,6 +38,7 @@ try {
     await fs.writeFile(KEY_FILE, keyString, 'utf8')
 }
 
+//console.log(uint8ArrayToString(privateKey.publicKey.raw, KEY_ENCODING))
 //console.log(peerIdFromPrivateKey(privateKey).toString())
 //process.exit()
 

@@ -316,7 +316,7 @@ function handleAnyStreamError(proc: ChildProcessWithLogPrefix){
             const logPrefix = `${proc.logPrefix} [${streamName.toUpperCase()}]`
             stream.on('error', (unk_err) => {
                 const err = unk_err as ErrnoException
-                if(err.code == 'EPIPE' && err.errno == -4047 && err.syscall == 'write') return // Ignore.
+                if(err.code == 'EPIPE' && (err.errno == -4047 || err.errno == -32) && err.syscall == 'write') return // Ignore.
                 logger.log(logPrefix, 'STREAM-ERROR', inspect(err))
             })
         }

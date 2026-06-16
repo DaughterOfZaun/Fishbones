@@ -1,6 +1,7 @@
 import type { AbortOptions } from "@libp2p/interface";
 import { DeferredView, render } from "../ui/remote/view";
-import { base, button, checkbox, form, icon, icon_button, line, list, option } from "../ui/remote/types";
+import { base, button, checkbox, form, icon, icon_button, label, line, list, option, text } from "../ui/remote/types";
+import { getOrLoadVersionFileString, parseVersionFileString, saveVersionFile, type ParsedVersionFile } from "../utils/data/upgrade";
 import { args } from "../utils/args";
 import { bwPkg } from "../utils/data/packages/game-server-bw";
 import { AUTO_LOCALE, DEFAULT_LOCALE, systemLocale, systemLocaleSupported, tr, usedLocale } from "../utils/translation";
@@ -110,7 +111,9 @@ export async function startup(opts: Required<AbortOptions>){
             )
         }, {
             visible: false,
-        },),
+        }),
+
+        DirectUpgrade: button(() => directUpgrade(opts)),
 
         Play: button(() => view.resolve()),
         Test: button(() => {
@@ -165,4 +168,36 @@ function clientLocation(getView: () => DeferredView<void>, gcPkg: { dir: string 
             args.gc126Location.save(text)
         }, isCustom),
     }
+}
+
+async function directUpgrade(opts: Required<AbortOptions>){
+    
+    let parsedVersionFile: ParsedVersionFile | undefined
+    
+    const view = render('DirectUpgrade', form({
+        TextToCopy: text(),
+        PastedText: text(undefined, (str: string) => {
+            parseVersionFileString(str, opts).then(({ err, res }) => {
+                view.get('Error').update({ $type: 'label', text: err?.message ?? '', visible: !!err })
+                view.get('Apply').update({ $type: 'button', disabled: !!err })
+                parsedVersionFile = res
+            })
+        }),
+        Cancel: button(() => view.resolve()),
+        Apply: button(() => {
+            if(parsedVersionFile)
+                saveVersionFile(parsedVersionFile)
+            view.resolve()
+        }),
+        Warning: base(false),
+        Error: base(false),
+    }), opts)
+
+    getOrLoadVersionFileString(opts).then((str) => {
+        if(str) view.get('TextToCopy').update(text(str))
+        else {
+            const text = tr('The file is unavailable, please try updating at least once.')
+            view.get('Error').update(label(text))
+        }
+    })
 }

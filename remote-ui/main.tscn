@@ -178,6 +178,7 @@ views = {
 "CustomGameSetup": NodePath("Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup"),
 "CustomsBrowser": NodePath("Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser"),
 "DirectConnect": NodePath("Container/TabContainer/#DirectConnect"),
+"DirectUpgrade": NodePath("Container/TabContainer/#DirectUpgrade"),
 "DiskSpaceWarning": NodePath("Container/TabContainer/#Install/VBoxContainer/CenterContainer/#DiskSpaceWarning"),
 "GatheringLobby": NodePath("Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#GatheringLobby"),
 "Install": NodePath("Container/TabContainer/#Install"),
@@ -519,6 +520,14 @@ size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 14
 placeholder_text = "C:\\..."
 editable = false
+
+[node name="HSeparator2" type="HSeparator" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer" unique_id=1216931381]
+layout_mode = 2
+
+[node name="#DirectUpgrade" type="Button" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer" unique_id=742065917]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Share or apply launcher update code"
 
 [node name="CenterContainer" type="CenterContainer" parent="Container/TabContainer/#Startup" unique_id=1821376361]
 layout_mode = 1
@@ -3447,6 +3456,140 @@ text = "30"
 custom_minimum_size = Vector2(31, 0)
 layout_mode = 2
 text = "⟳"
+
+[node name="#DirectUpgrade" type="MarginContainer" parent="Container/TabContainer" unique_id=1878375386]
+visible = false
+layout_mode = 2
+script = ExtResource("13_2cqfq")
+metadata/_tab_index = 8
+
+[node name="GridContainer" type="GridContainer" parent="Container/TabContainer/#DirectUpgrade" unique_id=380972840]
+layout_mode = 2
+columns = 2
+
+[node name="PanelContainer1" type="PanelContainer" parent="Container/TabContainer/#DirectUpgrade/GridContainer" unique_id=362587091]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#DirectUpgrade/GridContainer/PanelContainer1" unique_id=1154082194]
+layout_mode = 2
+
+[node name="Label1" type="Label" parent="Container/TabContainer/#DirectUpgrade/GridContainer/PanelContainer1/MarginContainer" unique_id=1576545548]
+custom_minimum_size = Vector2(1, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Copy the launcher update code below and share it"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="PanelContainer2" type="PanelContainer" parent="Container/TabContainer/#DirectUpgrade/GridContainer" unique_id=1248817908]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#DirectUpgrade/GridContainer/PanelContainer2" unique_id=2051527259]
+layout_mode = 2
+
+[node name="Label1" type="Label" parent="Container/TabContainer/#DirectUpgrade/GridContainer/PanelContainer2/MarginContainer" unique_id=1395512328]
+custom_minimum_size = Vector2(1, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Find and paste the launcher update code below"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="#TextToCopy" type="TextEdit" parent="Container/TabContainer/#DirectUpgrade/GridContainer" unique_id=1837307718]
+layout_mode = 2
+size_flags_vertical = 3
+placeholder_text = "The launcher update code will appear here for copying and sharing"
+wrap_mode = 1
+autowrap_mode = 1
+
+[node name="#Warning" type="Label" parent="Container/TabContainer/#DirectUpgrade/GridContainer/#TextToCopy" unique_id=75422492]
+visible = false
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -23.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.85882354, 0.81960785, 0.4627451, 1)
+text = "WARNING"
+horizontal_alignment = 1
+
+[node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/#DirectUpgrade/GridContainer/#TextToCopy/#Warning" unique_id=1814988823]
+show_behind_parent = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="#PastedText" type="TextEdit" parent="Container/TabContainer/#DirectUpgrade/GridContainer" unique_id=450017000]
+layout_mode = 2
+size_flags_vertical = 3
+placeholder_text = "Paste the found launcher update code here"
+wrap_mode = 1
+autowrap_mode = 1
+
+[node name="#Error" type="Label" parent="Container/TabContainer/#DirectUpgrade/GridContainer/#PastedText" unique_id=428319149]
+visible = false
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -23.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.8627451, 0.46666667, 0.827451, 1)
+text = "ERROR"
+horizontal_alignment = 1
+
+[node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/#DirectUpgrade/GridContainer/#PastedText/#Error" unique_id=1292721332]
+show_behind_parent = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="HBoxContainer1" type="HBoxContainer" parent="Container/TabContainer/#DirectUpgrade/GridContainer" unique_id=1803113571]
+layout_mode = 2
+
+[node name="#Cancel" type="Button" parent="Container/TabContainer/#DirectUpgrade/GridContainer/HBoxContainer1" unique_id=330435432]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Cancel"
+
+[node name="#Paste" type="Button" parent="Container/TabContainer/#DirectUpgrade/GridContainer/HBoxContainer1" unique_id=679720464 node_paths=PackedStringArray("textarea")]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Copy"
+script = ExtResource("11_ycdy4")
+action = 1
+textarea = NodePath("../../#TextToCopy")
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="Container/TabContainer/#DirectUpgrade/GridContainer" unique_id=1440306938]
+layout_mode = 2
+
+[node name="#Paste" type="Button" parent="Container/TabContainer/#DirectUpgrade/GridContainer/HBoxContainer2" unique_id=1738799235 node_paths=PackedStringArray("textarea")]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Paste"
+script = ExtResource("11_ycdy4")
+action = 2
+textarea = NodePath("../../#PastedText")
+
+[node name="#Apply" type="Button" parent="Container/TabContainer/#DirectUpgrade/GridContainer/HBoxContainer2" unique_id=1042092412]
+modulate = Color(0, 1, 0, 1)
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+text = "Apply"
 
 [node name="MariginContainer" type="MarginContainer" parent="." unique_id=1202763836]
 layout_mode = 1

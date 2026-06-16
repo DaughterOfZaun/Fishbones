@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+message VersionFile {
+    optional SelfPackage self = 1;
+    message SelfPackage {
+        uint32 version = 1;
+        uint32 size = 2;
+        uint32 zip_size = 3;
+        repeated string zip_web_seeds = 4;
+        bytes zip_info_hash_v1 = 5;
+        bytes zip_info_hash_v2 = 6;
+        optional string releases_url = 7;
+    }
+}
