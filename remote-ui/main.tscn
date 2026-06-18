@@ -294,13 +294,13 @@ metadata/_tab_index = 1
 
 [node name="VBoxContainer" type="VBoxContainer" parent="Container/TabContainer/#Startup" unique_id=1694149679]
 layout_mode = 1
-anchors_preset = 2
-anchor_top = 1.0
+anchors_preset = -1
 anchor_bottom = 1.0
-offset_top = -40.0
-offset_right = 40.0
+offset_right = 386.0
 grow_vertical = 0
+size_flags_vertical = 3
 theme_override_constants/separation = 0
+alignment = 2
 
 [node name="#EnableInternet" type="CheckBox" parent="Container/TabContainer/#Startup/VBoxContainer" unique_id=475046149]
 layout_mode = 2
@@ -3504,29 +3504,6 @@ placeholder_text = "The launcher update code will appear here for copying and sh
 wrap_mode = 1
 autowrap_mode = 1
 
-[node name="#Warning" type="Label" parent="Container/TabContainer/#DirectUpgrade/GridContainer/#TextToCopy" unique_id=75422492]
-visible = false
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -23.0
-grow_horizontal = 2
-grow_vertical = 0
-theme_override_colors/font_color = Color(0.85882354, 0.81960785, 0.4627451, 1)
-text = "WARNING"
-horizontal_alignment = 1
-
-[node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/#DirectUpgrade/GridContainer/#TextToCopy/#Warning" unique_id=1814988823]
-show_behind_parent = true
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
 [node name="#PastedText" type="TextEdit" parent="Container/TabContainer/#DirectUpgrade/GridContainer" unique_id=450017000]
 layout_mode = 2
 size_flags_vertical = 3
@@ -3534,28 +3511,25 @@ placeholder_text = "Paste the found launcher update code here"
 wrap_mode = 1
 autowrap_mode = 1
 
-[node name="#Error" type="Label" parent="Container/TabContainer/#DirectUpgrade/GridContainer/#PastedText" unique_id=428319149]
-visible = false
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -23.0
-grow_horizontal = 2
-grow_vertical = 0
+[node name="PanelContainer3" type="PanelContainer" parent="Container/TabContainer/#DirectUpgrade/GridContainer" unique_id=1814988823]
+show_behind_parent = true
+layout_mode = 2
+
+[node name="#Warning" type="Label" parent="Container/TabContainer/#DirectUpgrade/GridContainer/PanelContainer3" unique_id=75422492]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85882354, 0.81960785, 0.4627451, 1)
+text = "WARNING"
+horizontal_alignment = 1
+
+[node name="PanelContainer4" type="PanelContainer" parent="Container/TabContainer/#DirectUpgrade/GridContainer" unique_id=1292721332]
+show_behind_parent = true
+layout_mode = 2
+
+[node name="#Error" type="Label" parent="Container/TabContainer/#DirectUpgrade/GridContainer/PanelContainer4" unique_id=428319149]
+layout_mode = 2
 theme_override_colors/font_color = Color(0.8627451, 0.46666667, 0.827451, 1)
 text = "ERROR"
 horizontal_alignment = 1
-
-[node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/#DirectUpgrade/GridContainer/#PastedText/#Error" unique_id=1292721332]
-show_behind_parent = true
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 
 [node name="HBoxContainer1" type="HBoxContainer" parent="Container/TabContainer/#DirectUpgrade/GridContainer" unique_id=1803113571]
 layout_mode = 2
@@ -3565,7 +3539,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Cancel"
 
-[node name="#Paste" type="Button" parent="Container/TabContainer/#DirectUpgrade/GridContainer/HBoxContainer1" unique_id=679720464 node_paths=PackedStringArray("textarea")]
+[node name="#Copy" type="Button" parent="Container/TabContainer/#DirectUpgrade/GridContainer/HBoxContainer1" unique_id=679720464 node_paths=PackedStringArray("textarea")]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Copy"

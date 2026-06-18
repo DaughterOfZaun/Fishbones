@@ -189,15 +189,15 @@ async function directUpgrade(opts: Required<AbortOptions>){
                 saveVersionFile(parsedVersionFile)
             view.resolve()
         }),
-        Warning: base(false),
-        Error: base(false),
+        Warning: label(''),
+        Error: label(''),
     }), opts)
 
     getOrLoadVersionFileString(opts).then((str) => {
         if(str) view.get('TextToCopy').update(text(str))
         else {
             const text = tr('The file is unavailable, please try updating at least once.')
-            view.get('Error').update(label(text))
+            view.get('Warning').update(label(text))
         }
     })
 }
