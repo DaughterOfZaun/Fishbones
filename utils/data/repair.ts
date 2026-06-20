@@ -13,7 +13,7 @@ import embedded from './embedded/embedded'
 import os from 'os'
 import { runPostInstall, update } from "./update"
 import { args } from "../args"
-import { checkForUpdates, fbPkg, isNewVersionAvailable, prev_fbPkg, repairSelfPackage } from "./upgrade"
+import { checkForUpdates, fbPkg, isNewVersionAvailable, fbPkgCurrent, repairSelfPackage } from "./upgrade"
 import { spawn } from "node:child_process"
 import { tr } from "../translation"
 import { DeferredView, render } from "../../ui/remote/view"
@@ -283,9 +283,9 @@ async function repairOrThrow(opts: Required<AbortOptions>){
     if(args.upgrade.value && isNewVersionAvailable()) try {
 
         // A hack to speed up download.
-        if(await fs_exists(prev_fbPkg.zip, opts) && !await fs_exists(fbPkg.zip, opts)){
-            const bar = createBar(tr('Copying'), prev_fbPkg.zip)
-            await fs_copyFile(prev_fbPkg.zip, fbPkg.zip, opts)
+        if(await fs_exists(fbPkgCurrent.zip, opts) && !await fs_exists(fbPkg.zip, opts)){
+            const bar = createBar(tr('Copying'), fbPkgCurrent.zip)
+            await fs_copyFile(fbPkgCurrent.zip, fbPkg.zip, opts)
             await fs_truncate(fbPkg.zip, fbPkg.zipSize, opts)
             bar.stop()
         }
@@ -297,8 +297,8 @@ async function repairOrThrow(opts: Required<AbortOptions>){
         await fs.utimes(fbPkg.exe, now, now)
         await fs_chmod(fbPkg.exe, rwx_rx_rx, opts)
 
-        console.assert(fbPkg.dir === prev_fbPkg.dir)
-        const oldExe = path.join(prev_fbPkg.dir, `Fishbones.${prev_fbPkg.version}.exe`)
+        console.assert(fbPkg.dir === fbPkgCurrent.dir)
+        const oldExe = path.join(fbPkgCurrent.dir, `Fishbones.${fbPkgCurrent.version}.exe`)
         await fs_moveFile(currentExe, oldExe, opts, true)
         await fs_moveFile(fbPkg.exe, currentExe, opts, true)
 

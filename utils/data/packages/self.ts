@@ -1,4 +1,4 @@
-import { arch, platform, HARDCODED_RELEASE_URL } from "../../constants-build"
+import { arch, platform, HARDCODED_GH_RELEASE_URL, HARDCODED_HTTP_SERVER_URL, HARDCODED_GH_DOWNLOAD_URL } from "../../constants-build"
 import { tr } from "../../translation"
 import { downloads } from "../fs"
 import { PkgInfo } from "./shared"
@@ -6,7 +6,8 @@ import path from 'node:path'
 
 export class FBPkgInfo extends PkgInfo {
     
-    releasesURL = HARDCODED_RELEASE_URL
+    /** @deprecated Property is not used and will be removed in the future. */
+    releasesURL = HARDCODED_GH_RELEASE_URL
 
     readonly name = tr('Launcher')
     readonly dirName = 'Fishbones'
@@ -18,23 +19,18 @@ export class FBPkgInfo extends PkgInfo {
     readonly zipExt = 'zip'
 
     // Mutable variables.
-    private _version!: string
-    get version(){ return this._version }
-    set version(version: string){
-        this._version = version
-        this.zipName = `${this.dirName}-${this.version}-${platform}-${arch}.${this.zipExt}`
-        this.zipTorrentName = `${this.zipName}.torrent`
-        this.zipTorrent = path.join(downloads, this.zipTorrentName)
-        this.zip = path.join(downloads, this.zipName)
-    }
-    zipName!: string
-    zipTorrentName!: string
-    zipTorrent!: string
-    zip!: string
+    version: string
+    get zipName(){ return `${this.dirName}-${this.version}-${platform}-${arch}.${this.zipExt}` }
+    get zipTorrentName() { return `${this.zipName}.torrent` }
+    get zipTorrent(){ return path.join(downloads, this.zipTorrentName) }
+    get zip(){ return path.join(downloads, this.zipName) }
     
     size = 0 //TODO:
     zipSize!: number
-    zipWebSeeds: string[] = []
+    zipWebSeeds: string[] = [
+        `${HARDCODED_GH_DOWNLOAD_URL}/${this.zipName}`,
+        `${HARDCODED_HTTP_SERVER_URL}/${this.zipName}`,
+    ]
     
     zipTorrentEmbedded = ''
     zipInfoHashV1 = ''
@@ -52,6 +48,10 @@ export class FBPkgInfo extends PkgInfo {
 
     versionFileName = 'version.bin'
     versionFile = path.join(downloads, this.versionFileName)
+    vfWebSeeds: string[] = [
+        `${HARDCODED_GH_DOWNLOAD_URL}/${this.versionFileName}`,
+        `${HARDCODED_HTTP_SERVER_URL}/${this.versionFileName}`,
+    ]
 
     constructor(version: string){
         super()

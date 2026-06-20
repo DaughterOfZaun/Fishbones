@@ -1,7 +1,7 @@
 import type { AbortOptions } from "@libp2p/interface";
 import { DeferredView, render } from "../ui/remote/view";
 import { base, button, checkbox, form, icon, icon_button, label, line, list, option, text } from "../ui/remote/types";
-import { getOrLoadVersionFileString, parseVersionFileString, saveVersionFile, type ParsedVersionFile } from "../utils/data/upgrade";
+import { getOrLoadVersionFileString, parseVersionFileString, saveVersionFileInBackground, type ParsedVersionFile } from "../utils/data/upgrade";
 import { args } from "../utils/args";
 import { bwPkg } from "../utils/data/packages/game-server-bw";
 import { AUTO_LOCALE, DEFAULT_LOCALE, systemLocale, systemLocaleSupported, tr, usedLocale } from "../utils/translation";
@@ -10,6 +10,8 @@ import { WINE_CMD_AUTO, WINE_CMD_AUTO_IDX, WINE_CMD_AUTO_TEMPLATE, WINE_CMD_CUST
 import { profileIcons, profileIconsCount } from "../utils/data/constants/profile-icons";
 import { gc420Pkg } from "../utils/data/packages/game-client-420";
 import { sanitize_str } from "../utils/data/constants/values/inputable";
+//import { logger } from "../utils/log";
+//import { inspect } from 'node:util'
 
 enum DownloadSource {
     Torrents_and_Mega = 3,
@@ -22,8 +24,7 @@ export async function startup(opts: Required<AbortOptions>){
 
     const isAuto = args.wineCommand.value == WINE_CMD_AUTO
 
-    let view: DeferredView<void>
-    view = render('Startup', form({
+    const view: DeferredView<void> = render('Startup', form({
         EnableInternet: checkbox(args.allowInternet.value, (on) => args.allowInternet.save(on)),
         UpdateLauncher: checkbox(args.upgrade.value, (on) => args.upgrade.save(on)),
         InstallModPack: checkbox(args.installModPack.value, (on) => args.installModPack.save(on)),
@@ -113,7 +114,9 @@ export async function startup(opts: Required<AbortOptions>){
             visible: false,
         }),
 
-        DirectUpgrade: button(() => directUpgrade(opts)),
+        DirectUpgrade: button(() => {
+            directUpgrade(opts) //.catch(err => { logger.log('Direct upgrade failed:', inspect(err)) })
+        }),
 
         Play: button(() => view.resolve()),
         Test: button(() => {
@@ -170,14 +173,14 @@ function clientLocation(getView: () => DeferredView<void>, gcPkg: { dir: string 
     }
 }
 
-async function directUpgrade(opts: Required<AbortOptions>){
+function directUpgrade(opts: Required<AbortOptions>){
     
     let parsedVersionFile: ParsedVersionFile | undefined
     
     const view = render('DirectUpgrade', form({
         TextToCopy: text(),
         PastedText: text(undefined, (str: string) => {
-            parseVersionFileString(str, opts).then(({ err, res }) => {
+            void parseVersionFileString(str, opts, true).then(({ err, res }) => {
                 view.get('Error').update({ $type: 'label', text: err?.message ?? '', visible: !!err })
                 view.get('Apply').update({ $type: 'button', disabled: !!err })
                 parsedVersionFile = res
@@ -186,7 +189,7 @@ async function directUpgrade(opts: Required<AbortOptions>){
         Cancel: button(() => view.resolve()),
         Apply: button(() => {
             if(parsedVersionFile)
-                saveVersionFile(parsedVersionFile)
+                saveVersionFileInBackground(parsedVersionFile)
             view.resolve()
         }),
         Warning: label(''),
@@ -199,5 +202,7 @@ async function directUpgrade(opts: Required<AbortOptions>){
             const text = tr('The file is unavailable, please try updating at least once.')
             view.get('Warning').update(label(text))
         }
+    }, () => {
+        // Ignore.
     })
 }

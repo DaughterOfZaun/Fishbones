@@ -11,7 +11,8 @@ export const DESCRIPTION = "Yet another LeagueSandbox launcher with a twist"
 export const COPYRIGHT = "AGPLv3"
 export const VERSION_REGEX = /(\d+)\.(\d+)\.(\d+)\.(\d+)/
 
-export const HARDCODED_RELEASE_URL = 'https://api.github.com/repos/DaughterOfZaun/Fishbones/releases'
+export const HARDCODED_GH_RELEASE_URL = 'https://api.github.com/repos/DaughterOfZaun/Fishbones/releases'
+export const HARDCODED_GH_DOWNLOAD_URL = 'https://github.com/DaughterOfZaun/Fishbones/releases/download/v0.0.4'
 
 export const VERSION_FILE_DOMAIN = 'fishbones-version-file'
 export const HARDCODED_UPGRADE_PUBLIC_KEY = 'IAOuTMg/ud6fE6id+R0sNsSfFIg9izQSLKInWYkcuYs='

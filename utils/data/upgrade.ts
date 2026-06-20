@@ -13,6 +13,12 @@ import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
 import { VersionFile } from '../../message/version.ts'
 import { logger } from "../log.ts"
 import { safeOptions } from "../process/process.ts"
+import { magnet } from "./packages/shared.ts"
+
+const VERSION_FILE_LIFETIME = 7/*d*/ * 24/*h*/ * 60/*m*/ * 60/*s*/ * 1000/*ms*/
+const HTTP_FETCH_TIMEOUT = 10_000
+
+type Result<T, E extends Error = Error> = { res?: T, err?: E }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 namespace GitHub {
@@ -34,8 +40,8 @@ export function isNewVersionAvailable(){
     return _isNewVersionAvailable
 }
 
-export let fbPkg = new FBPkgInfo(VERSION)
-export let prev_fbPkg = new FBPkgInfo(VERSION) //TODO: Freeze.
+export const fbPkg = new FBPkgInfo(VERSION)
+export const fbPkgCurrent = Object.freeze(new FBPkgInfo(VERSION))
 export async function checkForUpdates(opts: Required<AbortOptions>){
 
     //if(!args.upgrade.enabled){
@@ -45,73 +51,89 @@ export async function checkForUpdates(opts: Required<AbortOptions>){
 
     const bar = createBar(tr('Checking for updates'), '')
     try {
-        
-        const vf = await getOrLoadVersionFile(opts)
-        if(vf){
-            const vfVersion = version(vf.version)
-            const fbVersion = version(fbPkg.version)
-            console.log(tr('Latest version in version file:', {}) + ` ${fbPkg.zipName} (${fbVersion})`)
-            if(vfVersion <= fbVersion){
-                //console_log(tr('Already using the latest launcher version.', {}))
-            } else {
-                _isNewVersionAvailable = true
-                applyVersionFile()
-            }
-        }
-
-        const releasesJSON = await fetch(fbPkg.releasesURL, opts)
-        const releases = await releasesJSON.json() as GitHub.Release[]
-        const release = releases.sort((a, b) => date(b.published_at) - date(a.published_at)).at(0)!
-        const assets = release.assets.sort((a, b) => version(b.name) - version(a.name))
-        const zip = assets.find(asset => asset.name.includes(platform) && asset.name.endsWith('.' + fbPkg.zipExt))
-
-        if(!zip){
-            console_log(tr('No suitable launcher update archive found.', {}))
-            return
-        }
-        
-        const zipVersion = version(zip.name)
-        const fbVersion = version(fbPkg.version)
-        console_log(tr('Latest version on releases page:', {}) + ` ${zip.name} (${zipVersion})`)
-        if(zipVersion <= fbVersion){
-            //console_log(tr('Already using the latest launcher version.', {}))
-        } else {
-
-            _isNewVersionAvailable = true
-
-            fbPkg.version = versionToString(zipVersion)
-            fbPkg.zipWebSeeds = [ zip.browser_download_url ]
-            fbPkg.zipSize = zip.size
-            
-            //await fs_removeFile(fbPkg.zip, opts, true)
-            //await fs_removeFile(fbPkg.zipTorrent, opts, true)
-
-            const torrent = assets.find(asset => asset.name == zip.name + '.torrent')
-            if(torrent){
-                try {
-                    if(await fs_exists(fbPkg.zipTorrent, opts)){
-                        console_log(tr(`{fbPkg_zipTorrent} exists already`, { fbPkg_zipTorrent: fbPkg.zipTorrent }))
-                    } else {
-                        const zipTorrentURL = torrent.browser_download_url
-                        const zipTorrentResponse = await fetch(zipTorrentURL, opts)
-                        const zipTorrentBytes = await zipTorrentResponse.bytes()
-                        const zipTorrentPartial = appendPartialDownloadFileExt(fbPkg.zipTorrent)
-                        await fs.writeFile(zipTorrentPartial, zipTorrentBytes)
-                        await fs.rename(zipTorrentPartial, fbPkg.zipTorrent)
-                    }
-                } catch(err) {
-                    console_log(tr(`{fbPkg_zipTorrent} download failed:`, { fbPkg_zipTorrent: fbPkg.zipTorrent }), inspect(err))
-                    fbPkg.zipTorrent = ''
-                }
-            } else {
-                fbPkg.zipTorrent = ''
-            }
-        }
-        
+        await checkForUpdatesImpl(opts)    
     } catch(err) {
         console_log(tr('Update check failed:', {}), inspect(err))
     } finally {
         bar.stop()
+    }
+}
+async function checkForUpdatesImpl(opts: Required<AbortOptions>){
+
+    const fbPkgCurrent_versionNumber = version(fbPkgCurrent.version)
+
+    const vf = await getOrLoadVersionFile(opts)
+    if(vf) applyVersionFile()
+
+    for(const url of fbPkg.vfWebSeeds){
+        const { err, res } = await fetchBinary(url, opts)
+    }
+
+}
+async function fetchBinary(url: string, opts: Required<AbortOptions>): Promise<Result<Buffer>> {
+    try {
+        logger.log('fetching binary from', url)
+        const signal = AbortSignal.any([ opts.signal, AbortSignal.timeout(HTTP_FETCH_TIMEOUT) ])
+        const data = await fetch(url, { signal })
+        const bytes = await data.bytes()
+        opts.signal.throwIfAborted()
+        const res = Buffer.from(bytes)
+        return { res }
+    } catch(err) {
+        return { err: err as Error }
+    }
+}
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function checkReleasesPage(opts: Required<AbortOptions>){
+
+    const fbPkgCurrent_versionNumber = version(fbPkgCurrent.version)
+
+    const releasesJSON = await fetch(fbPkg.releasesURL, opts)
+    const releases = await releasesJSON.json() as GitHub.Release[]
+    const release = releases.sort((a, b) => date(b.published_at) - date(a.published_at)).at(0)!
+    const assets = release.assets.sort((a, b) => version(b.name) - version(a.name))
+    const zip = assets.find(asset => asset.name.includes(platform) && asset.name.endsWith('.' + fbPkg.zipExt))
+
+    if(!zip){
+        console_log(tr('No suitable launcher update archive found.', {}))
+        return
+    }
+    
+    const zipVersion = version(zip.name)
+    console_log(tr('Latest version on releases page:', {}) + ` ${zip.name} (${zipVersion})`)
+    if(zipVersion <= fbPkgCurrent_versionNumber){
+        //console_log(tr('Already using the latest launcher version.', {}))
+    } else {
+
+        _isNewVersionAvailable = true
+
+        fbPkg.version = versionToString(zipVersion)
+        fbPkg.zipWebSeeds = [ zip.browser_download_url ]
+        fbPkg.zipSize = zip.size
+        
+        //await fs_removeFile(fbPkg.zip, opts, true)
+        //await fs_removeFile(fbPkg.zipTorrent, opts, true)
+
+        const torrent = assets.find(asset => asset.name == zip.name + '.torrent')
+        if(torrent){
+            try {
+                if(await fs_exists(fbPkg.zipTorrent, opts)){
+                    console_log(tr(`{fbPkg_zipTorrent} exists already`, { fbPkg_zipTorrent: fbPkg.zipTorrent }))
+                } else {
+                    const zipTorrentURL = torrent.browser_download_url
+                    const zipTorrentResponse = await fetch(zipTorrentURL, opts)
+                    const zipTorrentBytes = await zipTorrentResponse.bytes()
+                    const zipTorrentPartial = appendPartialDownloadFileExt(fbPkg.zipTorrent)
+                    await fs.writeFile(zipTorrentPartial, zipTorrentBytes)
+                    await fs.rename(zipTorrentPartial, fbPkg.zipTorrent)
+                }
+            } catch(err) {
+                console_log(tr(`{fbPkg_zipTorrent} download failed:`, { fbPkg_zipTorrent: fbPkg.zipTorrent }), inspect(err))
+                //fbPkg.zipTorrent = ''
+            }
+        } else {
+            //fbPkg.zipTorrent = ''
+        }
     }
 }
 
@@ -142,12 +164,14 @@ export async function repairSelfPackage(opts: Required<AbortOptions>){
 }
 
 export interface ParsedVersionFile {
+    date: number
     version: string
     size: number
     zipSize: number
-    zipWebSeeds: string[]
     zipInfoHashV1: string
     zipInfoHashV2: string
+    zipWebSeeds: string[]
+    vfWebSeeds: string[]
     releasesURL?: string
     buffer: Buffer
 }
@@ -156,11 +180,14 @@ let parsedVersionFile: ParsedVersionFile | undefined = undefined
 //export function setVersionFile(to: ParsedVersionFile){
 //    parsedVersionFile = to
 //}
-export function saveVersionFile(vf: ParsedVersionFile){
-    parsedVersionFile = vf
-    fs_writeFile(fbPkg.versionFile, vf.buffer, { ...safeOptions, encoding: 'binary' }).catch((err) => {
+export function saveVersionFileInBackground(vf: ParsedVersionFile){
+    void saveVersionFile(vf, safeOptions).catch((err) => {
         logger.log('Failed to save version file:', inspect(err))
     })
+}
+export async function saveVersionFile(vf: ParsedVersionFile, opts: Required<AbortOptions>){
+    parsedVersionFile = vf
+    return fs_writeFile(fbPkg.versionFile, vf.buffer, { ...opts, encoding: 'binary' })
 }
 export async function getOrLoadVersionFile(opts: Required<AbortOptions>){
     return parsedVersionFile ?
@@ -181,38 +208,37 @@ export async function loadVersionFile(opts: Required<AbortOptions>){
         }
     }
 }
-export async function parseVersionFileString(str: string, opts: Required<AbortOptions>): Promise<{ err?: Error, res?: ParsedVersionFile }> {
+export async function parseVersionFileString(str: string, opts: Required<AbortOptions>, checkDate = true): Promise<Result<ParsedVersionFile>> {
     try {
         const buffer = Buffer.from(str, 'base64')
-        return parseVersionFile(buffer, opts)
+        return parseVersionFile(buffer, opts, checkDate)
     } catch(err) {
         return { err: err as Error }
     }
 }
-export async function parseVersionFile(buffer: Buffer, opts: Required<AbortOptions>): Promise<{ err?: Error, res?: ParsedVersionFile }> {
+export async function parseVersionFile(buffer: Buffer, opts: Required<AbortOptions>, checkDate = true): Promise<{ err?: Error, res?: ParsedVersionFile }> {
     try {
         const envelope = await RecordEnvelope.openAndCertify(buffer, VERSION_FILE_DOMAIN, opts)
         const publicKeyBase64String = uint8ArrayToString(envelope.publicKey.raw, HARDCODED_KEY_ENCODING)
         if(publicKeyBase64String != HARDCODED_UPGRADE_PUBLIC_KEY)
             throw new Error('The public key is not the official one that is hardcoded in the program.')
-        const packages = VersionFile.decode(envelope.payload)
-        if(!packages.self)
-            throw new Error('The file does not contain information about the current version of the launcher.')
-        const { version: zipVersion, size, zipSize, zipWebSeeds, zipInfoHashV1, zipInfoHashV2, releasesUrl: releasesURL } = packages.self
-        
-        let latestKnownVersion = 0
-            latestKnownVersion = Math.max(latestKnownVersion, version(fbPkg.version))
-        if(parsedVersionFile)
-            latestKnownVersion = Math.max(latestKnownVersion, version(parsedVersionFile.version))
-        if(zipVersion <= latestKnownVersion)
-            throw new Error('The launcher version in the file is not newer than the latest known one.')
-        
-        const res = {
-            version: versionToString(zipVersion),
+
+        const {
+            date, version,
+            zipInfoHashV1, zipInfoHashV2,
             size, zipSize, zipWebSeeds,
+            vfWebSeeds, releasesUrl: releasesURL
+        } = VersionFile.decode(envelope.payload)
+
+        if(checkDate && parsedVersionFile && date <= parsedVersionFile.date)
+            throw new Error('The file version is not newer than the latest known version file.')
+
+        const res = {
+            size, zipSize, zipWebSeeds,
+            date, version: versionToString(version),
             zipInfoHashV1: uint8ArrayToString(zipInfoHashV1, 'hex'),
             zipInfoHashV2: uint8ArrayToString(zipInfoHashV2, 'hex'),
-            releasesURL,
+            vfWebSeeds, releasesURL,
             buffer,
         }
         return { res }
@@ -226,8 +252,10 @@ export function applyVersionFile(){
     fbPkg.version = vf.version
     fbPkg.size = vf.size
     fbPkg.zipSize = vf.zipSize
+    fbPkg.vfWebSeeds = vf.vfWebSeeds
     fbPkg.zipWebSeeds = vf.zipWebSeeds
     fbPkg.zipInfoHashV1 = vf.zipInfoHashV1
     fbPkg.zipInfoHashV2 = vf.zipInfoHashV2
+    fbPkg.zipMagnet = magnet(fbPkg.zipInfoHashV1, fbPkg.zipInfoHashV2, fbPkg.zipName, fbPkg.zipSize)
     fbPkg.releasesURL = vf.releasesURL ?? fbPkg.releasesURL
 }
