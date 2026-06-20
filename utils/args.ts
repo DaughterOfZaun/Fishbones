@@ -1,3 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+
 import type { AbortOptions } from "@libp2p/interface"
 import { OUTFILE } from "./constants-build"
 import fs from 'node:fs/promises'
@@ -91,7 +95,7 @@ class Option<T> {
     }
     
     public save(to: T = this.value){
-        this.set(to!)
+        this.set(to)
         console.assert(!!this.name, 'Assertion failed: !!this.name')
         config[this.name] = this.value
         saveConfigInBackground()
@@ -184,7 +188,7 @@ export async function loadConfig(opts: Required<AbortOptions>){
 }
 
 const configFile = path.join(downloads, 'config.json')
-function saveConfig(opts: Required<AbortOptions>){
+async function saveConfig(opts: Required<AbortOptions>){
     return fs.writeFile(configFile, JSON.stringify(config, null, 4), { ...opts, encoding: 'utf8' })
 }
 

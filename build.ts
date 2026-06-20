@@ -3,10 +3,12 @@
 import { $ } from 'bun'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
-import { NAME, OUTDIR, OUTFILE, VERSION_REGEX } from './utils/constants-build'
+import { HARDCODED_KEY_ENCODING, NAME, OUTDIR, OUTFILE, VERSION_REGEX, versionFromString } from './utils/constants-build'
 import { config, type Config } from './utils/data/embedded/config'
 import { Reader, sizeof, Writer } from './utils/binary'
 //import { ariaPkg } from './utils/data/packages/aria2'
+import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string'
+import { VersionFile } from './message/version'
 
 const GODOT_EDITOR_EXE =
     process.platform == 'linux' ? './dist/Godot_v4.6.3-stable_linux.x86_64' :
@@ -19,11 +21,12 @@ const GODOT_TEMPLATES_DIR = path.join(process.env['HOME'] ?? '~', '.local/share/
 
 const release = process.argv.includes('release') ? 'release' : 'debug'
 
-const version = process.argv.find(arg => VERSION_REGEX.test(arg))
-console.assert(typeof version === 'string')
+const versionString = process.argv.find(arg => VERSION_REGEX.test(arg))!
+const versionNumber = versionFromString(versionString)
+console.assert(typeof versionString === 'string')
 
-const indexJS = `./${OUTDIR}/index-${version}.js`
-const indexJSMap = `./${OUTDIR}/index-${version}.js.map`
+const indexJS = `./${OUTDIR}/index-${versionString}.js`
+const indexJSMap = `./${OUTDIR}/index-${versionString}.js.map`
 
 const platform =
     process.argv.includes('linux') ? 'linux' :
@@ -175,7 +178,7 @@ if (process.argv.includes('bun')) {
             minify: false,
             packages: "bundle",
             define: {
-                'process.env.VERSION': `"${version}"`
+                'process.env.VERSION': `"${versionString}"`
             },
         })
         await fs.rename(`./${OUTDIR}/index.js`, indexJS)
@@ -198,16 +201,16 @@ if (process.argv.includes('godot')) {
 
     const file = './remote-ui/project.godot'
     let proj = await fs.readFile(file, 'utf8')
-    proj = proj.replace(/^(config\/name)="(.*?)"$/m, `$1="${NAME} v${version}"`)
-    proj = proj.replace(/^(config\/version)="(.*?)"$/m, `$1="${version}"`)
+    proj = proj.replace(/^(config\/name)="(.*?)"$/m, `$1="${NAME} v${versionString}"`)
+    proj = proj.replace(/^(config\/version)="(.*?)"$/m, `$1="${versionString}"`)
     await fs.writeFile(file, proj, 'utf8')
 
-    //if(platform == 'windows'){
-    //    await build_godot_exe(relative_exe_path)
-    //} else {
+    if(platform == 'windows'){
+        await build_godot_exe(relative_exe_path)
+    } else {
         await build_godot_pck(relative_pck_path)
         process.argv.push('append-pck') //HACK:
-    //}
+    }
 }
 
 if (process.argv.includes('append-pck')) {
@@ -246,6 +249,33 @@ if (process.argv.includes('append-pck')) {
     //console.assert(reader.readUInt32() == GODOT_PACK_HEADER_MAGIC, `Assertion failed: 3`)
 
     await fs.writeFile(exe_path, exe)
+}
+
+if(process.argv.includes('version')){
+    const key = uint8ArrayFromString(await fs.readFile('keys/upgrade-key-1.txt', 'utf8'), HARDCODED_KEY_ENCODING)
+    const vf = VersionFile.encode({
+        date: Date.now(),
+        versionNumber,
+        windows: getPkg('Windows'),
+        linux: getPkg('Linux'),
+        //releasesUrl: '',
+    })
+    function getPkg(platform: 'Windows' | 'Linux'){
+        const dirName = 'Fishbones'
+        const zipExt = 'zip'
+        const arch = 'x64'
+        const zipName = `${dirName}-${versionString}-${platform}-${arch}.${zipExt}`
+        const zipTorrentName = `${zipName}.torrent`
+        return {
+            size: 0,
+            zipSize: 0,
+            //zipInfoHashV1: '',
+            //zipInfoHashV2: '',
+            vfWebSeeds: [],
+            zipWebSeeds: [],
+            zipTorrentWebSeeds: [],
+        }
+    }
 }
 
 async function build_godot_exe(outfile: string) {

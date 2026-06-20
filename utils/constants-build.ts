@@ -4,12 +4,13 @@ export const NAME = 'Fishbones'
 export const OUTFILE = `${NAME}.exe`
 export const HIDE_CONSOLE = true
 export const ICON = 'icon.ico'
-export const VERSION = process.env.VERSION!
-export const TITLE = `${NAME} v${VERSION}`
+export const VERSION_STRING = process.env.VERSION ?? '0.0.0.0'
+export const TITLE = `${NAME} v${VERSION_STRING}`
 export const PUBLISHER = "Jinx"
 export const DESCRIPTION = "Yet another LeagueSandbox launcher with a twist"
 export const COPYRIGHT = "AGPLv3"
 export const VERSION_REGEX = /(\d+)\.(\d+)\.(\d+)\.(\d+)/
+export const VERSION_NUMBER = versionFromString(VERSION_STRING)
 
 export const HARDCODED_GH_RELEASE_URL = 'https://api.github.com/repos/DaughterOfZaun/Fishbones/releases'
 export const HARDCODED_GH_DOWNLOAD_URL = 'https://github.com/DaughterOfZaun/Fishbones/releases/download/v0.0.4'
@@ -48,8 +49,11 @@ export const platform =
     process.platform === 'linux' ? 'Linux' :
     undefined!
 
-export const date = (str: string) => new Date(str).getTime()
-export const versionFromString = (str: string) => {
+export function dateFromString(str: string){
+    return new Date(str).getTime()
+}
+
+export function versionFromString(str: string){
     const m = str.match(VERSION_REGEX)
     if(m){
         return 0
@@ -61,7 +65,7 @@ export const versionFromString = (str: string) => {
     return 0
 }
 
-export const versionToString = (num: number) => {
+export function versionToString(num: number){
     return [
         (num >> 8 * 3) & 0xFF,
         (num >> 8 * 2) & 0xFF,

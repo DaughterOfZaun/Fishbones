@@ -1,4 +1,4 @@
-import { arch, platform, HARDCODED_GH_RELEASE_URL, HARDCODED_HTTP_SERVER_URL, HARDCODED_GH_DOWNLOAD_URL } from "../../constants-build"
+import { arch, platform, HARDCODED_GH_RELEASE_URL, HARDCODED_HTTP_SERVER_URL, HARDCODED_GH_DOWNLOAD_URL, versionToString } from "../../constants-build"
 import { tr } from "../../translation"
 import { downloads } from "../fs"
 import { PkgInfo } from "./shared"
@@ -19,8 +19,9 @@ export class FBPkgInfo extends PkgInfo {
     readonly zipExt = 'zip'
 
     // Mutable variables.
-    version: string
-    get zipName(){ return `${this.dirName}-${this.version}-${platform}-${arch}.${this.zipExt}` }
+    versionNumber: number
+    get versionString(){ return versionToString(this.versionNumber) }
+    get zipName(){ return `${this.dirName}-${this.versionString}-${platform}-${arch}.${this.zipExt}` }
     get zipTorrentName() { return `${this.zipName}.torrent` }
     get zipTorrent(){ return path.join(downloads, this.zipTorrentName) }
     get zip(){ return path.join(downloads, this.zipName) }
@@ -33,6 +34,11 @@ export class FBPkgInfo extends PkgInfo {
     ]
     
     zipTorrentEmbedded = ''
+    zipTorrentWebSeeds: string[] = [
+        `${HARDCODED_GH_DOWNLOAD_URL}/${this.zipTorrentName}`,
+        `${HARDCODED_HTTP_SERVER_URL}/${this.zipTorrentName}`,
+    ]
+
     zipInfoHashV1 = ''
     zipInfoHashV2 = ''
     zipMagnet = ''
@@ -53,8 +59,8 @@ export class FBPkgInfo extends PkgInfo {
         `${HARDCODED_HTTP_SERVER_URL}/${this.versionFileName}`,
     ]
 
-    constructor(version: string){
+    constructor(versionNumber: number){
         super()
-        this.version = version
+        this.versionNumber = versionNumber
     }
 }

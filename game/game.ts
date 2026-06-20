@@ -24,7 +24,7 @@ import { runes } from '../utils/data/constants/runes'
 import { champions, ChampionsEnabled } from '../utils/data/constants/champions'
 import { SummonerSpellsEnabled } from '../utils/data/constants/spells'
 import { KnownClients, KnownServers, type ClientVersion, type ServerVersion } from '../utils/data/constants/client-server-combinations'
-import { VERSION, versionFromString, versionToString } from '../utils/constants-build'
+import { VERSION_STRING, versionFromString, versionToString } from '../utils/constants-build'
 import { console_log } from '../ui/remote/remote'
 import { tr } from '../utils/translation'
 import { firewall } from '../utils/proxy/proxy-firewall'
@@ -35,7 +35,7 @@ import { args } from '../utils/args'
 import { INI } from '../utils/data/ini'
 import { inspect } from 'node:util'
 
-export const version = versionFromString(VERSION)
+export const version = versionFromString(VERSION_STRING)
 
 interface GameEvents {
     update: CustomEvent,

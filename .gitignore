@@ -1,5 +1,6 @@
 # generated
 /message/*.ts
+/keys/*.txt
 
 # downloaded
 /downloads

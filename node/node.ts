@@ -46,7 +46,7 @@ import type { ConnectionManager, TransportManager } from '@libp2p/interface-inte
 
 import { console_log } from '../ui/remote/remote'
 import { args } from '../utils/args'
-import { appDiscoveryTopic, HARDCODED_SERVER_IP, NAME, rtcConfiguration, VERSION } from '../utils/constants-build'
+import { appDiscoveryTopic, HARDCODED_SERVER_IP, NAME, rtcConfiguration, VERSION_STRING } from '../utils/constants-build'
 import { deadlyRace, Deferred } from '../utils/promises'
 import { tr } from '../utils/translation'
 
@@ -163,8 +163,8 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
     const node = await createLibp2p({
         nodeInfo: {
             name: NAME,
-            version: VERSION,
-            userAgent: `${NAME}/${VERSION}`
+            version: VERSION_STRING,
+            userAgent: `${NAME}/${VERSION_STRING}`
         },
         addresses: {
             listen: [

@@ -2,7 +2,7 @@ import { build } from "./build"
 import { download, appendPartialDownloadFileExt, repairAria2, seed } from "./download/download"
 import { gc126Pkg, gc420Pkg, gitPkg, bwPkg, cbPkg, modPck1, type PkgInfo, repairTorrents, sdkPkg, type PkgInfoCSProj, packages } from "./packages"
 import { console_log, createBar, currentExe, extractFile } from "../../ui/remote/remote"
-import { console_log_fs_err, cwd, downloads, fs_chmod, fs_copyFile, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_overwrite, fs_readdir, fs_readFile, fs_removeFile, fs_rmdir, fs_stat, fs_statfs, fs_truncate, fs_writeFile, rwx_rx_rx } from './fs'
+import { console_log_fs_err, cwd, downloads, fs_chmod, fs_copyFile, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_overwrite, fs_readFile, fs_removeFile, fs_rmdir, fs_stat, fs_statfs, fs_truncate, fs_writeFile, rwx_rx_rx } from './fs'
 import { readTrackersTxt } from "./download/trackers"
 import { appendPartialUnpackFileExt, DataError, repair7z, unpack } from "./unpack"
 import { TerminationError, unwrapAbortError } from "../process/process"
@@ -18,7 +18,7 @@ import { spawn } from "node:child_process"
 import { tr } from "../translation"
 import { DeferredView, render } from "../../ui/remote/view"
 import { button, form, label } from "../../ui/remote/types"
-import { VERSION } from "../constants-build"
+import { VERSION_STRING } from "../constants-build"
 import type { StatsFs } from "node:fs"
 import { clients_push, combinations_merge, combinations_push, KnownClients, KnownServers, servers_push, type ClientInfo, type ServerInfo } from "./constants/client-server-combinations"
 import { ClientDataInfoV126 } from "./packages/game-client-126"
@@ -197,7 +197,7 @@ async function checkFreeSpaceAndGetErrorMsg(opts: Required<AbortOptions>){
             checkFileSize(fbPkg.zip, 81561932, opts),
             checkFileSize(fbPkg.zipTorrent, 25399, opts),
             
-            checkFileSize(path.join(downloads, `index-${VERSION}.js`), 14896347, opts),
+            checkFileSize(path.join(downloads, `index-${VERSION_STRING}.js`), 14896347, opts),
             checkFileSize(path.join(downloads, 'mastery-pages.json'), 1494, opts),
             checkFileSize(path.join(downloads, 'log.txt'), 1834, opts),
             
@@ -298,7 +298,7 @@ async function repairOrThrow(opts: Required<AbortOptions>){
         await fs_chmod(fbPkg.exe, rwx_rx_rx, opts)
 
         console.assert(fbPkg.dir === fbPkgCurrent.dir)
-        const oldExe = path.join(fbPkgCurrent.dir, `Fishbones.${fbPkgCurrent.version}.exe`)
+        const oldExe = path.join(fbPkgCurrent.dir, `Fishbones.${fbPkgCurrent.versionString}.exe`)
         await fs_moveFile(currentExe, oldExe, opts, true)
         await fs_moveFile(fbPkg.exe, currentExe, opts, true)
 
@@ -400,7 +400,7 @@ async function repairOrThrow(opts: Required<AbortOptions>){
 
                 gc126ExeIsMissing = false
 
-                Promise.allSettled([
+                return Promise.allSettled([
                     (async () => {
                         //await fs_ensureDir(gc126Pkg.exeDir, opts)
                         const d3dx9_39_dll_name = 'd3dx9_39.dll'
