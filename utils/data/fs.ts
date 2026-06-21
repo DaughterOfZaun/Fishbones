@@ -84,10 +84,13 @@ export async function fs_copyFile(src: string, dest: string, opts: Required<Abor
 
 export type TextBufferEncoding = 'utf8' | 'base64' | 'binary'
 export type ReadWriteFileOpts = /*TextBufferEncoding |*/ { encoding: TextBufferEncoding, rethrow?: boolean } & Required<AbortOptions>
-export async function fs_readFile(path: string, opts: ReadWriteFileOpts, log = true): Promise<string | undefined> {
+//TODO: export async function fs_readFile(path: string, opts: { encoding: 'binary', rethrow?: boolean } & Required<AbortOptions>, log?: boolean): Promise<Buffer | undefined>
+//TODO: export async function fs_readFile(path: string, opts: { encoding: 'utf8' | 'base64', rethrow?: boolean } & Required<AbortOptions>, log?: boolean): Promise<string | undefined>
+export async function fs_readFile<T extends (string | Buffer) = string>(path: string, opts: ReadWriteFileOpts, log = true): Promise<T | undefined> {
     let result = undefined
     try {
-        result = await fs.readFile(path, opts.encoding)
+        const encoding = (opts.encoding != 'binary') ? opts.encoding : undefined
+        result = await fs.readFile(path, encoding)
     } catch(err) {
         if(log)
             console_log_fs_err(tr('Opening file failed', {}), path, err)
@@ -95,13 +98,14 @@ export async function fs_readFile(path: string, opts: ReadWriteFileOpts, log = t
             throw err
     }
     opts.signal.throwIfAborted()
-    return result
+    return result as T
 }
 
 export async function fs_writeFile(path: string, data: string | Buffer, opts: ReadWriteFileOpts, log = true): Promise<boolean> {
     let result = false
     try {
-        await fs.writeFile(path, data, opts.encoding)
+        const encoding = (opts.encoding != 'binary') ? opts.encoding : undefined
+        await fs.writeFile(path, data, encoding)
         result = true
     } catch(err) {
         if(log)

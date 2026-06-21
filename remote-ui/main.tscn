@@ -3501,6 +3501,7 @@ autowrap_mode = 2
 layout_mode = 2
 size_flags_vertical = 3
 placeholder_text = "The launcher update code will appear here for copying and sharing"
+editable = false
 wrap_mode = 1
 autowrap_mode = 1
 
@@ -3515,7 +3516,10 @@ autowrap_mode = 1
 show_behind_parent = true
 layout_mode = 2
 
-[node name="#Warning" type="Label" parent="Container/TabContainer/#DirectUpgrade/GridContainer/PanelContainer3" unique_id=75422492]
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#DirectUpgrade/GridContainer/PanelContainer3" unique_id=929132414]
+layout_mode = 2
+
+[node name="#Warning" type="Label" parent="Container/TabContainer/#DirectUpgrade/GridContainer/PanelContainer3/MarginContainer" unique_id=75422492]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.85882354, 0.81960785, 0.4627451, 1)
 text = "WARNING"
@@ -3525,7 +3529,10 @@ horizontal_alignment = 1
 show_behind_parent = true
 layout_mode = 2
 
-[node name="#Error" type="Label" parent="Container/TabContainer/#DirectUpgrade/GridContainer/PanelContainer4" unique_id=428319149]
+[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#DirectUpgrade/GridContainer/PanelContainer4" unique_id=1935285027]
+layout_mode = 2
+
+[node name="#Error" type="Label" parent="Container/TabContainer/#DirectUpgrade/GridContainer/PanelContainer4/MarginContainer" unique_id=428319149]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.8627451, 0.46666667, 0.827451, 1)
 text = "ERROR"

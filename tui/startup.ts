@@ -190,6 +190,7 @@ function directUpgrade(opts: Required<AbortOptions>){
         Apply: button(() => {
             if(parsedVersionFile)
                 saveVersionFileInBackground(parsedVersionFile)
+            view.get('PastedText').update(text(''))
             view.resolve()
         }),
         Warning: label(''),

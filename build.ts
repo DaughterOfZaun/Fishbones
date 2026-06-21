@@ -3,13 +3,16 @@
 import { $ } from 'bun'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
-import { HARDCODED_GH_DOWNLOAD_URL, HARDCODED_HTTP_SERVER_URL, HARDCODED_KEY_ENCODING, NAME, OUTDIR, OUTFILE, VERSION_REGEX, versionFromString } from './utils/constants-build'
+import { HARDCODED_GH_DOWNLOAD_URL, HARDCODED_HTTP_SERVER_URL, HARDCODED_KEY_ENCODING, NAME, OUTDIR, OUTFILE, VERSION_FILE_CODEC, VERSION_FILE_DOMAIN, VERSION_REGEX, versionFromString } from './utils/constants-build'
 import { config, type Config } from './utils/data/embedded/config'
 import { Reader, sizeof, Writer } from './utils/binary'
 //import { ariaPkg } from './utils/data/packages/aria2'
 import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string'
 import { VersionFile } from './message/version'
-import { compressVersionFile } from './utils/data/version'
+import { compressVersionFile, decompressVersionFile, VersionFileRecord } from './utils/data/version'
+import { RecordEnvelope } from '@libp2p/peer-record'
+import { privateKeyFromRaw } from '@libp2p/crypto/keys'
+import type { Record } from '@libp2p/interface'
 
 const GODOT_EDITOR_EXE =
     process.platform == 'linux' ? './dist/Godot_v4.6.3-stable_linux.x86_64' :
@@ -263,11 +266,15 @@ if(process.argv.includes('version')){
         //releasesUrl: '',
     }
     compressVersionFile(vf)
-    console.log(vf)
-    //const key = uint8ArrayFromString(await fs.readFile('keys/upgrade-key-1.txt', 'utf8'), HARDCODED_KEY_ENCODING)
-    const evf = VersionFile.encode(vf)
-    const evfs = evf.toBase64()
-    console.log(evfs, evfs.length)
+    //decompressVersionFile(vf)
+    //console.log(vf)
+    const txtKey = await fs.readFile('keys/upgrade-key-1.txt', 'utf8')
+    const rawKey = uint8ArrayFromString(txtKey, HARDCODED_KEY_ENCODING)
+    const privateKey = privateKeyFromRaw(rawKey)
+    const envelope = await RecordEnvelope.seal(new VersionFileRecord(vf), privateKey)
+    const marshaled = Buffer.from(envelope.marshal())
+    const b64 = marshaled.toString('base64')
+    console.log(b64, b64.length)
 }
 async function getPkg(platform: 'Windows' | 'Linux', replacements: Set<string>){
     const dirName = 'Fishbones'
@@ -275,14 +282,25 @@ async function getPkg(platform: 'Windows' | 'Linux', replacements: Set<string>){
     const arch = 'x64'
     const torrentExt = 'torrent'
     const zipName = `${dirName}-${versionString}-${platform}-${arch}.${zipExt}`
+    const zipTorrentName = `${zipName}.${torrentExt}`
+    const versionFileName = 'version.bin'
     const exeName =
             platform === 'Windows' ? 'Fishbones.exe' :
             platform === 'Linux' ? 'Fishbones' :
             undefined!
-    const zipSize = (await fs.stat(`./dist/Releases/${zipName}`))?.size ?? 0
-    const size = (await fs.stat(`./dist/${exeName}`))?.size ?? 0
-    const zipTorrentName = `${zipName}.${torrentExt}`
-    const versionFileName = 'version.bin'
+    
+    let size = 0, zipSize = 0
+    try {
+        zipSize = (await fs.stat(`./dist/Releases/${zipName}`))?.size ?? 0
+    } catch(err){
+        console.log(err)
+    }
+    try {
+        size = (await fs.stat(`./dist/${exeName}`))?.size ?? 0
+    } catch(err){
+        console.log(err)
+    }
+    
     const res = {
         size,
         zipSize,

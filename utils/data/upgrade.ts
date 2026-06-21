@@ -14,6 +14,7 @@ import { VersionFile } from '../../message/version.ts'
 import { logger } from "../log.ts"
 import { safeOptions } from "../process/process.ts"
 import { magnet } from "./packages/shared.ts"
+import { decompressVersionFile } from "./version.ts"
 
 const VERSION_FILE_LIFETIME = 7/*d*/ * 24/*h*/ * 60/*m*/ * 60/*s*/ * 1000/*ms*/
 const HTTP_FETCH_TIMEOUT = 10_000
@@ -244,14 +245,16 @@ export async function getOrLoadVersionFileString(opts: Required<AbortOptions>){
     return (await getOrLoadVersionFile(opts))?.buffer.toString('base64')
 }
 export async function loadVersionFile(opts: Required<AbortOptions>){
-    const buffer = await fs_readFile(fbPkg.versionFile, { ...opts, encoding: 'binary' }) as unknown as Buffer
-    if(buffer){
+    const buffer = await fs_readFile(fbPkg.versionFile, { ...opts, encoding: 'binary' })
+    if(Buffer.isBuffer(buffer)){
         const { err, res } = await parseVersionFile(buffer, opts)
         if(err) logger.log('Failed to load version file:', inspect(err))
         if(res){
             parsedVersionFile = res
             return res
         }
+    } else {
+        logger.log('Failed to load version file:', 'buffer is not instance of Buffer')
     }
 }
 export async function parseVersionFileString(str: string, opts: Required<AbortOptions>, checkDate = true): Promise<Result<ParsedVersionFile>> {
@@ -270,6 +273,8 @@ export async function parseVersionFile(buffer: Buffer, opts: Required<AbortOptio
             throw new Error(tr('The public key is not the official one that is hardcoded in the program.'))
 
         const dvf = VersionFile.decode(envelope.payload)
+        decompressVersionFile(dvf)
+        
         const { date, versionNumber, releasesUrl: releasesURL } = dvf
         if(checkDate && parsedVersionFile && date <= parsedVersionFile.date)
             throw new Error(tr('The file version is not newer than the latest known version file.'))

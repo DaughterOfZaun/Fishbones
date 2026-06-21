@@ -4,7 +4,7 @@
     
     // Environment setup & latest features
     "lib": [ "ESNext" ], // Handled by base config.
-    "target": "NodeNext",  // Handled by base config.
+    "target": "ESNext",  // Handled by base config.
     "module": "ESNext",  // Handled by base config.
     "esModuleInterop": true,
     

@@ -16,6 +16,7 @@ export const HARDCODED_GH_RELEASE_URL = 'https://api.github.com/repos/DaughterOf
 export const HARDCODED_GH_DOWNLOAD_URL = 'https://github.com/DaughterOfZaun/Fishbones/releases/download/v0.0.4'
 
 export const VERSION_FILE_DOMAIN = 'fishbones-version-file'
+export const VERSION_FILE_CODEC = Uint8Array.from([ 0x50 ]) // Protocol Buffers
 export const HARDCODED_UPGRADE_PUBLIC_KEY = 'IAOuTMg/ud6fE6id+R0sNsSfFIg9izQSLKInWYkcuYs='
 export const HARDCODED_KEY_ENCODING = 'base64pad'
 
