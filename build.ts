@@ -3,12 +3,13 @@
 import { $ } from 'bun'
 import { promises as fs } from 'node:fs'
 import path from 'node:path'
-import { HARDCODED_KEY_ENCODING, NAME, OUTDIR, OUTFILE, VERSION_REGEX, versionFromString } from './utils/constants-build'
+import { HARDCODED_GH_DOWNLOAD_URL, HARDCODED_HTTP_SERVER_URL, HARDCODED_KEY_ENCODING, NAME, OUTDIR, OUTFILE, VERSION_REGEX, versionFromString } from './utils/constants-build'
 import { config, type Config } from './utils/data/embedded/config'
 import { Reader, sizeof, Writer } from './utils/binary'
 //import { ariaPkg } from './utils/data/packages/aria2'
 import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string'
 import { VersionFile } from './message/version'
+import { compressVersionFile } from './utils/data/version'
 
 const GODOT_EDITOR_EXE =
     process.platform == 'linux' ? './dist/Godot_v4.6.3-stable_linux.x86_64' :
@@ -252,32 +253,75 @@ if (process.argv.includes('append-pck')) {
 }
 
 if(process.argv.includes('version')){
-    const key = uint8ArrayFromString(await fs.readFile('keys/upgrade-key-1.txt', 'utf8'), HARDCODED_KEY_ENCODING)
-    const vf = VersionFile.encode({
+    const replacements = new Set<string>()
+    const vf = {
         date: Date.now(),
         versionNumber,
-        windows: getPkg('Windows'),
-        linux: getPkg('Linux'),
+        windows: await getPkg('Windows', replacements),
+        linux: await getPkg('Linux', replacements),
+        replacements: Array.from(replacements)
         //releasesUrl: '',
-    })
-    function getPkg(platform: 'Windows' | 'Linux'){
-        const dirName = 'Fishbones'
-        const zipExt = 'zip'
-        const arch = 'x64'
-        const zipName = `${dirName}-${versionString}-${platform}-${arch}.${zipExt}`
-        const zipTorrentName = `${zipName}.torrent`
-        return {
-            size: 0,
-            zipSize: 0,
-            //zipInfoHashV1: '',
-            //zipInfoHashV2: '',
-            vfWebSeeds: [],
-            zipWebSeeds: [],
-            zipTorrentWebSeeds: [],
-        }
     }
+    compressVersionFile(vf)
+    console.log(vf)
+    //const key = uint8ArrayFromString(await fs.readFile('keys/upgrade-key-1.txt', 'utf8'), HARDCODED_KEY_ENCODING)
+    const evf = VersionFile.encode(vf)
+    const evfs = evf.toBase64()
+    console.log(evfs, evfs.length)
 }
+async function getPkg(platform: 'Windows' | 'Linux', replacements: Set<string>){
+    const dirName = 'Fishbones'
+    const zipExt = 'zip'
+    const arch = 'x64'
+    const torrentExt = 'torrent'
+    const zipName = `${dirName}-${versionString}-${platform}-${arch}.${zipExt}`
+    const exeName =
+            platform === 'Windows' ? 'Fishbones.exe' :
+            platform === 'Linux' ? 'Fishbones' :
+            undefined!
+    const zipSize = (await fs.stat(`./dist/Releases/${zipName}`))?.size ?? 0
+    const size = (await fs.stat(`./dist/${exeName}`))?.size ?? 0
+    const zipTorrentName = `${zipName}.${torrentExt}`
+    const versionFileName = 'version.bin'
+    const res = {
+        size,
+        zipSize,
+        //zipInfoHashV1: '',
+        //zipInfoHashV2: '',
+        zipWebSeeds: [
+            `${HARDCODED_GH_DOWNLOAD_URL}/${zipName}`,
+            `${HARDCODED_HTTP_SERVER_URL}/${zipName}`,
+        ],
+        zipTorrentWebSeeds: [
+            `${HARDCODED_GH_DOWNLOAD_URL}/${zipTorrentName}`,
+            `${HARDCODED_HTTP_SERVER_URL}/${zipTorrentName}`,
+        ],
+        vfWebSeeds: [
+            `${HARDCODED_GH_DOWNLOAD_URL}/${versionFileName}`,
+            `${HARDCODED_HTTP_SERVER_URL}/${versionFileName}`,
+        ],
+    }
+    
+    ;[
+        versionString,
+        dirName,
+        zipExt,
+        arch,
+        torrentExt,
+        zipName,
+        zipTorrentName,
+        versionFileName,
+        zipName,
+        zipTorrentName,
+        versionFileName,
+        HARDCODED_GH_DOWNLOAD_URL,
+        HARDCODED_HTTP_SERVER_URL,
+        'Windows',
+        'Linux',
+    ].forEach(str => replacements.add(str))
 
+    return res
+}
 async function build_godot_exe(outfile: string) {
     await $`${GODOT_EDITOR_EXE} \
     --export-${{ raw: release }} ${godot_preset} ${outfile} \

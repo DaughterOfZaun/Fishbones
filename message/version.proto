@@ -15,5 +15,5 @@ message VersionFile {
         repeated string zip_torrent_web_seeds = 9;
     }
     optional string releases_url = 5;
-    //repeated string replacements = 5;
+    repeated string replacements = 6;
 }
