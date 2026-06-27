@@ -261,7 +261,7 @@ if(process.argv.includes('version')){
         date: Date.now(),
         versionNumber,
         windows: await getPkg('Windows', replacements),
-        linux: undefined, //await getPkg('Linux', replacements),
+        linux: await getPkg('Linux', replacements),
         replacements: Array.from(replacements)
         //releasesUrl: '',
     }
@@ -291,7 +291,7 @@ async function getPkg(platform: 'Windows' | 'Linux', replacements: Set<string>){
     
     let size = 0, zipSize = 0
     try {
-        zipSize = (await fs.stat(`./dist/${zipName}`))?.size ?? 0
+        zipSize = (await fs.stat(`./dist/Releases/${zipName}`))?.size ?? 0
     } catch(err){
         console.log(err)
     }

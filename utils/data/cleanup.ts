@@ -52,6 +52,7 @@ export async function cleanup(opts: Required<AbortOptions>){
     filesToRemove.delete(path.basename(embedded.s7zExe))
     filesToRemove.delete(path.basename(embedded.bunExe))
     filesToRemove.delete(path.basename(embedded.indexJS))
+    filesToRemove.delete(path.basename(embedded.indexJSMap))
     filesToRemove.delete(path.basename(embedded.dataChannelLib))
 
     filesToRemove.delete(fbPkg.dirName)
