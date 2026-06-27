@@ -21,7 +21,7 @@ const regexes = [
     /^aria2c-(?:.*?)-(?<platform>)-(?:64bit|x64)(?:.*?)\.exe$/,
     /^node_datachannel-(?:.*?)\.node$/,
     /^Fishbones-(?:.*?)-(?<platform>)-x64\.zip(?:\.torrent)?$/,
-    /^index-(?:.*?)\.js$/,
+    /^index-(?:.*?)\.js(?:\.map)?$/,
 ].map(regex => {
     const src = regex.source
         .replaceAll('(?<platform>)', `(?:${platformRegex.source})`)

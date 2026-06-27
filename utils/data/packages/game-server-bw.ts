@@ -15,7 +15,7 @@ export const bwPkg = new class extends PkgInfoCSProj implements PkgInfoGit {
     name = tr('BrokenWings') + ' ' + tr('Game Server')
     
     //gitRevision = '4592f1379ddaa972ce0b5dc6cebb9caf09c812ab'
-    gitRevision = '2fab77d5f9e60c501c8efb3365b8ca207521100f'
+    gitRevision = 'ea2c203afb329360c8ea81b084aab55fca6b48af'
     
     dirName = 'ChildrenOfTheGrave-GameServer'
     zipRoot = [ 'brokenwings-master' ] // New.

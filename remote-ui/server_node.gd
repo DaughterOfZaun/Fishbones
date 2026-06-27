@@ -142,8 +142,8 @@ func _ready() -> void:
 
     err = DirAccess.make_dir_absolute(downloads); assert(err in [ OK, ERR_ALREADY_EXISTS ])
 
-    var fb_dir := downloads.path_join('Fishbones')
-    err = DirAccess.make_dir_absolute(fb_dir); assert(err in [ OK, ERR_ALREADY_EXISTS ])
+    #var fb_dir := downloads.path_join('Fishbones')
+    #err = DirAccess.make_dir_absolute(fb_dir); assert(err in [ OK, ERR_ALREADY_EXISTS ])
 
     #var copied_exe := fb_dir.path_join('Fishbones.exe')
     #var current_exe_mod_time := FileAccess.get_modified_time(current_exe)
@@ -168,6 +168,7 @@ func _ready() -> void:
                 err = FileAccess.set_unix_permissions(extracted_file, rwx); assert(err == OK)
 
     exe_args.append('--trace-warnings')
+    exe_args.append('--enable-source-maps')
     exe_args.append_array([ extracted_js ])
     exe_args.append_array(OS.get_cmdline_user_args())
     exe_args.append_array([ JSONRPC_GUI_ARG, current_exe ])
