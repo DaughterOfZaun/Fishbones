@@ -1,5 +1,7 @@
 import type { AbortOptions } from "@libp2p/interface"
 
+export type Result<T, E extends Error = Error> = { res: T, err?: undefined } | { err: E, res?: undefined }
+
 export type ErrnoException = Error & {
     code?: string
     errno?: number

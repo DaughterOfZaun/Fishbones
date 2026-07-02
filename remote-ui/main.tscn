@@ -17,6 +17,7 @@
 [ext_resource type="Texture2D" uid="uid://cxy05krshktbp" path="res://images/discord-icon-circle.png" id="14_82xsv"]
 [ext_resource type="Script" uid="uid://ssnirlom0p0n" path="res://popup_panel.gd" id="14_vivmo"]
 [ext_resource type="Script" uid="uid://co8q1vt1vwjgu" path="res://array_view.gd" id="14_yaehf"]
+[ext_resource type="Script" uid="uid://b43bfmt04knxd" path="res://components/double_text_edit.gd" id="15_1u8w0"]
 [ext_resource type="Texture2D" uid="uid://otwgmcv7cmt7" path="res://icons/icon.png" id="15_2cqfq"]
 [ext_resource type="AudioStream" uid="uid://c4nwhpquh7t73" path="res://sounds/buddy_invite.mp3" id="15_074og"]
 [ext_resource type="AudioStream" uid="uid://bahat51jj7lgm" path="res://sounds/air_event_invited_1.mp3" id="16_2cqfq"]
@@ -192,8 +193,8 @@ spinner = ExtResource("4_ycdy4")
 select = ExtResource("5_w48qg")
 checkbox = ExtResource("6_vivmo")
 input = ExtResource("7_2cqfq")
-embedded_js = "res://embedded/index-0.0.3.51.js"
-embedded_js_map = "res://embedded/index-0.0.3.51.js.map"
+embedded_js = "res://embedded/index-0.0.3.52.js"
+embedded_js_map = "res://embedded/index-0.0.3.52.js.map"
 embedded_exe = "res://embedded/node-v26.3.0-win-x64.exe"
 embedded_lib_0 = "res://embedded/node_datachannel-8fg8wz1b.node"
 embedded_file_0 = "res://embedded/7za-2601-windows-x64.exe"
@@ -206,7 +207,7 @@ embedded_file_6 = "res://embedded/brokenwings-master-ea2c203a.7z"
 embedded_file_7 = "res://embedded/d3dx9_39.dll"
 embedded_file_8 = "res://embedded/dotnet-sdk-10.0.103-win-x64.zip.torrent"
 embedded_file_9 = "res://embedded/modded_levels_paste_on_client.7z.torrent"
-embedded_file_10 = "res://embedded/playable_client_126.7z.torrent"
+embedded_file_a = "res://embedded/playable_client_126.7z.torrent"
 container = NodePath("MariginContainer")
 bars_container = NodePath("Container/TabContainer/#Install/VBoxContainer/BarsContainer")
 show_console_toggle = NodePath("VBoxContainer/ShowConsoleToggle")
@@ -845,7 +846,18 @@ text = "Paste the text you received from someone you trust and click connect"
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="#TextToCopy" type="TextEdit" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer" unique_id=158208854]
+[node name="MarginContainer1" type="MarginContainer" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer" unique_id=28845950 node_paths=PackedStringArray("text_edit_1", "text_edit_2")]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 0
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 0
+script = ExtResource("15_1u8w0")
+text_edit_1 = NodePath("#TextToCopy")
+text_edit_2 = NodePath("#BinaryToCopy")
+
+[node name="#TextToCopy" type="TextEdit" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer/MarginContainer1" unique_id=158208854]
 layout_mode = 2
 size_flags_vertical = 3
 placeholder_text = "Please wait for the text to appear"
@@ -853,7 +865,18 @@ editable = false
 wrap_mode = 1
 autowrap_mode = 1
 
-[node name="#Warning" type="Label" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer/#TextToCopy" unique_id=1977987584]
+[node name="#BinaryToCopy" type="TextEdit" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer/MarginContainer1" unique_id=741944277]
+modulate = Color(1, 1, 1, 0.3)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(0.8745098, 0.8745098, 0.8745098, 0)
+theme_override_colors/background_color = Color(0, 0, 0, 0)
+placeholder_text = "Please wait for the text to appear"
+editable = false
+wrap_mode = 1
+autowrap_mode = 1
+
+[node name="#Warning" type="Label" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer/MarginContainer1/#BinaryToCopy" unique_id=937274095]
 visible = false
 layout_mode = 1
 anchors_preset = 12
@@ -867,7 +890,7 @@ theme_override_colors/font_color = Color(0.85882354, 0.81960785, 0.4627451, 1)
 text = "WARNING"
 horizontal_alignment = 1
 
-[node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer/#TextToCopy/#Warning" unique_id=1870879547]
+[node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer/MarginContainer1/#BinaryToCopy/#Warning" unique_id=2002256176]
 show_behind_parent = true
 layout_mode = 1
 anchors_preset = 15
@@ -879,13 +902,27 @@ grow_vertical = 2
 [node name="VSeparator2" type="VSeparator" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer" unique_id=2069426270]
 layout_mode = 2
 
-[node name="#PastedText" type="TextEdit" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer" unique_id=417145942]
+[node name="MarginContainer2" type="MarginContainer" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer" unique_id=1832878225 node_paths=PackedStringArray("text_edit_1", "text_edit_2")]
+layout_mode = 2
+size_flags_vertical = 3
+script = ExtResource("15_1u8w0")
+text_edit_1 = NodePath("#PastedText")
+text_edit_2 = NodePath("#PastedBinary")
+
+[node name="#PastedText" type="TextEdit" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer/MarginContainer2" unique_id=417145942]
 layout_mode = 2
 size_flags_vertical = 3
 wrap_mode = 1
 autowrap_mode = 1
 
-[node name="#Error" type="Label" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer/#PastedText" unique_id=1973976098]
+[node name="#PastedBinary" type="TextEdit" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer/MarginContainer2" unique_id=284820305]
+modulate = Color(1, 1, 1, 0.3)
+layout_mode = 2
+size_flags_vertical = 3
+wrap_mode = 1
+autowrap_mode = 1
+
+[node name="#Error" type="Label" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer/MarginContainer2/#PastedBinary" unique_id=1842391820]
 visible = false
 layout_mode = 1
 anchors_preset = 12
@@ -899,7 +936,7 @@ theme_override_colors/font_color = Color(0.8627451, 0.46666667, 0.827451, 1)
 text = "ERROR"
 horizontal_alignment = 1
 
-[node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer/#PastedText/#Error" unique_id=1666573908]
+[node name="PanelContainer" type="PanelContainer" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer/MarginContainer2/#PastedBinary/#Error" unique_id=1270605548]
 show_behind_parent = true
 layout_mode = 1
 anchors_preset = 15
@@ -922,7 +959,7 @@ size_flags_horizontal = 3
 text = "Copy"
 script = ExtResource("11_ycdy4")
 action = 1
-textarea = NodePath("../../#TextToCopy")
+textarea = NodePath("../../MarginContainer1/#TextToCopy")
 
 [node name="VSeparator3" type="VSeparator" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer" unique_id=1861897752]
 layout_mode = 2
@@ -937,7 +974,7 @@ size_flags_horizontal = 3
 text = "Paste"
 script = ExtResource("11_ycdy4")
 action = 2
-textarea = NodePath("../../#PastedText")
+textarea = NodePath("../../MarginContainer2/#PastedText")
 
 [node name="#Connect" type="Button" parent="Container/TabContainer/#DirectConnect/PanelContainer/MarginContainer/VBoxContainer/GridContainer/HBoxContainer2" unique_id=211013558]
 modulate = Color(0, 1, 0, 1)
@@ -3498,7 +3535,28 @@ text = "Find and paste the launcher update code below"
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="#TextToCopy" type="TextEdit" parent="Container/TabContainer/#DirectUpgrade/GridContainer" unique_id=1837307718]
+[node name="MarginContainer1" type="MarginContainer" parent="Container/TabContainer/#DirectUpgrade/GridContainer" unique_id=1368758316 node_paths=PackedStringArray("text_edit_1", "text_edit_2")]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_left = 0
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 0
+script = ExtResource("15_1u8w0")
+text_edit_1 = NodePath("#TextToCopy")
+text_edit_2 = NodePath("#BinaryToCopy")
+
+[node name="#TextToCopy" type="TextEdit" parent="Container/TabContainer/#DirectUpgrade/GridContainer/MarginContainer1" unique_id=469439984]
+layout_mode = 2
+size_flags_vertical = 3
+placeholder_text = "The launcher update code will appear here for copying and sharing"
+editable = false
+wrap_mode = 1
+autowrap_mode = 1
+scroll_smooth = true
+
+[node name="#BinaryToCopy" type="TextEdit" parent="Container/TabContainer/#DirectUpgrade/GridContainer/MarginContainer1" unique_id=1837307718]
+modulate = Color(1, 1, 1, 0.3)
 layout_mode = 2
 size_flags_vertical = 3
 placeholder_text = "The launcher update code will appear here for copying and sharing"
@@ -3506,42 +3564,32 @@ editable = false
 wrap_mode = 1
 autowrap_mode = 1
 
-[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#DirectUpgrade/GridContainer/#TextToCopy" unique_id=1881673843]
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -8.0
-grow_horizontal = 2
-grow_vertical = 0
-
-[node name="#DecodeCopied" type="CheckButton" parent="Container/TabContainer/#DirectUpgrade/GridContainer/#TextToCopy/MarginContainer" unique_id=1300217620]
-visible = false
+[node name="MarginContainer2" type="MarginContainer" parent="Container/TabContainer/#DirectUpgrade/GridContainer" unique_id=1358828559 node_paths=PackedStringArray("text_edit_1", "text_edit_2")]
 layout_mode = 2
-text = "Decode"
+size_flags_vertical = 3
+theme_override_constants/margin_left = 0
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 0
+script = ExtResource("15_1u8w0")
+text_edit_1 = NodePath("#PastedText")
+text_edit_2 = NodePath("#PastedBinary")
 
-[node name="#PastedText" type="TextEdit" parent="Container/TabContainer/#DirectUpgrade/GridContainer" unique_id=450017000]
+[node name="#PastedText" type="TextEdit" parent="Container/TabContainer/#DirectUpgrade/GridContainer/MarginContainer2" unique_id=1584222025]
 layout_mode = 2
 size_flags_vertical = 3
 placeholder_text = "Paste the found launcher update code here"
 wrap_mode = 1
 autowrap_mode = 1
+scroll_smooth = true
 
-[node name="MarginContainer" type="MarginContainer" parent="Container/TabContainer/#DirectUpgrade/GridContainer/#PastedText" unique_id=1222868985]
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -39.0
-grow_horizontal = 2
-grow_vertical = 0
-
-[node name="#DecodePasted" type="CheckButton" parent="Container/TabContainer/#DirectUpgrade/GridContainer/#PastedText/MarginContainer" unique_id=12952940]
-visible = false
+[node name="#PastedBinary" type="TextEdit" parent="Container/TabContainer/#DirectUpgrade/GridContainer/MarginContainer2" unique_id=450017000]
+modulate = Color(1, 1, 1, 0.3)
 layout_mode = 2
-text = "Decode"
+size_flags_vertical = 3
+placeholder_text = "Paste the found launcher update code here"
+wrap_mode = 1
+autowrap_mode = 1
 
 [node name="PanelContainer3" type="PanelContainer" parent="Container/TabContainer/#DirectUpgrade/GridContainer" unique_id=1814988823]
 show_behind_parent = true
@@ -3569,46 +3617,46 @@ theme_override_colors/font_color = Color(0.8627451, 0.46666667, 0.827451, 1)
 text = "ERROR"
 horizontal_alignment = 1
 
-[node name="MarginContainer1" type="MarginContainer" parent="Container/TabContainer/#DirectUpgrade/GridContainer" unique_id=1992306242]
+[node name="MarginContainer3" type="MarginContainer" parent="Container/TabContainer/#DirectUpgrade/GridContainer" unique_id=1992306242]
 layout_mode = 2
 theme_override_constants/margin_left = 0
 theme_override_constants/margin_right = 0
 theme_override_constants/margin_bottom = 0
 
-[node name="HBoxContainer1" type="HBoxContainer" parent="Container/TabContainer/#DirectUpgrade/GridContainer/MarginContainer1" unique_id=1803113571]
+[node name="HBoxContainer1" type="HBoxContainer" parent="Container/TabContainer/#DirectUpgrade/GridContainer/MarginContainer3" unique_id=1803113571]
 layout_mode = 2
 
-[node name="#Cancel" type="Button" parent="Container/TabContainer/#DirectUpgrade/GridContainer/MarginContainer1/HBoxContainer1" unique_id=330435432]
+[node name="#Cancel" type="Button" parent="Container/TabContainer/#DirectUpgrade/GridContainer/MarginContainer3/HBoxContainer1" unique_id=330435432]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Cancel"
 
-[node name="#Copy" type="Button" parent="Container/TabContainer/#DirectUpgrade/GridContainer/MarginContainer1/HBoxContainer1" unique_id=679720464 node_paths=PackedStringArray("textarea")]
+[node name="#Copy" type="Button" parent="Container/TabContainer/#DirectUpgrade/GridContainer/MarginContainer3/HBoxContainer1" unique_id=679720464 node_paths=PackedStringArray("textarea")]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Copy"
 script = ExtResource("11_ycdy4")
 action = 1
-textarea = NodePath("../../../#TextToCopy")
+textarea = NodePath("../../../MarginContainer1/#BinaryToCopy")
 
-[node name="MarginContainer2" type="MarginContainer" parent="Container/TabContainer/#DirectUpgrade/GridContainer" unique_id=826001573]
+[node name="MarginContainer4" type="MarginContainer" parent="Container/TabContainer/#DirectUpgrade/GridContainer" unique_id=826001573]
 layout_mode = 2
 theme_override_constants/margin_left = 0
 theme_override_constants/margin_right = 0
 theme_override_constants/margin_bottom = 0
 
-[node name="HBoxContainer2" type="HBoxContainer" parent="Container/TabContainer/#DirectUpgrade/GridContainer/MarginContainer2" unique_id=1440306938]
+[node name="HBoxContainer2" type="HBoxContainer" parent="Container/TabContainer/#DirectUpgrade/GridContainer/MarginContainer4" unique_id=1440306938]
 layout_mode = 2
 
-[node name="#Paste" type="Button" parent="Container/TabContainer/#DirectUpgrade/GridContainer/MarginContainer2/HBoxContainer2" unique_id=1738799235 node_paths=PackedStringArray("textarea")]
+[node name="#Paste" type="Button" parent="Container/TabContainer/#DirectUpgrade/GridContainer/MarginContainer4/HBoxContainer2" unique_id=1738799235 node_paths=PackedStringArray("textarea")]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Paste"
 script = ExtResource("11_ycdy4")
 action = 2
-textarea = NodePath("../../../#PastedText")
+textarea = NodePath("../../../MarginContainer2/#PastedBinary")
 
-[node name="#Apply" type="Button" parent="Container/TabContainer/#DirectUpgrade/GridContainer/MarginContainer2/HBoxContainer2" unique_id=1042092412]
+[node name="#Apply" type="Button" parent="Container/TabContainer/#DirectUpgrade/GridContainer/MarginContainer4/HBoxContainer2" unique_id=1042092412]
 modulate = Color(0, 1, 0, 1)
 layout_mode = 2
 size_flags_horizontal = 3

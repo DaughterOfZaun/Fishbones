@@ -12,7 +12,6 @@ import { VersionFile } from './message/version'
 import { compressVersionFile, decompressVersionFile, VersionFileRecord } from './utils/data/version'
 import { RecordEnvelope } from '@libp2p/peer-record'
 import { privateKeyFromRaw } from '@libp2p/crypto/keys'
-import type { Record } from '@libp2p/interface'
 
 const GODOT_EDITOR_EXE =
     process.platform == 'linux' ? './dist/Godot_v4.6.3-stable_linux.x86_64' :
@@ -79,8 +78,8 @@ async function fs_ensureDir(path: string) {
     }
 }
 
-let embeddedJson: Record<string, string> = {}
-let embedFileCopies: { from: string, to: string }[] = []
+const embeddedJson: Record<string, string> = {}
+const embedFileCopies: { from: string, to: string }[] = []
 
 async function generate_embeds_json() {
 
@@ -129,7 +128,7 @@ async function build_embeds() {
     tscn = tscn.replace(/^embedded_exe = ".*"$/m, `embedded_exe = "${embeddedJson['bunExe']}"`)
     tscn = tscn.replace(/^embedded_lib_0 = ".*"$/m, `embedded_lib_0 = "${embeddedJson['dataChannelLib']}"`)
     tscn = tscn.replace(/(embedded_file_\w+ = ".*"\n)+/g, embeddedFiles.map((file, i) => {
-        return `embedded_file_${i} = "${file}"\n`
+        return `embedded_file_${i.toString(36)} = "${file}"\n`
     }).join(''))
     await fs.writeFile('./remote-ui/main.tscn', tscn, 'utf8')
 }
@@ -265,6 +264,8 @@ if(process.argv.includes('version')){
         replacements: Array.from(replacements)
         //releasesUrl: '',
     }
+    const ignoreReplacements = (k: string, v: unknown) => (k != 'replacements') ? v : undefined
+    console.log(JSON.stringify(vf, ignoreReplacements, 4))
     compressVersionFile(vf)
     //decompressVersionFile(vf)
     //console.log(vf)
@@ -321,21 +322,18 @@ async function getPkg(platform: 'Windows' | 'Linux', replacements: Set<string>){
     }
     
     ;[
-        versionString,
         dirName,
-        zipExt,
+        versionString,
+        'Windows',
+        'Linux',
         arch,
+        zipExt,
         torrentExt,
-        zipName,
-        zipTorrentName,
-        versionFileName,
         zipName,
         zipTorrentName,
         versionFileName,
         HARDCODED_GH_DOWNLOAD_URL,
         HARDCODED_HTTP_SERVER_URL,
-        'Windows',
-        'Linux',
     ].forEach(str => replacements.add(str))
 
     return res

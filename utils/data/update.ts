@@ -2,7 +2,7 @@ import type { AbortOptions } from "@libp2p/interface"
 import { spawn, successfulTermination, TerminationError } from "../process/process"
 import { gitPkg, type PkgInfoGit } from "./packages"
 import { console_log, createBar } from "../../ui/remote/remote"
-import { fs_ensureDir, fs_exists, fs_moveFile, fs_readdir } from "./fs"
+import { fs_ensureDir, fs_exists, fs_moveFile, fs_readdir, fs_removeFile } from "./fs"
 import { tr } from "../translation"
 import { args } from "../args"
 import path from "node:path"
@@ -45,7 +45,7 @@ export async function update(pkg: PkgInfoGit, opts: Required<AbortOptions>){
             await fs_moveFile(pkg.dir, `${pkg.dir}-backup-${Date.now().toString(16)}`, opts)
 
         await fs_ensureDir(pkg.dir, opts)
-        
+        await fs_removeFile(path.join(pkg.dir, '.git', 'index.lock'), opts, false)
         const init = !(await fs_exists(path.join(pkg.dir, '.git'), opts))
 
         if(init) await git([ 'init' ], pkg, opts)

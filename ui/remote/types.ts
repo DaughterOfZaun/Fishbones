@@ -5,6 +5,7 @@ export interface Id {
     visible?: boolean
     tooltip_text?: string
     self_modulate?: string
+    modulate?: string
 }
 
 export interface Base extends Id {

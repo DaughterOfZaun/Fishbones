@@ -35,7 +35,7 @@ import { dcutr } from '@libp2p/dcutr'
 import { tcp } from '@libp2p/tcp'
 
 import { loadOrCreateSelfKey } from '@libp2p/config'
-import { isPeerId, KEEP_ALIVE, type AbortOptions, type AddressSorter, type ComponentLogger, type Connection, type Libp2pEvents, type Logger, type PeerId, type PeerInfo, type PeerStore, type PrivateKey, type Startable, type TypedEventTarget } from '@libp2p/interface'
+import { isPeerId, KEEP_ALIVE, type AbortOptions, type AddressSorter, type ComponentLogger, type Connection, type Libp2pEvents, type Logger, type PeerId, type PeerId, type PeerInfo, type PeerStore, type PrivateKey, type Startable, type TypedEventTarget } from '@libp2p/interface'
 import { PeerMap, PeerSet } from '@libp2p/peer-collections'
 import { peerIdFromCID, peerIdFromString } from '@libp2p/peer-id'
 import { PeerRecord, RecordEnvelope } from '@libp2p/peer-record'
@@ -489,10 +489,11 @@ function filterDiableMultiaddrs(node: LibP2PNode, multiaddrs: Multiaddr[]){
     return multiaddrs
 }
 
-export async function getPeerInfoString(node: LibP2PNode, opts: Required<AbortOptions>): Promise<string> {
+export async function getPeerInfoString(node: LibP2PNode, opts: Required<AbortOptions>){
 
-    const multiaddrs = node.getMultiaddrs()
-    if(multiaddrs.length === 0) return ''
+    const p2p_peerId = multiaddr(`/p2p/${node.peerId}`)
+    const multiaddrs = node.getMultiaddrs().map(ma => ma.decapsulate(p2p_peerId))
+    //if(multiaddrs.length === 0) return
 
     const peerRecord = new PeerRecord({
         peerId: node.peerId,
@@ -501,11 +502,23 @@ export async function getPeerInfoString(node: LibP2PNode, opts: Required<AbortOp
     const { privateKey } = node.components
     const signedPeerRecord = await RecordEnvelope.seal(peerRecord, privateKey, opts)
     const marshaled = signedPeerRecord.marshal()
-    return toBase64(marshaled)
+
+    const b64 = toBase64(marshaled)
+    const json = JSON.stringify({
+        peerId: node.peerId.toString(),
+        multiaddrs: multiaddrs.map(ma => ma.toString()),
+    }, null, 4)
+
+    return { b64, json }
 }
 
+interface ParsedPeerInfo {
+    peerId: PeerId
+    envelope: RecordEnvelope
+    buffer: Uint8Array
+}
 
-function parsePeerInfoString(str: string){
+function parsePeerInfoString(str: string): ParsedPeerInfo {
     const buffer = fromBase64(str)
     const envelope = RecordEnvelope.createFromProtobuf(buffer)
     const peerId = peerIdFromCID(envelope.publicKey.toCID())

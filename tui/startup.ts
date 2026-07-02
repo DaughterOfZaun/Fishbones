@@ -1,7 +1,8 @@
 import type { AbortOptions } from "@libp2p/interface";
 import { DeferredView, render } from "../ui/remote/view";
 import { base, button, checkbox, form, icon, icon_button, label, line, list, option, text } from "../ui/remote/types";
-import { getOrLoadVersionFileString, parseVersionFileString, saveVersionFileInBackground, type ParsedVersionFile } from "../utils/data/upgrade";
+import { getOrLoadVersionFile, parseVersionFileString, saveVersionFileInBackground } from "../utils/data/upgrade";
+import { versionFileToBase64, versionFileToJSON, type ParsedVersionFile } from '../utils/data/upgrade'
 import { args } from "../utils/args";
 import { bwPkg } from "../utils/data/packages/game-server-bw";
 import { AUTO_LOCALE, DEFAULT_LOCALE, systemLocale, systemLocaleSupported, tr, usedLocale } from "../utils/translation";
@@ -179,17 +180,21 @@ function directUpgrade(opts: Required<AbortOptions>){
     
     const view = render('DirectUpgrade', form({
         TextToCopy: text(),
-        PastedText: text(undefined, (str: string) => {
-            void parseVersionFileString(str, opts, true).then(({ err, res }) => {
+        BinaryToCopy: text(),
+        PastedText: text(),
+        PastedBinary: text(undefined, (str: string) => {
+            void parseVersionFileString(str, opts, true).then(({ err, res: vf }) => {
+                view.get('PastedText').update(text( vf ? versionFileToJSON(vf) : '' ))
                 view.get('Error').update({ $type: 'label', text: err?.message ?? '', visible: !!err })
                 view.get('Apply').update({ $type: 'button', disabled: !!err })
-                parsedVersionFile = res
+                parsedVersionFile = vf
             })
         }),
         Cancel: button(() => view.resolve()),
         Apply: button(() => {
             if(parsedVersionFile)
                 saveVersionFileInBackground(parsedVersionFile)
+            view.get('PastedBinary').update(text(''))
             view.get('PastedText').update(text(''))
             view.resolve()
         }),
@@ -197,9 +202,11 @@ function directUpgrade(opts: Required<AbortOptions>){
         Error: label(''),
     }), opts)
 
-    getOrLoadVersionFileString(opts).then((str) => {
-        if(str) view.get('TextToCopy').update(text(str))
-        else {
+    getOrLoadVersionFile(opts).then((vf) => {
+        if(vf){
+            view.get('BinaryToCopy').update(text(versionFileToBase64(vf)))
+            view.get('TextToCopy').update(text(versionFileToJSON(vf)))
+        } else {
             const text = tr('The file is unavailable, please try updating at least once.')
             view.get('Warning').update(label(text))
         }

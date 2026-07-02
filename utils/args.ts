@@ -94,7 +94,7 @@ class Option<T> {
         this.emit('change', to)
     }
     
-    public save(to: T = this.value){
+    public save(to: T){
         this.set(to)
         console.assert(!!this.name, 'Assertion failed: !!this.name')
         config[this.name] = this.value

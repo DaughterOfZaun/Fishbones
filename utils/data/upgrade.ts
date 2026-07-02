@@ -15,11 +15,10 @@ import { logger } from "../log.ts"
 import { safeOptions } from "../process/process.ts"
 import { magnet } from "./packages/shared.ts"
 import { decompressVersionFile } from "./version.ts"
+import type { Result } from "../helpers.ts"
 
 const VERSION_FILE_LIFETIME = 7/*d*/ * 24/*h*/ * 60/*m*/ * 60/*s*/ * 1000/*ms*/
 const HTTP_FETCH_TIMEOUT = 10_000
-
-type Result<T, E extends Error = Error> = { res: T, err?: undefined } | { err: E, res?: undefined }
 
 // eslint-disable-next-line @typescript-eslint/no-namespace
 namespace GitHub {
@@ -241,8 +240,12 @@ export async function getOrLoadVersionFile(opts: Required<AbortOptions>){
         Promise.resolve(parsedVersionFile) :
         loadVersionFile(opts)
 }
-export async function getOrLoadVersionFileString(opts: Required<AbortOptions>){
-    return (await getOrLoadVersionFile(opts))?.buffer.toString('base64')
+export function versionFileToBase64(vf: ParsedVersionFile){
+    return vf.buffer.toString('base64')
+}
+const excludeBuffer = (k: string, v: unknown) => (k != 'buffer') ? v : undefined
+export function versionFileToJSON(vf: ParsedVersionFile){
+    return JSON.stringify(vf, excludeBuffer, 4)
 }
 export async function loadVersionFile(opts: Required<AbortOptions>){
     const buffer = await fs_readFile(fbPkg.versionFile, { ...opts, encoding: 'binary' })

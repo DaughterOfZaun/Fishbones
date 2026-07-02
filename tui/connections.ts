@@ -87,6 +87,8 @@ function updatePeer(view: DeferredView<void>, peerId: PeerId, patch: Partial<FBP
             Name: (full) ? label(getUsername(peerId, true)) : undefined!,
             Status: (full || status != info.status) ? label(peerStatusToString[status!]) : undefined!,
             Ping: (full || ping != info.ping) ? label(ping?.toFixed()?.concat('' + tr('ms')) ?? '') : undefined!,
+        }, {
+            modulate: (status == PeerStatus.Connected) ? '#ffffffff' : '#ffffff99',
         })
     }
 }
@@ -183,7 +185,10 @@ let lastPeerInfoString = ''
 async function directConnect(node: LibP2PNode, opts: Required<AbortOptions>){
     
     const view = render<string | void>('DirectConnect', form({
-        PastedText: text(undefined, (str: string) => {
+        TextToCopy: text(),
+        BinaryToCopy: text(),
+        PastedText: text(),
+        PastedBinary: text(undefined, (str: string) => {
             lastPeerInfoString = str
             void validatePeerInfoString(node, str, opts)
             .then((err) => {
@@ -199,8 +204,9 @@ async function directConnect(node: LibP2PNode, opts: Required<AbortOptions>){
     view.addEventListener(node, 'self:peer:update', onPeerUpdate)
     function onPeerUpdate(){
         getPeerInfoString(node, opts)
-            .then((str) => {
-                view.get('TextToCopy').update(text(str))
+            .then(({ b64, json }) => {
+                view.get('TextToCopy').update(text(json))
+                view.get('BinaryToCopy').update(text(b64))
             })
             .catch((/*err*/) => { /* Ignore */ })
     }

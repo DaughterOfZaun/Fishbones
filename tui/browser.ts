@@ -1,5 +1,5 @@
 import { RemoteGame } from '../game/game-remote'
-import { combinations_find, KnownServers } from '../utils/data/constants/client-server-combinations'
+import { combinations, combinations_find, KnownServers } from '../utils/data/constants/client-server-combinations'
 import { type LibP2PNode } from '../node/node'
 import { type AbortOptions } from '@libp2p/interface'
 import { args } from '../utils/args'
@@ -66,7 +66,7 @@ export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts
                     tr('No games') + '\n' + tr('Wait longer or host your own') :
                     tr('No games on local network') + '\n' + tr('Wait longer or host your own'),
             ),
-            Host: button(() => view.resolve(['host'])),
+            Host: button(() => view.resolve(['host']), combinations.length == 0),
             Quit: button(() => view.resolve(['quit'])),
         }), opts, [
             {
