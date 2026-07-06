@@ -66,6 +66,7 @@ export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts
                     tr('No games') + '\n' + tr('Wait longer or host your own') :
                     tr('No games on local network') + '\n' + tr('Wait longer or host your own'),
             ),
+            HostWarning: label(tr('No servers with suitable clients are installed'), combinations.length == 0),
             Host: button(() => view.resolve(['host']), combinations.length == 0),
             Quit: button(() => view.resolve(['quit'])),
         }), opts, [
@@ -127,7 +128,7 @@ async function hostLocal(node: LibP2PNode, name: string, icon: number, lobby: Lo
     
     let prevPlayerCount = 0
     const { gameInfo, serverSettings } = game.encode()
-    let data: PartialAdditionalData = {
+    const data: PartialAdditionalData = {
         serverSettings,
         gameInfos: [ gameInfo ],
     }

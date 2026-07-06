@@ -92,6 +92,14 @@ var handlers: Dictionary[Variant, InputHandler] = {}
     embedded_file_7,
     embedded_file_8,
     embedded_file_9,
+    embedded_file_a,
+    embedded_file_b,
+    embedded_file_c,
+    embedded_file_d,
+    embedded_file_e,
+    embedded_file_f,
+    embedded_file_g,
+    embedded_file_h,
 ]
 
 @export_group("Static Elements")

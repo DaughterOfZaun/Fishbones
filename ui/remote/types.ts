@@ -114,9 +114,9 @@ export const inq2gd = (choices: { value: number, name: string }[], enabled?: num
 }
 
 export const base = (visible?: boolean) => ({ $type: 'base' as const, visible })
-export const form = (fields?: Record<string, Config>, props?: Omit<Tabs, '$type' | 'fields'>) => ({ $type: 'form' as const, fields })
+export const form = (fields?: Record<string, Config>, props?: Omit<Config, '$type' | 'fields'>) => ({ $type: 'form' as const, fields, ...props })
 export const list = (items?: Record<string, Config>, placeholderText?: string) => ({ $type: 'list' as const, items, placeholderText })
-export const label = (text?: string) => ({ $type: 'label' as const, text })
+export const label = (text?: string, visible?: boolean) => ({ $type: 'label' as const, text, visible })
 export const line = (text?: string, changed?: (text: string) => void, editable?: boolean) => ({ $type: 'line' as const, editable, text, $listeners: { changed } })
 export const text = (text?: string, changed?: (text: string) => void) => ({ $type: 'text' as const, text, $listeners: { changed } })
 export const checkbox = (button_pressed?: boolean, toggled?: (on: boolean) => void, disabled?: boolean) => ({ $type: 'checkbox' as const, disabled, button_pressed, $listeners: { toggled } })

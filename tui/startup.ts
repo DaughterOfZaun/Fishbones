@@ -185,8 +185,8 @@ function directUpgrade(opts: Required<AbortOptions>){
         PastedBinary: text(undefined, (str: string) => {
             void parseVersionFileString(str, opts, true).then(({ err, res: vf }) => {
                 view.get('PastedText').update(text( vf ? versionFileToJSON(vf) : '' ))
-                view.get('Error').update({ $type: 'label', text: err?.message ?? '', visible: !!err })
-                view.get('Apply').update({ $type: 'button', disabled: !!err })
+                view.get('Error').update(label(err?.message ?? '', !!err))
+                view.get('Apply').update(button(void 0, !!err))
                 parsedVersionFile = vf
             })
         }),

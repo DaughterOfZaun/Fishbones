@@ -192,8 +192,8 @@ async function directConnect(node: LibP2PNode, opts: Required<AbortOptions>){
             lastPeerInfoString = str
             void validatePeerInfoString(node, str, opts)
             .then((err) => {
-                view.get('Error').update({ $type: 'label', text: err ?? '', visible: !!err })
-                view.get('Connect').update({ $type: 'button', disabled: !!err })
+                view.get('Error').update(label(err ?? '', !!err))
+                view.get('Connect').update(button(void 0, !!err))
             })
         }),
         Error: label(),

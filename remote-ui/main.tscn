@@ -1399,6 +1399,23 @@ size_flags_horizontal = 3
 size_flags_stretch_ratio = 0.25
 text = "Host Game"
 
+[node name="#HostWarning" type="Label" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomsBrowser/HBoxContainer/#Host" unique_id=91778502]
+custom_minimum_size = Vector2(31, 31)
+layout_mode = 1
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -15.0
+grow_horizontal = 0
+grow_vertical = 2
+size_flags_vertical = 1
+mouse_filter = 0
+theme_override_fonts/font = ExtResource("13_getpj")
+text = "⚠"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="#CustomGameSetup" type="VBoxContainer" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer" unique_id=962409957]
 visible = false
 layout_mode = 2
