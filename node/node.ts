@@ -18,6 +18,7 @@ import { mdns } from '@libp2p/mdns'
 import { uPnPNAT } from '@libp2p/upnp-nat'
 import { autoNAT } from '@libp2p/autonat'
 //import { autoNATv2 } from '@libp2p/autonat-v2'
+import { contentPeerDiscovery } from '../network/libp2p/discovery/content-discovery.ts'
 import { pubsubPeerDiscovery } from '../network/libp2p/discovery/pubsub-discovery'
 import { customPing } from '../network/libp2p/ping'
 import { probe } from '../network/libp2p/probe'
@@ -230,6 +231,7 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
                         '/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ',
                     ]
                 }),
+                contentPeerDiscovery: contentPeerDiscovery({}),
                 //torrentPeerDiscovery: torrentPeerDiscovery({
                 //    topic: appDiscoveryTopic,
                 //    autodial: true,

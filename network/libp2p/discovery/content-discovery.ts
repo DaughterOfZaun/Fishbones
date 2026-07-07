@@ -1,10 +1,15 @@
 import { AbortError, peerDiscoverySymbol, serviceCapabilities, TypedEventEmitter, type AbortOptions, type ComponentLogger, type ContentRouting, type Logger, type PeerDiscovery, type PeerDiscoveryEvents, type PeerDiscoveryProvider, type Startable } from "@libp2p/interface";
 import { CID } from 'multiformats/cid';
+import { sleep } from "../../../utils/helpers";
+import type { DHTProgressEvents } from "@libp2p/kad-dht";
 
-interface DiscoveryInit {
-    cid: CID
-    startupDelay?: number
-    lookupInterval?: number
+const MIN_PEERS_TO_PROVIDE_TO = 1
+
+class DiscoveryInit {
+    cid!: CID
+    startupDelay?: number = 5_000
+    retryInterval?: number = 60_000
+    lookupInterval?: number = 60_000
 }
 interface DiscoveryComponents {
     contentRouting: ContentRouting
@@ -28,57 +33,79 @@ class DiscoveryClass extends TypedEventEmitter<PeerDiscoveryEvents> implements P
     private readonly components: DiscoveryComponents
     constructor(init: DiscoveryInit, components: DiscoveryComponents){
         super()
-        this.init = {
-            startupDelay: 5_000,
-            lookupInterval: 60_000,
-            ...init
-        }
-        this.components = components
         this.log = components.logger.forComponent('libp2p:content-discovery')
+        this.init = Object.assign(new DiscoveryInit(), init as Required<DiscoveryInit>)
+        this.components = components
     }
 
     private abortController: undefined | AbortController
-
-    beforeStart?(){}
-    start(){}
-    async afterStart?() {
+    start(){
         if(this.abortController) return
 
         this.abortController = new AbortController()
-        const abortOpts = { signal: this.abortController.signal }
+        const opts = { signal: this.abortController.signal }
         
-        await new Promise(res => setTimeout(res, this.init.startupDelay))
-        
-        this.log('content discovery started')
-
-        this.components.contentRouting.provide(this.init.cid, abortOpts)
-        .then(() => this.log('done announcing self as a provider'))
-        .catch(err => {
-            if(err.name !== AbortError.name)
-                this.log.error('error announcing self as provider - %e', err)
-        })
-
-        this.discover(abortOpts).catch(err => {
-            if(err.name !== AbortError.name)
-                this.log.error('error in content discovery - %e', err)
+        sleep(this.init.startupDelay, opts).then(() => {
+            this.providerLoop(opts).catch((err: Error) => {
+                if(!opts.signal.aborted)
+                    this.log.error('provider loop exited - %e', err)
+            })
+            this.discoverLoop(opts).catch((err: Error) => {
+                if(!opts.signal.aborted)
+                    this.log.error('discover loop exited - %e', err)
+            })
+        }, (err: Error) => {
+            if(!opts.signal.aborted)
+                this.log.error('startup delay failed - %e', err)
         })
     }
-    async discover(abortOpts: Required<AbortOptions>){
-        while(!abortOpts.signal.aborted){
-            this.log('providers search started')
-            for await (const provider of this.components.contentRouting.findProviders(this.init.cid, abortOpts)){
-                this.log('discovered provider %s', provider.id.toString())
-                this.safeDispatchEvent('peer', { detail: provider })
-            }
-            this.log('providers search ended')
-            await new Promise(res => setTimeout(res, this.init.lookupInterval))
-        }
-    }
-    beforeStop?(){}
+
     stop(){
         if(!this.abortController) return
         this.abortController.abort(new AbortError())
         this.abortController = undefined
     }
-    afterStop?(){}
+    
+    private async providerLoop(opts: Required<AbortOptions>){
+        while(!opts.signal.aborted){
+            try {
+            
+                let sent = 0
+                await this.components.contentRouting.provide(this.init.cid, {
+                    ...opts,
+                    onProgress(evt: DHTProgressEvents){
+                        if(evt.detail.name == 'PEER_RESPONSE')
+                            sent++
+                    },
+                })
+                this.log('sent provider records to %d peers', sent)
+                if(sent >= MIN_PEERS_TO_PROVIDE_TO)
+                    break
+            
+            } catch(err) {
+                opts.signal.throwIfAborted()
+                this.log.error('error announcing self as provider - %e', err)
+            }
+            await sleep(this.init.retryInterval, opts)
+        }
+    }
+
+    private async discoverLoop(opts: Required<AbortOptions>){
+        while(!opts.signal.aborted){
+            try {
+            
+                this.log('providers search started')
+                for await (const provider of this.components.contentRouting.findProviders(this.init.cid, opts)){
+                    this.log('discovered provider %s', provider.id.toString())
+                    this.safeDispatchEvent('peer', { detail: provider })
+                }
+                this.log('providers search ended')
+
+            } catch(err){
+                opts.signal.throwIfAborted()
+                this.log.error('failed to find providers - %e', err)
+            }
+            await sleep(this.init.lookupInterval, opts)
+        }
+    }
 }
