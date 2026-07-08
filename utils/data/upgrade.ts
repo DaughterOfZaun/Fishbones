@@ -15,7 +15,7 @@ import { logger } from "../log.ts"
 import { safeOptions } from "../process/process.ts"
 import { magnet } from "./packages/shared.ts"
 import { decompressVersionFile } from "./version.ts"
-import type { Result } from "../helpers.ts"
+import { shuffleInplace, type Result } from "../helpers.ts"
 
 const VERSION_FILE_LIFETIME = 7/*d*/ * 24/*h*/ * 60/*m*/ * 60/*s*/ * 1000/*ms*/
 const HTTP_FETCH_TIMEOUT = 10_000
@@ -61,7 +61,7 @@ export async function checkForUpdates(opts: Required<AbortOptions>){
 async function checkForUpdatesImpl(opts: Required<AbortOptions>){
 
     let vf = await getOrLoadVersionFile(opts)
-    let urlsToVisit = vf?.vfWebSeeds ?? fbPkg.vfWebSeeds
+    let urlsToVisit = shuffleInplace(vf?.vfWebSeeds ?? fbPkg.vfWebSeeds)
     const visitedUrls = new Set<string>()
 
     while(urlsToVisit.length > 0){
@@ -81,13 +81,18 @@ async function checkForUpdatesImpl(opts: Required<AbortOptions>){
         }
         
         if(!vf || vf.date < rvf.date){
-            urlsToVisit = Array.from(new Set(rvf.vfWebSeeds).difference(visitedUrls))
+            urlsToVisit = shuffleInplace(Array.from(new Set(rvf.vfWebSeeds).difference(visitedUrls)))
             await saveVersionFile(rvf, opts)
             vf = rvf
         }
 
-        if((Date.now() - vf.date) < VERSION_FILE_LIFETIME)
-            break
+        const now = Date.now()
+        if((now - vf.date) >= VERSION_FILE_LIFETIME){
+            logger.log('The version file is too old:', vf.date, 'vs', now)
+            continue
+        }
+
+        break
     }
     
     if(vf && fbPkgCurrent.versionNumber <= vf.versionNumber)
@@ -256,8 +261,6 @@ export async function loadVersionFile(opts: Required<AbortOptions>){
             parsedVersionFile = res
             return res
         }
-    } else {
-        logger.log('Failed to load version file:', 'buffer is not instance of Buffer')
     }
 }
 export async function parseVersionFileString(str: string, opts: Required<AbortOptions>, checkDate = true): Promise<Result<ParsedVersionFile>> {

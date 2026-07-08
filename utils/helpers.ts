@@ -49,3 +49,13 @@ export function sortInplace<T>(a: T[], by: (e: T) => (number | string), dir: 'as
     })
     return a
 }
+
+export function shuffleInplace<T>(a: T[]): T[] {
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        const temp = a[i]!
+        a[i] = a[j]!
+        a[j] = temp
+    }
+    return a
+}
