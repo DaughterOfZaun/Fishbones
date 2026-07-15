@@ -687,32 +687,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             
             const players = this.getPlayers()
             if(players.every(p => p.isBot || !!p.lock.value)){
-                const notification: LobbyNotificationMessage = {
-                    peersRequests: []
-                }
-                for(const player of players){
-                    let reqIsEmpty = true
-                    const pickRequest: PickRequest = {
-                        talents: undefined!,
-                    }
-                    for(const prop of ['champion', 'spell1', 'spell2'] as const){
-                        if(player[prop].value === undefined){
-                            player[prop].setRandom()
-                            pickRequest[prop] = player[prop].encode()
-                            reqIsEmpty = false
-                        }
-                    }
-                    if(!reqIsEmpty){
-                        notification.peersRequests.push({
-                            playerId: player.id,
-                            pickRequest: pickRequest,
-                        })
-                    }
-                }
-                if(notification.peersRequests.length){
-                    this.broadcast(notification, players)
-                }
-                this.launch()
+                this.forceLaunch()
                 return
             }
         }
@@ -748,6 +723,36 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     }
     private handlePickResponse(player: GamePlayer, res: PickRequest){
         player.decodeInplace(res)
+    }
+
+    public forceLaunch(){
+        const players = this.getPlayers()
+        const notification: LobbyNotificationMessage = {
+            peersRequests: []
+        }
+        for(const player of players){
+            let reqIsEmpty = true
+            const pickRequest: PickRequest = {
+                talents: undefined!,
+            }
+            for(const prop of ['champion', 'spell1', 'spell2'] as const){
+                if(player[prop].value === undefined){
+                    player[prop].setRandom()
+                    pickRequest[prop] = player[prop].encode()
+                    reqIsEmpty = false
+                }
+            }
+            if(!reqIsEmpty){
+                notification.peersRequests.push({
+                    playerId: player.id,
+                    pickRequest: pickRequest,
+                })
+            }
+        }
+        if(notification.peersRequests.length){
+            this.broadcast(notification, players)
+        }
+        this.launch()
     }
 
     private unlockAllPlayers(){

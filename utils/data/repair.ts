@@ -2,7 +2,7 @@ import { build } from "./build"
 import { download, appendPartialDownloadFileExt, repairAria2, seed } from "./download/download"
 import { gc126Pkg, gc420Pkg, gitPkg, bwPkg, cbPkg, modPck1, type PkgInfo, repairTorrents, sdkPkg, type PkgInfoCSProj, packages } from "./packages"
 import { console_log, createBar, currentExe, extractFile } from "../../ui/remote/remote"
-import { console_log_fs_err, cwd, downloads, fs_chmod, fs_copyFile, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_overwrite, fs_readFile, fs_removeFile, fs_rmdir, fs_stat, fs_statfs, fs_truncate, fs_writeFile, rwx_rx_rx } from './fs'
+import { console_log_fs_err, cwd, downloads, fs_chmod, fs_copyFile, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_overwrite, fs_readFile, fs_removeFile, fs_stat, fs_statfs, fs_truncate, fs_writeFile, rwx_rx_rx } from './fs'
 import { readTrackersTxt } from "./download/trackers"
 import { appendPartialUnpackFileExt, DataError, repair7z, unpack } from "./unpack"
 import { TerminationError, unwrapAbortError } from "../process/process"
@@ -28,6 +28,7 @@ import { ChronobreakDataInfo } from "./packages/game-server-cb"
 import { champions } from "./constants/champions"
 import { TestGroundsDataInfo, tgPkg } from "./packages/game-server-tg"
 import { inspect } from 'node:util'
+import { logger } from "../log"
 
 const DOTNET_INSTALL_CORRUPT_EXIT_CODES = [ 130, 131, 142, ]
 
@@ -127,6 +128,7 @@ async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>
             return await repairOrThrow(opts)
         } catch(err){
             if(opts.signal.aborted) throw err //TODO: Should I put this in all try-catch blocks?
+            logger.log('Repairing failed:', inspect(err))
             await retryPrompt(
                 tr('Repairing failed'),
                 tr('Repairing of some critical component has failed.'),
@@ -642,7 +644,7 @@ async function moveFoundFilesToDir(foundPkgDir: string, pkg: PkgInfo, opts: Requ
     //opts.signal.throwIfAborted()
 
     // Try to delete the folder if it is empty.
-    await fs_rmdir(foundPkgDir, { ...opts, recursive: false }, false)
+    await fs_removeFile(foundPkgDir, { ...opts, recursive: false }, false)
 
     return successfullyMovedRequiredFiles
 }

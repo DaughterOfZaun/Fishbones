@@ -13,6 +13,7 @@ import { combinations_find } from '../utils/data/constants/client-server-combina
 import { bwPkg } from '../utils/data/packages' //TODO: Unhardcode.
 //import { logger as myLogger } from '../utils/log'
 import { tr } from '../utils/translation'
+import { Team } from '../tui/lobby/lobby'
 
 export class LocalGame extends Game {
     protected log = logger('launcher:game-local')
@@ -34,6 +35,15 @@ export class LocalGame extends Game {
         await this.node.handle(LOBBY_PROTOCOL, this.handleIncomingStream, opts)
         this.connected = true
         return true
+    }
+
+    public autofill(){
+        const teams = [ Team.Blue, Team.Purple ]
+        const players = this.getPlayers()
+        const playerCounts = teams.map(team => players.filter(player => player.team.value == team).length)
+        const playersMax = Math.max(...playerCounts, this.playersMax.value ?? 0)
+        const countsToAdd = playerCounts.map(playersCount => Math.max(0, playersMax - playersCount))
+        this.addBots(countsToAdd)
     }
 
     public addBot(team: number){

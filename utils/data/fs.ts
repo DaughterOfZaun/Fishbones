@@ -147,19 +147,6 @@ export async function fs_moveFile(src: string, dest: string, opts: { rethrow?: b
     return result
 }
 
-export async function fs_rmdir(path: string, opts: RmDirOptions & Required<AbortOptions>, log = true){
-    let result = false
-    try {
-        await fs.rmdir(path, opts)
-        result = true
-    } catch(err){
-        if(log)
-            console_log_fs_err(tr('Removing folder failed', {}), path, err)
-    }
-    opts.signal.throwIfAborted()
-    return result
-}
-
 export async function fs_removeFile(path: string, opts: RmOptions & Required<AbortOptions>, log = true){
     let result = false
     try {

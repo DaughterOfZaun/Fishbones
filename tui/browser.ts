@@ -113,7 +113,7 @@ export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts
     }
 }
 
-async function hostLocal(node: LibP2PNode, name: string, icon: number, lobby: Lobby, setup: Setup, opts: Required<AbortOptions>){
+export async function hostLocal(node: LibP2PNode, name: string, icon: number, lobby: Lobby, setup: Setup, opts: Required<AbortOptions>){
     const pspd = node.services.pubsubPeerDiscovery
     const ps = node.services.pubsub
 
@@ -300,8 +300,8 @@ function gameInfoToChoice(
 
     let explanation = ''
     if(commitHashMismatch) explanation += tr('The commit (version) of the remote server does not match the commit (version) of your local server') + '\n'
-    if(dangerOfCrash) explanation += tr('The game client will crash at the beginning of the game') + '\n'
     if(clientUnavaible) explanation += tr('You do not have the client version required to play on this server') + '\n'
+    if(dangerOfCrash) explanation += tr('The game client will crash at the beginning of the game') + '\n'
 
     ;(choice.fields!.Explanation as Base).visible = explanation != ''
     ;(choice.fields!.Explanation as Base).tooltip_text = explanation.trim()

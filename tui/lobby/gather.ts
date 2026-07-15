@@ -77,7 +77,7 @@ export async function lobby_gather(ctx: Context){
         Quit: button(() => view.reject(new SwitchViewError({ cause: null }))),
         Start: startbutton(() => { if(gatheringTimeout <= 0) localGame?.start() }),
         Explanation: base(false),
-        Autofill: button(autofill, !localGame || allBotIDs.size === 0),
+        Autofill: button(() => localGame?.autofill(), !localGame || allBotIDs.size === 0),
         GatheringProgress: bar(0, 0, 100, gatheringTimeout > 0),
         Team1: team(0),
         Team2: team(1),
@@ -126,15 +126,6 @@ export async function lobby_gather(ctx: Context){
             title: tr('New player joined'),
             sound: 'join_chat',
         })
-    }
-
-    function autofill(){
-        const teams = [ Team.Blue, Team.Purple ]
-        const players = game.getPlayers()
-        const playerCounts = teams.map(team => players.filter(player => player.team.value == team).length)
-        const playersMax = Math.max(...playerCounts, game.playersMax.value ?? 0)
-        const countsToAdd = playerCounts.map(playersCount => Math.max(0, playersMax - playersCount))
-        localGame?.addBots(countsToAdd)
     }
 
     if(gatheringTimeout > 0){

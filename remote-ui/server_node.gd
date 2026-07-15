@@ -175,6 +175,7 @@ func _ready() -> void:
             if extracted_file.get_extension() == "exe":
                 err = FileAccess.set_unix_permissions(extracted_file, rwx); assert(err == OK)
 
+    exe_args.append('--no-maglev')
     exe_args.append('--trace-warnings')
     exe_args.append('--enable-source-maps')
     exe_args.append_array([ extracted_js ])

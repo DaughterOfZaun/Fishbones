@@ -21,6 +21,7 @@ config/auto_accept_quit=false
 config/quit_on_go_back=false
 config/features=PackedStringArray("4.6", "GL Compatibility")
 run/low_processor_mode=true
+run/low_processor_mode_sleep_usec=40000
 boot_splash/bg_color=Color(0, 0, 0, 1)
 boot_splash/image="res://icons/splash-logo.png"
 config/icon="uid://otwgmcv7cmt7"
