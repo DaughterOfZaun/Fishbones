@@ -1,11 +1,10 @@
-import type { PeerId, AbortOptions, IncomingStreamData, Stream, Startable, StreamHandler } from "@libp2p/interface"
+import type { PeerId, AbortOptions, Stream, Startable, StreamHandler, Connection } from "@libp2p/interface"
 import { PeerMap } from "@libp2p/peer-collections"
 import { logger } from "@libp2p/logger"
-import { pipe } from "it-pipe"
-import * as lp from 'it-length-prefixed'
 import { AbortError, pushable as createPushable, type Pushable } from 'it-pushable'
 import { ConnectionStrategy, DEFAULT_REMOTE_STREAM_INDEX, Role, type OnDataFromRemote, type RemoteStreamIndex, type SocketToRemote } from "./shared"
 import type { Registrar } from "@libp2p/interface-internal"
+import { lpStream } from "@libp2p/utils"
 
 //import { PROXY_PROTOCOL } from "./constants"
 const PROXY_PROTOCOL = `/proxy/${0}`
@@ -36,10 +35,10 @@ class ProxyService implements Startable {
         return this.components.registrar.unhandle(PROXY_PROTOCOL)
     }
 
-    private onStream = async (data: IncomingStreamData) => {
-        return this.handler(data)
+    private onStream = async (stream: Stream, connection: Connection) => {
+        return this.handler(stream, connection)
     }
-    private defaultHandler = async ({ stream }: IncomingStreamData) => {
+    private defaultHandler = async (stream: Stream, connection: Connection) => {
         return stream.close() //.catch(err => log.error(err))
     }
     private handler: StreamHandler = this.defaultHandler
@@ -78,7 +77,7 @@ export class UseExistingLibP2PConnection extends ConnectionStrategy {
         }
     }
 
-    onStream = ({ stream, connection }: IncomingStreamData) => {
+    onStream = (stream: Stream, connection: Connection) => {
         const id = connection.remotePeer
         if(this.socketsByPeerId.has(id)){
             this.handleStream(id, stream)
@@ -205,23 +204,21 @@ export class UseExistingLibP2PConnection extends ConnectionStrategy {
         console.assert(i == streamIdx, 'Assertion failed: i == streamIdx')
 
         //console.log(Role[this.role], 'handleStream', streamIdx)
+        
+        const wrapped = lpStream(stream)
 
-        pipe(
-            stream.source,
-            //@ts-expect-error: Type 'Uint8ArrayList' is not assignable to type 'Uint8ArrayList'.
-            source => lp.decode(source),
-            async source => {
-                for await (const chunk of source) {
-                    const data = Buffer.from(chunk.slice())
-                    socket.onData(data, streamIdx, peerId.toString())
-                }
-            },
-        ).catch(err => log.error(err))
+        Promise.resolve().then(async () => {
+            for(;;){
+                const chunk = await wrapped.read()
+                const data = Buffer.from(chunk.slice())
+                socket.onData(data, streamIdx, peerId.toString())
+            }
+        }).catch(err => log.error(err))
 
-        pipe(
-            pushable,
-            source => lp.encode(source),
-            stream.sink,
-        ).catch(err => log.error(err))
+        Promise.resolve().then(async () => {
+            for await (const data of pushable){
+                wrapped.write(data)
+            }
+        }).catch(err => log.error(err))
     }
 }

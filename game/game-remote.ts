@@ -1,14 +1,11 @@
-import { LOBBY_PROTOCOL } from '../utils/constants'
-import { Peer as PBPeer } from '../message/peer'
-import { type AbortOptions, type IncomingStreamData, type PeerId, type Stream } from '@libp2p/interface'
-import { obtainConnection, type LibP2PNode } from '../node/node'
-import * as lp from 'it-length-prefixed'
-import { pbStream, type MessageStream } from '../utils/pb-stream'
-import { pipe } from 'it-pipe'
-import { LobbyRequestMessage, LobbyNotificationMessage } from '../message/lobby'
-import { Game } from './game'
 import { logger } from '@libp2p/logger'
 //import { logger as myLogger } from '../utils/log'
+import type { AbortOptions, PeerId, Stream } from '@libp2p/interface'
+import { pbStream, type ReadonlyMessageStream, type WriteonlyMessageStream } from '../utils/pb-stream'
+import { LobbyRequestMessage, LobbyNotificationMessage } from '../message/lobby'
+import { obtainConnection, type LibP2PNode } from '../node/node'
+import { LOBBY_PROTOCOL } from '../utils/constants'
+import { Game } from './game'
 
 export class RemoteGame extends Game {
     protected log = logger('launcher:game-remote')
@@ -24,8 +21,9 @@ export class RemoteGame extends Game {
         try {
             const connection = await obtainConnection(this.node, this.ownerId, opts)
             const stream = await connection.newStream([ LOBBY_PROTOCOL ], { ...opts, runOnLimitedConnection: false })
-            this.stream = pbStream(stream).pb(LobbyNotificationMessage, LobbyRequestMessage)
-            this.handleOutgoingStream({ stream, connection })
+            const wrapped = pbStream(stream).pb(LobbyNotificationMessage, LobbyRequestMessage)
+            this.handleIncomingStream(wrapped)
+            this.stream = wrapped
             this.connected = true
             return true
         } catch(err) {
@@ -34,7 +32,7 @@ export class RemoteGame extends Game {
         }
     }
 
-    private stream?: MessageStream<LobbyNotificationMessage, LobbyRequestMessage, Stream>
+    private stream?: WriteonlyMessageStream<LobbyRequestMessage>
     protected stream_write(req: LobbyRequestMessage){
         //myLogger.log(inspect({ method: 'stream_write', from: this.player?.id, req }))
         this.stream?.write(req).catch(err => this.log.error(err))
@@ -42,23 +40,17 @@ export class RemoteGame extends Game {
     }
     
     //TODO: opts: Required<AbortOptions>
-    private handleOutgoingStream = ({ stream, /*connection*/ }: IncomingStreamData) => {
-        //if(!connection.remotePeer.equals(this.id)) return
-        pipe(
-            stream,
-            //@ts-expect-error: Type 'Uint8ArrayList' is not assignable to type 'Uint8ArrayList'.
-            (source) => lp.decode(source),
-            async (source) => {
-                for await (const data of source) {
-                    const req = LobbyNotificationMessage.decode(data)
-                    this.handleResponse(req)
-                }
+    private handleIncomingStream(stream: ReadonlyMessageStream<LobbyNotificationMessage>){
+        Promise.resolve().then(async () => {
+            for(;;){
+                const req = await stream.read()
+                this.handleResponse(req)
             }
-        ).catch(err => {
+        }).catch(err => {
             this.log.error(err)
         }).finally(() => {
-            this.cleanup()
             this.safeDispatchEvent('kick')
+            this.cleanup()
         })
     }
     

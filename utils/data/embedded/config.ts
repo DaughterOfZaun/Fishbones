@@ -59,7 +59,7 @@ export const config = {
 
     dataChannelLib: {
         linux: './dist/node_datachannel-bfgv6pn8.node',
-        windows: './dist/node_datachannel-8fg8wz1b.node',
+        windows: './dist/node_datachannel-65apsw7k.node',
     },
 
     modPck1ZipTorrent: './torrents/modded_levels_paste_on_client.7z.torrent',

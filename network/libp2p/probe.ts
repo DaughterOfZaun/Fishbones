@@ -1,5 +1,5 @@
 import { udpSocket, type Socket, type ReceiveFlags } from "../../utils/bun"
-import { TypedEventEmitter, type PeerId, type PeerStore, type Startable } from "@libp2p/interface"
+import { TypedEventEmitter, type AbortOptions, type PeerId, type PeerStore, type Startable } from "@libp2p/interface"
 import { parseIPv4 } from '@chainsafe/is-ip/parse'
 import { Packet } from '../../message/probe'
 import { bytesToUInt32, uInt32ToBytes } from "../../utils/binary"
@@ -7,8 +7,7 @@ import { Circuit } from '@multiformats/multiaddr-matcher'
 import { randomBytes } from '@libp2p/crypto'
 import { PeerMap } from "@libp2p/peer-collections"
 import { sleep, sortInplace, toBase64 } from "../../utils/helpers"
-import type { AbortOptions } from "@multiformats/multiaddr"
-import { isLoopback } from '@libp2p/utils/multiaddr/is-loopback'
+import { isLoopback } from '@libp2p/utils'
 import { Peer as ENetPeer } from '../../utils/proxy/peer'
 import { Connect, Protocol, ProtocolCommand, ProtocolFlag, VerifyConnect } from "../../utils/proxy/enet"
 import { assign } from "../../utils/proxy/utils"

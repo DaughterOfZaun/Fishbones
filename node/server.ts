@@ -34,11 +34,24 @@ import { logger } from '../utils/log'
 import { inspect } from 'node:util'
 //import { peerIdFromPrivateKey } from '@libp2p/peer-id'
 
+interface Timeout {
+    id: ReturnType<typeof setTimeout>
+    startedAt: number
+}
+
 const UDP_PORT = 42451
 const TCP_PORT = 41463
 
 const KEY_FILE = './keys/server-key-1.txt'
 const KEY_ENCODING = 'base64pad'
+
+const SEC = 1000
+const MIN = 60 * SEC
+const GATHER_TIMEOUT = 60 * SEC
+const START_TIMEOUT = 5 * SEC
+const PICK_TIMEOUT = 60 * SEC
+const PLAY_TIMEOUT = 60 * MIN
+const ZERO_PLAYERS = 1
 
 let keyString: string
 let privateKey: PrivateKey
@@ -89,7 +102,7 @@ const node = await createLibp2p({
         
         ping: customPing(),
         probe: probe({
-            port: 5119
+            port: 5118,
         }),
 
         relay: circuitRelayServer(),
@@ -119,22 +132,16 @@ const node = await createLibp2p({
 
 console.log(node.getMultiaddrs().map(ma => ma.toString()))
 
-interface Timeout {
-    id: ReturnType<typeof setTimeout>
-    startedAt: number
-}
-
-const SEC = 1000
-const MIN = 60 * SEC
-const GATHER_TIMEOUT = 60 * SEC
-const START_TIMEOUT = 5 * SEC
-const PICK_TIMEOUT = 60 * SEC
-const PLAY_TIMEOUT = 60 * MIN
-const ZERO_PLAYERS = 1
+node.services.pubsubPeerDiscovery.setData({
+    name: 'Official Server #1',
+    serverSettings: undefined,
+    gameInfos: [],
+    icon: 0,
+})
 
 const opts = shutdownOptions
 const name = 'Manager Bot', icon = 0
-await hostLocal(node as unknown as LibP2PNode, name, icon, setup, lobby, opts)
+await hostLocal(node as unknown as LibP2PNode, name, icon, lobby, setup, opts)
 
 // eslint-disable-next-line @typescript-eslint/require-await, @typescript-eslint/no-unused-vars
 async function setup(game: Game, opts: Required<AbortOptions>){
@@ -150,7 +157,8 @@ async function setup(game: Game, opts: Required<AbortOptions>){
     game.clientVersion = KnownClients.v126
 }
 
-async function lobby(game: LocalGame, opts: Required<AbortOptions>){
+async function lobby(_game: Game, opts: Required<AbortOptions>){
+    const game = _game as LocalGame //HACK:
 
     const maxPlayers = 2 * game.playersMax.value!
     let prevPlayerCount = game.getPlayersCount()

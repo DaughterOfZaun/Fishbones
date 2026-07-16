@@ -88,6 +88,7 @@ function updatePeer(view: DeferredView<void>, peerId: PeerId, patch: Partial<FBP
             Status: (full || status != info.status) ? label(peerStatusToString[status!]) : undefined!,
             Ping: (full || ping != info.ping) ? label(ping?.toFixed()?.concat('' + tr('ms')) ?? '') : undefined!,
         }, {
+            $type: 'base',
             modulate: (status == PeerStatus.Connected) ? '#ffffffff' : '#ffffff99',
         })
     }

@@ -1,8 +1,6 @@
 import { LOBBY_PROTOCOL, type u } from '../utils/constants'
 import { type AbortOptions, type PeerId, type StreamHandler } from '@libp2p/interface'
 import type { LibP2PNode } from '../node/node'
-import * as lp from 'it-length-prefixed'
-import { pipe } from 'it-pipe'
 import { LobbyRequestMessage, LobbyNotificationMessage, KickReason } from '../message/lobby'
 import { Game } from './game'
 import { logger } from '@libp2p/logger'
@@ -116,7 +114,7 @@ export class LocalGame extends Game {
         )
     }
 
-    private handleIncomingStream: StreamHandler = async ({ stream, connection }) => {
+    private handleIncomingStream: StreamHandler = async (stream, connection) => {
         const wrapped = pbStream(stream).pb(LobbyRequestMessage, LobbyNotificationMessage)
 
         let checkPassed = false
@@ -147,21 +145,15 @@ export class LocalGame extends Game {
         this.handleRequest(playerId, firstReq, wrapped, peerId)
 
         try {
-            await pipe(
-                stream,
-                //@ts-expect-error: Type 'Uint8ArrayList' is not assignable to type 'Uint8ArrayList'.
-                (source) => lp.decode(source),
-                async (source) => {
-                    for await (const data of source) {
-                        const req = LobbyRequestMessage.decode(data)
-                        this.handleRequest(playerId, req, wrapped, peerId)
-                    }
-                }
-            )
-            this.freePlayerId(playerId, peerId)
-            this.handleRequest(playerId, { leaveRequest: true }, undefined, peerId)
+            for(;;){
+                const req = await wrapped.read()
+                this.handleRequest(playerId, req, wrapped, peerId)
+            }
         } catch(err) {
             this.log.error(err)
+        } finally {
+            this.freePlayerId(playerId, peerId)
+            this.handleRequest(playerId, { leaveRequest: true }, undefined, peerId)
         }
     }
 

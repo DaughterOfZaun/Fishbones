@@ -3,12 +3,12 @@
 //src: libp2p/src/connection-manager/connection-pruner.ts
 //src: libp2p/src/connection-manager/dial-queue.ts
 
-import { isPeerId, type ComponentLogger, type Connection, type Libp2pEvents, type Logger, type PeerId, type PeerInfo, type PeerStore, type PeerUpdate, type Startable, type TypedEventTarget } from "@libp2p/interface"
+import { isPeerId, type AbortOptions, type ComponentLogger, type Connection, type Libp2pEvents, type Logger, type PeerId, type PeerInfo, type PeerStore, type PeerUpdate, type Startable, type TypedEventTarget } from "@libp2p/interface"
 import type { ConnectionManager, TransportManager } from "@libp2p/interface-internal"
 //import { setMaxListeners } from 'main-event'
 //import { anySignal } from 'any-signal'
 import { PeerMap } from "@libp2p/peer-collections"
-import { CODE_P2P, CODE_P2P_CIRCUIT, multiaddr, type AbortOptions, type Multiaddr } from "@multiformats/multiaddr"
+import { CODE_P2P, CODE_P2P_CIRCUIT, multiaddr, type Multiaddr } from "@multiformats/multiaddr"
 import { Queue, type Job, type QueueInit } from "@libp2p/utils/queue"
 import { peerIdFromString } from "@libp2p/peer-id"
 

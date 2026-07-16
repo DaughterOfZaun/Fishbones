@@ -36,13 +36,13 @@ import { dcutr } from '@libp2p/dcutr'
 import { tcp } from '@libp2p/tcp'
 
 import { loadOrCreateSelfKey } from '@libp2p/config'
-import { isPeerId, KEEP_ALIVE, type AbortOptions, type AddressSorter, type ComponentLogger, type Connection, type Libp2pEvents, type Logger, type PeerId, type PeerId, type PeerInfo, type PeerStore, type PrivateKey, type Startable, type TypedEventTarget } from '@libp2p/interface'
+import { isPeerId, KEEP_ALIVE, type AbortOptions, type Address, type AddressSorter, type ComponentLogger, type Connection, type Libp2pEvents, type Logger, type PeerId, type PeerInfo, type PeerStore, type PrivateKey, type Startable, type TypedEventTarget } from '@libp2p/interface'
 import { PeerMap, PeerSet } from '@libp2p/peer-collections'
 import { peerIdFromCID, peerIdFromString } from '@libp2p/peer-id'
 import { PeerRecord, RecordEnvelope } from '@libp2p/peer-record'
 import { CODE_P2P_CIRCUIT, multiaddr, type Multiaddr } from '@multiformats/multiaddr'
 
-import type { RTCDataChannel, RTCPeerConnection } from '@ipshipyard/node-datachannel/polyfill'
+import type { RTCDataChannel, RTCPeerConnection } from 'node-datachannel/polyfill'
 import type { ConnectionManager, TransportManager } from '@libp2p/interface-internal'
 
 import { console_log } from '../ui/remote/remote'
@@ -53,8 +53,12 @@ import { tr } from '../utils/translation'
 
 import { anySignal } from 'any-signal'
 
-import { certifiedAddressesFirst } from '../node_modules/libp2p/src/connection-manager/address-sorter.ts'
-import { reliableTransportsFirst, loopbackAddressLast, publicAddressesFirst, circuitRelayAddressesLast } from '../node_modules/libp2p/node_modules/@libp2p/utils/src/multiaddr/sorters.ts'
+import { reliableTransportsFirst, loopbackAddressLast, publicAddressesFirst, circuitRelayAddressesLast } from '@libp2p/utils'
+//import { certifiedAddressesFirst } from '../node_modules/libp2p/src/connection-manager/address-sorter'
+function certifiedAddressesFirst(a: Address, b: Address): (-1 | 0 | 1) {
+    return ((+b.isCertified) - (+a.isCertified)) as (-1 | 0 | 1)
+}
+
 import { sleep, fromBase64, toBase64 } from '../utils/helpers.ts'
 import { inspect } from 'node:util'
 
@@ -126,13 +130,15 @@ const dialTimeout = maxPeerAddrsToDial * perTransportDialTimeout
 const dcutrDefaultTimeout = 5000
 const dcutrDefaultRetries = 3
 const dcutrTimeout = dcutrDefaultTimeout * dcutrDefaultRetries
-const addressSorter: AddressSorter = (a, b) => {
-    let v = 0
-    if(v == 0) v = -loopbackAddressLast(a, b) // loopbackAddressesFirst
-    if(v == 0) v = -publicAddressesFirst(a, b) // privateAddressesFirst
-    if(v == 0) v = circuitRelayAddressesLast(a, b) // unlimitedAddressesFirst
-    if(v == 0) v = certifiedAddressesFirst(a, b)
-    if(v == 0) v = reliableTransportsFirst(a, b)
+const addressSorter: AddressSorter = (c, d) => {
+    const a = c.multiaddr
+    const b = d.multiaddr
+    const v = 0
+        || -loopbackAddressLast(a, b) // loopbackAddressesFirst
+        || -publicAddressesFirst(a, b) // privateAddressesFirst
+        || circuitRelayAddressesLast(a, b) // unlimitedAddressesFirst
+        || certifiedAddressesFirst(c, d)
+        || reliableTransportsFirst(a, b)
     return v as (-1 | 0 | 1)
 }
 
@@ -232,7 +238,7 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
                         '/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ',
                     ]
                 }),
-                contentPeerDiscovery: contentPeerDiscovery({}),
+                //contentPeerDiscovery: contentPeerDiscovery({}),
                 //torrentPeerDiscovery: torrentPeerDiscovery({
                 //    topic: appDiscoveryTopic,
                 //    autodial: true,
@@ -245,7 +251,9 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
 
             //logger: customLogger,
 
+            //@ts-expect-error Property '[symbol]' is missing in type 'Uint8ArrayList'
             pubsub: gossipsub({
+                allowedTopics: [ appDiscoveryTopic ],
                 allowPublishToZeroTopicPeers: true,
                 emitSelf: true,
                 //directPeers: args.allowInternet.enabled ? [
@@ -267,7 +275,6 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
                 enableSync: false,
             }),
         },
-        //@ts-expect-error: Types of parameters 'key' and 'key' are incompatible.
         datastore,
         privateKey,
         keychain: keychain(keychainInit),

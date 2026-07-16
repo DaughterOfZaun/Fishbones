@@ -112,6 +112,7 @@ export async function startup(opts: Required<AbortOptions>){
                 )
             )
         }, {
+            $type: 'base',
             visible: false,
         }),
 

@@ -20,9 +20,12 @@ export const VERSION_FILE_CODEC = Uint8Array.from([ 0x50 ]) // Protocol Buffers
 export const HARDCODED_UPGRADE_PUBLIC_KEY = 'IAOuTMg/ud6fE6id+R0sNsSfFIg9izQSLKInWYkcuYs='
 export const HARDCODED_KEY_ENCODING = 'base64pad'
 
-export const HARDCODED_SERVER_IP = '195.133.146.185'
-export const HARDCODED_SERVER_PEER_ID = '12D3KooWHHyaqcTuPvphwifkP2su2Qis2wWKLZhaobc9cB5qXQak'
-export const HARDCODED_SERVER_CERT_HASH = 'uEiBYh4UvCuTLl07oUNUl_1CNkWJAver2h7jLVdZmE0anig'
+//export const HARDCODED_SERVER_IP = '195.133.146.185'
+//export const HARDCODED_SERVER_PEER_ID = '12D3KooWHHyaqcTuPvphwifkP2su2Qis2wWKLZhaobc9cB5qXQak'
+//export const HARDCODED_SERVER_CERT_HASH = 'uEiBYh4UvCuTLl07oUNUl_1CNkWJAver2h7jLVdZmE0anig'
+export const HARDCODED_SERVER_IP = '127.0.0.1'
+export const HARDCODED_SERVER_PEER_ID = '12D3KooWQFGcVuhcCWY55qn4T6owriHz8f638p3oi4d5vM4xyq92'
+export const HARDCODED_SERVER_CERT_HASH = 'uEiAIMIG2b61Apk2Rx7UYDHG6l7Dj6iyXKWDk8FtlMqNc9Q'
 export const HARDCODED_HTTP_SERVER_URL = `http://${HARDCODED_SERVER_IP}:3000`
 export const HARDCODED_ANNOUNCE_URLS = [
     `udp://${HARDCODED_SERVER_IP}:6969/announce`,

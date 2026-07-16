@@ -376,8 +376,8 @@ async function build_libUTP() {
 async function patch_npm_modules() {
     await Promise.all([
         patch_achingbrain_ssdp(),
-        patch_node_datachannel(),
-        patch_node_datachannel_again(),
+        //patch_node_datachannel(),
+        //patch_node_datachannel_again(),
         patch_ipshipyard_node_datachannel(),
         patch_simple_peer(),
         //patch_rendezvous(),
@@ -385,7 +385,8 @@ async function patch_npm_modules() {
 }
 
 async function patch_ipshipyard_node_datachannel() {
-    const file = './node_modules/@ipshipyard/node-datachannel/dist/esm/lib/node-datachannel.mjs'
+    //const file = './node_modules/@ipshipyard/node-datachannel/dist/esm/lib/node-datachannel.mjs'
+    const file = './node_modules/node-datachannel/dist/esm/lib/node-datachannel.mjs'
     let js = await fs.readFile(file, 'utf8')
     js = js.replace(`
 import cjsUrl from 'node:url';

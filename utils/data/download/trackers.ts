@@ -3,6 +3,7 @@ import { console_log, createBar } from '../../../ui/remote/remote'
 import { downloads, fs_readFile, fs_writeFile } from '../fs'
 import type { AbortOptions } from '@libp2p/interface'
 import { logger } from '../../log'
+//@ts-expect-error Cannot find module or its corresponding type declarations.
 import embeddedTrackersTxt from '../../../thirdparty/trackers.txt'
 import { HARDCODED_ANNOUNCE_URLS } from '../../constants-build'
 import { tr } from '../../translation'
@@ -39,7 +40,7 @@ export async function readTrackersTxt(opts: Required<AbortOptions>){
         console_log(tr('Using built-in list of torrent-trackers', {}))
         txt = embeddedTrackersTxt
     }
-    return setTrackers(txt)
+    return setTrackers(txt as string)
 }
 
 export async function downloadTrackersTxt(opts: Required<AbortOptions>){

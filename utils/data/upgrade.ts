@@ -203,7 +203,7 @@ export async function repairSelfPackage(opts: Required<AbortOptions>){
         }, opts)
     }
     if(!(await fs_exists(fbPkg.zipTorrent, opts))){
-        const buffer = await new Promise<Buffer>((resolve, reject) => {
+        const buffer = await new Promise<Uint8Array>((resolve, reject) => {
             createTorrent(fbPkg.zip, { creationDate: 1 }, (err, torrent) => {
                 if(err) reject(err)
                 else resolve(torrent)

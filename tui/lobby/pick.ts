@@ -93,6 +93,7 @@ export async function lobby_pick(ctx: Context){
             ChampionsDisabled: base(false),
             Skins: list({}),
         }, {
+            $type: 'tabs',
             current_tab: 0,
         }),
         SearchBar: line('', (text) => {
@@ -112,6 +113,7 @@ export async function lobby_pick(ctx: Context){
             view.get('TabContainer').update(form({
                 ChampionsDisabled: base(true),
             }, {
+                $type: 'tabs',
                 current_tab: 1,
             }))
             game.set('lock', +true)
@@ -188,6 +190,7 @@ export async function lobby_pick(ctx: Context){
                 ChampionsDisabled: base(false),
                 Champions: list({ [championIndex]: unpressed }),
             }, {
+                $type: 'tabs',
                 current_tab: 0,
             }),
             SummonerSpell1: list({ [spellIndex1]: unpressed }),

@@ -1,49 +1,26 @@
-import { pbStream as pbStreamOrig, type Decoder, type Encoder, type ProtobufStream } from 'it-protobuf-stream'
-import type { Duplex } from 'it-stream-types'
+import type { MessageStream } from "@libp2p/interface"
+import { pbStream as pbStream1, type ProtobufDecoder, type ProtobufEncoder, type ProtobufMessageStream } from "@libp2p/utils"
 
-type DecoderProto<T> = { decode: Decoder<T> }
-type EncoderProto<T> = { encode: Encoder<T> }
+export type ReadonlyMessageStream<T, S extends MessageStream = MessageStream> = Pick<ProtobufMessageStream<T, S>, 'read' | 'unwrap'>
+export type WriteonlyMessageStream<T, S extends MessageStream = MessageStream> = Pick<ProtobufMessageStream<T, S>, 'write' | 'writeV' | 'unwrap'>
+export type ProtobufEncoderDecoder<T> = { encode: ProtobufEncoder<T>, decode: ProtobufDecoder<T> }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyDuplex = Duplex<any, any, any>
-
-interface AbortOptions { signal: AbortSignal }
-
-//// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export interface ReadonlyMessageStream<I, S> {
-    read: (options?: AbortOptions) => Promise<I>
-    unwrap: () => ProtobufStream<S>
-}
-
-//// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export interface WriteonlyMessageStream<O, S> {
-    write: (data: O, options?: AbortOptions) => Promise<void>,
-    writeV: (data: O[], options?: AbortOptions) => Promise<void>,
-    unwrap: () => ProtobufStream<S>
-}
-
-export interface MessageStream<I, O, S> {
-    read: (options?: AbortOptions) => Promise<I>
-    write: (data: O, options?: AbortOptions) => Promise<void>,
-    writeV: (data: O[], options?: AbortOptions) => Promise<void>,
-    unwrap: () => ProtobufStream<S>
-}
-
-export
-function pbStream<S extends AnyDuplex>
-(...args: Parameters<typeof pbStreamOrig<S>>)
-{
-    //const [duplex, options] = args
-    const W = pbStreamOrig(...args)
-    return Object.assign(W, {
+export { pbStream2 as pbStream }
+function pbStream2<S extends MessageStream = MessageStream>(...args: Parameters<typeof pbStream1<S>>){
+    const pbs = pbStream1<S>(...args)
+    return Object.assign(pbs, {
         pb: <I, O>(
-                inProto: DecoderProto<I>,
-                outProto: EncoderProto<O> //= inProto as unknown as EncoderProto<O>
-            ): MessageStream<I, O, S> => ({
-            read: async (options?: AbortOptions) => W.read(inProto, options),
-            write: async (data: O, options?: AbortOptions) => W.write(data, outProto, options),
-            writeV: async (data: O[], options?: AbortOptions) => W.writeV(data, outProto, options),
-            unwrap: () => W
-        })
+            inputDecoder: ProtobufEncoderDecoder<I>,
+            outputEncoder: ProtobufEncoderDecoder<O>,
+        ) => {
+            const inputStream = pbs.pb(inputDecoder)
+            const outputStream = pbs.pb(outputEncoder)
+            return {
+                read: inputStream.read,
+                write: outputStream.write,
+                writeV: outputStream.writeV,
+                unwrap: () => pbs,
+            }
+        }
     })
 }

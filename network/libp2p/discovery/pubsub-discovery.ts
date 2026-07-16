@@ -3,13 +3,15 @@ import { TypedEventEmitter, peerDiscoverySymbol } from '@libp2p/interface'
 import { peerIdFromPublicKey } from '@libp2p/peer-id'
 import { multiaddr } from '@multiformats/multiaddr'
 import { Peer as PBPeer } from '../../../message/peer'
-import type { PeerDiscovery, PeerDiscoveryEvents, PeerId, PeerInfo, Startable, ComponentLogger, Logger, PeerStore, PublishResult, TypedEventTarget } from '@libp2p/interface'
+import type { PeerDiscovery, PeerDiscoveryEvents, PeerId, PeerInfo, Startable, ComponentLogger, Logger, PeerStore, TypedEventTarget } from '@libp2p/interface'
 import type { AddressManager, ConnectionManager } from '@libp2p/interface-internal'
 import type { GossipSub, GossipsubMessage, GossipsubOpts } from '@chainsafe/libp2p-gossipsub'
 import type { PinningService } from '../../../network/libp2p/pinning'
 import type { TimeService } from '../../../utils/proxy/time'
 //import { console_log } from '../../../ui/remote/remote'
 import type { LibP2PEvents } from '../../../node/node'
+
+type PublishResult = Awaited<ReturnType<GossipSub['publish']>>
 
 export const TOPIC = '_peer-discovery._p2p._pubsub'
 
@@ -265,7 +267,7 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
                         else if(cm.getDialQueue().find(dial => dial.peerId == peerId)) //TODO: Should I check the status?
                             newPWD.status = Status.Unreachable
                         else
-                            setTimeout(this.onPositiveTimeout, OPTIMISTICALLY_REACHABLE_TIMEOUT, { detail: peerId })
+                            setTimeout(this.onPositiveTimeout, OPTIMISTICALLY_REACHABLE_TIMEOUT, { detail: peerId } as CustomEvent<PeerId>)
                     }
 
                     return newPWD
