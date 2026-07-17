@@ -6,7 +6,7 @@ import { webRTCDirect } from '@libp2p/webrtc'
 import { createLibp2p } from 'libp2p'
 import { tcp } from '@libp2p/tcp'
 import { patchedCrypto as crypto } from '../utils/crypto'
-//import { defaultLogger } from '@libp2p/logger'
+import { defaultLogger } from '@libp2p/logger'
 import { GossipSub, gossipsub, type GossipSubComponents } from '@chainsafe/libp2p-gossipsub'
 import { appDiscoveryTopic, rtcConfiguration } from '../utils/constants-build'
 //import { rendezvousServer } from "@canvas-js/libp2p-rendezvous/server"
@@ -16,7 +16,7 @@ import { generateKeyPair, privateKeyFromRaw } from '@libp2p/crypto/keys'
 import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string'
 import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
 import { pubsubPeerDiscovery } from '../network/libp2p/discovery/pubsub-discovery'
-import { pinning } from '../network/libp2p/pinning'
+import { pinning, PinningMessageCache, type MessageCache } from '../network/libp2p/pinning-v2'
 import { time } from '../utils/proxy/time'
 import type { AbortOptions, PrivateKey } from '@libp2p/interface'
 import { LocalGame } from '../game/game-local'
@@ -68,6 +68,8 @@ try {
 //console.log(peerIdFromPrivateKey(privateKey).toString())
 //process.exit()
 
+const messageCache = new PinningMessageCache()
+
 const node = await createLibp2p({
     privateKey,
     nodeInfo: {
@@ -94,11 +96,10 @@ const node = await createLibp2p({
     connectionGater: {
         denyDialMultiaddr: () => false,
     },
+    logger: defaultLogger(),
     services: {
         identify: identify(),
         identifyPush: identifyPush(),
-
-        //logger: defaultLogger,
         
         ping: customPing(),
         probe: probe({
@@ -111,15 +112,16 @@ const node = await createLibp2p({
 
         //@ts-expect-error Property '[symbol]' is missing in type 'Uint8ArrayList'
         pubsub: gossipsub({
+            messageCache: messageCache as unknown as MessageCache, //TODO: Fix types.
             allowedTopics: [ appDiscoveryTopic ],
             allowPublishToZeroTopicPeers: true,
             emitSelf: true,
-            doPX: true,
+            //doPX: true,
         }) as (components: GossipSubComponents) => GossipSub,
         pubsubPeerDiscovery: pubsubPeerDiscovery({
             topic: appDiscoveryTopic,
         }),
-        pinning: pinning(),
+        pinning: pinning({ messageCache }),
 
         //mdns: mdns(),
 

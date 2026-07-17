@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { createLibp2p } from 'libp2p'
-import { pinning } from '../network/libp2p/pinning'
+import { pinning, PinningMessageCache, type MessageCache } from '../network/libp2p/pinning-v2'
 import { patchedCrypto as crypto } from '../utils/crypto'
 
 import { noise } from '@chainsafe/libp2p-noise'
@@ -18,7 +18,7 @@ import { mdns } from '@libp2p/mdns'
 import { uPnPNAT } from '@libp2p/upnp-nat'
 import { autoNAT } from '@libp2p/autonat'
 //import { autoNATv2 } from '@libp2p/autonat-v2'
-import { contentPeerDiscovery } from '../network/libp2p/discovery/content-discovery.ts'
+//import { contentPeerDiscovery } from '../network/libp2p/discovery/content-discovery.ts'
 import { pubsubPeerDiscovery } from '../network/libp2p/discovery/pubsub-discovery'
 import { customPing } from '../network/libp2p/ping'
 import { probe } from '../network/libp2p/probe'
@@ -168,6 +168,8 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
         opts?.signal?.throwIfAborted()
     }
 
+    const messageCache = new PinningMessageCache()
+
     const node = await createLibp2p({
         nodeInfo: {
             name: NAME,
@@ -253,6 +255,7 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
 
             //@ts-expect-error Property '[symbol]' is missing in type 'Uint8ArrayList'
             pubsub: gossipsub({
+                messageCache: messageCache as unknown as MessageCache, //TODO: Fix types.
                 allowedTopics: [ appDiscoveryTopic ],
                 allowPublishToZeroTopicPeers: true,
                 emitSelf: true,
@@ -266,7 +269,7 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
             pubsubPeerDiscovery: pubsubPeerDiscovery({
                 topic: appDiscoveryTopic,
             }),
-            pinning: pinning(),
+            pinning: pinning({ messageCache }),
             
             mdns: mdns(),
             

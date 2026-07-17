@@ -79,6 +79,7 @@ export class PinningService {
         const pubsub_opts_msgIdToStrFn = pubsub['opts']['msgIdToStrFn']
         const pubsub_sendRpc = (pubsub['sendRpc'] as PubSubSendRpc).bind(pubsub)
         const pubsub_handleReceivedRpc = (pubsub['handleReceivedRpc'] as PubSubHandleReceivedRpc).bind(pubsub)
+        //@ts-expect-error PeerId is not assignable to type PeerId
         pubsub['handleReceivedRpc'] = async (from: PeerId, rpc: RPC): Promise<void> => {
             
             pubsub_handleReceivedRpc(from, rpc)

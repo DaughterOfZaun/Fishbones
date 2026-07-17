@@ -6,7 +6,7 @@ import { Peer as PBPeer } from '../../../message/peer'
 import type { PeerDiscovery, PeerDiscoveryEvents, PeerId, PeerInfo, Startable, ComponentLogger, Logger, PeerStore, TypedEventTarget } from '@libp2p/interface'
 import type { AddressManager, ConnectionManager } from '@libp2p/interface-internal'
 import type { GossipSub, GossipsubMessage, GossipsubOpts } from '@chainsafe/libp2p-gossipsub'
-import type { PinningService } from '../../../network/libp2p/pinning'
+import type { PinningService } from '../../../network/libp2p/pinning-v2'
 import type { TimeService } from '../../../utils/proxy/time'
 //import { console_log } from '../../../ui/remote/remote'
 import type { LibP2PEvents } from '../../../node/node'
@@ -236,6 +236,7 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
             this.updatePeer(peerId, (oldPWD) => {
 
                 if(oldPWD){
+                    //console.log('unpinning', oldPWD.msgIdStr)
                     this.components.pinning.unpin(oldPWD.msgIdStr)
                     clearTimeout(oldPWD.timeout)
                 }
@@ -249,10 +250,11 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
                         timeout: undefined!,
                         status: undefined!,
                     }
-
+                    //console.log('pinning', newPWD.msgIdStr, newPWD.data)
                     this.components.pinning.pin(newPWD.msgIdStr)
                     newPWD.timeout = setTimeout(() => this.updatePeer(peerId, (peer) => {
                         if(peer){
+                            //console.log('unpinning', peer.msgIdStr)
                             this.components.pinning.unpin(peer.msgIdStr)
                             clearTimeout(peer.timeout)
                         }

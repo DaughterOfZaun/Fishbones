@@ -140,7 +140,8 @@ export async function hostLocal(node: LibP2PNode, name: string, icon: number, lo
             game.addEventListener('update', update)
             game.addEventListener('start', start)
             game.addEventListener('stop', stop)
-            pspd_setData(data)
+            //pspd_setData(data)
+            update()
         }
 
         await lobby(game, opts)
