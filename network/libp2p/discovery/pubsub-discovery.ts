@@ -5,7 +5,7 @@ import { multiaddr } from '@multiformats/multiaddr'
 import { Peer as PBPeer } from '../../../message/peer'
 import type { PeerDiscovery, PeerDiscoveryEvents, PeerId, PeerInfo, Startable, ComponentLogger, Logger, PeerStore, TypedEventTarget } from '@libp2p/interface'
 import type { AddressManager, ConnectionManager } from '@libp2p/interface-internal'
-import type { GossipSub, GossipsubMessage, GossipsubOpts } from '@chainsafe/libp2p-gossipsub'
+import type { GossipSub, GossipsubMessage, GossipsubOpts } from '@libp2p/gossipsub'
 import type { PinningService } from '../../../network/libp2p/pinning-v2'
 import type { TimeService } from '../../../utils/proxy/time'
 //import { console_log } from '../../../ui/remote/remote'
@@ -121,6 +121,7 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
         this.running = true
         
         const pubsub = this.components.pubsub
+        //@ts-expect-error Property 'isStarted' does not exist on type 'GossipSub'
         if (!pubsub || !pubsub.isStarted()){
             throw new Error('PubSub not configured')
         }
@@ -141,6 +142,7 @@ export class PubSubPeerDiscovery extends TypedEventEmitter<PeerDiscoveryEvents &
         this.running = false
         
         const pubsub = this.components.pubsub
+        //@ts-expect-error Property 'isStarted' does not exist on type 'GossipSub'
         if (!pubsub || !pubsub.isStarted()){
             //throw new Error('PubSub not configured')
             return

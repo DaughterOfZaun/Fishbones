@@ -1,34 +1,94 @@
-import type { ComponentLogger } from '@libp2p/interface'
-import type { GossipSub } from '@chainsafe/libp2p-gossipsub'
-import type { MsgIdStr, PeerIdStr } from '@chainsafe/libp2p-gossipsub/types'
-import * as constants from '../../node_modules/@chainsafe/libp2p-gossipsub/src/constants.ts'
-import { MessageCache as MessageCacheClass, type CacheEntry } from '../../node_modules/@chainsafe/libp2p-gossipsub/src/message-cache.ts'
-import { messageIdToString } from '../../node_modules/@chainsafe/libp2p-gossipsub/src/utils/messageIdToString.ts'
+import type { Startable } from '@libp2p/interface'
+import type { MsgIdStr, MsgIdToStrFn, PeerIdStr, TopicStr } from '@libp2p/gossipsub/types'
+import type { GossipSub, GossipSubComponents, GossipsubOpts, SubscriptionChangeData } from '@libp2p/gossipsub'
 
-import type { GossipsubOpts } from '@chainsafe/libp2p-gossipsub'
-export type MessageCache = GossipsubOpts['messageCache']
+import * as constants from '../../node_modules/@libp2p/gossipsub/src/constants.ts'
+import { GossipSub as GossipSubClass } from '../../node_modules/@libp2p/gossipsub/src/gossipsub.ts'
+import { MessageCache as MessageCacheClass } from '../../node_modules/@libp2p/gossipsub/src/message-cache.ts'
+import { messageIdToString } from '../../node_modules/@libp2p/gossipsub/src/utils/messageIdToString.ts'
 
-import type { RPC } from '@chainsafe/libp2p-gossipsub/message' 
-type PubSubSendRpc = (id: PeerIdStr, rpc: RPC) => boolean
+export function gossipsub (init: Partial<Omit<GossipsubOpts, 'messageCache'>> = {}){
+  return (components: GossipSubComponents) => new PinningGossipSub(components, init) as GossipSub
+}
+
+export class PinningGossipSub extends GossipSubClass implements Startable {
+    
+    private readonly pinnedMessages: Set<MsgIdStr>
+    public pin(msgIdStr: MsgIdStr){ this.pinnedMessages.add(msgIdStr) }
+    public unpin(msgIdStr: MsgIdStr){ this.pinnedMessages.delete(msgIdStr) }
+
+    //private readonly messageCache: PinningMessageCache
+
+    private readonly topicsToGossipByPeer = new Map<PeerIdStr, Set<TopicStr>>()
+
+    constructor(components: GossipSubComponents, options?: Partial<Omit<GossipsubOpts, 'messageCache'>>){
+        const pinnedMessages = new Set<MsgIdStr>()
+        const messageCache = new PinningMessageCache(
+            options?.mcacheGossip ?? constants.GossipsubHistoryGossip,
+            options?.mcacheLength ?? constants.GossipsubHistoryLength,
+            options?.msgIdToStrFn ?? messageIdToString,
+            pinnedMessages,
+        )
+        super(components, Object.assign(options ?? {}, {
+            messageCache,
+        }))
+        this.pinnedMessages = pinnedMessages
+        //this.messageCache = messageCache
+        this.patch()
+    }
+
+    async start(){
+        await super.start()
+        this.addEventListener('subscription-change', this.onSubscriptionChange)
+        this.addEventListener('gossipsub:heartbeat', this.onAfterHeartbeat)
+    }
+
+    async stop(){
+        await super.stop()
+        this.removeEventListener('subscription-change', this.onSubscriptionChange)
+        this.removeEventListener('gossipsub:heartbeat', this.onAfterHeartbeat)
+    }
+
+    private onSubscriptionChange = (event: CustomEvent<SubscriptionChangeData>) => {
+        const { peerId, subscriptions } = event.detail
+        const topics = subscriptions.filter(sub => sub.subscribe).map(sub => sub.topic)
+        if(topics.length === 0) return
+
+        const topicsToGossip = this.topicsToGossipByPeer.getOrInsert(peerId.toString(), new Set())
+        for(const topic of topics)
+            topicsToGossip.add(topic)
+    }
+
+    private patch(){
+        const super_emitGossip = this['emitGossip'].bind(this)
+        this['emitGossip'] = (peersToGossipByTopic: Map<string, Set<string>>) => {
+            for(const [id, topics] of this.topicsToGossipByPeer){
+                for(const topic of topics){
+                    const peersToGossip = peersToGossipByTopic.getOrInsert(topic, new Set())
+                    peersToGossip.add(id)
+                }
+            }
+            return super_emitGossip(peersToGossipByTopic)
+        }
+    }
+
+    private onAfterHeartbeat = () => {
+        this.topicsToGossipByPeer.clear()
+    }
+}
 
 export class PinningMessageCache extends MessageCacheClass {
 
-    private readonly pinnedMessages = new Set<MsgIdStr>()
+    private readonly pinnedMessages: Set<MsgIdStr>
 
-    constructor(){
-        super(
-            constants.GossipsubHistoryGossip,
-            constants.GossipsubHistoryLength,
-            messageIdToString,
-        )
-    }
-
-    public pin(msgIdStr: MsgIdStr): void {
-        this.pinnedMessages.add(msgIdStr)
-    }
-
-    public unpin(msgIdStr: MsgIdStr): void {
-        this.pinnedMessages.delete(msgIdStr)
+    constructor(
+        gossip: number,
+        historyCapacity: number,
+        msgIdToStrFn: MsgIdToStrFn,
+        pinnedMessages: Set<MsgIdStr>,
+    ){
+        super(gossip, historyCapacity, msgIdToStrFn)
+        this.pinnedMessages = pinnedMessages
     }
 
     public shift(): void {
@@ -40,59 +100,32 @@ export class PinningMessageCache extends MessageCacheClass {
         super.shift()
         this.history[i]!.push(...preserved)
     }
+}
 
-    public getGossipIDs(topics: Set<string>): Map<string, Uint8Array[]> {
-        const r = super.getGossipIDs(topics)
-        //console.log('getGossipIDs', [...topics], [...r.keys()])
-        return r
-    }
-
-    public getWithIWantCount(msgIdStr: string, p: string){
-        const r = super.getWithIWantCount(msgIdStr, p)
-        //console.log('getWithIWantCount', msgIdStr, p, r)
-        return r
+export const pinning = (opts: PinningServiceOpts = {}) => {
+    return (components: PinningServiceComponents) => {
+        return new PinningService(components, opts)
     }
 }
 
-export const pinning = (init: PinningServiceInit) => (components: PinningServiceComponents) => new PinningService(init, components)
-
 export interface PinningServiceComponents {
-    logger: ComponentLogger
     pubsub: GossipSub
 }
 
-export interface PinningServiceInit {
-    messageCache: PinningMessageCache
-}
+export interface PinningServiceOpts {}
 
 export type { PinningService }
 class PinningService {
+
     constructor(
-        private readonly init: PinningServiceInit,
         private readonly components: PinningServiceComponents,
-    ){
-        const pubsub = this.components.pubsub
-        //const pubsub_sendRpc = (pubsub['sendRpc'] as PubSubSendRpc).bind(pubsub)
-        //pubsub['sendRpc'] = ((id, rpc) => {
-        //   console.log('sendRPC', id, rpc)
-        //   return pubsub_sendRpc(id, rpc)
-        //}) as PubSubSendRpc
-
-        const mkpatch = (obj: any, key: any) => {
-            const orig = obj[key].bind(obj)
-            obj[key] = (...args: any) => {
-                console.log(key, ...args)
-                return orig(...args)
-            }
-        }
-
-        //mkpatch(pubsub, 'doEmitGossip')
-    }
+        private readonly options: PinningServiceOpts,
+    ){}
 
     public pin(msgIdStr: MsgIdStr){
-        this.init.messageCache.pin(msgIdStr)
+        (this.components.pubsub as PinningGossipSub).pin(msgIdStr)
     }
     public unpin(msgIdStr: MsgIdStr){
-        this.init.messageCache.unpin(msgIdStr)
+        (this.components.pubsub as PinningGossipSub).unpin(msgIdStr)
     }
 }

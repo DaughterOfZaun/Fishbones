@@ -85,6 +85,8 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     public readonly spells = new SummonerSpellsEnabled()
     public readonly tickRate = new TickRate(30)
 
+    public serverHack = false
+
     protected player?: GamePlayer
     public getPlayer(id?: PlayerId){
         return (id === undefined) ? this.player : this.players.get(id)
@@ -186,7 +188,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     private joiningPromise: Deferred<boolean> | null = null
     public async join(name: string, icon: number, password: u|string, opts: Required<AbortOptions>){
 
-        //if(!this.connected) return false
+        if(!this.connected) throw new Error('Game is not connected')
         if(this.joined) return true
 
         const port = this.node.services.probe.port
@@ -263,7 +265,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 peersRequests: await Promise.all(
                     [...this.players.values()].map(async player => {
                         const isMe = player === newPlayer
-                        const isOwner = this.node.peerId == this.ownerId
+                        const isOwner = this.node.peerId.equals(this.ownerId)
                         const info = (!isMe) ? await this.getPeerInfo(player, opts) : undefined
                         return {
                             playerId: player.id,
@@ -434,6 +436,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
 
         let i = 1
         for(const player of players)
+        if(!this.serverHack || !player.peerId?.equals(this.ownerId))
         this.broadcast(
             {
                 peersRequests: [],
@@ -902,6 +905,9 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         }
     }
     protected handleResponse(ress: LobbyNotificationMessage){
+
+        if(!this.connected) throw new Error('Game is not connected')
+
         if(ress.peersRequests.length){
             let joinedSelf = false
             const joinedPlayers = []

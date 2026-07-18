@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { createLibp2p } from 'libp2p'
-import { pinning, PinningMessageCache, type MessageCache } from '../network/libp2p/pinning-v2'
 import { patchedCrypto as crypto } from '../utils/crypto'
+
+import { LOBBY_PROTOCOL, PROXY_PROTOCOL } from '../utils/constants'
 
 import { noise } from '@chainsafe/libp2p-noise'
 import { yamux } from '@chainsafe/libp2p-yamux'
@@ -10,7 +11,8 @@ import { yamux } from '@chainsafe/libp2p-yamux'
 //import { tls } from '@libp2p/tls'
 
 //import { rendezvousClient } from "@canvas-js/libp2p-rendezvous/client"
-import { GossipSub, gossipsub, type GossipSubComponents } from '@chainsafe/libp2p-gossipsub'
+import { gossipsub } from '../network/libp2p/pinning-v2'
+import { pinning } from '../network/libp2p/pinning-v2'
 import { bootstrap } from '@libp2p/bootstrap'
 import { identify, identifyPush } from '@libp2p/identify'
 import { kadDHT, removePrivateAddressesMapper } from '@libp2p/kad-dht'
@@ -18,12 +20,12 @@ import { mdns } from '@libp2p/mdns'
 import { uPnPNAT } from '@libp2p/upnp-nat'
 import { autoNAT } from '@libp2p/autonat'
 //import { autoNATv2 } from '@libp2p/autonat-v2'
-//import { contentPeerDiscovery } from '../network/libp2p/discovery/content-discovery.ts'
+//import { contentPeerDiscovery } from '../network/libp2p/discovery/content-discovery'
 import { pubsubPeerDiscovery } from '../network/libp2p/discovery/pubsub-discovery'
 import { customPing } from '../network/libp2p/ping'
 import { probe } from '../network/libp2p/probe'
 import { downloads, logger as loggerClass } from '../utils/log'
-import { proxy } from '../utils/proxy/strategy-libp2p'
+import { handler } from '../network/libp2p/handler'
 import { time } from '../utils/proxy/time'
 
 import { keychain } from '@libp2p/keychain'
@@ -168,8 +170,6 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
         opts?.signal?.throwIfAborted()
     }
 
-    const messageCache = new PinningMessageCache()
-
     const node = await createLibp2p({
         nodeInfo: {
             name: NAME,
@@ -217,6 +217,9 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
 
             identify: identify(),
             identifyPush: identifyPush(),
+            
+            keychain: keychain(keychainInit),
+
             ...(args.allowInternet.value ? {
                 kadDHT: kadDHT({
                     protocol: '/ipfs/kad/1.0.0',
@@ -253,9 +256,7 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
 
             //logger: customLogger,
 
-            //@ts-expect-error Property '[symbol]' is missing in type 'Uint8ArrayList'
             pubsub: gossipsub({
-                messageCache: messageCache as unknown as MessageCache, //TODO: Fix types.
                 allowedTopics: [ appDiscoveryTopic ],
                 allowPublishToZeroTopicPeers: true,
                 emitSelf: true,
@@ -265,22 +266,26 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
                 //        addrs: serverPeerMultiddrStrings.map(maStr => multiaddr(maStr)),
                 //    },
                 //] : [],
-            }) as (components: GossipSubComponents) => GossipSub,
+            }),
             pubsubPeerDiscovery: pubsubPeerDiscovery({
                 topic: appDiscoveryTopic,
             }),
-            pinning: pinning({ messageCache }),
+            pinning: pinning(),
             
             mdns: mdns(),
             
-            proxy: proxy(),
+            handler: handler({
+                protocols: [
+                    PROXY_PROTOCOL,
+                    LOBBY_PROTOCOL,
+                ]
+            }),
             time: time({
                 enableSync: false,
             }),
         },
         datastore,
         privateKey,
-        keychain: keychain(keychainInit),
         start: false,
 
         connectionMonitor: {

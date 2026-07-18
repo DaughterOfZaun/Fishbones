@@ -6,8 +6,8 @@ import {
 } from "node:fs"
 import type { ErrnoException } from './helpers'
 
-//export let cwd = process.cwd()
-export let cwd = path.dirname(global['Bun']?.main ?? process.execPath)
+export let cwd = process.cwd()
+//export let cwd = path.dirname(global['Bun']?.main ?? process.execPath)
 //export let cwd = path.dirname(process.env.IS_COMPILED ? process.execPath : Bun.main)
 //export let cwd = path.dirname(Bun.main)
 export const downloadsDirName = 'Fishbones_Data'

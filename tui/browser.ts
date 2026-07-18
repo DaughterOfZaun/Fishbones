@@ -136,6 +136,7 @@ export async function hostLocal(node: LibP2PNode, name: string, icon: number, lo
         await game.startListening(opts)
         await game.join(name, icon, undefined, opts)
 
+        //@ts-expect-error Property 'isStarted' does not exist on type 'GossipSub'
         if(ps.isStarted() && !game.isPrivate){
             game.addEventListener('update', update)
             game.addEventListener('start', start)
@@ -149,6 +150,7 @@ export async function hostLocal(node: LibP2PNode, name: string, icon: number, lo
     } finally {
         game.stopListening()
 
+        //@ts-expect-error Property 'isStarted' does not exist on type 'GossipSub'
         if(ps.isStarted() && !game.isPrivate){
             game.removeEventListener('update', update)
             game.removeEventListener('start', start)
@@ -184,6 +186,7 @@ async function joinRemote(game: RemoteGame, name: string, icon: number, lobby: L
             async (opts) => spinner({ message: tr('Connecting to host...') }, opts),
             async (opts) => game.connect(opts),
         ], opts)
+        //const isConnected = await game.connect(opts)
         if(isConnected){
             if(game.password.isSet)
                 await game.password.uinput(opts)
@@ -191,13 +194,14 @@ async function joinRemote(game: RemoteGame, name: string, icon: number, lobby: L
                 async (opts) => spinner({ message: tr('Joining the game...') }, opts),
                 async (opts) => game.join(name, icon, game.password.encode(), opts)
             ], opts)
+            //await game.join(name, icon, game.password.encode(), opts)
             await lobby(game, opts)
         }
     } catch(err) {
         if(err instanceof AbortPromptError){ /* Ignore. */ }
         else throw err
     } finally {
-        game.disconnect()
+        await game.disconnect()
     }
 }
 

@@ -28,9 +28,9 @@ export class LocalGame extends Game {
         this.peerId = node.peerId
     }
 
-    public async startListening(opts: Required<AbortOptions>){
+    public startListening(_opts: Required<AbortOptions>){
         if(this.connected) return true
-        await this.node.handle(LOBBY_PROTOCOL, this.handleIncomingStream, opts)
+        this.node.services.handler.handle(LOBBY_PROTOCOL, this.handleIncomingStream)
         this.connected = true
         return true
     }
@@ -145,8 +145,7 @@ export class LocalGame extends Game {
         this.handleRequest(playerId, firstReq, wrapped, peerId)
 
         try {
-            for(;;){
-                const req = await wrapped.read()
+            for await (const req of wrapped.iter()){
                 this.handleRequest(playerId, req, wrapped, peerId)
             }
         } catch(err) {
@@ -177,7 +176,9 @@ export class LocalGame extends Game {
 
     protected stream_write(req: LobbyRequestMessage): boolean {
         //myLogger.log(inspect({ method: 'stream_write', from: this.player?.id, req }))
-        this.handleRequest(this.playerId, req, undefined, this.peerId)
+        process.nextTick(() => {
+            this.handleRequest(this.playerId, req, undefined, this.peerId)
+        })
         return true
     }
     protected broadcast(msg: LobbyNotificationMessage, to: Iterable<GamePlayer>, ignore?: GamePlayer): void {
@@ -197,9 +198,9 @@ export class LocalGame extends Game {
         if(!this.connected) return true
         this.connected = false
         
-        this.node.unhandle(LOBBY_PROTOCOL).catch(err => {
-            this.log.error(tr('An error occurred while unhandling the protocol: %e'), err)
-        })
+        this.node.services.handler.unhandle(LOBBY_PROTOCOL) //.catch(err => {
+        //    this.log.error(tr('An error occurred while unhandling the protocol: %e'), err)
+        //})
         for(const player of this.players.values()){
             player.stream?.unwrap().unwrap().close()
                 .catch(err => this.log.error(err))

@@ -5,51 +5,12 @@ import { AbortError, pushable as createPushable, type Pushable } from 'it-pushab
 import { ConnectionStrategy, DEFAULT_REMOTE_STREAM_INDEX, Role, type OnDataFromRemote, type RemoteStreamIndex, type SocketToRemote } from "./shared"
 import type { Registrar } from "@libp2p/interface-internal"
 import { lpStream } from "@libp2p/utils"
+import { iter } from "../pb-stream"
 
 //import { PROXY_PROTOCOL } from "./constants"
 const PROXY_PROTOCOL = `/proxy/${0}`
 
 const log = logger('launcher:proxy')
-
-interface ProxyComponents {
-    registrar: Registrar
-}
-
-export function proxy(){
-  return (components: ProxyComponents) => new ProxyService(components)
-}
-
-//TODO: ProtocolHandlerService
-//TODO: A service that registers protocols in advance and makes handle/unhandle operations synchronous.
-class ProxyService implements Startable {
-    
-    constructor(
-        private readonly components: ProxyComponents,
-    ){}
-
-    public async start(){
-        return this.components.registrar.handle(PROXY_PROTOCOL, this.onStream)
-    }
-    
-    public async stop() {
-        return this.components.registrar.unhandle(PROXY_PROTOCOL)
-    }
-
-    private onStream = async (stream: Stream, connection: Connection) => {
-        return this.handler(stream, connection)
-    }
-    private defaultHandler = async (stream: Stream, connection: Connection) => {
-        return stream.close() //.catch(err => log.error(err))
-    }
-    private handler: StreamHandler = this.defaultHandler
-    public handle(handler: StreamHandler){
-        console.assert(this.handler === this.defaultHandler, 'Assertion failed: this.handler != default')
-        this.handler = handler
-    }
-    public unhandle(){
-        this.handler = this.defaultHandler
-    }
-}
 
 export class UseExistingLibP2PConnection extends ConnectionStrategy {
 
@@ -62,7 +23,7 @@ export class UseExistingLibP2PConnection extends ConnectionStrategy {
     closeSockets(): void {
         if((this.role & Role.Server) != 0)
             //this.node.unhandle(PROXY_PROTOCOL).catch(err => log.error(err))
-            this.node.services.proxy.unhandle()
+            this.node.services.handler.unhandle(PROXY_PROTOCOL)
         for(const socket of this.socketsByPeerId.values())
             socket.close()
         this.socketsByPeerId.clear()
@@ -73,7 +34,7 @@ export class UseExistingLibP2PConnection extends ConnectionStrategy {
     async createMainSocketToRemote(opts: Required<AbortOptions>): Promise<void> {
         if((this.role & Role.Server) != 0){
             //await this.node.handle(PROXY_PROTOCOL, this.onStream, opts)
-            this.node.services.proxy.handle(this.onStream)
+            this.node.services.handler.handle(PROXY_PROTOCOL, this.onStream)
         }
     }
 
@@ -208,8 +169,7 @@ export class UseExistingLibP2PConnection extends ConnectionStrategy {
         const wrapped = lpStream(stream)
 
         Promise.resolve().then(async () => {
-            for(;;){
-                const chunk = await wrapped.read()
+            for await (const chunk of iter(stream, wrapped)){
                 const data = Buffer.from(chunk.slice())
                 socket.onData(data, streamIdx, peerId.toString())
             }

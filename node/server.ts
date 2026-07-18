@@ -7,7 +7,7 @@ import { createLibp2p } from 'libp2p'
 import { tcp } from '@libp2p/tcp'
 import { patchedCrypto as crypto } from '../utils/crypto'
 import { defaultLogger } from '@libp2p/logger'
-import { GossipSub, gossipsub, type GossipSubComponents } from '@chainsafe/libp2p-gossipsub'
+import { gossipsub } from '../network/libp2p/pinning-v2'
 import { appDiscoveryTopic, rtcConfiguration } from '../utils/constants-build'
 //import { rendezvousServer } from "@canvas-js/libp2p-rendezvous/server"
 import { circuitRelayServer } from '@libp2p/circuit-relay-v2'
@@ -16,27 +16,31 @@ import { generateKeyPair, privateKeyFromRaw } from '@libp2p/crypto/keys'
 import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string'
 import { toString as uint8ArrayToString } from 'uint8arrays/to-string'
 import { pubsubPeerDiscovery } from '../network/libp2p/discovery/pubsub-discovery'
-import { pinning, PinningMessageCache, type MessageCache } from '../network/libp2p/pinning-v2'
+import { pinning } from '../network/libp2p/pinning-v2'
 import { time } from '../utils/proxy/time'
 import type { AbortOptions, PrivateKey } from '@libp2p/interface'
 import { LocalGame } from '../game/game-local'
-import { proxy } from '../utils/proxy/strategy-libp2p'
+import { handler } from '../network/libp2p/handler'
 import { probe } from '../network/libp2p/probe'
 import type { LibP2PNode } from './node'
 import { hostLocal } from '../tui/browser'
 import { safeOptions, shutdownOptions } from '../utils/process/process'
 import type { Game } from '../game/game'
-import { Features } from '../utils/constants'
-import { KnownClients, KnownServers } from '../utils/data/constants/client-server-combinations'
+import { Features, LOBBY_PROTOCOL, PROXY_PROTOCOL } from '../utils/constants'
 import { Deferred } from '../utils/promises'
 import { stopServer } from '../utils/process/server'
 import { logger } from '../utils/log'
 import { inspect } from 'node:util'
+import { clients_push, combinations_merge, combinations_push, KnownClients, KnownServers, servers_push } from '../utils/data/constants/client-server-combinations'
+import { ClientDataInfoV126, gc126Pkg } from '../utils/data/packages/game-client-126'
+import { BrokenWingsDataInfo, bwPkg } from '../utils/data/packages/game-server-bw'
+import { Team } from '../tui/lobby/lobby'
 //import { peerIdFromPrivateKey } from '@libp2p/peer-id'
 
 interface Timeout {
     id: ReturnType<typeof setTimeout>
     startedAt: number
+    ms: number
 }
 
 const UDP_PORT = 42451
@@ -67,8 +71,6 @@ try {
 //console.log(uint8ArrayToString(privateKey.publicKey.raw, KEY_ENCODING))
 //console.log(peerIdFromPrivateKey(privateKey).toString())
 //process.exit()
-
-const messageCache = new PinningMessageCache()
 
 const node = await createLibp2p({
     privateKey,
@@ -110,22 +112,25 @@ const node = await createLibp2p({
         
         //rendezvous: rendezvousServer({}),
 
-        //@ts-expect-error Property '[symbol]' is missing in type 'Uint8ArrayList'
         pubsub: gossipsub({
-            messageCache: messageCache as unknown as MessageCache, //TODO: Fix types.
             allowedTopics: [ appDiscoveryTopic ],
             allowPublishToZeroTopicPeers: true,
             emitSelf: true,
-            //doPX: true,
-        }) as (components: GossipSubComponents) => GossipSub,
+            doPX: true,
+        }),
         pubsubPeerDiscovery: pubsubPeerDiscovery({
             topic: appDiscoveryTopic,
         }),
-        pinning: pinning({ messageCache }),
+        pinning: pinning(),
 
         //mdns: mdns(),
 
-        proxy: proxy(),
+        handler: handler({
+            protocols: [
+                PROXY_PROTOCOL,
+                LOBBY_PROTOCOL,
+            ]
+        }),
         time: time({
             enableSync: false,
         }),
@@ -133,6 +138,11 @@ const node = await createLibp2p({
 })
 
 console.log(node.getMultiaddrs().map(ma => ma.toString()))
+
+const client = clients_push(gc126Pkg, new ClientDataInfoV126(gc126Pkg.dir), KnownClients.v126, 'v1.0.0.126 (Season 1)')
+const server = servers_push(bwPkg, new BrokenWingsDataInfo(bwPkg.dir), KnownServers.BrokenWings, 'BrokenWings (Season 1)')
+const combo = combinations_push(client, server)
+combinations_merge()
 
 node.services.pubsubPeerDiscovery.setData({
     name: 'Official Server #1',
@@ -148,7 +158,7 @@ await hostLocal(node as unknown as LibP2PNode, name, icon, lobby, setup, opts)
 // eslint-disable-next-line @typescript-eslint/require-await, @typescript-eslint/no-unused-vars
 async function setup(game: Game, opts: Required<AbortOptions>){
 
-    game.features.set(Features.SPELLS_DISABLED, true)
+    game.features.set(Features.SPELLS_DISABLED, false)
     game.features.set(Features.BYPASS_ENABLED, true)
 
     game.name.value = 'Automatic Game'
@@ -157,6 +167,11 @@ async function setup(game: Game, opts: Required<AbortOptions>){
     game.playersMax.value = 3
     game.serverVersion = KnownServers.BrokenWings
     game.clientVersion = KnownClients.v126
+
+    game.champions.value = combo.champions.keys().toArray()
+    game.spells.value = combo.spells.keys().toArray()
+
+    game.serverHack = true
 }
 
 async function lobby(_game: Game, opts: Required<AbortOptions>){
@@ -172,6 +187,7 @@ async function lobby(_game: Game, opts: Required<AbortOptions>){
         return {
             startedAt: Date.now(),
             id: setTimeout(() => deferred!.resolve(), ms),
+            ms,
         }
     }
     function removeTimeout(timeout?: Timeout){
@@ -179,18 +195,22 @@ async function lobby(_game: Game, opts: Required<AbortOptions>){
         return undefined
     }
 
+    game.set('team', Team.Purple)
+
     for(;;){
 
         deferred = new Deferred(opts)
 
         let gatherTimeout: Timeout | undefined
         let startTimeout: Timeout | undefined
+        
+        deferred.addEventListener(game, 'update', checkPlayerCount)
         deferred.addCleanupCallback(() => {
+            //game.removeEventListener('update', checkPlayerCount)
             removeTimeout(gatherTimeout)
             removeTimeout(startTimeout)
         })
 
-        deferred.addEventListener(game, 'update', () => checkPlayerCount())
         prevPlayerCount = ZERO_PLAYERS
         checkPlayerCount()
 
@@ -210,17 +230,18 @@ async function lobby(_game: Game, opts: Required<AbortOptions>){
                 startTimeout = removeTimeout(startTimeout)
             
             const timeout = startTimeout ?? gatherTimeout
-            if(timeout && playerCount != prevPlayerCount){
+            if(timeout != undefined && playerCount != prevPlayerCount){
                 let msg = ''
                 if(startTimeout){
                     msg += `Waiting for the game to start...`
                 } else if(gatherTimeout){
                     msg += `Waiting for the players to gather...`
-                    msg += ` (${playerCount}/${maxPlayers})`
+                    msg += ` (${playerCount - ZERO_PLAYERS}/${maxPlayers})`
                 }
-                const sec = Math.round((Date.now() - timeout.startedAt) / SEC)
+                const sec = Math.round(Math.max(0, timeout.ms - (Date.now() - timeout.startedAt)) / SEC)
                 msg += ` (${sec} sec remain)`
                 game.appendToChat(msg)
+                console.log(msg)
             }
         }
 
@@ -256,5 +277,10 @@ async function lobby(_game: Game, opts: Required<AbortOptions>){
         }
 
         await deferred.promise
+
+        for(const player of game.getPlayers(true)){
+            if(player.isBot)
+                game.kick(player)
+        }
     }
 }

@@ -22,7 +22,7 @@ export class RemoteGame extends Game {
             const connection = await obtainConnection(this.node, this.ownerId, opts)
             const stream = await connection.newStream([ LOBBY_PROTOCOL ], { ...opts, runOnLimitedConnection: false })
             const wrapped = pbStream(stream).pb(LobbyNotificationMessage, LobbyRequestMessage)
-            this.handleIncomingStream(wrapped)
+            this.handleIncomingStream(stream, wrapped)
             this.stream = wrapped
             this.connected = true
             return true
@@ -40,10 +40,9 @@ export class RemoteGame extends Game {
     }
     
     //TODO: opts: Required<AbortOptions>
-    private handleIncomingStream(stream: ReadonlyMessageStream<LobbyNotificationMessage>){
+    private handleIncomingStream(stream: Stream, wrapped: ReadonlyMessageStream<LobbyNotificationMessage>){
         Promise.resolve().then(async () => {
-            for(;;){
-                const req = await stream.read()
+            for await (const req of wrapped.iter()){
                 this.handleResponse(req)
             }
         }).catch(err => {
@@ -54,16 +53,20 @@ export class RemoteGame extends Game {
         })
     }
     
-    public disconnect() {
+    public async disconnect() {
         if(!this.connected) return true
-        //try {
-            //await this.stream?.write({ ...lmDefaults, leaveRequest: {} })
-            this.stream?.unwrap().unwrap().close()
-                .catch(err => this.log.error(err))
+        try {
+            await this.stream?.write({ leaveRequest: true })
+        } catch(err) {
+            this.log.error(err)
+        } finally {
+            try {
+                await this.stream?.unwrap().unwrap().close()
+            } catch(err) {
+                this.log.error(err)
+            }
             this.cleanup()
-        //} catch(err) {
-        //    this.log.error(err)
-        //}
+        }
         return true
     }
 

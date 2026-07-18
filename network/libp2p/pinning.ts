@@ -1,7 +1,7 @@
-import { createGossipRpc } from '../../node_modules/@chainsafe/libp2p-gossipsub/src/utils/create-gossip-rpc.ts'
-import type { RPC } from '../../node_modules/@chainsafe/libp2p-gossipsub/src/message/rpc.ts'
-import type { GossipSub, GossipsubOpts } from "@chainsafe/libp2p-gossipsub"
-import type { MsgIdStr } from '@chainsafe/libp2p-gossipsub/types'
+import { createGossipRpc } from '../../node_modules/@libp2p/gossipsub/src/utils/create-gossip-rpc.ts'
+import type { RPC } from '../../node_modules/@libp2p/gossipsub/src/message/rpc.ts'
+import type { GossipSub, GossipsubOpts } from "@libp2p/gossipsub"
+import type { MsgIdStr } from '@libp2p/gossipsub/types'
 import type { ComponentLogger, Logger, PeerId } from "@libp2p/interface"
 
 const GossipsubMaxIHaveLength = 5000
