@@ -25,7 +25,6 @@ import { champions, ChampionsEnabled } from '../utils/data/constants/champions'
 import { SummonerSpellsEnabled } from '../utils/data/constants/spells'
 import { KnownClients, KnownServers, type ClientVersion, type ServerVersion } from '../utils/data/constants/client-server-combinations'
 import { VERSION_STRING, versionFromString, versionToString } from '../utils/constants-build'
-import { console_log } from '../ui/remote/remote'
 import { tr } from '../utils/translation'
 import { firewall } from '../utils/proxy/proxy-firewall'
 import { fs_ensureDir, fs_readdir, fs_readFile, fs_writeFile } from '../utils/data/fs'
@@ -210,9 +209,6 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         player.team.value = team
     }
     private handleJoinRequest(player: GamePlayer, req: LobbyRequestMessage.JoinRequest){
-        void this.handleJoinRequestAsync(player, req, shutdownOptions)
-    }
-    private async handleJoinRequestAsync(player: GamePlayer, req: LobbyRequestMessage.JoinRequest, opts: Required<AbortOptions>){
         
         if(req.name !== undefined)
             player.name.decodeInplace(req.name)
@@ -249,7 +245,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                     joinRequest: {
                         name: player.name.encode(),
                         icon: player.icon.encode(),
-                        info: await this.getPeerInfo(player, opts),
+                        info: this.getPeerInfo(player),
                         port: player.port,
                     },
                     pickRequest: player.encode(),
@@ -262,11 +258,11 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         const newPlayer = player
         this.broadcast(
             {
-                peersRequests: await Promise.all(
-                    [...this.players.values()].map(async player => {
+                peersRequests: (
+                    [...this.players.values()].map(player => {
                         const isMe = player === newPlayer
                         const isOwner = this.node.peerId.equals(this.ownerId)
-                        const info = (!isMe) ? await this.getPeerInfo(player, opts) : undefined
+                        const info = (!isMe) ? this.getPeerInfo(player) : undefined
                         return {
                             playerId: player.id,
                             joinRequest: {
@@ -284,21 +280,22 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             [ player ],
         )
     }
-    private async getPeerInfo(player: GamePlayer, opts: Required<AbortOptions>){
+    private getPeerInfo(player: GamePlayer){
         const peerId = player.peerId
-        const { peerStore } = this.node.components
+        //const { peerStore } = this.node.components
         if(
             peerId
             //TODO: && player !== this.player
             && this.features.isHalfPingEnabled
         ){
-            const { multiaddrs } = await peerStore.getInfo(peerId, opts)
-            return {
-                publicKey: publicKeyToProtobuf(peerId.publicKey!),
-                addrs: multiaddrs.map(multiaddr => multiaddr.bytes),
-            }
+            //TODO: Make this part of the code synchronous.
+            //const { multiaddrs } = await peerStore.getInfo(peerId, opts)
+            //return {
+            //    publicKey: publicKeyToProtobuf(peerId.publicKey!),
+            //    addrs: multiaddrs.map(multiaddr => multiaddr.bytes),
+            //}
         }
-        //return undefined
+        return undefined
     }
     private handleJoinResponse(player: GamePlayer, res: LobbyNotificationMessage.JoinRequest){
         void this.handleJoinResponseAsync(player, res, shutdownOptions)
@@ -434,22 +431,23 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
 
         //console_log(tr(`An input delay of {delay}ms is set.`, { delay }))
 
-        let i = 1
-        for(const player of players)
-        if(!this.serverHack || !player.peerId?.equals(this.ownerId))
-        this.broadcast(
-            {
-                peersRequests: [],
-                launchRequest: {
-                    ip: 0,
-                    port: this.node.services.probe.port,
-                    key: text2arr(blowfishKey),
-                    clientId: i++,
-                    delay,
+        for(let i = 0; i < players.length; i++){
+            const player = players[i]!
+            this.broadcast(
+                {
+                    peersRequests: [],
+                    launchRequest: {
+                        ip: 0,
+                        port: this.node.services.probe.port,
+                        key: text2arr(blowfishKey),
+                        clientId: i + 1,
+                        delay,
+                    },
                 },
-            },
-            [ player ],
-        )
+                [ player ],
+            )
+            
+        }
     }
     private onServerExit = (/*code, signal*/) => {
 
@@ -540,6 +538,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
         this.launched = true
         this.safeDispatchEvent('launch')
 
+        if(this.serverHack && this.node.peerId.equals(this.ownerId)) return
         this.handleLaunchResponseAsync(res, shutdownOptions).catch(err => {
             logger.log('An error occurred while processing the launch notification', inspect(err))
         })

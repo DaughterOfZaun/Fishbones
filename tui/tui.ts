@@ -45,8 +45,7 @@ export class SwitchViewError extends Error {
 async function lobby(game: Game, opts: Required<AbortOptions>){
     type View = null | ((opts: Context) => Promise<unknown>)
 
-    const deferred = new Deferred<void>()
-    chat.bind(deferred, game)
+    chat.bind(game)
 
     let controller = new AbortController()
     const createSignal = () => AbortSignal.any([ controller.signal, opts.signal ]) 
@@ -75,7 +74,7 @@ async function lobby(game: Game, opts: Required<AbortOptions>){
     
     const handlers_keys = Object.keys(handlers) as (keyof typeof handlers)[]
     for(const name of handlers_keys)
-        deferred.addEventListener(game, name, handlers[name])
+        game.addEventListener(name, handlers[name])
     
     try {
         let view: View = lobby_gather
@@ -96,7 +95,9 @@ async function lobby(game: Game, opts: Required<AbortOptions>){
             }
         }
     } finally {
-        deferred.resolve()
+        chat.unbind()
+        for(const name of handlers_keys)
+            game.removeEventListener(name, handlers[name])
     }
 }
 

@@ -8,6 +8,7 @@ import { Deferred } from '../promises'
 //import { downloads } from './data-fs'
 import { tr } from '../translation'
 import { inspect } from 'node:util'
+import dgram from 'node:dgram'
 import net from "node:net"
 
 export const ABORT_STAGE_TIMEOUT = 3_000
@@ -129,8 +130,10 @@ type AdvancedError = Error & {
     errno?: number
     fd?: number
 }
-process.on('uncaughtException', (err: AdvancedError) => {
-
+export function listenForUncaughtExceptions(){
+    process.on('uncaughtException', onUncaughtException)
+}
+function onUncaughtException(err: AdvancedError){
     if(
         //err.message.startsWith('Unhandled error. (') &&
         //err.message.endsWith(')') &&
@@ -164,19 +167,21 @@ process.on('uncaughtException', (err: AdvancedError) => {
         console_log(tr('An unexpected exception occurred:', {}), inspect(err))
         //shutdown('exception')
     //}
-})
+}
 
 //src: signal-exit/signals.js
-const signals = [ 'SIGHUP', 'SIGINT', 'SIGTERM' ]
-if (process.platform !== 'win32')
-    signals.push('SIGALRM', 'SIGABRT', 'SIGVTALRM', 'SIGXCPU', 'SIGXFSZ', 'SIGUSR2', 'SIGTRAP', 'SIGSYS', 'SIGQUIT', 'SIGIOT')
-if (process.platform === 'linux')
-    signals.push('SIGIO', 'SIGPOLL', 'SIGPWR', 'SIGSTKFLT');
-for(const signal of signals)
-    process.on(signal, () => shutdown('signal'))
+export function listenForSignals(){
+    const signals = [ 'SIGHUP', 'SIGINT', 'SIGTERM' ]
+    if (process.platform !== 'win32')
+        signals.push('SIGALRM', 'SIGABRT', 'SIGVTALRM', 'SIGXCPU', 'SIGXFSZ', 'SIGUSR2', 'SIGTRAP', 'SIGSYS', 'SIGQUIT', 'SIGIOT')
+    if (process.platform === 'linux')
+        signals.push('SIGIO', 'SIGPOLL', 'SIGPWR', 'SIGSTKFLT');
+    for(const signal of signals)
+        process.on(signal, () => shutdown('signal'))
 
-for(const stream of ['stdin', 'stdout', 'stderr'] as const)
-    process[stream].on('close', () => shutdown('call'))
+    for(const stream of ['stdin', 'stdout', 'stderr'] as const)
+        process[stream].on('close', () => shutdown('call'))
+}
 
 enum ShutdownStage {
     NONE = 0,
@@ -301,6 +306,61 @@ export async function getFreePort(){
             const { port } = server.address() as net.AddressInfo
             server.close((err) => err ? reject(err) : resolve(port))
         });
+    })
+}
+
+export type ErrorWithCode = Error & { code?: string }
+export interface GetFreeUDPPortOptions {
+    host?: string
+    start?: number
+    count?: number
+    end?: number
+    fallback?: number
+}
+export async function getFreeUDPPort(opts: GetFreeUDPPortOptions & Required<AbortOptions>){
+
+    opts.host ??= '0.0.0.0'
+    opts.start ??= 0
+    opts.count ??= 0
+    opts.end ??= opts.start + opts.count
+    opts.fallback ??= 0
+
+    const server = dgram.createSocket('udp4')
+    for(let port = opts.start; port <= opts.end; port++){
+        const err = await checkAddress(server, opts.host, port, opts)
+        if(err?.code == 'EADDRINUSE' || err?.code == 'EACCES') continue
+        if(err) throw err
+        return port
+    }
+    
+    const port = opts.fallback
+    const err = await checkAddress(server, opts.host, port, opts)
+    if(err) throw err
+    return port
+}
+
+async function checkAddress(server: dgram.Socket, host: string, port: number, { signal }: Required<AbortOptions>){
+    return new Promise<ErrorWithCode | null>((resolve, reject) => {
+        function onlistening(){ server.close() }
+        function onclose(){ cleanup() && resolve(null) }
+        function onerror(err: Error){ cleanup() && resolve(err) }
+        function onabort(){ cleanup() && reject(signal.reason) }
+        server.addListener('listening', onlistening)
+        server.addListener('close', onclose)
+        server.addListener('error', onerror)
+        signal.addEventListener('abort', onabort)
+        function cleanup(){
+            server.removeListener('listening', onlistening)
+            server.removeListener('close', onclose)
+            server.removeListener('error', onerror)
+            signal.removeEventListener('abort', onabort)
+            return true
+        }
+        try {
+            server.bind(port, host)
+        } catch(err) {
+            cleanup() && resolve(err as ErrorWithCode)
+        }
     })
 }
 

@@ -3,7 +3,7 @@ import { main } from './tui/tui'
 import { TITLE } from './utils/constants-build'
 import { logger } from './utils/log'
 import { console_log, ExitPromptError } from './ui/remote/remote'
-import { registerShutdownHandler, setInsideUI, shutdown, shutdownOptions, unwrapAbortError } from './utils/process/process'
+import { listenForSignals, listenForUncaughtExceptions, registerShutdownHandler, setInsideUI, shutdown, shutdownOptions, unwrapAbortError } from './utils/process/process'
 import { repair } from './utils/data/repair'
 import { cleanup } from './utils/data/cleanup'
 //import * as umplex from './network/umplex'
@@ -14,6 +14,9 @@ import { startup } from './tui/startup'
 import { mrs } from './tui/mrs'
 import { tr } from './utils/translation'
 import { inspect } from 'node:util'
+
+listenForSignals()
+listenForUncaughtExceptions()
 
 logger.log(`${'-'.repeat(35)} ${TITLE} started ${'-'.repeat(35)}`)
 

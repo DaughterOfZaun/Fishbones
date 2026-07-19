@@ -1,6 +1,5 @@
 import { TypedEventEmitter, type AbortOptions } from "@libp2p/interface";
 import { type DeferredView, render } from "../ui/remote/view";
-import type { Deferred } from '../utils/promises'
 import type { ChatEventDetail, Game } from "../game/game";
 import { getCustomUsername, getName } from "../utils/namegen/namegen";
 import { form, line, text } from "../ui/remote/types";
@@ -11,7 +10,7 @@ type ChatEvents = {
     line: CustomEvent<string>
 }
 
-export const chat = new class Chat extends TypedEventEmitter<ChatEvents> {
+class Chat extends TypedEventEmitter<ChatEvents> {
 
     private view!: DeferredView<void>
     public prerender(opts: Required<AbortOptions>){
@@ -30,10 +29,34 @@ export const chat = new class Chat extends TypedEventEmitter<ChatEvents> {
         }), opts, [], true)
     }
 
-    private show(){
+    private lines: string[] = []
+    private append(message: string){
+        const lastMessage = this.lines.at(-1)!
+        if(lastMessage == message){
+            return
+        }
+        this.lines.push(message)
+        this.view.get('Text').update(text(this.lines.join('\n')))
+    }
+
+    private game: Game | undefined
+
+    public bind(game: Game){
+        this.game = game
+        game.addEventListener('joined', this.onJoined)
+        game.addEventListener('chat', this.onChat)
+        chat.addEventListener('line', this.onLine)
+
         this.view.show()
     }
-    private hide(){
+
+    public unbind(){
+        const game = this.game!
+        game.removeEventListener('joined', this.onJoined)
+        game.removeEventListener('chat', this.onChat)
+        chat.removeEventListener('line', this.onLine)
+        this.game = undefined
+
         this.view.hide()
         this.lines.length = 0
         this.view.update(form({
@@ -42,35 +65,27 @@ export const chat = new class Chat extends TypedEventEmitter<ChatEvents> {
         }))
     }
 
-    private lines: string[] = []
-    private append(message: string){
-        this.lines.push(message)
-        this.view.get('Text').update(text(this.lines.join('\n')))
+    private readonly onJoined = (event: CustomEvent<GamePlayer>) => {
+        const player = event.detail
+        //const isMe = game.getPlayer() === player
+        //const name = getName(player, isMe, true)
+        const name = getCustomUsername(player, undefined, true)
+        chat.append((`[color=gray]${tr(`{name} joined the lobby`, { name })}[/color]`))
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    public bind(view: Deferred<any>, game: Game){
-        view.addEventListener(game, 'joined', (event: CustomEvent<GamePlayer>) => {
-            const player = event.detail
-            //const isMe = game.getPlayer() === player
-            //const name = getName(player, isMe, true)
-            const name = getCustomUsername(player, undefined, true)
-            chat.append((`[color=gray]${tr(`{name} joined the lobby`, { name })}[/color]`))
-        })
-        view.addEventListener(game, 'chat', (event: CustomEvent<ChatEventDetail>) => {
-            const { player, message } = event.detail
-            //const isMe = game.getPlayer() === player
-            //const name = getName(player, isMe, true)
-            const name = getCustomUsername(player, undefined, true)
-            chat.append(`${name}: ${message}`)
-        })
-        view.addEventListener(chat, 'line', (event: CustomEvent<string>) => {
-            const line = event.detail
-            game.appendToChat(line)
-        })
-        view.addCleanupCallback(() => {
-            chat.hide()
-        })
-        chat.show()
+    private readonly onChat = (event: CustomEvent<ChatEventDetail>) => {
+        const { player, message } = event.detail
+        //const isMe = game.getPlayer() === player
+        //const name = getName(player, isMe, true)
+        const name = getCustomUsername(player, undefined, true)
+        chat.append(`${name}: ${message}`)
+    }
+
+    private readonly onLine = (event: CustomEvent<string>) => {
+        const line = event.detail
+        const game = this.game!
+        game.appendToChat(line)
     }
 }
+
+export const chat = new Chat()

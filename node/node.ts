@@ -212,7 +212,7 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
             
             ping: customPing(),
             probe: probe({
-                port: 5119
+                preferredPortRange: [ 5119, 5129 ]
             }),
 
             identify: identify(),

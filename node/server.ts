@@ -35,6 +35,8 @@ import { clients_push, combinations_merge, combinations_push, KnownClients, Know
 import { ClientDataInfoV126, gc126Pkg } from '../utils/data/packages/game-client-126'
 import { BrokenWingsDataInfo, bwPkg } from '../utils/data/packages/game-server-bw'
 import { Team } from '../tui/lobby/lobby'
+import { sleep } from '../utils/helpers'
+import type { GamePlayer } from '../game/game-player'
 //import { peerIdFromPrivateKey } from '@libp2p/peer-id'
 
 interface Timeout {
@@ -49,13 +51,21 @@ const TCP_PORT = 41463
 const KEY_FILE = './keys/server-key-1.txt'
 const KEY_ENCODING = 'base64pad'
 
-const SEC = 1000
+const MS = 1
+const SEC = 1000 * MS
 const MIN = 60 * SEC
 const GATHER_TIMEOUT = 60 * SEC
 const START_TIMEOUT = 5 * SEC
 const PICK_TIMEOUT = 60 * SEC
-const PLAY_TIMEOUT = 60 * MIN
-const ZERO_PLAYERS = 1
+const PLAY_TIMEOUT = 30 * MIN
+function formatDuration(ms: number){
+    if(ms >= MIN) return `${Math.round(ms / MIN)} min`
+    if(ms >= SEC) return `${Math.round(ms / SEC)} sec`
+    return `${Math.round(ms / MS)} ms`
+}
+
+const ZERO_PLAYERS = 0
+const MIN_PLAYERS = 2
 
 let keyString: string
 let privateKey: PrivateKey
@@ -105,7 +115,7 @@ const node = await createLibp2p({
         
         ping: customPing(),
         probe: probe({
-            port: 5118,
+            preferredPortRange: [ 5119, 5129 ]
         }),
 
         relay: circuitRelayServer(),
@@ -152,7 +162,7 @@ node.services.pubsubPeerDiscovery.setData({
 })
 
 const opts = shutdownOptions
-const name = 'Manager Bot', icon = 0
+const name = 'Game_Manager_Bot', icon = 0
 await hostLocal(node as unknown as LibP2PNode, name, icon, lobby, setup, opts)
 
 // eslint-disable-next-line @typescript-eslint/require-await, @typescript-eslint/no-unused-vars
@@ -161,7 +171,7 @@ async function setup(game: Game, opts: Required<AbortOptions>){
     game.features.set(Features.SPELLS_DISABLED, false)
     game.features.set(Features.BYPASS_ENABLED, true)
 
-    game.name.value = 'Automatic Game'
+    game.name.value = 'Automatic_Game'
     game.map.value = 4 //HACK: Twisted Threeline
     game.mode.value = 0 //HACK: Classic
     game.playersMax.value = 3
@@ -178,7 +188,7 @@ async function lobby(_game: Game, opts: Required<AbortOptions>){
     const game = _game as LocalGame //HACK:
 
     const maxPlayers = 2 * game.playersMax.value!
-    let prevPlayerCount = game.getPlayersCount()
+    let prevPlayerCount = ZERO_PLAYERS
     let playerCount = ZERO_PLAYERS
 
     let deferred: Deferred<void>
@@ -195,7 +205,10 @@ async function lobby(_game: Game, opts: Required<AbortOptions>){
         return undefined
     }
 
-    game.set('team', Team.Purple)
+    const me = game.getPlayer()!
+    me.team.value = Team.Purple
+    me.difficulty.value = 0 //HACK: Newbie.
+    assignRandomBotChampion(game, me)
 
     for(;;){
 
@@ -207,58 +220,85 @@ async function lobby(_game: Game, opts: Required<AbortOptions>){
         deferred.addEventListener(game, 'update', checkPlayerCount)
         deferred.addCleanupCallback(() => {
             //game.removeEventListener('update', checkPlayerCount)
-            removeTimeout(gatherTimeout)
-            removeTimeout(startTimeout)
+            gatherTimeout = removeTimeout(gatherTimeout)
+            startTimeout = removeTimeout(startTimeout)
         })
 
-        prevPlayerCount = ZERO_PLAYERS
+        playerCount = ZERO_PLAYERS
         checkPlayerCount()
 
         function checkPlayerCount(){
             
             prevPlayerCount = playerCount
-            playerCount = game.getPlayersCount()
+            playerCount = game.getPlayersCount() - ZERO_PLAYERS
             
-            if(prevPlayerCount <= ZERO_PLAYERS && playerCount > ZERO_PLAYERS)
+            if(prevPlayerCount < MIN_PLAYERS && playerCount >= MIN_PLAYERS)
                 gatherTimeout = createTimeout(GATHER_TIMEOUT)
-            if(prevPlayerCount > ZERO_PLAYERS && playerCount <= ZERO_PLAYERS)
+            if(prevPlayerCount >= MIN_PLAYERS && playerCount < MIN_PLAYERS)
                 gatherTimeout = removeTimeout(gatherTimeout)
             
-            if(playerCount >= maxPlayers && prevPlayerCount < maxPlayers)
+            if(prevPlayerCount < maxPlayers && playerCount >= maxPlayers)
                 startTimeout = createTimeout(START_TIMEOUT)
-            if(playerCount < maxPlayers && prevPlayerCount >= maxPlayers)
+            if(prevPlayerCount >= maxPlayers && playerCount < maxPlayers)
                 startTimeout = removeTimeout(startTimeout)
             
-            const timeout = startTimeout ?? gatherTimeout
-            if(timeout != undefined && playerCount != prevPlayerCount){
+            if(playerCount != prevPlayerCount && playerCount > 0){
                 let msg = ''
                 if(startTimeout){
                     msg += `Waiting for the game to start...`
-                } else if(gatherTimeout){
+                } else /*if(gatherTimeout)*/ {
                     msg += `Waiting for the players to gather...`
-                    msg += ` (${playerCount - ZERO_PLAYERS}/${maxPlayers})`
+                    msg += ` (${playerCount}/${MIN_PLAYERS})`
                 }
-                const sec = Math.round(Math.max(0, timeout.ms - (Date.now() - timeout.startedAt)) / SEC)
-                msg += ` (${sec} sec remain)`
+                const timeout = startTimeout ?? gatherTimeout
+                if(timeout){
+                    const remain = Math.max(0, timeout.ms - (Date.now() - timeout.startedAt))
+                    msg += ` (${formatDuration(remain)} remain)`
+                }
                 game.appendToChat(msg)
                 console.log(msg)
             }
         }
 
-        await deferred.promise
+        await Promise.all([
+            deferred.promise,
+            (async () => {
+                for(const player of game.getPlayers(true)){
+                    await sleep(500, opts)
+                    if(player.isBot && player != me){
+                        console.log(`Kicking player...`)
+                        game.kick(player)
+                    }
+                }
+            })(),
+        ])
         
         game.autofill()
-        game.start()
+        //for(let i = game.getPlayersCount(true); i < maxPlayers; i++){
+        //    await game.addBot()
+        //}
 
+        game.start()
+        
         game.set('lock', +true)
 
         deferred = new Deferred(opts)
         deferred.setTimeout(() => game.forceLaunch(), PICK_TIMEOUT)
+        deferred.addEventListener(game, 'wait', () => deferred.resolve())
+        {
+            const msg = `Waiting for the players to lock... (${formatDuration(PICK_TIMEOUT)} remain)`
+            game.appendToChat(msg)
+            console.log(msg)
+        }
+
+        await deferred.promise
+
+        deferred = new Deferred(opts)
         deferred.addEventListener(game, 'launch', () => deferred.resolve())
         {
-            const sec = Math.round(PICK_TIMEOUT / SEC)
-            const msg = `Waiting for the players to lock... (${sec} sec remain)`
+            const msg = `Waiting for the server to start...`
             game.appendToChat(msg)
+            console.log(msg)
         }
 
         await deferred.promise
@@ -269,18 +309,30 @@ async function lobby(_game: Game, opts: Required<AbortOptions>){
                 logger.log('An error occurred when stopping the server:', inspect(err))
             })
         }, PLAY_TIMEOUT)
-        deferred.addEventListener(game, 'stop', () => deferred.resolve)
+        deferred.addEventListener(game, 'stop', () => deferred.resolve())
         {
-            const sec = Math.round(PLAY_TIMEOUT / SEC)
-            const msg = `Waiting for the game to end... (${sec} sec remain)`
+            const msg = `Waiting for the game to end... (${formatDuration(PLAY_TIMEOUT)} remain)`
             game.appendToChat(msg)
+            console.log(msg)
         }
 
         await deferred.promise
-
-        for(const player of game.getPlayers(true)){
-            if(player.isBot)
-                game.kick(player)
-        }
     }
+}
+
+// This code is extracted from LocalGame.
+function assignRandomBotChampion(game: Game, player: GamePlayer){
+    const existingBots = game.getPlayers(true)
+        .filter(player => player.isBot && player.champion.value !== undefined)
+        .map(player => player.champion.value!)
+    const map = combo.maps.get(game.map.value!)!
+    const allBots = [...map.bots.keys(), ...combo.bots.keys()]
+    const bots = [...(new Set(allBots).difference(new Set(existingBots))).values()]
+    if(bots.length === 0)
+        bots.push(...allBots)
+    const champion = (bots.length > 0) ?
+        bots.splice(Math.floor(Math.random() * bots.length), 1)[0] :
+        undefined
+
+    game.set('champion', champion)
 }

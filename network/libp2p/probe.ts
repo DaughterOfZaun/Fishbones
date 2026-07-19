@@ -14,13 +14,14 @@ import { assign } from "../../utils/proxy/utils"
 import { pushable } from 'it-pushable'
 import { logger } from "../../utils/log"
 import { inspect } from 'node:util'
+import { getFreeUDPPort, safeOptions } from "../../utils/process/process"
 
 const DATA_SIZE = 32
 const ATTEMPTS_COUNT = 3
 const ATTEMPTS_INTERVAL = 1000
 
 class ProbeInit {
-    port: number = 0
+    preferredPortRange: [ number, number ] = [ 0, 0 ]
 }
 interface ProbeEvents {}
 interface ProbeComponents {
@@ -109,11 +110,16 @@ class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
     ){
         super()
         this.init = Object.assign(new ProbeInit(), init ?? {})
-        this.port = this.init.port
     }
 
     async start(){
         if(this.socket) return
+        this.port = await getFreeUDPPort({
+            start: this.init.preferredPortRange[0],
+            end: this.init.preferredPortRange[1],
+            signal: safeOptions.signal,
+            fallback: 0,
+        })
         this.socket = await udpSocket<'buffer'>({
             hostname: '0.0.0.0', port: this.port,
             socket: {
@@ -122,7 +128,6 @@ class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
                 },
             },
         })
-        this.port = this.socket.address.port
     }
 
     stop(){

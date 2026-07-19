@@ -163,11 +163,8 @@ export class LocalGame extends Game {
         const playerId = player.id
         const peerId = player.peerId
 
-        const promise = Promise.resolve()
-        if(wrapped)
-            promise.then(async () => wrapped.write({ kickRequest: KickReason.MAKER_DECISION, peersRequests: [] }), err => this.log.error(err))
-        if(stream)
-            promise.then(async () => stream.close(), err => this.log.error(err))
+        wrapped?.write({ kickRequest: KickReason.MAKER_DECISION, peersRequests: [] }).catch(err => this.log.error(err))
+        stream?.close().catch(err => this.log.error(err))
         if(this.playerIds.has(playerId))
             this.freePlayerId(playerId, peerId)
         if(this.players.has(playerId))
@@ -186,7 +183,9 @@ export class LocalGame extends Game {
         for(const player of to){
             if(player === ignore) continue
             if(player.id === this.playerId){
-                this.handleResponse(msg)
+                process.nextTick(() => {
+                    this.handleResponse(msg)
+                })
             } else if(player.stream){
                 player.stream.write(msg)
                     .catch(err => this.log.error(err))
