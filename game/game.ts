@@ -33,19 +33,20 @@ import path from 'node:path'
 import { args } from '../utils/args'
 import { INI } from '../utils/data/ini'
 import { inspect } from 'node:util'
+import { EventEmitter } from 'node:events'
 
 export const version = versionFromString(VERSION_STRING)
 
 interface GameEvents {
-    update: CustomEvent,
-    kick: CustomEvent,
-    start: CustomEvent,
-    wait: CustomEvent,
-    launch: CustomEvent,
-    crash: CustomEvent<{ isSpellCrash: boolean }>,
-    stop: CustomEvent,
-    joined: CustomEvent<GamePlayer>,
-    chat: CustomEvent<ChatEventDetail>,
+    update: [ CustomEvent ],
+    kick: [ CustomEvent ],
+    start: [ CustomEvent ],
+    wait: [ CustomEvent ],
+    launch: [ CustomEvent ],
+    crash: [ CustomEvent<{ isSpellCrash: boolean }> ],
+    stop: [ CustomEvent ],
+    joined: [ CustomEvent<GamePlayer> ],
+    chat: [ CustomEvent<ChatEventDetail> ],
 }
 export type ChatEventDetail = {
     player: GamePlayer
@@ -63,8 +64,11 @@ enum State {
 
 const MAX_PING_MULTIPLIER = 0.5
 
-export abstract class Game extends TypedEventEmitter<GameEvents> {
+export abstract class Game extends EventEmitter<GameEvents> {
     
+    public addEventListener = this.addListener
+    public removeEventListener = this.removeListener
+
     public readonly node: LibP2PNode
     public readonly ownerId: PeerId
     
@@ -490,17 +494,17 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                 })
                 this.proxyServer?.stop()
                 this.proxyServer = undefined
-                this.safeDispatchEvent('stop')
+                this.emit('stop', new CustomEvent('stop'))
                 break
             case State.STARTED:
                 this.started = true
                 this.launched = false
-                this.safeDispatchEvent('start')
+                this.emit('start', new CustomEvent('start'))
                 break
             case State.LAUNCHED: {
                 this.started = true
                 this.launched = true
-                this.safeDispatchEvent('wait')
+                this.emit('wait', new CustomEvent('wait'))
 
                 if(this.features.isHalfPingEnabled){
                     const gameInfo = this.getGameInfo()
@@ -536,7 +540,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     private handleLaunchResponse(res: LobbyNotificationMessage.LaunchRequest){
         this.started = true
         this.launched = true
-        this.safeDispatchEvent('launch')
+        this.emit('launch', new CustomEvent('launch'))
 
         if(this.serverHack && this.node.peerId.equals(this.ownerId)) return
         this.handleLaunchResponseAsync(res, shutdownOptions).catch(err => {
@@ -660,7 +664,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
             }
         }
         logger.log('SpellCrash detection result:', isSpellCrash)
-        this.safeDispatchEvent('crash', { detail: { isSpellCrash } })
+        this.emit('crash', new CustomEvent('crash', { detail: { isSpellCrash } }))
     }
 
     public set<T extends PPP>(prop: T, value: GamePlayer[T]['value']){
@@ -800,7 +804,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     }
 
     private handleKickRequest(reason: KickReason){
-        this.safeDispatchEvent('kick', { reason })
+        this.emit('kick', new CustomEvent('kick', { detail: { reason } }))
     }
 
     public appendToChat(message: string) {
@@ -824,7 +828,7 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
     }
     private handleChatResponse(player: GamePlayer, res: LobbyNotificationMessage.ChatRequest){
         const { message } = res
-        this.safeDispatchEvent('chat', { detail: { player, message } })
+        this.emit('chat', new CustomEvent('chat', { detail: { player, message } }))
     }
 
     public encode(): {
@@ -940,11 +944,11 @@ export abstract class Game extends TypedEventEmitter<GameEvents> {
                     this.handleLeaveResponse(player)
                 }
             }
-            this.safeDispatchEvent('update')
+            this.emit('update', new CustomEvent('update'))
             if(!joinedSelf){
                 for(const player of joinedPlayers){
                     if(!player.isBot)
-                        this.safeDispatchEvent('joined', { detail: player })
+                        this.emit('joined', new CustomEvent('joined', { detail: player }))
                 }
             }
         }

@@ -48,7 +48,7 @@ export class RemoteGame extends Game {
         }).catch(err => {
             this.log.error(err)
         }).finally(() => {
-            this.safeDispatchEvent('kick')
+            this.emit('kick', new CustomEvent('kick'))
             this.cleanup()
         })
     }

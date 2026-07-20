@@ -184,7 +184,7 @@ class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
     private async resetPeerAddresses(peerId: PeerId, port: number, opts: Required<AbortOptions>){
 
         const ps = this.components.peerStore
-        const info = await ps.get(peerId)
+        const info = await ps.get(peerId, opts)
         const hosts = new Set<string>()
         for(const { multiaddr: addr } of info.addresses){
             if(!Circuit.exactMatch(addr) && !(isLoopback(addr) && port == this.port)){
@@ -241,6 +241,7 @@ class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
     public async ping126(peerId: PeerId, port: number, opts: Required<AbortOptions>){
         
         const addresses = await this.resetPeerAddresses(peerId, port, opts)
+        if(addresses.length == 0) return
 
         await Promise.race(addresses.map(async (addr) => {
             const { host, port } = addr

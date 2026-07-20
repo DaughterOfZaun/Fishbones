@@ -24,7 +24,7 @@ import { handler } from '../network/libp2p/handler'
 import { probe } from '../network/libp2p/probe'
 import type { LibP2PNode } from './node'
 import { hostLocal } from '../tui/browser'
-import { safeOptions, shutdownOptions } from '../utils/process/process'
+import { listenForUncaughtExceptions, safeOptions, shutdownOptions } from '../utils/process/process'
 import type { Game } from '../game/game'
 import { Features, LOBBY_PROTOCOL, PROXY_PROTOCOL } from '../utils/constants'
 import { Deferred } from '../utils/promises'
@@ -65,7 +65,9 @@ function formatDuration(ms: number){
 }
 
 const ZERO_PLAYERS = 0
-const MIN_PLAYERS = 2
+const MIN_PLAYERS = 1
+
+listenForUncaughtExceptions()
 
 let keyString: string
 let privateKey: PrivateKey
@@ -191,12 +193,12 @@ async function lobby(_game: Game, opts: Required<AbortOptions>){
     let prevPlayerCount = ZERO_PLAYERS
     let playerCount = ZERO_PLAYERS
 
-    let deferred: Deferred<void>
+    let deferred: Deferred<boolean>
 
     function createTimeout(ms: number){
         return {
             startedAt: Date.now(),
-            id: setTimeout(() => deferred!.resolve(), ms),
+            id: setTimeout(() => deferred!.resolve(false), ms),
             ms,
         }
     }
@@ -212,7 +214,11 @@ async function lobby(_game: Game, opts: Required<AbortOptions>){
 
     for(;;){
 
-        deferred = new Deferred(opts)
+        for(const player of game.getPlayers(true))
+            if(player.isBot && player != me)
+                game.kick(player)
+
+        deferred = new Deferred<boolean>(opts)
 
         let gatherTimeout: Timeout | undefined
         let startTimeout: Timeout | undefined
@@ -242,81 +248,65 @@ async function lobby(_game: Game, opts: Required<AbortOptions>){
             if(prevPlayerCount >= maxPlayers && playerCount < maxPlayers)
                 startTimeout = removeTimeout(startTimeout)
             
-            if(playerCount != prevPlayerCount && playerCount > 0){
+            if(playerCount != prevPlayerCount){
                 let msg = ''
                 if(startTimeout){
                     msg += `Waiting for the game to start...`
                 } else /*if(gatherTimeout)*/ {
-                    msg += `Waiting for the players to gather...`
-                    msg += ` (${playerCount}/${MIN_PLAYERS})`
+                    msg += `Waiting for the players to gather... (${playerCount}/${MIN_PLAYERS})`
                 }
                 const timeout = startTimeout ?? gatherTimeout
                 if(timeout){
                     const remain = Math.max(0, timeout.ms - (Date.now() - timeout.startedAt))
                     msg += ` (${formatDuration(remain)} remain)`
                 }
-                game.appendToChat(msg)
-                console.log(msg)
+                log(msg)
             }
         }
 
-        await Promise.all([
-            deferred.promise,
-            (async () => {
-                for(const player of game.getPlayers(true)){
-                    await sleep(500, opts)
-                    if(player.isBot && player != me){
-                        console.log(`Kicking player...`)
-                        game.kick(player)
-                    }
-                }
-            })(),
-        ])
+        await deferred.promise
         
         game.autofill()
-        //for(let i = game.getPlayersCount(true); i < maxPlayers; i++){
-        //    await game.addBot()
-        //}
-
         game.start()
-        
+
         game.set('lock', +true)
 
-        deferred = new Deferred(opts)
+        deferred = new Deferred<boolean>(opts)
         deferred.setTimeout(() => game.forceLaunch(), PICK_TIMEOUT)
-        deferred.addEventListener(game, 'wait', () => deferred.resolve())
-        {
-            const msg = `Waiting for the players to lock... (${formatDuration(PICK_TIMEOUT)} remain)`
-            game.appendToChat(msg)
-            console.log(msg)
+        deferred.addEventListener(game, 'wait', () => deferred.resolve(false))
+        deferred.addEventListener(game, 'stop', () => deferred.resolve(true))
+        log(`Waiting for the players to lock... (${formatDuration(PICK_TIMEOUT)} remain)`)        
+        if(await deferred.promise){
+            log(`The game is stopped. Probably somebody left`)
+            continue
         }
 
-        await deferred.promise
-
-        deferred = new Deferred(opts)
-        deferred.addEventListener(game, 'launch', () => deferred.resolve())
-        {
-            const msg = `Waiting for the server to start...`
-            game.appendToChat(msg)
-            console.log(msg)
+        deferred = new Deferred<boolean>(opts)
+        deferred.addEventListener(game, 'launch', () => deferred.resolve(false))
+        deferred.addEventListener(game, 'stop', () => deferred.resolve(true))
+        log(`Waiting for the server to start...`)
+        if(await deferred.promise){
+            log(`The game is stopped. Probably the server crashed`)
+            continue
         }
 
-        await deferred.promise
-
-        deferred = new Deferred(opts)
+        deferred = new Deferred<boolean>(opts)
         deferred.setTimeout(() => {
             stopServer(safeOptions).catch(err => {
                 logger.log('An error occurred when stopping the server:', inspect(err))
             })
         }, PLAY_TIMEOUT)
-        deferred.addEventListener(game, 'stop', () => deferred.resolve())
-        {
-            const msg = `Waiting for the game to end... (${formatDuration(PLAY_TIMEOUT)} remain)`
-            game.appendToChat(msg)
-            console.log(msg)
+        deferred.addEventListener(game, 'stop', () => deferred.resolve(true))
+        log(`Waiting for the game to end... (${formatDuration(PLAY_TIMEOUT)} remain)`)
+        if(await deferred.promise){
+            log(`The game is stopped. Probably the game ended or timeout reached`)
+            continue
         }
+    }
 
-        await deferred.promise
+    function log(msg: string){
+        game.appendToChat(msg)
+        console.log(msg)
     }
 }
 
