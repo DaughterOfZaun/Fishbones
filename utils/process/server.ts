@@ -8,13 +8,8 @@ import type { AbortOptions } from '@libp2p/interface'
 
 const LOG_PREFIX = 'SERVER'
 
-let serverSubprocess: ChildProcess & { port?: number } | undefined
-
-export function getRunningServerPort(){
-    return serverSubprocess?.port
-}
-
-export async function launchServer(serverVersion: ServerVersion, info: GameInfo, opts: Required<AbortOptions>, port = 0){
+export type ChildProcessWithPort = { proc: ChildProcess, port: number }
+export async function launchServer(serverVersion: ServerVersion, info: GameInfo, opts: Required<AbortOptions>, port = 0): Promise<ChildProcessWithPort> {
     const gsPkg = servers[serverVersion]!
 
     //info.gameInfo.CONTENT_PATH = path.relative(gsPkg.dllDir, gsPkg.gcDir)
@@ -26,7 +21,7 @@ export async function launchServer(serverVersion: ServerVersion, info: GameInfo,
     
     if(port === 0) port = await getFreePort() //HACK:
 
-    serverSubprocess = spawn(sdkPkg.exe, [
+    const serverSubprocess = spawn(sdkPkg.exe, [
         gsPkg.dll, '--port', port.toString(), '--config', gsInfoRel,
     ], {
         logPrefix: LOG_PREFIX,
@@ -50,14 +45,12 @@ export async function launchServer(serverVersion: ServerVersion, info: GameInfo,
         */
     }, opts, Infinity/*60_000*/)
 
-    return Object.assign(serverSubprocess, { port })
+    return {
+        proc: serverSubprocess,
+        port,
+    }
 }
 
-export async function stopServer(opts: Required<AbortOptions>){
-    const prevSubprocess = serverSubprocess!
-
-    if(!serverSubprocess) return
-    serverSubprocess = undefined
-
-    await killSubprocess(LOG_PREFIX, prevSubprocess, opts)
+export async function stopServer(server: ChildProcessWithPort, opts: Required<AbortOptions>){
+    await killSubprocess(LOG_PREFIX, server.proc, opts)
 }

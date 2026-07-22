@@ -12,8 +12,8 @@ import { ProxyClient } from '../utils/proxy/proxy-client'
 import { ProxyServer } from '../utils/proxy/proxy-server'
 import { ClientServerProxy } from '../utils/proxy/proxy-client-server'
 import type { WriteonlyMessageStream } from '../utils/pb-stream'
-import { launchClient, relaunchClient, stopClient } from '../utils/process/client'
-import { launchServer, stopServer, getRunningServerPort } from '../utils/process/server'
+import { launchClient, relaunchClient, stopClient, type ChildProcessWithLaunchArgs } from '../utils/process/client'
+import { launchServer, stopServer, type ChildProcessWithPort } from '../utils/process/server'
 import { safeOptions, shutdownOptions, TerminationError } from '../utils/process/process'
 import { Deferred } from '../utils/promises'
 import { logger } from '../utils/log'
@@ -131,15 +131,12 @@ export abstract class Game extends EventEmitter<GameEvents> {
     public launched = false
 
     protected cleanup(){
-        stopClient(safeOptions).catch(err => {
-            logger.log(tr('An error occurred when stopping the client:'), inspect(err))
-        })
+
+        this.stopClient()
         this.proxyClient?.disconnect()
         this.proxyClient = undefined
 
-        stopServer(safeOptions).catch(err => {
-            logger.log(tr('An error occurred when stopping the server:'), inspect(err))
-        })
+        this.stopServer()
         this.proxyServer?.stop()
         this.proxyServer = undefined
 
@@ -160,6 +157,26 @@ export abstract class Game extends EventEmitter<GameEvents> {
     private proxyServer?: ProxyServer
     private proxyClient?: ProxyClient
     private proxyClientServer?: ClientServerProxy
+
+    private serverSubprocess?: ChildProcessWithPort
+    private stopServer(){
+        const prevSubprocess = this.serverSubprocess
+        this.serverSubprocess = undefined
+        if(!prevSubprocess) return
+        stopServer(prevSubprocess, safeOptions).catch(err => {
+            logger.log('An error occurred when stopping the server:', inspect(err))
+        })
+    }
+
+    private clientSubprocess?: ChildProcessWithLaunchArgs
+    private stopClient(){
+        const prevSubprocess = this.clientSubprocess
+        this.clientSubprocess = undefined
+        if(!prevSubprocess) return
+        stopClient(prevSubprocess, safeOptions).catch(err => {
+            logger.log('An error occurred when stopping the client:', inspect(err))
+        })
+    }
 
     public isJoinable(): boolean {
         return this.getKickReason() == KickReason.UNDEFINED
@@ -410,12 +427,12 @@ export abstract class Game extends EventEmitter<GameEvents> {
         try {
             this.node.services.probe.stop()
             const port = this.node.services.probe.port
-            const proc = await launchServer(this.serverVersion, this.getGameInfo(), opts, port)
-            proc.once('exit', this.onServerExit)
+            this.serverSubprocess = await launchServer(this.serverVersion, this.getGameInfo(), opts, port)
+            this.serverSubprocess.proc.once('exit', this.onServerExit)
             
             this.proxyServer = firewall(new ProxyServer(this.node), this.features.isFirewallEnabled)
             const peerIds = players.filter(p => !!p.peerId).map(p => p.peerId!)
-            await this.proxyServer.start(proc.port, peerIds, opts)
+            await this.proxyServer.start(this.serverSubprocess.port, peerIds, opts)
         } catch(err) {
             logger.log('Failed to start server:', inspect(err))
             this.onServerExit()
@@ -484,14 +501,10 @@ export abstract class Game extends EventEmitter<GameEvents> {
                 this.started = false
                 this.launched = false
                 this.unlockAllPlayers()
-                stopClient(safeOptions).catch(err => {
-                    logger.log('An error occurred when stopping the client:', inspect(err))
-                })
+                this.stopClient()
                 this.proxyClient?.disconnect()
                 this.proxyClient = undefined
-                stopServer(safeOptions).catch(err => {
-                    logger.log('An error occurred when stopping the server:', inspect(err))
-                })
+                this.stopServer()
                 this.proxyServer?.stop()
                 this.proxyServer = undefined
                 this.emit('stop', new CustomEvent('stop'))
@@ -515,10 +528,10 @@ export abstract class Game extends EventEmitter<GameEvents> {
                         await this.proxyClientServer.start(peerIds, opts)
 
                         //let proc: Awaited<ReturnType<typeof launchServer>>
-                        const proc = await launchServer(this.serverVersion, gameInfo, opts)
-                        proc.once('exit', this.onServerExit)
+                        this.serverSubprocess = await launchServer(this.serverVersion, gameInfo, opts)
+                        this.serverSubprocess.proc.once('exit', this.onServerExit)
 
-                        this.proxyClientServer.afterStart(proc.port)
+                        this.proxyClientServer.afterStart(this.serverSubprocess.port)
 
                         const maxPingObserved = peerIds
                             .map(peerId => this.node.services.ping.getMaxPing(peerId))
@@ -561,7 +574,7 @@ export abstract class Game extends EventEmitter<GameEvents> {
         let port: number | undefined
 
         if(this.features.isBypassEnabled){
-            port = getRunningServerPort()
+            port = this.serverSubprocess?.port
             if(port){ /* Do nothing. Connect directly to the server */ }
             else {
                 if(this.clientVersion == KnownClients.v126)
@@ -616,8 +629,8 @@ export abstract class Game extends EventEmitter<GameEvents> {
                     })
                 )
             }
-            const proc = await launchClient(this.clientVersion, host, port, key, clientId, opts)
-            proc.once('exit', this.onClientExit)
+            this.clientSubprocess = await launchClient(this.clientVersion, host, port, key, clientId, opts)
+            this.clientSubprocess.proc.once('exit', this.onClientExit)
             return true
         } catch(err) {
             logger.log('Failed to start client:', inspect(err))
@@ -633,8 +646,8 @@ export abstract class Game extends EventEmitter<GameEvents> {
     }
     private async relaunchAsync(opts: Required<AbortOptions>){
         try {
-            const proc = await relaunchClient(opts)
-            proc.once('exit', this.onClientExit)
+            this.clientSubprocess = await relaunchClient(this.clientSubprocess!, opts)
+            this.clientSubprocess.proc.once('exit', this.onClientExit)
             return true
         } catch(err) {
             logger.log('Failed to restart client:', inspect(err))
@@ -648,7 +661,7 @@ export abstract class Game extends EventEmitter<GameEvents> {
         if(!this.launched) return
 
         let isSpellCrash = false
-        if(code == 253){
+        //if(code && (code & 0xfd) != 0){
             const exeDirEntries = await fs_readdir(gc126Pkg.exeDir, opts)
             const latestR3DLogName = exeDirEntries.filter(name => name.endsWith('_r3dlog.txt')).toSorted().at(-1)
             if(latestR3DLogName){
@@ -662,7 +675,7 @@ export abstract class Game extends EventEmitter<GameEvents> {
                     isSpellCrash = true
                 }
             }
-        }
+        //}
         logger.log('SpellCrash detection result:', isSpellCrash)
         this.emit('crash', new CustomEvent('crash', { detail: { isSpellCrash } }))
     }

@@ -11,10 +11,11 @@ import { isLoopback } from '@libp2p/utils'
 import { Peer as ENetPeer } from '../../utils/proxy/peer'
 import { Connect, Protocol, ProtocolCommand, ProtocolFlag, VerifyConnect } from "../../utils/proxy/enet"
 import { assign } from "../../utils/proxy/utils"
-import { pushable } from 'it-pushable'
+import { pushable, type Pushable } from 'it-pushable'
 import { logger } from "../../utils/log"
 import { inspect } from 'node:util'
 import { getFreeUDPPort, safeOptions } from "../../utils/process/process"
+import type { ConnectionManager } from "@libp2p/interface-internal"
 
 const DATA_SIZE = 32
 const ATTEMPTS_COUNT = 3
@@ -26,6 +27,7 @@ class ProbeInit {
 interface ProbeEvents {}
 interface ProbeComponents {
     peerStore: PeerStore
+    connectionManager: ConnectionManager
 }
 
 export function probe(init?: Partial<ProbeInit>): (components: ProbeComponents) => Probe {
@@ -85,6 +87,8 @@ const ENET_CONNECT_REQUEST = (() => {
 
 //type Socket = Bun.udp.Socket<'buffer'>
 //type ReceiveFlags = Bun.udp.ReceiveFlags
+type Data = { data: Buffer, port: number, address: string }
+
 class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
     
     private _port = 0
@@ -184,9 +188,15 @@ class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
     private async resetPeerAddresses(peerId: PeerId, port: number, opts: Required<AbortOptions>){
 
         const ps = this.components.peerStore
+        const cm = this.components.connectionManager
         const info = await ps.get(peerId, opts)
+        const connections = cm.getConnections(peerId)
+        const maddrs = [
+            ...info.addresses.map(addr => addr.multiaddr),
+            ...connections.map(conn => conn.remoteAddr),
+        ]
         const hosts = new Set<string>()
-        for(const { multiaddr: addr } of info.addresses){
+        for(const addr of maddrs){
             if(!Circuit.exactMatch(addr) && !(isLoopback(addr) && port == this.port)){
                 const component = addr.getComponents().at(0)
                 if(component?.name == 'ip4' && component.value){
@@ -243,57 +253,65 @@ class Probe extends TypedEventEmitter<ProbeEvents> implements Startable {
         const addresses = await this.resetPeerAddresses(peerId, port, opts)
         if(addresses.length == 0) return
 
-        await Promise.race(addresses.map(async (addr) => {
-            const { host, port } = addr
-
-            type Data = { data: Buffer, port: number, address: string }
-            const queue = pushable<Data>({ objectMode: true })
-            const socket = await udpSocket({
-                //hostname: '0.0.0.0', port: 0,
-                socket: {
-                    data(socket, data, port, address, flags){
-                        queue.push({ data, port, address })
-                    },
-                }
-            })
-            try {
-                opts.signal.throwIfAborted()
-                
-                //for(let attempt = 1; attempt <= ATTEMPTS_COUNT; attempt++){
-                const sentAt = Date.now()
-                //logger.log(`socket.send(${ENET_CONNECT_REQUEST.toString('hex')}, ${port}, ${host})`)
-                socket.send(ENET_CONNECT_REQUEST, port, host)
-                addr.packetsSent++
-
-                const result = await Promise.race([
-                    sleep(ATTEMPTS_INTERVAL, opts),
-                    queue.next(),
-                ])
-                //logger.log(`result?.done = ${result?.done}`)
-                const data = result?.value?.data
-                //logger.log(`result?.value?.data = ${data?.toString('hex')}`)
-                if(data){
-                    let packets: Protocol[] = []
-                    try {
-                        packets = ENET_PEER['readPackets'](data)?.packets ?? packets
-                    } catch(err){
-                        logger.log(`ENET_PEER['readPackets'](data) falied:`, inspect(err))
-                    }
-                    for(const packet of packets){
-                        //logger.log(`packet instanceof ${ProtocolCommand[packet.command]}`)
-                        if(packet instanceof VerifyConnect){
-                            //TODO: Close connection.
-                            addr.totalPing += Date.now() - sentAt
-                            addr.packetsReceived++
-                            //break
-                        }
-                    }
-                }
-                //}
-            } finally {
-                socket.close()
+        await Promise.race(addresses.map((addr) => this.connect(addr, opts)))
+    }
+    
+    private async connect(addr: Address, opts: Required<AbortOptions>){
+        const queue = pushable<Data>({ objectMode: true })
+        const socket = await udpSocket({
+            //hostname: '0.0.0.0', port: 0,
+            socket: {
+                data(socket, data, port, address, flags){
+                    queue.push({ data, port, address })
+                },
             }
-        }))
+        })
+        try {
+            opts.signal.throwIfAborted()
+            
+            const sentAt = Date.now()
+            await Promise.race([
+                this.send(socket, addr, opts),
+                this.receive(queue, addr, sentAt, opts),
+            ])
+        } finally {
+            socket.close()
+        }
+    }
+
+    private async send(socket: Socket, addr: Address, opts: Required<AbortOptions>){
+        const { host, port } = addr
+        //for(let attempt = 1; attempt <= ATTEMPTS_COUNT; attempt++){   
+        //logger.log(`socket.send(${ENET_CONNECT_REQUEST.toString('hex')}, ${port}, ${host})`)
+        socket.send(ENET_CONNECT_REQUEST, port, host)
+        addr.packetsSent++
+        sleep(ATTEMPTS_INTERVAL, opts)
+        //}
+    }
+
+    private async receive(queue: Pushable<Data>, addr: Address, sentAt: number, opts: Required<AbortOptions>){
+        const result = await queue.next()
+        opts.signal.throwIfAborted()
+        //logger.log(`result?.done = ${result?.done}`)
+        const data = result?.value?.data
+        //logger.log(`result?.value?.data = ${data?.toString('hex')}`)
+        if(data){
+            let packets: Protocol[] = []
+            try {
+                packets = ENET_PEER['readPackets'](data)?.packets ?? packets
+            } catch(err){
+                logger.log(`ENET_PEER['readPackets'](data) falied:`, inspect(err))
+            }
+            for(const packet of packets){
+                //logger.log(`packet instanceof ${ProtocolCommand[packet.command]}`)
+                if(packet instanceof VerifyConnect){
+                    //TODO: Close connection.
+                    addr.totalPing += Date.now() - sentAt
+                    addr.packetsReceived++
+                    //break
+                }
+            }
+        }
     }
 
     public getBestIPv4Address(peerId: PeerId){

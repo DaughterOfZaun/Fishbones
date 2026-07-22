@@ -1,4 +1,4 @@
-import type { AbortOptions, MessageStream, Stream } from "@libp2p/interface"
+import type { AbortOptions, MessageStream, Stream, StreamCloseEvent } from "@libp2p/interface"
 import { pbStream as pbStream1, type ProtobufDecoder, type ProtobufEncoder, type ProtobufMessageStream, type ProtobufStreamOpts } from "@libp2p/utils"
 
 export type ReadonlyMessageStream<T, S extends MessageStream = MessageStream> = Pick<ProtobufMessageStream<T, S>, 'read' | 'unwrap'> & { iter(): AsyncGenerator<Awaited<T>, void, unknown> }
@@ -21,7 +21,9 @@ function pbStream2<S extends Stream>(stream: S, opts?: Partial<ProtobufStreamOpt
                 write: outputStream.write,
                 writeV: outputStream.writeV,
                 unwrap: () => pbStream,
-                iter: () => iter(stream, inputStream)
+                iter: (opts?: AbortOptions) => {
+                    return iter(stream, inputStream, opts)
+                }
             }
         }
     })
@@ -29,30 +31,36 @@ function pbStream2<S extends Stream>(stream: S, opts?: Partial<ProtobufStreamOpt
 
 export async function * iter<T>(stream: Stream, wrapped: { read(opts?: AbortOptions): Promise<T> }, opts?: AbortOptions){
     
-    for(;;){
-        yield await wrapped.read(opts)
+    let throwException = true
+    const controller = new AbortController()
+
+    stream.addEventListener('close', onclose)
+    stream.addEventListener('remoteCloseWrite', onclose)
+    opts?.signal?.addEventListener('abort', onabort)
+    function cleanup(){
+        stream.removeEventListener('close', onclose)
+        stream.removeEventListener('remoteCloseWrite', onclose)
+        opts?.signal?.removeEventListener('abort', onabort)
+        return true
+    }
+    function onclose(evt?: StreamCloseEvent){
+        cleanup()
+        throwException = !!evt?.error
+        controller.abort(evt?.error)
+    }
+    function onabort(){
+        cleanup()
+        throwException = true
+        controller.abort(opts?.signal?.reason)
     }
 
-    //const onRemoteCloseWrite = (): void => {
-    //    source.end()
-    //    stream.removeEventListener('message', onMessage)
-    //    stream.removeEventListener('close', onClose)
-    //    stream.removeEventListener('remoteCloseWrite', onRemoteCloseWrite)
-    //}
-    //const onClose = (evt: StreamCloseEvent): void => {
-    //    source.end(evt.error)
-    //    if (evt.error != null) {
-    //    onError?.reject(evt.error)
-    //    }
-    //    stream.removeEventListener('message', onMessage)
-    //    stream.removeEventListener('close', onClose)
-    //    stream.removeEventListener('remoteCloseWrite', onRemoteCloseWrite)
-    //}
-    //stream.addEventListener('message', onMessage)
-    //stream.addEventListener('close', onClose, {
-    //    once: true
-    //})
-    //stream.addEventListener('remoteCloseWrite', onRemoteCloseWrite, {
-    //    once: true
-    //})
+    for(;;){
+        try {
+            yield await wrapped.read(opts)
+        } catch(err) {
+            if(throwException)
+                throw err
+            break
+        }
+    }
 }

@@ -8,7 +8,7 @@ import { tcp } from '@libp2p/tcp'
 import { patchedCrypto as crypto } from '../utils/crypto'
 import { defaultLogger } from '@libp2p/logger'
 import { gossipsub } from '../network/libp2p/pinning-v2'
-import { appDiscoveryTopic, rtcConfiguration } from '../utils/constants-build'
+import { appDiscoveryTopic, HARDCODED_SERVER_ADDRESSES, rtcConfiguration } from '../utils/constants-build'
 //import { rendezvousServer } from "@canvas-js/libp2p-rendezvous/server"
 import { circuitRelayServer } from '@libp2p/circuit-relay-v2'
 import fs from 'node:fs/promises'
@@ -35,7 +35,6 @@ import { clients_push, combinations_merge, combinations_push, KnownClients, Know
 import { ClientDataInfoV126, gc126Pkg } from '../utils/data/packages/game-client-126'
 import { BrokenWingsDataInfo, bwPkg } from '../utils/data/packages/game-server-bw'
 import { Team } from '../tui/lobby/lobby'
-import { sleep } from '../utils/helpers'
 import type { GamePlayer } from '../game/game-player'
 //import { peerIdFromPrivateKey } from '@libp2p/peer-id'
 
@@ -95,7 +94,10 @@ const node = await createLibp2p({
         listen: [
             `/ip4/0.0.0.0/udp/${UDP_PORT}/webrtc-direct`,
             `/ip4/0.0.0.0/tcp/${TCP_PORT}`,
-        ]
+        ],
+        announce: [
+            ...HARDCODED_SERVER_ADDRESSES,
+        ],
     },
     transports: [
         webRTCDirect({ rtcConfiguration }),
@@ -291,11 +293,7 @@ async function lobby(_game: Game, opts: Required<AbortOptions>){
         }
 
         deferred = new Deferred<boolean>(opts)
-        deferred.setTimeout(() => {
-            stopServer(safeOptions).catch(err => {
-                logger.log('An error occurred when stopping the server:', inspect(err))
-            })
-        }, PLAY_TIMEOUT)
+        deferred.setTimeout(() => game['stopServer'](), PLAY_TIMEOUT)
         deferred.addEventListener(game, 'stop', () => deferred.resolve(true))
         log(`Waiting for the game to end... (${formatDuration(PLAY_TIMEOUT)} remain)`)
         if(await deferred.promise){

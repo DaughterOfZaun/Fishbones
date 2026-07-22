@@ -49,7 +49,7 @@ import type { ConnectionManager, TransportManager } from '@libp2p/interface-inte
 
 import { console_log } from '../ui/remote/remote'
 import { args } from '../utils/args'
-import { appDiscoveryTopic, HARDCODED_SERVER_CERT_HASH, HARDCODED_SERVER_IP, HARDCODED_SERVER_PEER_ID, NAME, rtcConfiguration, VERSION_STRING } from '../utils/constants-build'
+import { appDiscoveryTopic, HARDCODED_SERVER_ADDRESSES, HARDCODED_SERVER_PEER_ID, NAME, rtcConfiguration, VERSION_STRING } from '../utils/constants-build'
 import { deadlyRace, Deferred } from '../utils/promises'
 import { tr } from '../utils/translation'
 
@@ -121,10 +121,7 @@ function log(type: string, name: string, ...args: any[]): boolean {
 
 export const serverPeerIDString = HARDCODED_SERVER_PEER_ID
 export const serverPeerID = peerIdFromString(HARDCODED_SERVER_PEER_ID)
-export const serverPeerMultiddrStrings = [
-    `/ip4/${HARDCODED_SERVER_IP}/udp/42451/webrtc-direct/certhash/${HARDCODED_SERVER_CERT_HASH}/p2p/${HARDCODED_SERVER_PEER_ID}`,
-    `/ip4/${HARDCODED_SERVER_IP}/tcp/41463/p2p/${HARDCODED_SERVER_PEER_ID}`,
-]
+export const serverPeerMultiddrStrings = HARDCODED_SERVER_ADDRESSES
 
 const maxPeerAddrsToDial = 25
 const perTransportDialTimeout = 10 * 1000
