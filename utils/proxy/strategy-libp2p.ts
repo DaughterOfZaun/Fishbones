@@ -1,11 +1,8 @@
-import type { PeerId, AbortOptions, Stream, Startable, StreamHandler, Connection } from "@libp2p/interface"
+import { type PeerId, type AbortOptions, type Stream, type Connection } from "@libp2p/interface"
 import { PeerMap } from "@libp2p/peer-collections"
 import { logger } from "@libp2p/logger"
-import { AbortError, pushable as createPushable, type Pushable } from 'it-pushable'
 import { ConnectionStrategy, DEFAULT_REMOTE_STREAM_INDEX, Role, type OnDataFromRemote, type RemoteStreamIndex, type SocketToRemote } from "./shared"
-import type { Registrar } from "@libp2p/interface-internal"
-import { lpStream } from "@libp2p/utils"
-import { iter } from "../pb-stream"
+import { LengthPrefixedStream } from "../lp-stream"
 
 //import { PROXY_PROTOCOL } from "./constants"
 const PROXY_PROTOCOL = `/proxy/${0}`
@@ -16,8 +13,7 @@ export class UseExistingLibP2PConnection extends ConnectionStrategy {
 
     socketsByPeerId = new PeerMap<SocketToRemote & {
         onData: OnDataFromRemote
-        pushables: Pushable<Buffer>[]
-        streams: Stream[]
+        streams: LengthPrefixedStream[]
     }>()
 
     closeSockets(): void {
@@ -60,21 +56,17 @@ export class UseExistingLibP2PConnection extends ConnectionStrategy {
             targetHostPort: id.toString(),
             
             onData,
-            streams: [] as Stream[],
-            pushables: [] as Pushable<Buffer>[],
+            streams: [] as LengthPrefixedStream[],
             send(data: Buffer, streamIdx: number){
-                let pushable = this.pushables[streamIdx]
-                    pushable ??= this.pushables[DEFAULT_REMOTE_STREAM_INDEX]
-                pushable?.push(data)
-                return true
+                let lpStream = this.streams[streamIdx]
+                    lpStream ??= this.streams[DEFAULT_REMOTE_STREAM_INDEX]
+                return lpStream?.send(data) ?? false
             },
             
             //get connected(){ return this.stream?.status === 'open' },
             //get opened(){ return this.stream?.status === 'open' },
 
             close(){
-                for(let streamIdx = 0; streamIdx < this.pushables.length; streamIdx++)
-                    this.pushables[streamIdx]!.end(new AbortError())
                 for(let streamIdx = 0; streamIdx < this.streams.length; streamIdx++)
                     this.streams[streamIdx]!.close().catch(err => log.error(err))
             }
@@ -158,27 +150,11 @@ export class UseExistingLibP2PConnection extends ConnectionStrategy {
 
     protected handleStream(peerId: PeerId, stream: Stream){
         const socket = this.socketsByPeerId.get(peerId)!
-        const pushable = createPushable<Buffer>({ objectMode: false })
-
-        const i = socket.pushables.push(pushable) 
-        const streamIdx = socket.streams.push(stream) as RemoteStreamIndex
-        console.assert(i == streamIdx, 'Assertion failed: i == streamIdx')
-
-        //console.log(Role[this.role], 'handleStream', streamIdx)
-        
-        const wrapped = lpStream(stream)
-
-        Promise.resolve().then(async () => {
-            for await (const chunk of iter(stream, wrapped)){
-                const data = Buffer.from(chunk.slice())
-                socket.onData(data, streamIdx, peerId.toString())
-            }
-        }).catch(err => log.error(err))
-
-        Promise.resolve().then(async () => {
-            for await (const data of pushable){
-                wrapped.write(data)
-            }
-        }).catch(err => log.error(err))
+        const lpStream = new LengthPrefixedStream(stream)
+        const streamIdx = socket.streams.push(lpStream) as RemoteStreamIndex
+        stream.addEventListener('message', (event) => {
+            const data = Buffer.from(event.data.slice())
+            socket.onData(data, streamIdx, peerId.toString())
+        })
     }
 }

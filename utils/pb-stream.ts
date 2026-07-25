@@ -31,8 +31,9 @@ function pbStream2<S extends Stream>(stream: S, opts?: Partial<ProtobufStreamOpt
 
 export async function * iter<T>(stream: Stream, wrapped: { read(opts?: AbortOptions): Promise<T> }, opts?: AbortOptions){
     
-    let throwException = true
+    let throwError = true
     const controller = new AbortController()
+    const abortOptions = { signal: controller.signal }
 
     stream.addEventListener('close', onclose)
     stream.addEventListener('remoteCloseWrite', onclose)
@@ -45,20 +46,20 @@ export async function * iter<T>(stream: Stream, wrapped: { read(opts?: AbortOpti
     }
     function onclose(evt?: StreamCloseEvent){
         cleanup()
-        throwException = !!evt?.error
+        throwError = !!evt?.error
         controller.abort(evt?.error)
     }
     function onabort(){
         cleanup()
-        throwException = true
+        throwError = true
         controller.abort(opts?.signal?.reason)
     }
 
     for(;;){
         try {
-            yield await wrapped.read(opts)
+            yield await wrapped.read(abortOptions)
         } catch(err) {
-            if(throwException)
+            if(throwError)
                 throw err
             break
         }

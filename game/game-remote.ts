@@ -22,7 +22,7 @@ export class RemoteGame extends Game {
             const connection = await obtainConnection(this.node, this.ownerId, opts)
             const stream = await connection.newStream([ LOBBY_PROTOCOL ], { ...opts, runOnLimitedConnection: false })
             const wrapped = pbStream(stream).pb(LobbyNotificationMessage, LobbyRequestMessage)
-            this.handleIncomingStream(stream, wrapped)
+            this.handleIncomingStream(wrapped)
             this.stream = wrapped
             this.connected = true
             return true
@@ -40,7 +40,7 @@ export class RemoteGame extends Game {
     }
     
     //TODO: opts: Required<AbortOptions>
-    private handleIncomingStream(stream: Stream, wrapped: ReadonlyMessageStream<LobbyNotificationMessage>){
+    private handleIncomingStream(wrapped: ReadonlyMessageStream<LobbyNotificationMessage>){
         Promise.resolve().then(async () => {
             for await (const req of wrapped.iter()){
                 this.handleResponse(req)
