@@ -3,9 +3,9 @@ import { BooleanValue, FloatValue, IntegerValue, Lock, Name, Team } from '../uti
 import { SummonerSpell } from '../utils/data/constants/spells'
 import { Champion, Skin, AIDifficulty, Talents } from '../utils/data/constants/champions'
 import { type PeerId, type Stream } from '@libp2p/interface'
-import { LobbyNotificationMessage, PickRequest } from '../message/lobby'
+import { LobbyNotificationMessage, LobbyRequestMessage, PickRequest } from '../message/lobby'
 import type { Game } from './game'
-import type { WriteonlyMessageStream } from '../utils/pb-stream'
+import type { ProtobufStream } from '../utils/pb-stream'
 import { tr } from '../utils/translation'
 
 export type PlayerId = number & { readonly brand: unique symbol }
@@ -24,7 +24,7 @@ export class GamePlayer {
 
     public port?: number
 
-    stream?: WriteonlyMessageStream<LobbyNotificationMessage, Stream>
+    stream?: ProtobufStream<LobbyRequestMessage, LobbyNotificationMessage>
     
     constructor(game: Game, id: PlayerId, peerId?: PeerId){
         this.game = game

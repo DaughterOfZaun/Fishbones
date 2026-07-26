@@ -6,7 +6,7 @@ import { Game } from './game'
 import { logger } from '@libp2p/logger'
 import type { GamePlayer, PlayerId, PPP } from './game-player'
 import { PeerMap } from '@libp2p/peer-collections'
-import { pbStream } from '../utils/pb-stream'
+import { ProtobufStream } from '../utils/pb-stream'
 import { combinations_find } from '../utils/data/constants/client-server-combinations'
 import { bwPkg } from '../utils/data/packages' //TODO: Unhardcode.
 //import { logger as myLogger } from '../utils/log'
@@ -115,42 +115,40 @@ export class LocalGame extends Game {
     }
 
     private handleIncomingStream: StreamHandler = async (stream, connection) => {
-        const wrapped = pbStream(stream).pb(LobbyRequestMessage, LobbyNotificationMessage)
-
-        let checkPassed = false
+        const wrapped = new ProtobufStream(stream, LobbyRequestMessage, LobbyNotificationMessage)
+        
+        let isFirstReq = true
+        let isCheckPassed = false
         let kickReason = KickReason.UNDEFINED
-        let firstReq: u|LobbyRequestMessage = undefined
-        try {
-            firstReq = await wrapped.read()
-            if(firstReq.joinRequest){
-                const { password, version } = firstReq.joinRequest
-                kickReason = this.getKickReason(true, password, version)
-                checkPassed = kickReason === KickReason.UNDEFINED
+        let peerId!: PeerId
+        let playerId!: PlayerId
+
+        wrapped.ondata = (req) => {
+
+            if(isFirstReq){
+                isFirstReq = false
+                if(req.joinRequest){
+                    const { password, version } = req.joinRequest
+                    kickReason = this.getKickReason(true, password, version)
+                    isCheckPassed = kickReason === KickReason.UNDEFINED
+                }
+                if(kickReason != KickReason.UNDEFINED)
+                    wrapped.send({ kickRequest: kickReason })
+                if(!isCheckPassed){
+                    wrapped.close() //.catch(err => this.log.error(err))
+                } else {
+                    peerId = connection.remotePeer
+                    playerId = this.peerIdToPlayerId(peerId)
+                }
             }
-            if(kickReason != KickReason.UNDEFINED){
-                await wrapped.write({ kickRequest: kickReason, peersRequests: [] })
-            }
-        } catch(err) {
-            this.log.error(err)
-        }
 
-        if(!checkPassed || !firstReq){
-            stream.close().catch(err => this.log.error(err))
-            return
-        }
-
-        const peerId = connection.remotePeer
-        const playerId = this.peerIdToPlayerId(peerId)
-
-        this.handleRequest(playerId, firstReq, wrapped, peerId)
-
-        try {
-            for await (const req of wrapped.iter()){
+            if(isCheckPassed)
                 this.handleRequest(playerId, req, wrapped, peerId)
-            }
-        } catch(err) {
+        }
+        wrapped.onerror = (err) => {
             this.log.error(err)
-        } finally {
+        }
+        wrapped.onclose = () => {
             this.freePlayerId(playerId, peerId)
             this.handleRequest(playerId, { leaveRequest: true }, undefined, peerId)
         }
@@ -159,12 +157,11 @@ export class LocalGame extends Game {
     public kick(player: GamePlayer){
         
         const wrapped = player.stream
-        const stream = player.stream?.unwrap().unwrap()
         const playerId = player.id
         const peerId = player.peerId
 
-        wrapped?.write({ kickRequest: KickReason.MAKER_DECISION, peersRequests: [] }).catch(err => this.log.error(err))
-        stream?.close().catch(err => this.log.error(err))
+        wrapped?.send({ kickRequest: KickReason.MAKER_DECISION, peersRequests: [] })
+        wrapped?.close() //.catch(err => this.log.error(err))
         if(this.playerIds.has(playerId))
             this.freePlayerId(playerId, peerId)
         if(this.players.has(playerId))
@@ -187,8 +184,7 @@ export class LocalGame extends Game {
                     this.handleResponse(msg)
                 })
             } else if(player.stream){
-                player.stream.write(msg)
-                    .catch(err => this.log.error(err))
+                player.stream.send(msg)
             }
         }
     }
@@ -201,8 +197,7 @@ export class LocalGame extends Game {
         //    this.log.error(tr('An error occurred while unhandling the protocol: %e'), err)
         //})
         for(const player of this.players.values()){
-            player.stream?.unwrap().unwrap().close()
-                .catch(err => this.log.error(err))
+            player.stream?.close() //.catch(err => this.log.error(err))
         }
         this.cleanup()
         return true

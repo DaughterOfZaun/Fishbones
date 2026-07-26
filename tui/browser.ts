@@ -16,6 +16,7 @@ import { spinner, AbortPromptError, popup } from '../ui/remote/remote'
 import { deadlyRace } from '../utils/promises'
 import { bwPkg } from '../utils/data/packages' //TODO: Unhardcode.
 import { tr } from '../utils/translation'
+import { chat } from './chat'
 
 interface CacheEntry {
     games: Map<number, {

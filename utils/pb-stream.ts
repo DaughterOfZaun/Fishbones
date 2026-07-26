@@ -1,5 +1,48 @@
 import type { AbortOptions, MessageStream, Stream, StreamCloseEvent } from "@libp2p/interface"
 import { pbStream as pbStream1, type ProtobufDecoder, type ProtobufEncoder, type ProtobufMessageStream, type ProtobufStreamOpts } from "@libp2p/utils"
+import { LengthPrefixedStream, type LengthPrefixedStreamInit } from "./lp-stream"
+
+export class ProtobufStream<Input, Output> {
+    private stream: LengthPrefixedStream
+    public ondata?: (data: Input) => void
+    public onerror?: (err: Error) => void
+    public onclose?: () => void
+    constructor(
+        stream: Stream,
+        private decoder: { decode: ProtobufDecoder<Input> },
+        private encoder: { encode: ProtobufEncoder<Output> },
+        init: LengthPrefixedStreamInit = {},
+    ){
+        this.stream = new LengthPrefixedStream(stream, init)
+        this.stream.ondata = (data) => {
+            try {
+                this.ondata?.(this.decoder.decode(data))
+            } catch(err) {
+                this.onerror?.(err as Error)
+            }
+        }
+        this.stream.onerror = (err) => {
+            this.onerror?.(err)
+        }
+        this.stream.onclose = () => {
+            this.onclose?.()
+        }
+    }
+    public send(data: Output){
+        console.log('send', data)
+        try {
+            return this.stream.send(this.encoder.encode(data))
+        } catch(err) {
+            this.onerror?.(err as Error)
+            return false
+        }
+    }
+    public close(opts?: AbortOptions){
+        this.stream.close(opts) //.catch(err => {
+        //    this.onerror?.(err)
+        //})
+    }
+}
 
 export type ReadonlyMessageStream<T, S extends MessageStream = MessageStream> = Pick<ProtobufMessageStream<T, S>, 'read' | 'unwrap'> & { iter(): AsyncGenerator<Awaited<T>, void, unknown> }
 export type WriteonlyMessageStream<T, S extends MessageStream = MessageStream> = Pick<ProtobufMessageStream<T, S>, 'write' | 'writeV' | 'unwrap'>

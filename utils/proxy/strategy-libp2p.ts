@@ -58,9 +58,9 @@ export class UseExistingLibP2PConnection extends ConnectionStrategy {
             onData,
             streams: [] as LengthPrefixedStream[],
             send(data: Buffer, streamIdx: number){
-                let lpStream = this.streams[streamIdx]
-                    lpStream ??= this.streams[DEFAULT_REMOTE_STREAM_INDEX]
-                return lpStream?.send(data) ?? false
+                let wrapped = this.streams[streamIdx]
+                    wrapped ??= this.streams[DEFAULT_REMOTE_STREAM_INDEX]
+                return wrapped?.send(data) ?? false
             },
             
             //get connected(){ return this.stream?.status === 'open' },
@@ -68,7 +68,7 @@ export class UseExistingLibP2PConnection extends ConnectionStrategy {
 
             close(){
                 for(let streamIdx = 0; streamIdx < this.streams.length; streamIdx++)
-                    this.streams[streamIdx]!.close().catch(err => log.error(err))
+                    this.streams[streamIdx]!.close() //.catch(err => log.error(err))
             }
         }
 
@@ -150,11 +150,14 @@ export class UseExistingLibP2PConnection extends ConnectionStrategy {
 
     protected handleStream(peerId: PeerId, stream: Stream){
         const socket = this.socketsByPeerId.get(peerId)!
-        const lpStream = new LengthPrefixedStream(stream)
-        const streamIdx = socket.streams.push(lpStream) as RemoteStreamIndex
-        stream.addEventListener('message', (event) => {
-            const data = Buffer.from(event.data.slice())
+        const wrapped = new LengthPrefixedStream(stream)
+        const streamIdx = socket.streams.push(wrapped) as RemoteStreamIndex
+        wrapped.ondata = (chunk) => {
+            const data = Buffer.from(chunk.slice())
             socket.onData(data, streamIdx, peerId.toString())
-        })
+        }
+        wrapped.onerror = (err) => {
+            log.error(err)
+        }
     }
 }

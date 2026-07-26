@@ -11,8 +11,8 @@ import type { GameInfo, GameInfo420 } from '../game/game-info'
 import { ProxyClient } from '../utils/proxy/proxy-client'
 import { ProxyServer } from '../utils/proxy/proxy-server'
 import { ClientServerProxy } from '../utils/proxy/proxy-client-server'
-import type { WriteonlyMessageStream } from '../utils/pb-stream'
-import { launchClient, relaunchClient, stopClient, type ChildProcessWithLaunchArgs } from '../utils/process/client'
+import type { ProtobufStream } from '../utils/pb-stream'
+import { getLastLaunchCmd, launchClient, relaunchClient, stopClient, type ChildProcessWithLaunchArgs } from '../utils/process/client'
 import { launchServer, stopServer, type ChildProcessWithPort } from '../utils/process/server'
 import { safeOptions, shutdownOptions, TerminationError } from '../utils/process/process'
 import { Deferred } from '../utils/promises'
@@ -169,6 +169,9 @@ export abstract class Game extends EventEmitter<GameEvents> {
     }
 
     private clientSubprocess?: ChildProcessWithLaunchArgs
+    public getLastLaunchCmd(){
+        return getLastLaunchCmd(this.clientSubprocess!)
+    }
     private stopClient(){
         const prevSubprocess = this.clientSubprocess
         this.clientSubprocess = undefined
@@ -319,10 +322,8 @@ export abstract class Game extends EventEmitter<GameEvents> {
         return undefined
     }
     private handleJoinResponse(player: GamePlayer, res: LobbyNotificationMessage.JoinRequest){
-        void this.handleJoinResponseAsync(player, res, shutdownOptions)
-    }
-    private async handleJoinResponseAsync(player: GamePlayer, res: LobbyNotificationMessage.JoinRequest, opts: Required<AbortOptions>){
-        
+        const opts = shutdownOptions
+
         if(res.name !== undefined)
             player.name.decodeInplace(res.name)
         if(res.icon !== undefined)
@@ -331,10 +332,11 @@ export abstract class Game extends EventEmitter<GameEvents> {
             player.port = res.port
 
         if(res.isMe){
-            this.player = player
-            this.joiningPromise!.resolve(true)
-            this.joiningPromise = null
             this.joined = true
+            this.player = player
+            const promise = this.joiningPromise!
+            this.joiningPromise = null
+            promise.resolve(true)
             return
         }
         
@@ -343,10 +345,11 @@ export abstract class Game extends EventEmitter<GameEvents> {
             //TODO: && this.player?.fullyConnected.value === true
             && player.peerId && (res.info?.addrs.length ?? 0) > 0
         ){
-            await obtainConnection(this.node, player.peerId!, opts, res.info!.addrs)
-            //console_log(`connectedTo: { playerId: ${player.id} }`)
-            this.stream_write({
-                connectedTo: { playerId: player.id },
+            obtainConnection(this.node, player.peerId!, opts, res.info!.addrs).then(() => {
+                //console_log(`connectedTo: { playerId: ${player.id} }`)
+                this.stream_write({
+                    connectedTo: { playerId: player.id },
+                })
             })
         }
 
@@ -898,7 +901,7 @@ export abstract class Game extends EventEmitter<GameEvents> {
         return ret
     }
 
-    protected handleRequest(playerId: PlayerId, req: LobbyRequestMessage, stream: u|WriteonlyMessageStream<LobbyNotificationMessage, Stream>, peerId: u|PeerId){
+    protected handleRequest(playerId: PlayerId, req: LobbyRequestMessage, stream: u|ProtobufStream<LobbyRequestMessage, LobbyNotificationMessage>, peerId: u|PeerId){
         let player: u|GamePlayer
         if(req.joinRequest && peerId){
             player = this.players_add(playerId, peerId)

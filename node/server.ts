@@ -303,8 +303,10 @@ async function lobby(_game: Game, opts: Required<AbortOptions>){
     }
 
     function log(msg: string){
-        game.appendToChat(msg)
-        console.log(msg)
+        setTimeout(() => {
+            game.appendToChat(msg)
+            console.log(msg)
+        }, 500) //HACK:
     }
 }
 

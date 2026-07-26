@@ -46,6 +46,7 @@ async function lobby(game: Game, opts: Required<AbortOptions>){
     type View = null | ((opts: Context) => Promise<unknown>)
 
     chat.bind(game)
+    chat.show()
 
     let controller = new AbortController()
     const createSignal = () => AbortSignal.any([ controller.signal, opts.signal ]) 
@@ -96,6 +97,7 @@ async function lobby(game: Game, opts: Required<AbortOptions>){
         }
     } finally {
         chat.unbind()
+        chat.hide()
         for(const name of handlers_keys)
             game.removeEventListener(name, handlers[name])
     }
@@ -146,7 +148,7 @@ async function lobby_crash_report(ctx: Context){
         } else if(action === 'show_cmd'){
             await input({
                 message: tr('Run the command in the terminal or paste it into a bat file'),
-                default: getLastLaunchCmd(),
+                default: game.getLastLaunchCmd(),
             })
         }
     }

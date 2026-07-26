@@ -1,4 +1,4 @@
-import { TypedEventEmitter, type AbortOptions } from "@libp2p/interface";
+import { type AbortOptions } from "@libp2p/interface";
 import { type DeferredView, render } from "../ui/remote/view";
 import type { ChatEventDetail, Game } from "../game/game";
 import { getCustomUsername, getName } from "../utils/namegen/namegen";
@@ -6,11 +6,7 @@ import { form, line, text } from "../ui/remote/types";
 import type { GamePlayer } from "../game/game-player";
 import { tr } from "../utils/translation";
 
-type ChatEvents = {
-    line: CustomEvent<string>
-}
-
-class Chat extends TypedEventEmitter<ChatEvents> {
+class Chat {
 
     private view!: DeferredView<void>
     public prerender(opts: Required<AbortOptions>){
@@ -22,7 +18,7 @@ class Chat extends TypedEventEmitter<ChatEvents> {
                 $listeners: {
                     submitted: (message) => {
                         this.view.get('Line').update(line(''))
-                        this.safeDispatchEvent('line', { detail: message })
+                        this.onLine(new CustomEvent('line', { detail: message }))
                     }
                 }
             }
@@ -42,21 +38,26 @@ class Chat extends TypedEventEmitter<ChatEvents> {
     private game: Game | undefined
 
     public bind(game: Game){
+        if(this.game == game) return
+        if(this.game) this.unbind()
         this.game = game
         game.addEventListener('joined', this.onJoined)
         game.addEventListener('chat', this.onChat)
-        chat.addEventListener('line', this.onLine)
+        
+    }
 
+    public show(){
         this.view.show()
     }
 
     public unbind(){
-        const game = this.game!
-        game.removeEventListener('joined', this.onJoined)
-        game.removeEventListener('chat', this.onChat)
-        chat.removeEventListener('line', this.onLine)
+        const game = this.game
+        game?.removeEventListener('joined', this.onJoined)
+        game?.removeEventListener('chat', this.onChat)
         this.game = undefined
+    }
 
+    public hide(){
         this.view.hide()
         this.lines.length = 0
         this.view.update(form({

@@ -1,4 +1,4 @@
-import { type AbortOptions, type Stream, TypedEventEmitter, StreamMessageEvent } from "@libp2p/interface"
+import { type AbortOptions, type Stream, StreamMessageEvent } from "@libp2p/interface"
 import { LengthPrefixedDecoder, type LengthPrefixedDecoderInit } from "@libp2p/utils"
 import { Uint8ArrayList } from "uint8arraylist"
 import * as varint from 'uint8-varint'
@@ -18,31 +18,45 @@ export class LengthPrefixedEncoder {
 }
 
 export type LengthPrefixedStreamInit = LengthPrefixedEncoderInit & LengthPrefixedDecoderInit
-//type LengthPrefixedStreamEvents = Pick<MessageStreamEvents, 'message'>
-export type LengthPrefixedStreamEvents = {
-    message: StreamMessageEvent
-}
-export class LengthPrefixedStream extends TypedEventEmitter<LengthPrefixedStreamEvents> {
+
+export class LengthPrefixedStream {
     private stream: Stream
     private encoder: LengthPrefixedEncoder
     private decoder: LengthPrefixedDecoder
+    public ondata?: (data: Uint8Array | Uint8ArrayList) => void
+    public onerror?: (err: Error) => void
+    public onclose?: () => void
     constructor(stream: Stream, init: LengthPrefixedStreamInit = {}){
-        super()
         this.stream = stream
         this.encoder = new LengthPrefixedEncoder(init)
         this.decoder = new LengthPrefixedDecoder(init)
-        this.onMessage = this.onMessage.bind(this)
-        this.stream.addEventListener('message', this.onMessage)
+        this.stream.addEventListener('message', (event) => {
+            for(const chunk of this.decoder.decode(event.data)) try {
+                this.ondata?.(chunk)
+            } catch(err) {
+                this.onerror?.(err as Error)
+            }
+        })
+        this.stream.addEventListener('close', (event) => {
+            if(event.error)
+                this.onerror?.(event.error)
+            this.onclose?.()
+        })
+        this.stream.addEventListener('remoteCloseWrite', (event) => {
+            this.onclose?.()
+        })
     }
     public send(data: Uint8ArrayList | Uint8Array){
-        return this.stream.send(this.encoder.encode(data))
+        try {
+            return this.stream.send(this.encoder.encode(data))
+        } catch(err){
+            this.onerror?.(err as Error)
+            return false
+        }
     }
     public close(opts?: AbortOptions){
-        this.stream.removeEventListener('message', this.onMessage)
-        return this.stream.close(opts)
-    }
-    private onMessage(event: StreamMessageEvent){
-        for(const chunk of this.decoder.decode(event.data))
-            this.safeDispatchEvent('message', new StreamMessageEvent(chunk))
+        this.stream.close(opts).catch((err) => {
+            this.onerror?.(err)
+        })
     }
 }
