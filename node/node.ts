@@ -20,7 +20,7 @@ import { mdns } from '@libp2p/mdns'
 import { uPnPNAT } from '@libp2p/upnp-nat'
 import { autoNAT } from '@libp2p/autonat'
 //import { autoNATv2 } from '@libp2p/autonat-v2'
-//import { contentPeerDiscovery } from '../network/libp2p/discovery/content-discovery'
+import { contentPeerDiscovery } from '../network/libp2p/discovery/content-discovery'
 import { pubsubPeerDiscovery } from '../network/libp2p/discovery/pubsub-discovery'
 import { customPing } from '../network/libp2p/ping'
 import { probe } from '../network/libp2p/probe'
@@ -43,13 +43,16 @@ import { PeerMap, PeerSet } from '@libp2p/peer-collections'
 import { peerIdFromCID, peerIdFromString } from '@libp2p/peer-id'
 import { PeerRecord, RecordEnvelope } from '@libp2p/peer-record'
 import { CODE_P2P_CIRCUIT, multiaddr, type Multiaddr } from '@multiformats/multiaddr'
+import { sha256 } from 'multiformats/hashes/sha2'
+import * as raw from 'multiformats/codecs/raw'
+import { CID } from 'multiformats/cid'
 
 import type { RTCDataChannel, RTCPeerConnection } from 'node-datachannel/polyfill'
 import type { ConnectionManager, TransportManager } from '@libp2p/interface-internal'
 
 import { console_log } from '../ui/remote/remote'
 import { args } from '../utils/args'
-import { appDiscoveryTopic, HARDCODED_SERVER_ADDRESSES, HARDCODED_SERVER_PEER_ID, NAME, rtcConfiguration, VERSION_STRING } from '../utils/constants-build'
+import { appDiscoveryContent, appDiscoveryTopic, HARDCODED_SERVER_ADDRESSES, HARDCODED_SERVER_PEER_ID, NAME, rtcConfiguration, VERSION_STRING } from '../utils/constants-build'
 import { deadlyRace, Deferred } from '../utils/promises'
 import { tr } from '../utils/translation'
 
@@ -167,6 +170,10 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
         opts?.signal?.throwIfAborted()
     }
 
+    const hash = await sha256.digest(Buffer.from(appDiscoveryContent, 'utf8'))
+    const cid = CID.createV1(raw.code, hash)
+    opts.signal.throwIfAborted()
+
     const node = await createLibp2p({
         nodeInfo: {
             name: NAME,
@@ -186,7 +193,7 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
             ]
         },
         transports: [
-            ...(args.allowInternet.value ? [
+            ...(args.globalDiscovery.value ? [
                 circuitRelayTransport(),
                 webRTC({ rtcConfiguration }),
             ] : []),
@@ -217,7 +224,7 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
             
             keychain: keychain(keychainInit),
 
-            ...(args.allowInternet.value ? {
+            ...(args.globalDiscovery.value ? {
                 kadDHT: kadDHT({
                     protocol: '/ipfs/kad/1.0.0',
                     peerInfoMapper: removePrivateAddressesMapper
@@ -240,7 +247,9 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
                         '/ip4/104.131.131.82/tcp/4001/p2p/QmaCpDMGvV2BGHeYERUEnRQAwe3N8SzbUtfsmvsqQLuvuJ',
                     ]
                 }),
-                //contentPeerDiscovery: contentPeerDiscovery({}),
+                contentPeerDiscovery: contentPeerDiscovery({
+                    cid,
+                }),
                 //torrentPeerDiscovery: torrentPeerDiscovery({
                 //    topic: appDiscoveryTopic,
                 //    autodial: true,
@@ -302,45 +311,48 @@ async function createNodeInternal(port: number, opts: Required<AbortOptions>){
 
 async function setup(node: LibP2PNode, opts: Required<AbortOptions>){
 
-    if(args.allowInternet.value){
+    if(args.globalDiscovery.value){
        await node.peerStore.patch(peerIdFromString(serverPeerIDString), {
            tags: { [`${KEEP_ALIVE}-rendezvous-server`]: { value: 1 } }
        }, opts)
     }
 
     //TODO: Reintroduce Autodial.
-    const peersDiscoveredByNode = new Set<string>()
-    const peersDiscoveredByMechanism = new Set<string>()
+    
     node.services.mdns?.addEventListener('peer', onPeerDiscoveredByMechanism)
     //node.services.rendezvous?.addEventListener('peer', onPeerDiscoveredByMechanism)
     node.services.pubsubPeerDiscovery?.addEventListener('peer', onPeerDiscoveredByMechanism)
+    node.services.contentPeerDiscovery?.addEventListener('peer', onPeerDiscoveredByMechanism)
     function onPeerDiscoveredByMechanism(event: CustomEvent<PeerInfo>){
-        const peer = event.detail
-        //console_log('*:peer', peer.id.toString())
-        if(!peersDiscoveredByMechanism.has(peer.id.toString())){
-            peersDiscoveredByMechanism.add(peer.id.toString())
-            if(peersDiscoveredByNode.has(peer.id.toString())){
-                node.safeDispatchEvent('same-program-peer:discovery', { detail: peer.id })
-                patchAndDial(peer.id).catch((/*err*/) => { /* Ignore */ })
-            }
-        }
+        onPeerDiscovered('byMechanism', event.detail.id)
     }
+
     node.addEventListener('peer:discovery', onPeerDiscoveredByNode)
     function onPeerDiscoveredByNode(event: CustomEvent<PeerInfo>){
-        const peer = event.detail
-        //console_log('discovery:peer', peer.id.toString())
-        if(!peersDiscoveredByNode.has(peer.id.toString())){
-            peersDiscoveredByNode.add(peer.id.toString())
-            if(peersDiscoveredByMechanism.has(peer.id.toString())){
-                node.safeDispatchEvent('same-program-peer:discovery', { detail: peer.id })
-                patchAndDial(peer.id).catch((/*err*/) => { /* Ignore */ })
-            }
+        onPeerDiscovered('byNode', event.detail.id)
+    }
+
+    type DiscoveredPeer = { byNode: boolean, byMechanism: boolean, nTimes: number }
+    const peersDiscovered = new PeerMap<DiscoveredPeer>()
+    function onPeerDiscovered(by: 'byNode' | 'byMechanism', peerId: PeerId){
+        let peerDiscovered = peersDiscovered.get(peerId)
+        if(!peerDiscovered){
+            peerDiscovered = { byNode: false, byMechanism: false, nTimes: 0 }
+            peersDiscovered.set(peerId, peerDiscovered)
+        }
+        peerDiscovered[by] = true
+        if(peerDiscovered.byNode && peerDiscovered.byMechanism){
+            peerDiscovered.byNode = peerDiscovered.byMechanism = false
+            peerDiscovered.nTimes = peerDiscovered.nTimes + 1
+            const peerDiscoveredForFirstTime = peerDiscovered.nTimes == 1
+            if(peerDiscoveredForFirstTime)
+                node.safeDispatchEvent('same-program-peer:discovery', { detail: peerId })
+            dialPeer(peerId, peerDiscoveredForFirstTime).catch((/*err*/) => { /* Ignore */ })
         }
     }
-    const patchedPeers = new PeerSet()
-    async function patchAndDial(peerId: PeerId){
-        if(!patchedPeers.has(peerId)){
-            patchedPeers.add(peerId)
+
+    async function dialPeer(peerId: PeerId, markAsSameProgram: boolean){
+        if(markAsSameProgram){
             await node.peerStore.patch(peerId, {
                 tags: {
                     [`${KEEP_ALIVE}-same-program`]: { value: 1 }
@@ -470,7 +482,7 @@ export async function stop(node: LibP2PNode){
         (async () => {
             const pubSubPeerDiscovery = node.services.pubsubPeerDiscovery
             await pubSubPeerDiscovery?.beforeStop()
-            pubSubPeerDiscovery.stop()
+            await pubSubPeerDiscovery.stop()
         })(),
         //(async () => {
         //    const rendezvous = node.services.rendezvous

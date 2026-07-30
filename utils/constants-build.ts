@@ -37,8 +37,10 @@ export const HARDCODED_ANNOUNCE_URLS = [
 ]
 
 const discoveryTopic = '_peer-discovery._p2p._pubsub'
+const discoveryContent = '_peer-discovery._p2p._dht'
 const appName = ['com', 'github', 'DaughterOfZaun', 'Fishbones']
 export const appDiscoveryTopic = `${appName.join('.')}.${discoveryTopic}`
+export const appDiscoveryContent = `${appName.join('.')}.${discoveryContent}`
 
 export const rtcConfiguration = {
     iceServers: [

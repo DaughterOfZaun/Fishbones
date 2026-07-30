@@ -32,7 +32,7 @@ export async function launchServer(serverVersion: ServerVersion, info: GameInfo,
     })
     
     await startProcess(LOG_PREFIX, serverSubprocess, 'stdout', (chunk) => {
-        return /\b(?:Game)?Server (?:is )?ready\b/.test(chunk)
+        return /\b(?:Game|Server)+ (?:is )?ready\b/.test(chunk)
         //return chunk.includes("Server is ready, clients can now connect")
         //    || chunk.includes("GameServer ready for clients to connect on Port")
         /*

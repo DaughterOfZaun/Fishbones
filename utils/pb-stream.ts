@@ -29,7 +29,6 @@ export class ProtobufStream<Input, Output> {
         }
     }
     public send(data: Output){
-        console.log('send', data)
         try {
             return this.stream.send(this.encoder.encode(data))
         } catch(err) {

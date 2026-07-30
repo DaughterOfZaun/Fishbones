@@ -8,23 +8,20 @@ import path from 'node:path'
 
 const LOG_PREFIX = 'CLIENT'
 
-export type LaunchArgs = { version: ClientVersion, ip: string, port: number, key: string, clientId: number }
-export type ChildProcessWithLaunchArgs = { proc: ChildProcess, launchArgs: LaunchArgs }
-
-export function getLastLaunchCmd(client: ChildProcessWithLaunchArgs){
-    const { version, ip, port, key, clientId } = client.launchArgs
+export type ClientLaunchArgs = { version: ClientVersion, ip: string, port: number, key: string, clientId: number }
+export function getLaunchCmd(launchArgs: ClientLaunchArgs){
+    const { version, ip, port, key, clientId } = launchArgs
     const gcPkg = clients[version]!
     const gcPkg_exeName = path.basename(gcPkg.exe)
     return 'start ' + ['', gcPkg_exeName, '', '', '', [ip, port, key, clientId].map(arg => arg.toString()).join(' ')].map(arg => `"${arg}"`).join(' ')
 }
 
-export async function launchClient(version: ClientVersion, ip: string, port: number, key: string, clientId: number, opts: Required<AbortOptions>): Promise<ChildProcessWithLaunchArgs> {
-    const launchArgs = { version, ip, port, key, clientId }
-    return await relaunchClient({ launchArgs }, opts)
+export async function launchClient(args: ClientLaunchArgs, opts: Required<AbortOptions>): Promise<ChildProcess> {
+    return await relaunchClient(undefined, args, opts)
 }
 
-export async function relaunchClient(client: { proc?: ChildProcess, launchArgs: LaunchArgs }, opts: Required<AbortOptions>): Promise<ChildProcessWithLaunchArgs> {
-    const { version, ip, port, key, clientId } = client.launchArgs
+export async function relaunchClient(clientSubprocess: ChildProcess | undefined, launchArgs: ClientLaunchArgs, opts: Required<AbortOptions>): Promise<ChildProcess> {
+    const { version, ip, port, key, clientId } = launchArgs
     const gcPkg = clients[version]!
 
     const gcArgs = ['8394', 'LoLLauncher.exe', 'unknown', ([ip, port.toString(), sanitize_bfkey(key), clientId.toString()]).join(' ')]
@@ -32,15 +29,8 @@ export async function relaunchClient(client: { proc?: ChildProcess, launchArgs: 
     //console.log('%s %s', gcPkg.exe, gcArgsStr)
     //logger.log('%s %s', gcPkg.exe, gcArgsStr)
 
-    const launchArgs = client.launchArgs
-    let clientSubprocess = client.proc
-    if(clientSubprocess){
-        const client = {
-            proc: clientSubprocess,
-            launchArgs
-        }
-        await stopClient(client, opts)
-    }
+    if(clientSubprocess)
+        await stopClient(clientSubprocess, opts)
     
     // eslint-disable-next-line prefer-const
     let exe = gcPkg.exe
@@ -79,14 +69,11 @@ export async function relaunchClient(client: { proc?: ChildProcess, launchArgs: 
         return !!chunk.trim().length
     }, opts, Infinity/*30_000*/)
 
-    return {
-        proc: clientSubprocess,
-        launchArgs,
-    }
+    return clientSubprocess
 }
 
-export async function stopClient(client: ChildProcessWithLaunchArgs, opts: Required<AbortOptions>){
-    await killSubprocess(LOG_PREFIX, client.proc, opts)
+export async function stopClient(clientSubprocess: ChildProcess, opts: Required<AbortOptions>){
+    await killSubprocess(LOG_PREFIX, clientSubprocess, opts)
 }
 
 /*

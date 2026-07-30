@@ -14,13 +14,13 @@ import { RecordEnvelope } from '@libp2p/peer-record'
 import { privateKeyFromRaw } from '@libp2p/crypto/keys'
 
 const GODOT_EDITOR_EXE =
-    process.platform == 'linux' ? './dist/Godot_v4.6.3-stable_linux.x86_64' :
-        process.platform == 'win32' ? './dist/Godot_v4.6.3-stable_win64.exe' :
+    process.platform == 'linux' ? './dist/Godot_v4.7.1-stable_linux.x86_64' :
+        process.platform == 'win32' ? './dist/Godot_v4.7.1-stable_win64.exe' :
             undefined!
 if (GODOT_EDITOR_EXE === undefined)
     throw new Error('Platform not specified or not supported')
 
-const GODOT_TEMPLATES_DIR = path.join(process.env['HOME'] ?? '~', '.local/share/godot/export_templates/4.6.3.stable')
+const GODOT_TEMPLATES_DIR = path.join(process.env['HOME'] ?? '~', '.local/share/godot/export_templates/4.7.1.stable')
 
 const release = process.argv.includes('release') ? 'release' : 'debug'
 
@@ -259,8 +259,8 @@ if(process.argv.includes('version')){
     const vf = {
         date: Date.now(),
         versionNumber,
-        windows: await getPkg('Windows', replacements),
-        linux: await getPkg('Linux', replacements),
+        windows: await getPkg('Windows', replacements, versionString),
+        linux: await getPkg('Linux', replacements, '0.0.3.51'),
         replacements: Array.from(replacements)
         //releasesUrl: '',
     }
@@ -277,7 +277,7 @@ if(process.argv.includes('version')){
     const b64 = marshaled.toString('base64')
     console.log(b64, b64.length)
 }
-async function getPkg(platform: 'Windows' | 'Linux', replacements: Set<string>){
+async function getPkg(platform: 'Windows' | 'Linux', replacements: Set<string>, versionString: string){
     const dirName = 'Fishbones'
     const zipExt = 'zip'
     const arch = 'x64'
@@ -309,15 +309,15 @@ async function getPkg(platform: 'Windows' | 'Linux', replacements: Set<string>){
         //zipInfoHashV2: '',
         zipWebSeeds: [
             `${HARDCODED_GH_DOWNLOAD_URL}/${zipName}`,
-            `${HARDCODED_HTTP_SERVER_URL}/${zipName}`,
+            //`${HARDCODED_HTTP_SERVER_URL}/${zipName}`,
         ],
         zipTorrentWebSeeds: [
             `${HARDCODED_GH_DOWNLOAD_URL}/${zipTorrentName}`,
-            `${HARDCODED_HTTP_SERVER_URL}/${zipTorrentName}`,
+            //`${HARDCODED_HTTP_SERVER_URL}/${zipTorrentName}`,
         ],
         vfWebSeeds: [
             `${HARDCODED_GH_DOWNLOAD_URL}/${versionFileName}`,
-            `${HARDCODED_HTTP_SERVER_URL}/${versionFileName}`,
+            //`${HARDCODED_HTTP_SERVER_URL}/${versionFileName}`,
         ],
     }
     

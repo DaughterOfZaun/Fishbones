@@ -171,7 +171,7 @@ async function checkFreeSpaceAndGetErrorMsg(opts: Required<AbortOptions>){
             
             ...(
                 (args.installBWServer.value) ? (
-                    (args.update.value) ? [
+                    (args.updateBWServer.value) ? [
                         checkDirSize(bwPkg.checkUnpackBy, bwPkg.zip, bwPkg.size, opts),
                     ] : [
                         checkDirSize(bwPkg.checkUnpackBy, bwPkg.zip, bwPkg.size, opts),
@@ -277,12 +277,12 @@ async function repairOrThrow(opts: Required<AbortOptions>){
         repairTorrents(opts).catch((err) => { console_log(tr('Restoring torrent files failed:', {}), inspect(err)) }),
         repair7z(opts), //.catch((err) => { console_log(tr('Restoring 7z archiver executable failed:', {}), inspect(err)); throw err }),
         repairAria2(opts), //.catch((err) => { console_log(tr('Restoring Aria2 downloader executable failed:', {}), inspect(err)); throw err }),
-        !(args.upgrade.value) ? Promise.resolve() :
+        !(args.selfUpgrade.value) ? Promise.resolve() :
         checkForUpdates(opts).catch(err => { console_log(tr('Update check failed:', {}), inspect(err)) }),
     ])
     throwAnyRejection(results)
 
-    if(args.upgrade.value && isNewVersionAvailable()) try {
+    if(args.selfUpgrade.value && isNewVersionAvailable()) try {
 
         // A hack to speed up download.
         if(await fs_exists(fbPkgCurrent.zip, opts) && !await fs_exists(fbPkg.zip, opts)){
@@ -336,14 +336,12 @@ async function repairOrThrow(opts: Required<AbortOptions>){
         Promise.allSettled([
             repairSDK(opts),
             (async () => {
-                if(args.update.value || args.mrNumber.value !== undefined){
-                    try {
-                        await repairGit(opts)
-                        bwUpdated = await update(bwPkg, opts)
-                        return // OK
-                    } catch(err) {
-                        console_log(tr('Updating game server package failed:', {}), inspect(err))
-                    }
+                if(args.updateBWServer.value || args.mrNumber.value !== undefined) try {
+                    await repairGit(opts)
+                    bwUpdated = await update(bwPkg, opts)
+                    return // OK
+                } catch(err) {
+                    console_log(tr('Updating game server package failed:', {}), inspect(err))
                 }
                 await repairArchived(bwPkg, opts)
             })(),
@@ -380,8 +378,11 @@ async function repairOrThrow(opts: Required<AbortOptions>){
         Promise.allSettled([
             repairSDK(opts),
             (async () => {
-                await repairGit(opts)
-                tgUpdated = await update(tgPkg, opts)
+                if(args.updateTGServer.value || !await fs_exists(tgPkg.checkUnpackBy, opts)){
+                    await repairGit(opts)
+                    tgUpdated = await update(tgPkg, opts)
+                    return
+                }
             })(),
         ]).then(async (results) => {
             throwAnyRejection(results)
@@ -403,35 +404,8 @@ async function repairOrThrow(opts: Required<AbortOptions>){
                 gc126ExeIsMissing = false
 
                 return Promise.allSettled([
-                    (async () => {
-                        //await fs_ensureDir(gc126Pkg.exeDir, opts)
-                        const d3dx9_39_dll_name = 'd3dx9_39.dll'
-                        const d3dx9_39_dll_src = path.join(downloads, d3dx9_39_dll_name)
-                        const d3dx9_39_dll_dst = path.join(gc126Pkg.exeDir, d3dx9_39_dll_name)
-                        if(!await fs_exists(d3dx9_39_dll_dst, opts, true)){
-                            await extractFile(embedded.d3dx9_39_dll, d3dx9_39_dll_src, opts)
-                            await fs_copyFile(d3dx9_39_dll_src, d3dx9_39_dll_dst, opts) //HACK: To bypass "Access denied" error.
-                        }
-                        //await ensureSymlink()
-                    })(),
-                    (async () => {
-                        const fontconfig_path = path.join(gc126Pkg.exeDir, 'DATA', 'Menu', 'fontconfig_en_US.txt')
-                        let fontconfig = await fs_readFile(fontconfig_path, { ...opts, encoding: 'utf8' })
-                        if(!fontconfig) return
-                            fontconfig = fontconfig.trim() + '\n'
-                        let fontconfig_changed = false
-                        const gsInfo = new BrokenWingsDataInfo(bwPkg.dir)
-                        const bots = new Set([gsInfo.bots, ...Object.values(gsInfo.maps).map(map => map.bots)].flat())
-                        for(const short of bots){
-                            const name = champions.find(champ => champ.short == short)?.name ?? short
-                            if(!fontconfig.includes(`"game_bot_${short}"`)){
-                                fontconfig += `tr "game_bot_${short}" = "${name} Bot"` + '\n'
-                                fontconfig_changed = true
-                            }
-                        }
-                        if(fontconfig_changed)
-                            await fs_writeFile(fontconfig_path, fontconfig, { ...opts, encoding: 'utf8' })
-                    })(),
+                    repairDirectX9Dll(gc126Pkg, opts),
+                    repairFontConfig(gc126Pkg, opts),
                 ]).then((results) => {
                     throwAnyRejection(results)
                 })
@@ -462,6 +436,12 @@ async function repairOrThrow(opts: Required<AbortOptions>){
         !(args.installS4Client.value) ? Promise.resolve() :
         repairArchived(gc420Pkg, opts).then(() => {
             gc420ExeIsMissing = false
+
+            return Promise.allSettled([
+                repairDirectX9Dll(gc126Pkg, opts),
+            ]).then((results) => {
+                throwAnyRejection(results)
+            })
         }),
     ])
     throwAnyRejection(results)
@@ -501,6 +481,36 @@ async function repairOrThrow(opts: Required<AbortOptions>){
             }
         })
     }
+}
+
+async function repairDirectX9Dll(gcPkg: { exeDir: string }, opts: Required<AbortOptions>){
+    //await fs_ensureDir(gcPkg.exeDir, opts)
+    const d3dx9_39_dll_name = 'd3dx9_39.dll'
+    const d3dx9_39_dll_src = path.join(downloads, d3dx9_39_dll_name)
+    const d3dx9_39_dll_dst = path.join(gcPkg.exeDir, d3dx9_39_dll_name)
+    if(!await fs_exists(d3dx9_39_dll_dst, opts, true)){
+        await extractFile(embedded.d3dx9_39_dll, d3dx9_39_dll_src, opts)
+        await fs_copyFile(d3dx9_39_dll_src, d3dx9_39_dll_dst, opts) //HACK: To bypass "Access denied" error.
+    }
+}
+
+async function repairFontConfig(gcPkg: { exeDir: string }, opts: Required<AbortOptions>){
+    const fontconfig_path = path.join(gcPkg.exeDir, 'DATA', 'Menu', 'fontconfig_en_US.txt')
+    let fontconfig = await fs_readFile(fontconfig_path, { ...opts, encoding: 'utf8' })
+    if(!fontconfig) return
+        fontconfig = fontconfig.trim() + '\n'
+    let fontconfig_changed = false
+    const gsInfo = new BrokenWingsDataInfo(bwPkg.dir)
+    const bots = new Set([gsInfo.bots, ...Object.values(gsInfo.maps).map(map => map.bots)].flat())
+    for(const short of bots){
+        const name = champions.find(champ => champ.short == short)?.name ?? short
+        if(!fontconfig.includes(`"game_bot_${short}"`)){
+            fontconfig += `tr "game_bot_${short}" = "${name} Bot"` + '\n'
+            fontconfig_changed = true
+        }
+    }
+    if(fontconfig_changed)
+        await fs_writeFile(fontconfig_path, fontconfig, { ...opts, encoding: 'utf8' })
 }
 
 async function tryBuild(pkg: PkgInfoCSProj, opts: Required<AbortOptions>){

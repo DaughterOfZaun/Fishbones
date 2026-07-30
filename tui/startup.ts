@@ -25,9 +25,29 @@ export async function startup(opts: Required<AbortOptions>){
 
     const isAuto = args.wineCommand.value == WINE_CMD_AUTO
 
+    const areAnyUpdatesEnabled = () => false
+        || args.selfUpgrade.value
+        || args.updateBWServer.value
+        || args.updateTGServer.value
+
     const view: DeferredView<void> = render('Startup', form({
-        EnableInternet: checkbox(args.allowInternet.value, (on) => args.allowInternet.save(on)),
-        UpdateLauncher: checkbox(args.upgrade.value, (on) => args.upgrade.save(on)),
+
+        EnableUpdates: checkbox(areAnyUpdatesEnabled(), (on) => {
+            
+            args.selfUpgrade.set(on)
+            args.updateBWServer.set(on)
+            args.updateTGServer.set(on)
+            args.save()
+
+            view.update(form({
+                UpdateLauncher: checkbox(on),
+                UpdateServer: checkbox(on),
+                UpdateTGServer: checkbox(on),
+            }))
+        }),
+
+        EnableInternet: checkbox(args.globalDiscovery.value, (on) => args.globalDiscovery.save(on)),
+        UpdateLauncher: checkbox(args.selfUpgrade.value, (on) => args.selfUpgrade.save(on)),
         InstallModPack: checkbox(args.installModPack.value, (on) => args.installModPack.save(on)),
         DownloadSource: option(
             [
@@ -42,11 +62,11 @@ export async function startup(opts: Required<AbortOptions>){
                 args.megaDownload.save((index & DownloadSource.Mega) != 0)
             }
         ),
-        UpdateServer: checkbox(args.update.value, (on) => args.update.save(on)),
+        UpdateServer: checkbox(args.updateBWServer.value, (on) => args.updateBWServer.save(on)),
         ServerOrigin: option(
             bwPkg.remotes.map((origin, id) => ({ id, text: origin.name })),
-            args.remoteIdx.value,
-            (index) => args.remoteIdx.save(index),
+            args.bwRemoteIdx.value,
+            (index) => args.bwRemoteIdx.save(index),
         ),
         //EditServerOrigins: button(),
         ForceEnglish: checkbox(
@@ -61,7 +81,8 @@ export async function startup(opts: Required<AbortOptions>){
         InstallBWServer: checkbox(args.installBWServer.value, (on) => args.installBWServer.save(on)),
         InstallCBServer: checkbox(args.installCBServer.value, (on) => args.installCBServer.save(on)),
         InstallTGServer: checkbox(args.installTGServer.value, (on) => args.installTGServer.save(on)),
-
+        UpdateTGServer: checkbox(args.updateTGServer.value, (on) => args.updateTGServer.save(on)),
+        
         LinuxSpecificOptions: base(process.platform == 'linux'),
         WineCommandType: option(
             [
@@ -141,20 +162,34 @@ export async function startup(opts: Required<AbortOptions>){
         }
     ])
 
+    //args.selfUpgrade.on('change', onAnyUpdateOptionChanged)
+    //args.updateBWServer.on('change', onAnyUpdateOptionChanged)
+    //args.updateTGServer.on('change', onAnyUpdateOptionChanged)
+    //view.addCleanupCallback(() => {
+    //    args.selfUpgrade.off('change', onAnyUpdateOptionChanged)
+    //    args.updateBWServer.off('change', onAnyUpdateOptionChanged)
+    //    args.updateTGServer.off('change', onAnyUpdateOptionChanged)
+    //})
+    //function onAnyUpdateOptionChanged(){
+    //    view.update(form({
+    //        EnableUpdates: checkbox(areAnyUpdatesEnabled()),
+    //    }))
+    //}
+
     return view.promise.then(() => {
         args.save()
     })
 }
 
-function clientLocation(getView: () => DeferredView<void>, gcPkg: { dir: string }, installS1Client: 'installS1Client' | 'installS4Client', InstallS1Client: string, S1ClientLocation: string, S1ClientCustomLocation: string, gcLocation: 'gc126Location' | 'gc420Location'){
+function clientLocation(getView: () => DeferredView<void>, gcPkg: { dir: string }, installClient: 'installS1Client' | 'installS4Client', InstallClient: string, ClientLocation: string, CustomClientLocation: string, gcLocation: 'gc126Location' | 'gc420Location'){
     const GC_LOCATION_CUSTOM_IDX = gcLocationFromStringToIndex[GC_LOCATION_CUSTOM]!
     const index = gcLocationFromStringToIndex[args[gcLocation].value] ?? GC_LOCATION_CUSTOM_IDX
     const isCustom = index == GC_LOCATION_CUSTOM_IDX
     return {
-        [InstallS1Client]: checkbox(args[installS1Client].value, (on) => {
-            args[installS1Client].save(on)
+        [InstallClient]: checkbox(args[installClient].value, (on) => {
+            args[installClient].save(on)
         }),
-        [S1ClientLocation]: option(
+        [ClientLocation]: option(
             [
                 { id: gcLocationFromStringToIndex[GC_LOCATION_AUTO]!, text: tr('automatic location') },
                 { id: gcLocationFromStringToIndex[GC_LOCATION_C_DRIVE]!, text: tr('C drive') },
@@ -166,10 +201,10 @@ function clientLocation(getView: () => DeferredView<void>, gcPkg: { dir: string 
                 const view = getView()
                 const isCustom = index == GC_LOCATION_CUSTOM_IDX
                 if(!isCustom) args[gcLocation].save(gcLocationFromIndexToString[index]!)
-                view.get(S1ClientCustomLocation).update(line(gcPkg.dir, undefined, isCustom))
+                view.get(CustomClientLocation).update(line(gcPkg.dir, undefined, isCustom))
             },
         ),
-        [S1ClientCustomLocation]: line(gcPkg.dir, (text) => {
+        [CustomClientLocation]: line(gcPkg.dir, (text) => {
             args.gc126Location.save(text)
         }, isCustom),
     }

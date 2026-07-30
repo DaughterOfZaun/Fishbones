@@ -8,7 +8,7 @@ import { tcp } from '@libp2p/tcp'
 import { patchedCrypto as crypto } from '../utils/crypto'
 import { defaultLogger } from '@libp2p/logger'
 import { gossipsub } from '../network/libp2p/pinning-v2'
-import { appDiscoveryTopic, HARDCODED_SERVER_ADDRESSES, rtcConfiguration } from '../utils/constants-build'
+import { appDiscoveryTopic, HARDCODED_SERVER_ADDRESSES, NAME, rtcConfiguration, VERSION_STRING } from '../utils/constants-build'
 //import { rendezvousServer } from "@canvas-js/libp2p-rendezvous/server"
 import { circuitRelayServer } from '@libp2p/circuit-relay-v2'
 import fs from 'node:fs/promises'
@@ -24,18 +24,16 @@ import { handler } from '../network/libp2p/handler'
 import { probe } from '../network/libp2p/probe'
 import type { LibP2PNode } from './node'
 import { hostLocal } from '../tui/browser'
-import { listenForUncaughtExceptions, safeOptions, shutdownOptions } from '../utils/process/process'
+import { listenForUncaughtExceptions, shutdownOptions } from '../utils/process/process'
 import type { Game } from '../game/game'
 import { Features, LOBBY_PROTOCOL, PROXY_PROTOCOL } from '../utils/constants'
 import { Deferred } from '../utils/promises'
-import { stopServer } from '../utils/process/server'
-import { logger } from '../utils/log'
-import { inspect } from 'node:util'
-import { clients_push, combinations_merge, combinations_push, KnownClients, KnownServers, servers_push } from '../utils/data/constants/client-server-combinations'
+import { clients_push, combinations_find, combinations_merge, combinations_push, KnownClients, KnownServers, servers_push, type Combination } from '../utils/data/constants/client-server-combinations'
 import { ClientDataInfoV126, gc126Pkg } from '../utils/data/packages/game-client-126'
 import { BrokenWingsDataInfo, bwPkg } from '../utils/data/packages/game-server-bw'
 import { Team } from '../tui/lobby/lobby'
-import type { GamePlayer } from '../game/game-player'
+import { ClientDataInfoV420, gc420Pkg } from '../utils/data/packages/game-client-420'
+import { TestGroundsDataInfo, tgPkg } from '../utils/data/packages/game-server-tg'
 //import { peerIdFromPrivateKey } from '@libp2p/peer-id'
 
 interface Timeout {
@@ -86,9 +84,9 @@ try {
 const node = await createLibp2p({
     privateKey,
     nodeInfo: {
-        //name: NAME,
-        //version: VERSION,
-        //userAgent: `${NAME}/${VERSION}`
+        name: NAME,
+        version: VERSION_STRING,
+        userAgent: `${NAME}/${VERSION_STRING}`
     },
     addresses: {
         listen: [
@@ -153,9 +151,13 @@ const node = await createLibp2p({
 
 console.log(node.getMultiaddrs().map(ma => ma.toString()))
 
-const client = clients_push(gc126Pkg, new ClientDataInfoV126(gc126Pkg.dir), KnownClients.v126, 'v1.0.0.126 (Season 1)')
-const server = servers_push(bwPkg, new BrokenWingsDataInfo(bwPkg.dir), KnownServers.BrokenWings, 'BrokenWings (Season 1)')
-const combo = combinations_push(client, server)
+// This code is extracted from Repair.
+const v126Client = clients_push(gc126Pkg, new ClientDataInfoV126(gc126Pkg.dir), KnownClients.v126, 'v1.0.0.126 (Season 1)')
+const bwServer = servers_push(bwPkg, new BrokenWingsDataInfo(bwPkg.dir), KnownServers.BrokenWings, 'BrokenWings (Season 1)')
+const s1combo = combinations_push(v126Client, bwServer)
+const v420client = clients_push(gc420Pkg, new ClientDataInfoV420(gc420Pkg.dir), KnownClients.v420, 'v4.20 (Season 4)')
+const tgServer = servers_push(tgPkg, new TestGroundsDataInfo(tgPkg.dir), KnownServers.TestGrounds, 'TestGrounds (Season 4)')
+const s4combo = combinations_push(v420client, tgServer)
 combinations_merge()
 
 node.services.pubsubPeerDiscovery.setData({
@@ -165,22 +167,30 @@ node.services.pubsubPeerDiscovery.setData({
     icon: 0,
 })
 
-const opts = shutdownOptions
-const name = 'Game_Manager_Bot', icon = 0
-await hostLocal(node as unknown as LibP2PNode, name, icon, lobby, setup, opts)
+await Promise.all([
+    { name: 'Automatic_S1_Game', combo: s1combo, map: 4 /* Twisted Threeline */, mode: 0 /* CLASSIC */, players: 3 },
+    //{ name: 'Automatic_S4_Game', combo: s4combo, map: 1 /*  Summoner's Rift  */, mode: 0 /* CLASSIC */, players: 5 },
+].map(options => {
+    const opts = shutdownOptions
+    const name = 'Game_Manager_Bot', icon = 0
+    const libP2PNode = node as unknown as LibP2PNode
+    return hostLocal(libP2PNode, name, icon, lobby, (game, opts) => setup(game, { ...opts, ...options }), opts)
+}))
 
+type SetupOptions = { name: string, combo: Combination, map: number, mode: number, players: number }
 // eslint-disable-next-line @typescript-eslint/require-await, @typescript-eslint/no-unused-vars
-async function setup(game: Game, opts: Required<AbortOptions>){
+async function setup(game: Game, opts: Required<AbortOptions> & SetupOptions){
+    const { name, combo, map, mode, players } = opts
 
     game.features.set(Features.SPELLS_DISABLED, false)
     game.features.set(Features.BYPASS_ENABLED, true)
 
-    game.name.value = 'Automatic_Game'
-    game.map.value = 4 //HACK: Twisted Threeline
-    game.mode.value = 0 //HACK: Classic
-    game.playersMax.value = 3
-    game.serverVersion = KnownServers.BrokenWings
-    game.clientVersion = KnownClients.v126
+    game.name.value = name
+    game.map.value = map
+    game.mode.value = mode
+    game.playersMax.value = players
+    game.serverVersion = combo.server.version
+    game.clientVersion = combo.client.version
 
     game.champions.value = combo.champions.keys().toArray()
     game.spells.value = combo.spells.keys().toArray()
@@ -212,7 +222,7 @@ async function lobby(_game: Game, opts: Required<AbortOptions>){
     const me = game.getPlayer()!
     me.team.value = Team.Purple
     me.difficulty.value = 0 //HACK: Newbie.
-    assignRandomBotChampion(game, me)
+    assignRandomBotChampion(game)
 
     for(;;){
 
@@ -311,7 +321,9 @@ async function lobby(_game: Game, opts: Required<AbortOptions>){
 }
 
 // This code is extracted from LocalGame.
-function assignRandomBotChampion(game: Game, player: GamePlayer){
+function assignRandomBotChampion(game: Game){
+    const combo = combinations_find(game.clientVersion, game.serverVersion)!
+
     const existingBots = game.getPlayers(true)
         .filter(player => player.isBot && player.champion.value !== undefined)
         .map(player => player.champion.value!)

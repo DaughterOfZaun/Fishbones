@@ -193,8 +193,8 @@ spinner = ExtResource("4_ycdy4")
 select = ExtResource("5_w48qg")
 checkbox = ExtResource("6_vivmo")
 input = ExtResource("7_2cqfq")
-embedded_js = "res://embedded/index-0.0.3.52.js"
-embedded_js_map = "res://embedded/index-0.0.3.52.js.map"
+embedded_js = "res://embedded/index-0.0.3.53.js"
+embedded_js_map = "res://embedded/index-0.0.3.53.js.map"
 embedded_exe = "res://embedded/node-v26.3.0-win-x64.exe"
 embedded_lib_0 = "res://embedded/node_datachannel-65apsw7k.node"
 embedded_file_0 = "res://embedded/7za-2601-windows-x64.exe"
@@ -303,40 +303,17 @@ size_flags_vertical = 3
 theme_override_constants/separation = 0
 alignment = 2
 
+[node name="#EnableUpdates" type="CheckBox" parent="Container/TabContainer/#Startup/VBoxContainer" unique_id=1768438988]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+button_pressed = true
+text = "Enable online updates"
+
 [node name="#EnableInternet" type="CheckBox" parent="Container/TabContainer/#Startup/VBoxContainer" unique_id=475046149]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
 button_pressed = true
-text = "Search for other players on the Internet"
-
-[node name="#UpdateLauncher" type="CheckBox" parent="Container/TabContainer/#Startup/VBoxContainer" unique_id=755542273]
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-button_pressed = true
-text = "Check and download launcher updates"
-
-[node name="HBoxContainer1" type="HBoxContainer" parent="Container/TabContainer/#Startup/VBoxContainer" unique_id=1325501841]
-layout_mode = 2
-
-[node name="CheckBox" type="CheckBox" parent="Container/TabContainer/#Startup/VBoxContainer/HBoxContainer1" unique_id=1746915543]
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-disabled = true
-button_pressed = true
-text = "Download files from"
-
-[node name="#DownloadSource" type="OptionButton" parent="Container/TabContainer/#Startup/VBoxContainer/HBoxContainer1" unique_id=675243991]
-layout_mode = 2
-theme_override_font_sizes/font_size = 14
-selected = 0
-fit_to_longest_item = false
-item_count = 3
-popup/item_0/text = "torrent + mega.nz"
-popup/item_0/id = 0
-popup/item_1/text = "torrent"
-popup/item_1/id = 1
-popup/item_2/text = "mega.nz"
-popup/item_2/id = 2
+text = "Search for players online"
 
 [node name="#ForceEnglish" type="CheckBox" parent="Container/TabContainer/#Startup/VBoxContainer" unique_id=297896498]
 layout_mode = 2
@@ -354,6 +331,38 @@ title_position = 1
 visible = false
 layout_mode = 2
 theme_override_constants/separation = 0
+
+[node name="#UpdateLauncher" type="CheckBox" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer" unique_id=755542273]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+button_pressed = true
+text = "Check and download launcher updates"
+
+[node name="HBoxContainer1" type="HBoxContainer" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer" unique_id=1325501841]
+layout_mode = 2
+
+[node name="CheckBox" type="CheckBox" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer/HBoxContainer1" unique_id=1746915543]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+disabled = true
+button_pressed = true
+text = "Download files from"
+
+[node name="#DownloadSource" type="OptionButton" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer/HBoxContainer1" unique_id=675243991]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+selected = 0
+fit_to_longest_item = false
+item_count = 3
+popup/item_0/text = "torrent + mega.nz"
+popup/item_0/id = 0
+popup/item_1/text = "torrent"
+popup/item_1/id = 1
+popup/item_2/text = "mega.nz"
+popup/item_2/id = 2
+
+[node name="HSeparator0" type="HSeparator" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer" unique_id=36129693]
+layout_mode = 2
 
 [node name="HBoxContainer3" type="HBoxContainer" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer" unique_id=525985444]
 layout_mode = 2
@@ -478,7 +487,12 @@ text = "Install Chronobreak game server"
 [node name="#InstallTGServer" type="CheckBox" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer" unique_id=54819545]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
-text = "Install/Update TestGrounds game server"
+text = "Install TestGrounds game server"
+
+[node name="#UpdateTGServer" type="CheckBox" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer" unique_id=1104378959]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Update TestGrounds game server"
 
 [node name="#LinuxSpecificOptions" type="VBoxContainer" parent="Container/TabContainer/#Startup/VBoxContainer/FoldableContainer/VBoxContainer" unique_id=2003036681]
 layout_mode = 2

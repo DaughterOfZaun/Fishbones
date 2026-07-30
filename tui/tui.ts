@@ -3,8 +3,6 @@ import { type Game } from '../game/game'
 import { type LibP2PNode } from '../node/node'
 import { TITLE } from '../utils/constants-build'
 import { type AbortOptions } from '@libp2p/interface'
-import { getLastLaunchCmd } from '../utils/process/client'
-import { Deferred } from '../utils/promises'
 
 import { browser } from './browser'
 import { connections, profilePanel } from './connections'

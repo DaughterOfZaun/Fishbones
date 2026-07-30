@@ -8,7 +8,7 @@ import { args } from '../../args'
 import { tr } from '../../translation'
 import { sdkPkg } from './sdk'
 
-args.remoteIdx.on('change', index => bwPkg.setRemoteByIndex(index))
+args.bwRemoteIdx.on('change', index => bwPkg.setRemoteByIndex(index))
 
 export const bwPkg = new class extends PkgInfoCSProj implements PkgInfoGit {
     

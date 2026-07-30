@@ -113,13 +113,12 @@ export async function connections(node: LibP2PNode, opts: Required<AbortOptions>
         return ms
     }
 
-    view.addEventListener(node, 'same-program-peer:discovery', onPeerDiscoveredByMechanism)
-    function onPeerDiscoveredByMechanism(event: CustomEvent<PeerId>){
+    view.addEventListener(node, 'same-program-peer:discovery', (event: CustomEvent<PeerId>) => {
         const peerId = event.detail
         if(!fbPeers.has(peerId)){
             updatePeer(view, peerId, {}, getPing)
         }
-    }
+    })
 
     view.addEventListener(node, 'connection:begin', (evt: CustomEvent<PeerId>) => {
         const peerId = evt.detail
@@ -174,7 +173,7 @@ export async function connections(node: LibP2PNode, opts: Required<AbortOptions>
             updatePeer(view, peerId, { name, icon }, getPing)
     })
 
-    if(args.allowInternet.value){
+    if(args.globalDiscovery.value){
         //fbPeers.set(serverPeerID, new FBPeerInfo(PeerType.Server))
         updatePeer(view, serverPeerID, { status: PeerStatus.Connecting }, getPing)
     }

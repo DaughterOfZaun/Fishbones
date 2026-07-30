@@ -12,13 +12,13 @@ import { ProxyClient } from '../utils/proxy/proxy-client'
 import { ProxyServer } from '../utils/proxy/proxy-server'
 import { ClientServerProxy } from '../utils/proxy/proxy-client-server'
 import type { ProtobufStream } from '../utils/pb-stream'
-import { getLastLaunchCmd, launchClient, relaunchClient, stopClient, type ChildProcessWithLaunchArgs } from '../utils/process/client'
+import { getLaunchCmd, launchClient, relaunchClient, stopClient, type ClientLaunchArgs } from '../utils/process/client'
 import { launchServer, stopServer, type ChildProcessWithPort } from '../utils/process/server'
-import { safeOptions, shutdownOptions, TerminationError } from '../utils/process/process'
+import { safeOptions, shutdownOptions, TerminationError, type ChildProcess } from '../utils/process/process'
 import { Deferred } from '../utils/promises'
 import { logger } from '../utils/log'
 import { getBotName, getCustomUsername, getName } from '../utils/namegen/namegen'
-import { GameMap, maps } from '../utils/data/constants/maps'
+import { GameMap } from '../utils/data/constants/maps'
 import { GameMode } from '../utils/data/constants/modes'
 import { runes } from '../utils/data/constants/runes'
 import { champions, ChampionsEnabled } from '../utils/data/constants/champions'
@@ -168,9 +168,10 @@ export abstract class Game extends EventEmitter<GameEvents> {
         })
     }
 
-    private clientSubprocess?: ChildProcessWithLaunchArgs
+    private clientSubprocess?: ChildProcess
+    private clientLaunchArgs?: ClientLaunchArgs
     public getLastLaunchCmd(){
-        return getLastLaunchCmd(this.clientSubprocess!)
+        return getLaunchCmd(this.clientLaunchArgs!)
     }
     private stopClient(){
         const prevSubprocess = this.clientSubprocess
@@ -632,8 +633,9 @@ export abstract class Game extends EventEmitter<GameEvents> {
                     })
                 )
             }
-            this.clientSubprocess = await launchClient(this.clientVersion, host, port, key, clientId, opts)
-            this.clientSubprocess.proc.once('exit', this.onClientExit)
+            this.clientLaunchArgs = { version: this.clientVersion, ip: host, port, key, clientId }
+            this.clientSubprocess = await launchClient(this.clientLaunchArgs, opts)
+            this.clientSubprocess.once('exit', this.onClientExit)
             return true
         } catch(err) {
             logger.log('Failed to start client:', inspect(err))
@@ -649,8 +651,8 @@ export abstract class Game extends EventEmitter<GameEvents> {
     }
     private async relaunchAsync(opts: Required<AbortOptions>){
         try {
-            this.clientSubprocess = await relaunchClient(this.clientSubprocess!, opts)
-            this.clientSubprocess.proc.once('exit', this.onClientExit)
+            this.clientSubprocess = await relaunchClient(this.clientSubprocess, this.clientLaunchArgs!, opts)
+            this.clientSubprocess.once('exit', this.onClientExit)
             return true
         } catch(err) {
             logger.log('Failed to restart client:', inspect(err))

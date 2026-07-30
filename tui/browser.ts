@@ -63,7 +63,7 @@ export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts
         const view = render<Action>('CustomsBrowser', form({
             Rooms: list(
                 {}, //getChoices(node),
-                args.allowInternet.value ?
+                args.globalDiscovery.value ?
                     tr('No games') + '\n' + tr('Wait longer or host your own') :
                     tr('No games on local network') + '\n' + tr('Wait longer or host your own'),
             ),

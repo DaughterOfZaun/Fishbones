@@ -21,6 +21,7 @@ const WINE_CMD_AUTO = 'auto'
 //import { tr } from "./translation"
 const tr = (str: string) => str
 const DEFAULT_LOCALE = 'en_US'
+const AUTO_LOCALE = 'auto'
 
 type Action<T> = (arg: T) => void
 
@@ -80,9 +81,12 @@ class Option<T> {
         return false
     }
 
-    private callbacks: Action<T>[] = []
+    private callbacks = new Set<Action<T>>
     public on(_event: 'change', cb: Action<T>){
-        this.callbacks.push(cb)
+        this.callbacks.add(cb)
+    }
+    public off(_event: 'change', cb: Action<T>){
+        this.callbacks.delete(cb)
     }
     public emit(_event: 'change', to: T){
         for(const callback of this.callbacks)
@@ -106,12 +110,14 @@ export const args = new class Args {
 
     megaDownload = new Option('mega-download', 'downloader-mega-enabled', true, tr('Download files from mega.nz'))
     torrentDownload = new Option('torrent-download', 'downloader-torrent-enabled', true, tr('Download and Seed files via BitTorrent'))
-    allowInternet = new Option('allow-internet', 'discovery-global-net-enabled', true, tr('Connect to other players via Internet'))
+    globalDiscovery = new Option('global-discovery', 'discovery-global-net-enabled', true, tr('Connect to other players via Internet'))
     
-    upgrade = new Option('upgrade', 'self-upgrade-enabled', true, tr('Download launcher updates'))
+    selfUpgrade = new Option('self-upgrade', 'self-upgrade-enabled', true, tr('Download launcher updates'))
     
-    update = new Option('update', 'game-server-update-enabled', true, tr('Download game server updates'))
-    remoteIdx = new Option('', 'game-server-git-remote-index', 0)
+    updateBWServer = new Option('update-brokenwings', 'game-server-update-enabled', true, tr('Download game server updates'))
+    updateTGServer = new Option('update-testgrounds', 'testgrounds-update-enabled', true, tr('Download game server updates'))
+
+    bwRemoteIdx = new Option('', 'game-server-git-remote-index', 0)
     selectMR = new Option<boolean>('', '', false, tr('Select a merge request to test'))
     mrNumber = new Option<number | undefined>('', '', undefined)
     
@@ -134,6 +140,7 @@ export const args = new class Args {
 
     repair = new Option('repair', '', true, tr('(Debug) Download+Unpack+Build missing files'))
     download = new Option('download', '', true, tr('(Debug) Download missing files'))
+    update = new Option('update', '', true, tr('(Debug) Update git repositories'))
     unpack = new Option('unpack', '', true, tr('(Debug) Unpack missing files'))
     build = new Option('build', '', true, tr('(Debug) Build missing files'))
     cleanup = new Option('cleanup', '', true)
@@ -143,7 +150,7 @@ export const args = new class Args {
     jRPCUI = new Option('jrpc-ui', '', `../${OUTFILE}`, tr('(Internal) Use JSON RPC for I/O'))
     systemLocale = new Option('system-locale', '', DEFAULT_LOCALE, tr('(Internal) Specify the system locale'))
     autoLocale = new Option('auto-locale', '', DEFAULT_LOCALE, tr('(Internal) Specify the auto-suggested locale to use'))
-    usedLocale = new Option('used-locale', '', DEFAULT_LOCALE, tr('(Internal) Specify the locale to use'))
+    usedLocale = new Option('used-locale', 'locale', AUTO_LOCALE, tr('(Internal) Specify the locale to use'))
 
     spellCrashDetected = new Option('', 'game-client-spell-crash-detected', false)
 
