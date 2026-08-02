@@ -20,6 +20,7 @@ out
 dist
 *.tgz
 *.exe
+*.zip
 
 ## media
 # *.jpg

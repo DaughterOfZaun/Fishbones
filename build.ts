@@ -13,14 +13,46 @@ import { compressVersionFile, decompressVersionFile, VersionFileRecord } from '.
 import { RecordEnvelope } from '@libp2p/peer-record'
 import { privateKeyFromRaw } from '@libp2p/crypto/keys'
 
-const GODOT_EDITOR_EXE =
-    process.platform == 'linux' ? './dist/Godot_v4.7.1-stable_linux.x86_64' :
-        process.platform == 'win32' ? './dist/Godot_v4.7.1-stable_win64.exe' :
-            undefined!
-if (GODOT_EDITOR_EXE === undefined)
-    throw new Error('Platform not specified or not supported')
+const hostPlatform = process.platform
+const targetPlatform =
+    process.argv.includes('linux') ? 'linux' :
+    process.argv.includes('windows') ? 'windows' :
+    undefined!
 
-const GODOT_TEMPLATES_DIR = path.join(process.env['HOME'] ?? '~', '.local/share/godot/export_templates/4.7.1.stable')
+const NODE_DATACHANNEL = './node_modules/node-datachannel/build/Release/node_datachannel.node'
+const NODE_DATACHANNEL_LIN = './thirdparty/node-datachannel/node-datachannel-v0.32.3-napi-v8-linux-x64.node'
+const NODE_DATACHANNEL_WIN = './thirdparty/node-datachannel/node-datachannel-v0.32.3-napi-v8-win32-x64.node'
+const NODE_DATACHANNEL_HOST = hostPlatformSpecific(NODE_DATACHANNEL_LIN, NODE_DATACHANNEL_WIN)
+const NODE_DATACHANNEL_TARGET = targetPlatformSpecific(NODE_DATACHANNEL_LIN, NODE_DATACHANNEL_WIN)
+
+const S7ZIP_EXE = hostPlatformSpecific(
+    './thirdparty/7z/7zzs-2601-linux-x64.exe',
+    './thirdparty/7z/7za-2601-windows-x64.exe',
+)
+
+const GODOT_EDITOR_EXE = hostPlatformSpecific(
+    './dist/Godot_v4.7.1-stable_linux.x86_64',
+    './dist/Godot_v4.7.1-stable_win64.exe',
+)
+
+function hostPlatformSpecific<T>(linux: T, windows: T){
+    return platformSpecific(hostPlatform, linux, windows)
+}
+function targetPlatformSpecific<T>(linux: T, windows: T){
+    return platformSpecific(targetPlatform, linux, windows)
+}
+function platformSpecific<T>(platform: string, linux: T, windows: T): T {
+    switch(platform){
+        case 'linux': return linux
+        case 'win32': return windows
+        case 'windows': return windows
+        default:
+            throw new Error('Platform not specified or not supported')
+    }
+}
+
+//const GODOT_TEMPLATES_DIR = path.join(process.env['HOME'] ?? '~', '.local/share/godot/export_templates/4.7.1.stable')
+const GODOT_TEMPLATES_DIR = './thirdparty/godot/bin'
 
 const release = process.argv.includes('release') ? 'release' : 'debug'
 
@@ -31,28 +63,16 @@ console.assert(typeof versionString === 'string')
 const indexJS = `./${OUTDIR}/index-${versionString}.js`
 const indexJSMap = `./${OUTDIR}/index-${versionString}.js.map`
 
-const platform =
-    process.argv.includes('linux') ? 'linux' :
-        process.argv.includes('windows') ? 'windows' :
-            undefined!
-if (platform === undefined)
-    throw new Error('Platform not specified or not supported')
-
 // Godot's packed file magic header ("GDPC" in ASCII).
 const GODOT_PACK_HEADER_MAGIC = 0x43504447
-const GODOT_TEMPLATE_EXE = ({
-    windows: path.join(GODOT_TEMPLATES_DIR, `${platform}_${release}_x86_32.exe`),
-    linux: path.join(GODOT_TEMPLATES_DIR, `${platform}_${release}.x86_64`),
-} as const)[platform]
-const godot_preset = ({
-    windows: 'Windows Desktop',
-    linux: 'Linux Desktop',
-} as const)[platform]
-
-const target: Bun.Build.CompileTarget =
-    (platform === 'linux') ? `bun-linux-x64-baseline` :
-        (platform === 'windows') ? `bun-windows-x64-baseline` :
-            undefined!
+const GODOT_TEMPLATE_EXE = targetPlatformSpecific(
+    path.join(GODOT_TEMPLATES_DIR, `godot.${targetPlatform}bsd.template_${release}.x86_64.upx`),
+    path.join(GODOT_TEMPLATES_DIR, `godot.${targetPlatform}.template_${release}.x86_32.exe`),
+)
+const godot_preset = targetPlatformSpecific(
+    'Linux Desktop',
+    'Windows Desktop',
+)
 
 if (process.argv.includes('server')) {
     await Bun.build({
@@ -63,7 +83,10 @@ if (process.argv.includes('server')) {
         target: 'bun',
         minify: true,
         compile: {
-            target,
+            target: targetPlatformSpecific(
+                `bun-linux-x64-baseline`,
+                `bun-windows-x64-baseline`,
+            ),
         },
     })
     process.exit()
@@ -89,14 +112,14 @@ async function generate_embeds_json() {
     for (const [key, keyConfig] of Object.entries(config as Config)) {
         let from =
             (typeof keyConfig === 'string') ? keyConfig :
-                (platform in keyConfig) ? keyConfig[platform]! : ''
+                (targetPlatform in keyConfig) ? keyConfig[targetPlatform]! : ''
 
         if (from) {
             from = path.resolve(from)
             let fileName = path.basename(from)
             if (!path.extname(fileName)) fileName += '.exe'
-            const to = `./remote-ui/embedded/${fileName}`
-            embeddedJson[key] = to.replace('./remote-ui/', 'res://')
+            const to = `./dist/embedded/${fileName}`
+            embeddedJson[key] = to.replace('./dist/', 'res://')
             embedFileCopies.push({ from, to })
         } else {
             embeddedJson[key] = ''
@@ -108,12 +131,12 @@ async function generate_embeds_json() {
 }
 
 async function build_embeds() {
-    await fs_ensureDir('./remote-ui/embedded/')
-    await $`rm ./remote-ui/embedded/*`.quiet().nothrow()
+    await fs_ensureDir('./dist/embedded/')
+    await $`rm ./dist/embedded/*`.quiet().nothrow()
 
     for (const { from, to } of embedFileCopies) {
         //console.log(`ln -sf "${from}" "${to}"`)
-        if (process.platform == 'linux')
+        if (hostPlatform == 'linux')
             await $`ln -sf ${from} ${to}`
         else await $`cp ${from} ${to}`
     }
@@ -131,16 +154,21 @@ async function build_embeds() {
         return `embedded_file_${i.toString(36)} = "${file}"\n`
     }).join(''))
     await fs.writeFile('./remote-ui/main.tscn', tscn, 'utf8')
+
+    try { await fs.rm('./remote-ui/embedded.zip') } catch(err){ /* Ignore. */ }
+    await $`${S7ZIP_EXE} a -mtm- -mtc- -mta- ${'./remote-ui/embedded.zip'} ${'./dist/embedded'}`
 }
 
 if (process.argv.includes('embeds'))
     await generate_embeds_json()
 
+
 if (process.argv.includes('bun')) {
-    if (platform === 'windows' && process.platform == 'linux') {
-        await $`mv node_modules node_modules_linux_npm`
-        await $`mv node_modules_win_npm node_modules`
-    }
+    await $`cp ${NODE_DATACHANNEL_TARGET} ${NODE_DATACHANNEL}`
+    //if (platform === 'windows' && hostPlatform == 'linux') {
+    //    await $`mv node_modules node_modules_linux_npm`
+    //    await $`mv node_modules_win_npm node_modules`
+    //}
     if (process.argv.includes('install')) {
         await $`bun install --linker hoisted`
     }
@@ -187,18 +215,27 @@ if (process.argv.includes('bun')) {
         await fs.rename(`./${OUTDIR}/index.js`, indexJS)
         await fs.rename(`./${OUTDIR}/index.js.map`, indexJSMap)
     } finally {
-        if (platform === 'windows' && process.platform == 'linux') {
-            await $`mv node_modules node_modules_win_npm`
-            await $`mv node_modules_linux_npm node_modules`
-        }
+        await $`cp ${NODE_DATACHANNEL_HOST} ${NODE_DATACHANNEL}`
+        //if (platform === 'windows' && hostPlatform == 'linux') {
+        //    await $`mv node_modules node_modules_win_npm`
+        //    await $`mv node_modules_linux_npm node_modules`
+        //}
     }
 }
+
 
 if (process.argv.includes('embeds'))
     await build_embeds()
 
 const relative_exe_path = path.join('..', OUTDIR, OUTFILE)
 const relative_pck_path = relative_exe_path.replace('.exe', '') + '.pck'
+
+if (process.argv.includes('godot-template')){
+    if (targetPlatform == 'windows')
+        await $`scons platform=windows target=template_release arch=x86_32 optimize=size production=yes lto=none build_profile=${'./remote-ui/profile.gdbuild'} winrt=no accesskit=no angle=no`
+    if (targetPlatform == 'linux')
+        await $`scons platform=linuxbsd target=template_release arch=x86_64 optimize=size production=yes lto=full build_profile=${'./remote-ui/profile.gdbuild'} accesskit=no angle=no`
+}
 
 if (process.argv.includes('godot')) {
 
@@ -208,7 +245,7 @@ if (process.argv.includes('godot')) {
     proj = proj.replace(/^(config\/version)="(.*?)"$/m, `$1="${versionString}"`)
     await fs.writeFile(file, proj, 'utf8')
 
-    if(platform == 'windows'){
+    if(targetPlatform == 'windows'){
         await build_godot_exe(relative_exe_path)
     } else {
         await build_godot_pck(relative_pck_path)
@@ -260,7 +297,7 @@ if(process.argv.includes('version')){
         date: Date.now(),
         versionNumber,
         windows: await getPkg('Windows', replacements, versionString),
-        linux: await getPkg('Linux', replacements, '0.0.3.51'),
+        linux: await getPkg('Linux', replacements, versionString),
         replacements: Array.from(replacements)
         //releasesUrl: '',
     }
@@ -358,12 +395,12 @@ async function build_libUTP() {
     $.cwd('./node_modules/utp-native/deps/libutp')
     try {
         const objs = ['utp_internal.o', 'utp_utils.o', 'utp_hash.o', 'utp_callbacks.o', 'utp_api.o', 'utp_packedsockaddr.o',]
-        if (platform === 'windows') {
+        if (targetPlatform === 'windows') {
             //zig build-lib -dynamic -lc -lc++ -target x86_64-windows-gnu -lws2_32
             const gpp = `x86_64-w64-mingw32-g++ -Wall -DPOSIX -g -fno-exceptions -O3 -fPIC -fno-rtti -Wno-sign-compare -fpermissive` // -D_DEBUG -DUTP_DEBUG_LOGGING
             await Promise.all(objs.map(async (obj) => $`${{ raw: gpp }} -c -o ${obj} ${obj.replace(/\.o$/, '.cpp')}`))
             await $`${{ raw: gpp }} -o libutp.dll -shared ${{ raw: objs.join(' ') }} -lws2_32 -static -static-libgcc -static-libstdc++`
-        } else if (platform === 'linux') {
+        } else if (targetPlatform === 'linux') {
             const gpp = `g++ -Wall -DPOSIX -g -fno-exceptions -O3 -fPIC -fno-rtti -Wno-sign-compare -fpermissive` // -D_DEBUG -DUTP_DEBUG_LOGGING
             await Promise.all(objs.map(async (obj) => $`${{ raw: gpp }} -c -o ${obj} ${obj.replace(/\.o$/, '.cpp')}`))
             await $`${{ raw: gpp }} -o libutp.so -shared ${{ raw: objs.join(' ') }}`

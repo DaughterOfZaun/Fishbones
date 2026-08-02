@@ -58,7 +58,7 @@ export const config = {
     //trackersTxt: './thirdparty/trackers.txt',
 
     dataChannelLib: {
-        linux: './dist/node_datachannel-bfgv6pn8.node',
+        linux: './dist/node_datachannel-9wv4an1r.node',
         windows: './dist/node_datachannel-65apsw7k.node',
     },
 

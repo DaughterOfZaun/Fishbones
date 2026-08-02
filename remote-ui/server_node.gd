@@ -158,6 +158,7 @@ func _ready() -> void:
     #var copied_exe_mod_time := FileAccess.get_modified_time(copied_exe)
     #if current_exe_mod_time > copied_exe_mod_time:
     #    err = DirAccess.copy_absolute(current_exe, copied_exe); assert(err == OK)
+    #    err = extract_absolute(current_exe, copied_exe); assert(err == OK)
 
     for file in embedded_files:
         embedded_files_by_name[file.get_file()] = file
@@ -171,7 +172,8 @@ func _ready() -> void:
         #print(embedded_file.get_file(), ' ', embedded_file_mod_time, ' vs ', extracted_file_mod_time)
         #if current_exe_mod_time > extracted_file_mod_time:
         if !FileAccess.file_exists(extracted_file):
-            err = DirAccess.copy_absolute(embedded_file, extracted_file); assert(err == OK)
+            #err = DirAccess.copy_absolute(embedded_file, extracted_file); assert(err == OK)
+            err = extract_absolute(embedded_file, extracted_file); assert(err == OK)
             if extracted_file.get_extension() == "exe":
                 err = FileAccess.set_unix_permissions(extracted_file, rwx); assert(err == OK)
 
@@ -257,6 +259,9 @@ func _notification(what: int) -> void:
             on_process_exit()
 
 func _init() -> void:
+    
+    zip_reader = ZIPReader.new()
+    zip_reader.open("res://embedded.zip")
 
     methods["console.log"] = func(...params: Array[Variant]) -> void:
         #print('console.log', ' ', params)
@@ -285,7 +290,8 @@ func _init() -> void:
             reject(id, err, error_string(err))
             return
 
-        err = DirAccess.copy_absolute(from, to)
+        #err = DirAccess.copy_absolute(from, to)
+        err = extract_absolute(from, to)
         if err != OK:
             reject(id, err, error_string(err))
         else:
@@ -529,3 +535,12 @@ func abort_handler(id: Variant) -> void:
     if handler != null_InputHandler:
         handlers.erase(id)
         handler.abort()
+
+var zip_reader: ZIPReader
+func extract_absolute(from: String, to: String) -> Error:
+    var err := OK
+    var buffer := zip_reader.read_file(from.replace("res://", ""))
+    var fa := FileAccess.open(to, FileAccess.WRITE)
+    if !fa.store_buffer(buffer):
+        err = fa.get_error()
+    return err

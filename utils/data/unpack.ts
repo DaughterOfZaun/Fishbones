@@ -231,7 +231,16 @@ export async function pack(pkg: { exe: string, exeName: string, zip: string, zip
         const lockfile = appendPartialPackFileExt(pkg.zip)
         await fs_writeFile(lockfile, '', { ...opts, encoding: 'utf8' })
 
-        proc = spawn(s7zExe, [ 'a', '-mtm-', '-mtc-', '-mta-', '-bsp1', /*`-si${pkg.exeName}`,*/ pkg.zip, pkg.exe ], {
+        proc = spawn(s7zExe, [
+            'a', // Add
+            '-mtm-', // Don't store last modified timestamps for files
+            '-mtc-', // Don't store creation timestamps for files
+            '-mta-', // Don't store last access timestamps for files
+            '-bsp1', // Redirect progress information to stdout stream 
+            //`-si${pkg.exeName}`, // Read data from stdin as if it was a file
+            pkg.zip,
+            pkg.exe,
+        ], {
             stdio: [ 'pipe', 'pipe', 'pipe' ],
             log: false, logPrefix,
             cwd: downloads,

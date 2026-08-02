@@ -196,11 +196,34 @@ export async function loadConfig(opts: Required<AbortOptions>){
 
 const configFile = path.join(downloads, 'config.json')
 async function saveConfig(opts: Required<AbortOptions>){
-    return fs.writeFile(configFile, JSON.stringify(config, null, 4), { ...opts, encoding: 'utf8' })
+    try {
+        await fs.writeFile(configFile, JSON.stringify(config, null, 4), { ...opts, encoding: 'utf8' })
+    } catch(err) {
+        //TODO: Handle.
+    }
 }
 
+let saving = false
+let delayedSave = false
 function saveConfigInBackground(){
-    saveConfig(safeOptions).catch(err => {
-        //TODO: Handle.
-    })
+    if(saving){
+        delayedSave = true
+    } else {
+        saveConfigInBackgroundAsync(safeOptions).catch(err => {
+            //TODO: Handle.
+        })
+    }
+}
+
+async function saveConfigInBackgroundAsync(opts: Required<AbortOptions>){
+    saving = true
+    for(;;){
+        await saveConfig(opts)
+        if(!delayedSave){
+            delayedSave = false
+            continue
+        }
+        break
+    }
+    saving = false
 }

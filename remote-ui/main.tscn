@@ -315,6 +315,16 @@ theme_override_font_sizes/font_size = 14
 button_pressed = true
 text = "Search for players online"
 
+[node name="#EnableS1" type="CheckBox" parent="Container/TabContainer/#Startup/VBoxContainer" unique_id=753460159]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Enable Season 1 (Recommended)"
+
+[node name="#EnableS4" type="CheckBox" parent="Container/TabContainer/#Startup/VBoxContainer" unique_id=1283982443]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Enable Season 4 (Experimental)"
+
 [node name="#ForceEnglish" type="CheckBox" parent="Container/TabContainer/#Startup/VBoxContainer" unique_id=297896498]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
@@ -1675,6 +1685,7 @@ size_flags_horizontal = 3
 text = "Password (Optional)"
 
 [node name="#Password" type="LineEdit" parent="Container/TabContainer/MarginContainer1/HBoxContainer1/PanelContainer/MarginContainer/TabContainer/#CustomGameSetup/CenterContainer/HBoxContainer1/VBoxContainer/HBoxContainer1/VBoxContainer1/VBoxContainer2" unique_id=491353617]
+custom_minimum_size = Vector2(0, 25)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "password"
@@ -3748,6 +3759,7 @@ scroll_following = true
 selection_enabled = true
 
 [node name="#Line" type="LineEdit" parent="#Chat/VBoxContainer" unique_id=35889201]
+custom_minimum_size = Vector2(0, 25)
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "Enter your message here"

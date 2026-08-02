@@ -25,10 +25,20 @@ export async function startup(opts: Required<AbortOptions>){
 
     const isAuto = args.wineCommand.value == WINE_CMD_AUTO
 
-    const areAnyUpdatesEnabled = () => false
-        || args.selfUpgrade.value
-        || args.updateBWServer.value
-        || args.updateTGServer.value
+    const areAnyUpdatesEnabled = () => {
+        return args.selfUpgrade.value
+            || args.updateBWServer.value
+            || args.updateTGServer.value
+    }
+    const isS1Enabled = () => {
+        return args.installS1Client.value
+            || args.installBWServer.value
+    }
+    const isS4Enabled = () => {
+        return args.installS4Client.value
+            || args.installTGServer.value
+            || args.installCBServer.value
+    }
 
     const view: DeferredView<void> = render('Startup', form({
 
@@ -43,6 +53,32 @@ export async function startup(opts: Required<AbortOptions>){
                 UpdateLauncher: checkbox(on),
                 UpdateServer: checkbox(on),
                 UpdateTGServer: checkbox(on),
+            }))
+        }),
+
+        EnableS1: checkbox(isS1Enabled(), (on) => {
+
+            args.installS1Client.set(on)
+            args.installBWServer.set(on)
+            args.save()
+
+            view.update(form({
+                InstallS1Client: checkbox(on),
+                InstallBWServer: checkbox(on),
+            }))
+        }),
+
+        EnableS4: checkbox(isS4Enabled(), (on) => {
+
+            args.installS4Client.set(on)
+            args.installTGServer.set(on)
+            args.installCBServer.set(false)
+            args.save()
+
+            view.update(form({
+                InstallS4Client: checkbox(on),
+                InstallTGServer: checkbox(on),
+                InstallCBServer: checkbox(false),
             }))
         }),
 
@@ -72,7 +108,7 @@ export async function startup(opts: Required<AbortOptions>){
         ForceEnglish: checkbox(
             !systemLocaleSupported || usedLocale != systemLocale && usedLocale == DEFAULT_LOCALE,
             (on) => args.usedLocale.save(on ? DEFAULT_LOCALE : AUTO_LOCALE),
-            !systemLocaleSupported || systemLocale === DEFAULT_LOCALE,
+            !systemLocaleSupported || usedLocale == systemLocale && usedLocale == DEFAULT_LOCALE,
         ),
 
         ...clientLocation(() => view, gc126Pkg, 'installS1Client', 'InstallS1Client', 'S1ClientLocation', 'S1ClientCustomLocation', 'gc126Location'),
