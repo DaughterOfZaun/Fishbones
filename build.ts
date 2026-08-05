@@ -200,8 +200,8 @@ if (process.argv.includes('bun')) {
     //     ])
     // }
     try {
-        await Bun.build({
-            entrypoints: ['./index.ts'],
+        const build = (entrypoint: string) => Bun.build({
+            entrypoints: [ entrypoint ],
             sourcemap: 'linked',
             outdir: OUTDIR,
             env: 'disable',
@@ -212,6 +212,8 @@ if (process.argv.includes('bun')) {
                 'process.env.VERSION': `"${versionString}"`
             },
         })
+        await build('./node/upgrade-helper.ts')
+        await build('./index.ts')
         await fs.rename(`./${OUTDIR}/index.js`, indexJS)
         await fs.rename(`./${OUTDIR}/index.js.map`, indexJSMap)
     } finally {

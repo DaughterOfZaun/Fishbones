@@ -14,7 +14,7 @@ import os from 'os'
 import { runPostInstall, update } from "./update"
 import { args } from "../args"
 import { checkForUpdates, fbPkg, isNewVersionAvailable, fbPkgCurrent, repairSelfPackage } from "./upgrade"
-import { spawn } from "node:child_process"
+import { fork } from "node:child_process"
 import { tr } from "../translation"
 import { DeferredView, render } from "../../ui/remote/view"
 import { button, form, label } from "../../ui/remote/types"
@@ -29,6 +29,8 @@ import { champions } from "./constants/champions"
 import { TestGroundsDataInfo, tgPkg } from "./packages/game-server-tg"
 import { inspect } from 'node:util'
 import { logger } from "../log"
+//@ts-expect-error Cannot find module or its corresponding type declarations.
+import upgradeHelperJS from '../../dist/upgrade-helper.js' with { type: 'text' }
 
 const DOTNET_INSTALL_CORRUPT_EXIT_CODES = [ 130, 131, 142, ]
 
@@ -299,17 +301,17 @@ async function repairOrThrow(opts: Required<AbortOptions>){
         await fs.utimes(fbPkg.exe, now, now)
         await fs_chmod(fbPkg.exe, rwx_rx_rx, opts)
 
-        console.assert(fbPkg.dir === fbPkgCurrent.dir)
-        const oldExe = path.join(fbPkgCurrent.dir, `Fishbones.${fbPkgCurrent.versionString}.exe`)
-        await fs_moveFile(currentExe, oldExe, opts, true)
-        await fs_moveFile(fbPkg.exe, currentExe, opts, true)
-
-        spawn(currentExe, {
-            //cwd: process.cwd(),
+        const helper = path.join(downloads, 'upgrade-helper.js')
+        await fs.writeFile(helper, upgradeHelperJS, 'utf8')
+        fork(helper, [
+            `${process.ppid}`,
+            fbPkgCurrent.exe,
+            currentExe,
+        ], {
             stdio: 'ignore',
             detached: true,
         }).unref()
-
+        
         return { mustExit: true }
     
     } catch(err) {
