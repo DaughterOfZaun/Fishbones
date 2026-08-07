@@ -75,20 +75,7 @@ const godot_preset = targetPlatformSpecific(
 )
 
 if (process.argv.includes('server')) {
-    await Bun.build({
-        entrypoints: ['./node/server.ts'],
-        sourcemap: 'linked',
-        outdir: OUTDIR,
-        env: 'disable',
-        target: 'bun',
-        minify: true,
-        compile: {
-            target: targetPlatformSpecific(
-                `bun-linux-x64-baseline`,
-                `bun-windows-x64-baseline`,
-            ),
-        },
-    })
+    await build('./node/server.ts')
     process.exit()
 }
 
@@ -200,18 +187,6 @@ if (process.argv.includes('bun')) {
     //     ])
     // }
     try {
-        const build = (entrypoint: string) => Bun.build({
-            entrypoints: [ entrypoint ],
-            sourcemap: 'linked',
-            outdir: OUTDIR,
-            env: 'disable',
-            target: 'node',
-            minify: false,
-            packages: "bundle",
-            define: {
-                'process.env.VERSION': `"${versionString}"`
-            },
-        })
         await build('./node/upgrade-helper.ts')
         await build('./index.ts')
         await fs.rename(`./${OUTDIR}/index.js`, indexJS)
@@ -225,6 +200,20 @@ if (process.argv.includes('bun')) {
     }
 }
 
+function build(entrypoint: string){
+    return Bun.build({
+        entrypoints: [ entrypoint ],
+        sourcemap: 'linked',
+        outdir: OUTDIR,
+        env: 'disable',
+        target: 'node',
+        minify: false,
+        packages: "bundle",
+        define: {
+            'process.env.VERSION': `"${versionString}"`
+        },
+    })
+}
 
 if (process.argv.includes('embeds'))
     await build_embeds()

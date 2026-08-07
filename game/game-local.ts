@@ -13,6 +13,8 @@ import { bwPkg } from '../utils/data/packages' //TODO: Unhardcode.
 import { tr } from '../utils/translation'
 import { Team } from '../tui/lobby/lobby'
 
+export enum AutofillMode { Max, Fair }
+
 export class LocalGame extends Game {
     protected log = logger('launcher:game-local')
 
@@ -35,11 +37,13 @@ export class LocalGame extends Game {
         return true
     }
 
-    public autofill(){
+    public autofill(mode = AutofillMode.Max){
         const teams = [ Team.Blue, Team.Purple ]
         const players = this.getPlayers()
         const playerCounts = teams.map(team => players.filter(player => player.team.value == team).length)
-        const playersMax = Math.max(...playerCounts, this.playersMax.value ?? 0)
+        let playersMax = Math.max(...playerCounts)
+        if(mode == AutofillMode.Max)
+            playersMax = Math.max(playersMax, this.playersMax.value ?? 0)
         const countsToAdd = playerCounts.map(playersCount => Math.max(0, playersMax - playersCount))
         this.addBots(countsToAdd)
     }

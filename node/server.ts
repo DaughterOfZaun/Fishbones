@@ -19,7 +19,7 @@ import { pubsubPeerDiscovery } from '../network/libp2p/discovery/pubsub-discover
 import { pinning } from '../network/libp2p/pinning-v2'
 import { time } from '../utils/proxy/time'
 import type { AbortOptions, PrivateKey } from '@libp2p/interface'
-import { LocalGame } from '../game/game-local'
+import { AutofillMode, LocalGame } from '../game/game-local'
 import { handler } from '../network/libp2p/handler'
 import { probe } from '../network/libp2p/probe'
 import type { LibP2PNode } from './node'
@@ -174,7 +174,9 @@ await Promise.all([
     const opts = shutdownOptions
     const name = 'Game_Manager_Bot', icon = 0
     const libP2PNode = node as unknown as LibP2PNode
-    return hostLocal(libP2PNode, name, icon, lobby, (game, opts) => setup(game, { ...opts, ...options }), opts)
+    const s = (game: Game, opts: Required<AbortOptions>) => setup(game, { ...opts, ...options })
+    const l = (game: Game, opts: Required<AbortOptions>) => lobby(game, { ...opts, ...options })
+    return hostLocal(libP2PNode, name, icon, l, s, opts)
 }))
 
 type SetupOptions = { name: string, combo: Combination, map: number, mode: number, players: number }
@@ -198,7 +200,8 @@ async function setup(game: Game, opts: Required<AbortOptions> & SetupOptions){
     game.serverHack = true
 }
 
-async function lobby(_game: Game, opts: Required<AbortOptions>){
+type LobbyOptions = { mode: AutofillMode }
+async function lobby(_game: Game, opts: Required<AbortOptions> & LobbyOptions){
     const game = _game as LocalGame //HACK:
 
     const maxPlayers = 2 * game.playersMax.value!

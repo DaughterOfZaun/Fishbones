@@ -259,9 +259,6 @@ func _notification(what: int) -> void:
             on_process_exit()
 
 func _init() -> void:
-    
-    zip_reader = ZIPReader.new()
-    zip_reader.open("res://embedded.zip")
 
     methods["console.log"] = func(...params: Array[Variant]) -> void:
         #print('console.log', ' ', params)
@@ -536,11 +533,17 @@ func abort_handler(id: Variant) -> void:
         handlers.erase(id)
         handler.abort()
 
-var zip_reader: ZIPReader
 func extract_absolute(from: String, to: String) -> Error:
     var err := OK
+    
+    var zip_reader := ZIPReader.new()
+    err = zip_reader.open("res://embedded.zip")
+    if err != OK: return err
+
     var buffer := zip_reader.read_file(from.replace("res://", ""))
     var fa := FileAccess.open(to, FileAccess.WRITE)
     if !fa.store_buffer(buffer):
         err = fa.get_error()
+    
+    err = zip_reader.close()
     return err

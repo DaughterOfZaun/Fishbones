@@ -436,11 +436,11 @@ async function repairOrThrow(opts: Required<AbortOptions>){
         }),
 
         !(args.installS4Client.value) ? Promise.resolve() :
-        repairArchived(gc420Pkg, opts).then(() => {
+        repairArchived(gc420Pkg, opts).then(async () => {
             gc420ExeIsMissing = false
 
             return Promise.allSettled([
-                repairDirectX9Dll(gc126Pkg, opts),
+                repairDirectX9Dll(gc420Pkg, opts),
             ]).then((results) => {
                 throwAnyRejection(results)
             })
