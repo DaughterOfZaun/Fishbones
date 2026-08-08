@@ -74,6 +74,7 @@
     "ntp-time-sync": "^0.6.0",
     "p-defer": "^4.0.1",
     "protons-runtime": "^7.0.0",
+    "resedit": "^3.0.2",
     "simple-peer": "^9.11.1",
     "torrent-discovery": "^11.0.21",
     "uint8-util": "^2.2.6",

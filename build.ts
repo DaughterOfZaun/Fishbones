@@ -1,17 +1,18 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { $ } from 'bun'
-import { promises as fs } from 'node:fs'
+import fs from 'node:fs/promises'
 import path from 'node:path'
-import { HARDCODED_GH_DOWNLOAD_URL, HARDCODED_HTTP_SERVER_URL, HARDCODED_KEY_ENCODING, NAME, OUTDIR, OUTFILE, VERSION_FILE_CODEC, VERSION_FILE_DOMAIN, VERSION_REGEX, versionFromString } from './utils/constants-build'
+import { DESCRIPTION, HARDCODED_GH_DOWNLOAD_URL, HARDCODED_HTTP_SERVER_URL, HARDCODED_KEY_ENCODING, NAME, OUTDIR, OUTFILE, VERSION_FILE_CODEC, VERSION_FILE_DOMAIN, VERSION_REGEX, VERSION_STRING, versionFromString } from './utils/constants-build'
 import { config, type Config } from './utils/data/embedded/config'
 import { Reader, sizeof, Writer } from './utils/binary'
 //import { ariaPkg } from './utils/data/packages/aria2'
 import { fromString as uint8ArrayFromString } from 'uint8arrays/from-string'
-import { VersionFile } from './message/version'
+//import { VersionFile } from './message/version'
 import { compressVersionFile, decompressVersionFile, VersionFileRecord } from './utils/data/version'
 import { RecordEnvelope } from '@libp2p/peer-record'
 import { privateKeyFromRaw } from '@libp2p/crypto/keys'
+import { resedit } from './utils/resedit'
 
 const hostPlatform = process.platform
 const targetPlatform =
@@ -51,8 +52,9 @@ function platformSpecific<T>(platform: string, linux: T, windows: T): T {
     }
 }
 
-//const GODOT_TEMPLATES_DIR = path.join(process.env['HOME'] ?? '~', '.local/share/godot/export_templates/4.7.1.stable')
-const GODOT_TEMPLATES_DIR = './thirdparty/godot/bin'
+//const GODOT_TEMPLATES_DIR = path.join(process.env['HOME'] ?? '~', '.local/share/godot/export_templates/4.7.1.stable'
+const GODOT_SRC_DIR = './thirdparty/godot'
+const GODOT_TEMPLATES_DIR = `${GODOT_SRC_DIR}/bin`
 
 const release = process.argv.includes('release') ? 'release' : 'debug'
 
@@ -65,9 +67,14 @@ const indexJSMap = `./${OUTDIR}/index-${versionString}.js.map`
 
 // Godot's packed file magic header ("GDPC" in ASCII).
 const GODOT_PACK_HEADER_MAGIC = 0x43504447
+//const GODOT_TEMPLATE_EXE = targetPlatformSpecific('../dist/Fishbones.x86_64', '../dist/Fishbones.exe')
 const GODOT_TEMPLATE_EXE = targetPlatformSpecific(
-    path.join(GODOT_TEMPLATES_DIR, `godot.${targetPlatform}bsd.template_${release}.x86_64.upx`),
+    path.join(GODOT_TEMPLATES_DIR, `godot.${targetPlatform}bsd.template_${release}.x86_64`),
     path.join(GODOT_TEMPLATES_DIR, `godot.${targetPlatform}.template_${release}.x86_32.exe`),
+)
+const GODOT_TEMPLATE_UPX_EXE = targetPlatformSpecific(
+    path.join(GODOT_TEMPLATES_DIR, `godot.${targetPlatform}bsd.template_${release}.x86_64.upx`),
+    path.join(GODOT_TEMPLATES_DIR, `godot.${targetPlatform}.template_${release}.x86_32.upx.exe`),
 )
 const godot_preset = targetPlatformSpecific(
     'Linux Desktop',
@@ -223,9 +230,30 @@ const relative_pck_path = relative_exe_path.replace('.exe', '') + '.pck'
 
 if (process.argv.includes('godot-template')){
     if (targetPlatform == 'windows')
-        await $`scons platform=windows target=template_release arch=x86_32 optimize=size production=yes lto=none build_profile=${'./remote-ui/profile.gdbuild'} winrt=no accesskit=no angle=no`
+        await $`scons platform=windows target=template_release arch=x86_32 optimize=size production=yes lto=none build_profile=../../remote-ui/profile.gdbuild winrt=no accesskit=no angle=no`.cwd(GODOT_SRC_DIR)
     if (targetPlatform == 'linux')
-        await $`scons platform=linuxbsd target=template_release arch=x86_64 optimize=size production=yes lto=full build_profile=${'./remote-ui/profile.gdbuild'} accesskit=no angle=no`
+        await $`scons platform=linuxbsd target=template_release arch=x86_64 optimize=size production=yes lto=full build_profile=../../remote-ui/profile.gdbuild accesskit=no angle=no`.cwd(GODOT_SRC_DIR)
+}
+
+if(process.argv.includes('rcedit')){
+    let template = await fs.readFile(GODOT_TEMPLATE_EXE) as Buffer
+    template = await resedit(template, {
+        iconPath: './remote-ui/icons/icon.ico',
+        productName: NAME,
+        //fileVersion: VERSION_STRING,
+        //productVersion: VERSION_STRING,
+        win32Metadata: {
+            FileDescription: DESCRIPTION,
+            OriginalFilename: OUTFILE,
+            ProductName: NAME,
+        }
+    })
+    await fs.writeFile(GODOT_TEMPLATE_EXE, template)
+}
+
+if(process.argv.includes('upx')){
+    await $`cp ${GODOT_TEMPLATE_EXE} ${GODOT_TEMPLATE_UPX_EXE}`
+    await $`upx --best ${GODOT_TEMPLATE_UPX_EXE}`
 }
 
 if (process.argv.includes('godot')) {
@@ -236,21 +264,18 @@ if (process.argv.includes('godot')) {
     proj = proj.replace(/^(config\/version)="(.*?)"$/m, `$1="${versionString}"`)
     await fs.writeFile(file, proj, 'utf8')
 
-    if(targetPlatform == 'windows'){
-        await build_godot_exe(relative_exe_path)
-    } else {
-        await build_godot_pck(relative_pck_path)
-        process.argv.push('append-pck') //HACK:
-    }
+    await build_godot_pck(relative_pck_path)
+    process.argv.push('append-pck') //HACK:
+    //process.argv.push('rcedit') //HACK:
 }
 
 if (process.argv.includes('append-pck')) {
 
-    const template_exe_path = GODOT_TEMPLATE_EXE.replace('..', '.') //HACK:
+    const template_exe_path = GODOT_TEMPLATE_UPX_EXE.replace('..', '.') //HACK:
     const pck_path = relative_pck_path.replace('..', '.')
     const exe_path = relative_exe_path.replace('..', '.')
 
-    const template = await fs.readFile(template_exe_path)
+    let template = await fs.readFile(template_exe_path) as Buffer
     const pck = await fs.readFile(pck_path)
     
     const template_size = template.length //Math.ceil(template.length / 8) * 8

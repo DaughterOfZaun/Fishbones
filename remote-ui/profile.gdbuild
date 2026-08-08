@@ -18,8 +18,8 @@
 		"module_jolt_physics_enabled": false,
 		"module_msdfgen_enabled": false,
 		"module_openxr_enabled": false,
-		"module_text_server_adv_enabled": false,
-		"module_text_server_fb_enabled": true,
+		"module_text_server_adv_enabled": true,
+		"module_text_server_fb_enabled": false,
 		"rendering_device": false,
 		"sdl": false,
 		"vulkan": false

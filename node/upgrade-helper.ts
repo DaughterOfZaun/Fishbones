@@ -17,14 +17,13 @@ const processExists = (pid: number) => {
     }
 }
 
-const [ exe, js, pid, from, to ] = process.argv
+const [ exe, js, pidStr, from, to ] = process.argv
 
-while(pid){
-    if(processExists(parseInt(pid))){
+if(pidStr){
+    const pid = parseInt(pidStr)
+    while(processExists(pid)){
         await sleep(checkInterval)
-        continue
     }
-    break
 }
 
 if(from && to){
@@ -38,4 +37,4 @@ if(to){
     }).unref()
 }
 
-process.exit()
+//process.exit()
