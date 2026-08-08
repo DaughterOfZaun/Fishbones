@@ -301,13 +301,14 @@ async function repairOrThrow(opts: Required<AbortOptions>){
         await fs.utimes(fbPkg.exe, now, now)
         await fs_chmod(fbPkg.exe, rwx_rx_rx, opts)
 
+        console.assert(fbPkg.dir === fbPkgCurrent.dir)
+        const backupExe = path.join(fbPkgCurrent.dir, `Fishbones.${fbPkgCurrent.versionString}.exe`)
+
         const helper = path.join(downloads, 'upgrade-helper.js')
         await fs.writeFile(helper, upgradeHelperJS, 'utf8')
-        fork(helper, [
-            `${process.ppid}`,
-            fbPkgCurrent.exe,
-            currentExe,
-        ], {
+        const args = [ `${process.ppid}`, currentExe, backupExe, fbPkg.exe ]
+        logger.log('fork', helper, ...args)
+        fork(helper, args, {
             stdio: 'ignore',
             detached: true,
         }).unref()

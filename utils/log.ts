@@ -28,9 +28,11 @@ export function fs_ensureDirSync(path: string){
     }
 }
 
+export type Loggable = string | number | boolean | { toString(): string } | undefined
+
 export const logger = new class Logger {
     private stream?: WriteStream
-    log(...args: (string | number | boolean | { toString(): string } | undefined)[]){
+    log(...args: Loggable[]){
         //return console.log(...args)
         if(!this.stream){
             //fs_ensureDirSync(downloads)

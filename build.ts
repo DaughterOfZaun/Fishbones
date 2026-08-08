@@ -243,7 +243,7 @@ if(process.argv.includes('rcedit')){
         //fileVersion: VERSION_STRING,
         //productVersion: VERSION_STRING,
         win32Metadata: {
-            FileDescription: DESCRIPTION,
+            //FileDescription: DESCRIPTION,
             OriginalFilename: OUTFILE,
             ProductName: NAME,
         }
