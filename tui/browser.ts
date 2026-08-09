@@ -16,7 +16,8 @@ import { spinner, AbortPromptError, popup } from '../ui/remote/remote'
 import { deadlyRace } from '../utils/promises'
 import { bwPkg } from '../utils/data/packages' //TODO: Unhardcode.
 import { tr } from '../utils/translation'
-import { chat } from './chat'
+import type { Setup } from './setup'
+import type { Lobby } from './tui'
 
 interface CacheEntry {
     games: Map<number, {
@@ -29,8 +30,6 @@ const cache = new PeerMap<CacheEntry>()
 const objs = new Map<string, RemoteGame>()
 let nextObjId = 0
 
-type Lobby = (game: Game, opts: Required<AbortOptions>) => Promise<void>
-type Setup = (game: LocalGame, opts: Required<AbortOptions>) => Promise<void>
 export async function browser(node: LibP2PNode, lobby: Lobby, setup: Setup, opts: Required<AbortOptions>){
 
     //const name = getUsername(node.peerId)

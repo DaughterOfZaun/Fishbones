@@ -71,4 +71,5 @@ export interface PkgInfoGit extends PkgInfo {
     gitOriginURL: string
     gitBranchName: string
     gitRemoteName: string
+    gitLabMR?: number
 }

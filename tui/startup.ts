@@ -13,6 +13,7 @@ import { gc420Pkg } from "../utils/data/packages/game-client-420";
 import { sanitize_str } from "../utils/data/constants/values/inputable";
 //import { logger } from "../utils/log";
 //import { inspect } from 'node:util'
+import type { MRs } from "./mrs";
 
 enum DownloadSource {
     Torrents_and_Mega = 3,
@@ -21,7 +22,7 @@ enum DownloadSource {
     Web = 0,
 }
 
-export async function startup(opts: Required<AbortOptions>){
+export async function startup(mrs: MRs, opts: Required<AbortOptions>){
 
     const isAuto = args.wineCommand.value == WINE_CMD_AUTO
 
@@ -40,7 +41,7 @@ export async function startup(opts: Required<AbortOptions>){
             || args.installCBServer.value
     }
 
-    const view: DeferredView<void> = render('Startup', form({
+    const view: DeferredView<{ selectMR?: true }> = render('Startup', form({
 
         EnableUpdates: checkbox(areAnyUpdatesEnabled(), (on) => {
             
@@ -177,11 +178,8 @@ export async function startup(opts: Required<AbortOptions>){
             directUpgrade(opts) //.catch(err => { logger.log('Direct upgrade failed:', inspect(err)) })
         }),
 
-        Play: button(() => view.resolve()),
-        Test: button(() => {
-            args.selectMR.set(true)
-            view.resolve()
-        }),
+        Play: button(() => view.resolve({})),
+        Test: button(() => view.resolve({ selectMR: true })),
     }), opts, [
         {
             regex: /^\.\/IconPicker\/Icons\/(?<index>\d+):pressed$/,
@@ -212,12 +210,13 @@ export async function startup(opts: Required<AbortOptions>){
     //    }))
     //}
 
-    return view.promise.then(() => {
+    return view.promise.then((v) => {
         args.save()
+        return v
     })
 }
 
-function clientLocation(getView: () => DeferredView<void>, gcPkg: { dir: string }, installClient: 'installS1Client' | 'installS4Client', InstallClient: string, ClientLocation: string, CustomClientLocation: string, gcLocation: 'gc126Location' | 'gc420Location'){
+function clientLocation(getView: () => DeferredView<any>, gcPkg: { dir: string }, installClient: 'installS1Client' | 'installS4Client', InstallClient: string, ClientLocation: string, CustomClientLocation: string, gcLocation: 'gc126Location' | 'gc420Location'){
     const GC_LOCATION_CUSTOM_IDX = gcLocationFromStringToIndex[GC_LOCATION_CUSTOM]!
     const index = gcLocationFromStringToIndex[args[gcLocation].value] ?? GC_LOCATION_CUSTOM_IDX
     const isCustom = index == GC_LOCATION_CUSTOM_IDX

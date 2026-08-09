@@ -9,6 +9,7 @@ import { combinations, KnownClients, KnownServers, type Combination } from "../u
 import { champions } from "../utils/data/constants/champions";
 import { spells } from "../utils/data/constants/spells";
 
+export type Setup = typeof setup
 export async function setup(game: LocalGame, opts: Required<AbortOptions>){
     
     game.features.set(Features.SPELLS_DISABLED, args.spellCrashDetected.value)

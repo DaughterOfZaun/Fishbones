@@ -40,6 +40,7 @@ export class SwitchViewError extends Error {
     }
 }
 
+export type Lobby = typeof lobby
 async function lobby(game: Game, opts: Required<AbortOptions>){
     type View = null | ((opts: Context) => Promise<unknown>)
 

@@ -4,6 +4,7 @@ import { TITLE } from './utils/constants-build'
 import { logger } from './utils/log'
 import { console_log, ExitPromptError } from './ui/remote/remote'
 import { listenForSignals, listenForUncaughtExceptions, registerShutdownHandler, setInsideUI, shutdown, shutdownOptions, unwrapAbortError } from './utils/process/process'
+import { bwPkg } from './utils/data/packages/game-server-bw'
 import { repair } from './utils/data/repair'
 import { cleanup } from './utils/data/cleanup'
 //import * as umplex from './network/umplex'
@@ -22,16 +23,14 @@ logger.log(`${'-'.repeat(35)} ${TITLE} started ${'-'.repeat(35)}`)
 
 async function index(opts: Required<AbortOptions>){
     
-    if(args.setup.value){
-        
-        await loadConfig(opts)
-        await startup(opts)
+    await loadConfig(opts)
 
-        if(args.selectMR.value){
-            args.selectMR.set(false)
-            const selected = await mrs(opts)
+    if(args.setup.value){
+        const { selectMR } = await startup(mrs, opts)
+        if(selectMR){
+            const selected = await mrs(bwPkg, opts)
             if(selected){
-                args.mrNumber.set(selected)
+                args.bwMrNumber.set(selected)
                 args.update.set(true)
             }
         }

@@ -28,6 +28,8 @@ type Action<T> = (arg: T) => void
 const config: Record<string, any> = {}
 
 class Option<T> {
+
+    public readonly short: string
     public readonly name: string
     public readonly desc?: string
 
@@ -42,6 +44,7 @@ class Option<T> {
 
         this.defaultValue = defaultValue
         this.value = defaultValue
+        this.short = short
         this.name = name
         this.desc = desc
         
@@ -104,6 +107,10 @@ class Option<T> {
         config[this.name] = this.value
         saveConfigInBackground()
     }
+
+    public isDefault(){
+        return this.value === this.defaultValue
+    }
 }
 
 export const args = new class Args {
@@ -118,8 +125,7 @@ export const args = new class Args {
     updateTGServer = new Option('update-testgrounds', 'testgrounds-update-enabled', true, tr('Download game server updates'))
 
     bwRemoteIdx = new Option('', 'game-server-git-remote-index', 0)
-    selectMR = new Option<boolean>('', '', false, tr('Select a merge request to test'))
-    mrNumber = new Option<number | undefined>('', '', undefined)
+    bwMrNumber = new Option<number>('bw-mr-number', '', 0)
     
     port = new Option('port', '', 5119, tr('Set custom UDP port number to use'))
 

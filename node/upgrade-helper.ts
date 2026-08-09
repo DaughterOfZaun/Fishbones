@@ -24,8 +24,8 @@ function rename(from: string, to: string){
     return try_catch('rename', from, to, () => fs.renameSync(from, to))
 }
 
-function spawn(exe: string){
-    return try_catch('spawn', exe, () => cp_spawn(exe, { stdio: 'ignore', detached: true }).unref())
+function spawn(exe: string, ...args: string[]){
+    return try_catch('spawn', exe, () => cp_spawn(exe, args, { stdio: 'ignore', detached: true }).unref())
 }
 
 type Callback = () => void
@@ -47,7 +47,8 @@ const pid = parseInt(process.argv[2]!)
 const oldExe = process.argv[3]!
 const tmpExe = process.argv[4]!
 const newExe = process.argv[5]!
-logger.log(LOG_PREFIX, exe, js, pid, oldExe, tmpExe, newExe)
+const args = process.argv.slice(6)
+//logger.log(LOG_PREFIX, exe, js, pid, oldExe, tmpExe, newExe, ...args)
 
 if(rename(oldExe, tmpExe)){
     rename(newExe, oldExe)
@@ -65,6 +66,6 @@ if(rename(oldExe, tmpExe)){
     }
 }
 
-spawn(oldExe)
+spawn(oldExe, ...args)
 
 //process.exit()

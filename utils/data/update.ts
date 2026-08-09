@@ -30,7 +30,7 @@ export async function runPostInstall(opts: Required<AbortOptions>){
 
 export async function update(pkg: PkgInfoGit, opts: Required<AbortOptions>){
 
-    if(!args.update.value && args.mrNumber.value === undefined){
+    if(!args.update.value){
         //console.log(`Pretending to update ${pkg.name}...`)
         //return false
     }
@@ -53,11 +53,11 @@ export async function update(pkg: PkgInfoGit, opts: Required<AbortOptions>){
         await git([ 'remote', 'add', pkg.gitRemoteName, pkg.gitOriginURL ], pkg, opts, true)
 
         const prevHash = init ? undefined : await getHeadCommitHash(pkg, opts, true)
-        if(args.mrNumber.value !== undefined){
-            const newBranchName = `mr-${pkg.gitRemoteName}-${args.mrNumber.value}`
+        if(pkg.gitLabMR !== undefined && pkg.gitLabMR !== 0){
+            const newBranchName = `mr-${pkg.gitRemoteName}-${pkg.gitLabMR}`
             console_log(tr(`Switching the branch to {newBranchName}...`, { newBranchName }))
 
-            await git([ 'fetch', pkg.gitRemoteName, `merge-requests/${args.mrNumber.value}/head:${newBranchName}`], pkg, opts)
+            await git([ 'fetch', pkg.gitRemoteName, `merge-requests/${pkg.gitLabMR}/head:${newBranchName}`], pkg, opts)
             await git([ 'checkout',  newBranchName ], pkg, opts)
         } else {
             const newBranchName = `${pkg.gitRemoteName}-${pkg.gitBranchName}`

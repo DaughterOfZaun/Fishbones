@@ -9,6 +9,7 @@ import { tr } from '../../translation'
 import { sdkPkg } from './sdk'
 
 args.bwRemoteIdx.on('change', index => bwPkg.setRemoteByIndex(index))
+args.bwMrNumber.on('change', num => bwPkg.gitLabMR = num)
 
 export const bwPkg = new class extends PkgInfoCSProj implements PkgInfoGit {
     
@@ -117,6 +118,7 @@ export const bwPkg = new class extends PkgInfoCSProj implements PkgInfoGit {
     gitOriginURL = ''
     gitBranchName = ''
     gitRemoteName = ''
+    gitLabMR = 0
     remotes = [
         {
             name: 'skelsoft',

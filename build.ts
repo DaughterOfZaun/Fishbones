@@ -194,10 +194,16 @@ if (process.argv.includes('bun')) {
     //     ])
     // }
     try {
+        
         await build('./node/upgrade-helper.ts')
         await build('./index.ts')
         await fs.rename(`./${OUTDIR}/index.js`, indexJS)
         await fs.rename(`./${OUTDIR}/index.js.map`, indexJSMap)
+        
+        let js = await fs.readFile(indexJS, 'utf8')
+        js = js.replace(/(?<=\/\/# sourceMappingURL=)index\.js\.map/, `index-${versionString}.js.map`)
+        await fs.writeFile(indexJS, js, 'utf8')
+
     } finally {
         await $`cp ${NODE_DATACHANNEL_HOST} ${NODE_DATACHANNEL}`
         //if (platform === 'windows' && hostPlatform == 'linux') {
@@ -207,14 +213,14 @@ if (process.argv.includes('bun')) {
     }
 }
 
-function build(entrypoint: string){
-    return Bun.build({
+async function build(entrypoint: string){
+    await Bun.build({
         entrypoints: [ entrypoint ],
         sourcemap: 'linked',
         outdir: OUTDIR,
         env: 'disable',
         target: 'node',
-        minify: false,
+        minify: true,
         packages: "bundle",
         define: {
             'process.env.VERSION': `"${versionString}"`

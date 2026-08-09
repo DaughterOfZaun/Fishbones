@@ -293,8 +293,8 @@ async function repairOrThrow(opts: Required<AbortOptions>){
             await fs_truncate(fbPkg.zip, fbPkg.zipSize, opts)
             bar.stop()
         }
-        await download(fbPkg, opts)
-        await unpack(fbPkg, opts)
+
+        await repairArchivedSimple(fbPkg, opts)
 
         const now = new Date()
         // Fix file after unpacking.
@@ -306,9 +306,13 @@ async function repairOrThrow(opts: Required<AbortOptions>){
 
         const helper = path.join(downloads, 'upgrade-helper.js')
         await fs.writeFile(helper, upgradeHelperJS, 'utf8')
-        const args = [ `${process.ppid}`, currentExe, backupExe, fbPkg.exe ]
-        logger.log('fork', helper, ...args)
-        fork(helper, args, {
+        const exeArgs = [ '--', `--no-${args.setup.short}`, `--no-${args.selfUpgrade.short}` ]
+        if(!args.bwMrNumber.isDefault()) //HACK:
+            exeArgs.push(`--${args.bwMrNumber.short}`, `${args.bwMrNumber.value}`)
+        const helperArgs = [ `${process.ppid}`, currentExe, backupExe, fbPkg.exe, ...exeArgs ]
+        //const nodeArgs = [ '--no-maglev', '--trace-warnings', '--enable-source-maps' ]
+        logger.log('fork', ...helperArgs)
+        fork(helper, helperArgs, {
             stdio: 'ignore',
             detached: true,
         }).unref()
@@ -339,7 +343,7 @@ async function repairOrThrow(opts: Required<AbortOptions>){
         Promise.allSettled([
             repairSDK(opts),
             (async () => {
-                if(args.updateBWServer.value || args.mrNumber.value !== undefined) try {
+                if(args.updateBWServer.value || !args.bwMrNumber.isDefault()) try {
                     await repairGit(opts)
                     bwUpdated = await update(bwPkg, opts)
                     return // OK
@@ -747,6 +751,19 @@ export async function repairArchived(pkg: PkgInfo, opts: Required<AbortOptions> 
         await unpack(pkg, opts)
         //TODO: Re-download.
     }
+}
+
+export async function repairArchivedSimple(pkg: PkgInfo, opts: Required<AbortOptions>){
+
+    if(await fs_exists_and_size_eq(pkg.zip, pkg.zipSize, opts)){
+        const lockfile = appendPartialDownloadFileExt(pkg.zip)
+        if(await fs_exists(lockfile, opts, false)){
+            console_log(tr('Found temporary downloader file:', {}), lockfile)
+        } else if(await tryToUnpack(pkg, opts))
+            return // OK
+    }
+    await download(pkg, opts)
+    await unpack(pkg, opts)
 }
 
 //TODO: Modify `unpack` to return boolean instead of throwning?

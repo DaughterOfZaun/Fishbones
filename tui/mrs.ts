@@ -21,10 +21,12 @@ namespace GitLab {
     }
 }
 
-export async function mrs(opts: Required<AbortOptions>){
+export type MRs = typeof mrs
+type GitLabPkg = { gitLabMRs: string, gitLabMR?: number }
+export async function mrs(pkg: GitLabPkg, opts: Required<AbortOptions>){
     
-    const view = render<number | null>('MergeRequests', form({
-        Cancel: button(() => view.resolve(null)),
+    const view = render<number | undefined>('MergeRequests', form({
+        Cancel: button(() => view.resolve(undefined)),
         NoMRs: base(false),
         List: list(),
     }), opts, [
@@ -39,7 +41,7 @@ export async function mrs(opts: Required<AbortOptions>){
 
     let mrs: GitLab.MergeRequest[] | undefined
     try {
-        mrs = await (await fetch(bwPkg.gitLabMRs)).json() as never
+        mrs = await (await fetch(pkg.gitLabMRs)).json() as never
     } catch(err) {
         console_log(tr('Fetching a list of open requests failed:', {}), inspect(err))
     }
@@ -70,5 +72,7 @@ export async function mrs(opts: Required<AbortOptions>){
         }))
     }
 
-    return view.promise
+    const selected = await view.promise
+    pkg.gitLabMR = selected
+    return selected
 }
