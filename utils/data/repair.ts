@@ -286,14 +286,6 @@ async function repairOrThrow(opts: Required<AbortOptions>){
 
     if(args.selfUpgrade.value && isNewVersionAvailable()) try {
 
-        // A hack to speed up download.
-        if(await fs_exists(fbPkgCurrent.zip, opts) && !await fs_exists(fbPkg.zip, opts)){
-            const bar = createBar(tr('Copying'), fbPkgCurrent.zip)
-            await fs_copyFile(fbPkgCurrent.zip, fbPkg.zip, opts)
-            await fs_truncate(fbPkg.zip, fbPkg.zipSize, opts)
-            bar.stop()
-        }
-
         await repairArchivedSimple(fbPkg, opts)
 
         const now = new Date()
@@ -311,7 +303,7 @@ async function repairOrThrow(opts: Required<AbortOptions>){
             exeArgs.push(`--${args.bwMrNumber.short}`, `${args.bwMrNumber.value}`)
         const helperArgs = [ `${process.ppid}`, currentExe, backupExe, fbPkg.exe, ...exeArgs ]
         //const nodeArgs = [ '--no-maglev', '--trace-warnings', '--enable-source-maps' ]
-        logger.log('fork', ...helperArgs)
+        logger.log('fork', helper, ...helperArgs)
         fork(helper, helperArgs, {
             stdio: 'ignore',
             detached: true,
@@ -753,8 +745,7 @@ export async function repairArchived(pkg: PkgInfo, opts: Required<AbortOptions> 
     }
 }
 
-export async function repairArchivedSimple(pkg: PkgInfo, opts: Required<AbortOptions>){
-
+async function repairArchivedSimple(pkg: PkgInfo, opts: Required<AbortOptions>){
     if(await fs_exists_and_size_eq(pkg.zip, pkg.zipSize, opts)){
         const lockfile = appendPartialDownloadFileExt(pkg.zip)
         if(await fs_exists(lockfile, opts, false)){
@@ -762,6 +753,13 @@ export async function repairArchivedSimple(pkg: PkgInfo, opts: Required<AbortOpt
         } else if(await tryToUnpack(pkg, opts))
             return // OK
     }
+    // Use old data to speed up download.
+    //if(await fs_exists(prev_pkg.zip, opts)){
+    //    const bar = createBar(tr('Copying'), prev_pkg.zip)
+    //    await fs_copyFile(prev_pkg.zip, pkg.zip, opts)
+    //    await fs_truncate(pkg.zip, pkg.zipSize, opts)
+    //    bar.stop()
+    //}
     await download(pkg, opts)
     await unpack(pkg, opts)
 }

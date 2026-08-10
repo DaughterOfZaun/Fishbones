@@ -125,7 +125,7 @@ export const args = new class Args {
     updateTGServer = new Option('update-testgrounds', 'testgrounds-update-enabled', true, tr('Download game server updates'))
 
     bwRemoteIdx = new Option('', 'game-server-git-remote-index', 0)
-    bwMrNumber = new Option<number>('bw-mr-number', '', 0)
+    bwMrNumber = new Option('bw-mr-number', '', 0)
     
     port = new Option('port', '', 5119, tr('Set custom UDP port number to use'))
 

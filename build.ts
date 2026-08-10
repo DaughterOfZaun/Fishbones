@@ -194,7 +194,7 @@ if (process.argv.includes('bun')) {
     //     ])
     // }
     try {
-        
+
         await build('./node/upgrade-helper.ts')
         await build('./index.ts')
         await fs.rename(`./${OUTDIR}/index.js`, indexJS)
@@ -220,7 +220,13 @@ async function build(entrypoint: string){
         outdir: OUTDIR,
         env: 'disable',
         target: 'node',
-        minify: true,
+        minify: false,
+        //minify: {
+        //    whitespace: true,
+        //    syntax: true,
+        //    identifiers: false,
+        //    keepNames: true,
+        //},
         packages: "bundle",
         define: {
             'process.env.VERSION': `"${versionString}"`

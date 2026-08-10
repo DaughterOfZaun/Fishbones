@@ -25,7 +25,7 @@ function rename(from: string, to: string){
 }
 
 function spawn(exe: string, ...args: string[]){
-    return try_catch('spawn', exe, () => cp_spawn(exe, args, { stdio: 'ignore', detached: true }).unref())
+    return try_catch('spawn', exe, ...args, () => cp_spawn(exe, args, { stdio: 'ignore', detached: true }).unref())
 }
 
 type Callback = () => void
