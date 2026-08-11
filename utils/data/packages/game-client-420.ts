@@ -70,6 +70,7 @@ export const gc420Pkg = new class extends GCPkgCommon {
         '2018-07-08_01-48-41_League of Legends.log',
         '-000000000000001_crash.json',
         'Launch.bat',
+        'd3dx9_39.dll',
         'oldFiles.json',
         'files.json',
         'run.bat',

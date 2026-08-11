@@ -63,4 +63,10 @@ export const config = {
     },
 
     modPck1ZipTorrent: './torrents/modded_levels_paste_on_client.7z.torrent',
+
+    gcCB3ZipTorrent: './torrents/playable_client_cb3.7z.torrent',
+    lolSrvExe: {
+        windows: './thirdparty/lolsrv/bin/lolsrv.exe',
+        linux: './thirdparty/lolsrv/bin/lolsrv',
+    },
 }

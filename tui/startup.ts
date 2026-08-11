@@ -10,6 +10,7 @@ import { GC_LOCATION_AUTO, GC_LOCATION_C_DRIVE, GC_LOCATION_CUSTOM, GC_LOCATION_
 import { WINE_CMD_AUTO, WINE_CMD_AUTO_IDX, WINE_CMD_AUTO_TEMPLATE, WINE_CMD_CUSTOM_IDX } from "../utils/data/packages/wine";
 import { profileIcons, profileIconsCount } from "../utils/data/constants/profile-icons";
 import { gc420Pkg } from "../utils/data/packages/game-client-420";
+import { gcCB3Pkg } from "../utils/data/packages/game-client-cb3";
 import { sanitize_str } from "../utils/data/constants/values/inputable";
 //import { logger } from "../utils/log";
 //import { inspect } from 'node:util'
@@ -112,9 +113,11 @@ export async function startup(mrs: MRs, opts: Required<AbortOptions>){
             !systemLocaleSupported || usedLocale == systemLocale && usedLocale == DEFAULT_LOCALE,
         ),
 
+        ...clientLocation(() => view, gcCB3Pkg, 'installS0Client', 'InstallS0Client', 'S0ClientLocation', 'S0ClientCustomLocation', 'gcCB3Location'),
         ...clientLocation(() => view, gc126Pkg, 'installS1Client', 'InstallS1Client', 'S1ClientLocation', 'S1ClientCustomLocation', 'gc126Location'),
         ...clientLocation(() => view, gc420Pkg, 'installS4Client', 'InstallS4Client', 'S4ClientLocation', 'S4ClientCustomLocation', 'gc420Location'),
         
+        InstallLoLSrv: checkbox(args.installLoLSrver.value, (on) => args.installLoLSrver.save(on)),
         InstallBWServer: checkbox(args.installBWServer.value, (on) => args.installBWServer.save(on)),
         InstallCBServer: checkbox(args.installCBServer.value, (on) => args.installCBServer.save(on)),
         InstallTGServer: checkbox(args.installTGServer.value, (on) => args.installTGServer.save(on)),
@@ -216,7 +219,15 @@ export async function startup(mrs: MRs, opts: Required<AbortOptions>){
     })
 }
 
-function clientLocation(getView: () => DeferredView<any>, gcPkg: { dir: string }, installClient: 'installS1Client' | 'installS4Client', InstallClient: string, ClientLocation: string, CustomClientLocation: string, gcLocation: 'gc126Location' | 'gc420Location'){
+function clientLocation(
+    getView: () => DeferredView<any>,
+    gcPkg: { dir: string },
+    installClient: 'installS0Client' | 'installS1Client' | 'installS4Client',
+    InstallClient: string,
+    ClientLocation: string,
+    CustomClientLocation: string,
+    gcLocation: 'gc126Location' | 'gc420Location' | 'gcCB3Location'
+){
     const GC_LOCATION_CUSTOM_IDX = gcLocationFromStringToIndex[GC_LOCATION_CUSTOM]!
     const index = gcLocationFromStringToIndex[args[gcLocation].value] ?? GC_LOCATION_CUSTOM_IDX
     const isCustom = index == GC_LOCATION_CUSTOM_IDX
