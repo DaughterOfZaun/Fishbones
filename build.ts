@@ -242,7 +242,7 @@ const relative_pck_path = relative_exe_path.replace('.exe', '') + '.pck'
 
 if (process.argv.includes('godot-template')){
     if (targetPlatform == 'windows')
-        await $`scons platform=windows target=template_release arch=x86_32 optimize=size production=yes lto=none build_profile=../../remote-ui/profile.gdbuild winrt=no accesskit=no angle=no`.cwd(GODOT_SRC_DIR)
+        await $`scons platform=windows target=template_release arch=x86_32 optimize=size production=yes lto=full build_profile=../../remote-ui/profile.gdbuild winrt=no accesskit=no angle=no`.cwd(GODOT_SRC_DIR)
     if (targetPlatform == 'linux')
         await $`scons platform=linuxbsd target=template_release arch=x86_64 optimize=size production=yes lto=full build_profile=../../remote-ui/profile.gdbuild accesskit=no angle=no`.cwd(GODOT_SRC_DIR)
 }
@@ -255,7 +255,7 @@ if(process.argv.includes('rcedit')){
         //fileVersion: VERSION_STRING,
         //productVersion: VERSION_STRING,
         win32Metadata: {
-            //FileDescription: DESCRIPTION,
+            FileDescription: NAME,
             OriginalFilename: OUTFILE,
             ProductName: NAME,
         }
@@ -341,6 +341,7 @@ if(process.argv.includes('version')){
     const marshaled = Buffer.from(envelope.marshal())
     const b64 = marshaled.toString('base64')
     console.log(b64, b64.length)
+    await fs.writeFile('./dist/version.bin', marshaled, 'binary')
 }
 async function getPkg(platform: 'Windows' | 'Linux', replacements: Set<string>, versionString: string){
     const dirName = 'Fishbones'

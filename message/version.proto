@@ -8,11 +8,16 @@ message VersionFile {
     message PackageInfo {
         uint32 size = 3;
         uint32 zip_size = 4;
+        optional uint32 exe_size = 10;
         optional bytes zip_info_hash_v1 = 5;
         optional bytes zip_info_hash_v2 = 6;
+        optional bytes exe_info_hash_v1 = 11;
+        optional bytes exe_info_hash_v2 = 12;
         repeated string vf_web_seeds = 7;
         repeated string zip_web_seeds = 8;
         repeated string zip_torrent_web_seeds = 9;
+        repeated string exe_web_seeds = 13;
+        repeated string exe_torrent_web_seeds = 14;
     }
     optional string releases_url = 5;
     repeated string replacements = 6;
