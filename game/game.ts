@@ -428,6 +428,11 @@ export abstract class Game extends EventEmitter<GameEvents> {
         
         if(this.features.isHalfPingEnabled) return
 
+        const isNotCB3 = this.clientVersion != KnownClients.vCB3
+        const key = isNotCB3 ? blowfishKey : 'GLzvuWtyCfHyGhF2' //TODO: Unhardcode. Security
+        for(let player of players)
+            player.key = key
+
         try {
             this.node.services.probe.stop()
             const port = this.node.services.probe.port
@@ -464,7 +469,7 @@ export abstract class Game extends EventEmitter<GameEvents> {
                     launchRequest: {
                         ip: 0,
                         port: this.node.services.probe.port,
-                        key: text2arr(blowfishKey),
+                        key: text2arr(player.key!),
                         clientId: i + 1,
                         delay,
                     },
@@ -1068,7 +1073,7 @@ export abstract class Game extends EventEmitter<GameEvents> {
             const { name: championName, short: championShort } = champion
 
             const info: any = {
-                blowfishKey, //TODO: Unhardcode. Security
+                blowfishKey: player.key,
                 rank: /*Rank.random() ??*/ "DIAMOND",
                 champion: championShort,
                 team: player.team.toString().toUpperCase(),

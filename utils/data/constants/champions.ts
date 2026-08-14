@@ -175,7 +175,7 @@ export const champions = [
     { i: 167, short: "Aurora", name: "Aurora" },
     { i: 168, short: "Ambessa", name: "Ambessa" },
     { i: 169, short: "Mel", name: "Mel"},
-    { i: 170, short: "Armordillo", name: "Armordillo" },
+    { i: 170, short: "Armordillo", name: "Rammus" },
     { i: 171, short: "Armsmaster", name: "Jax" },
     { i: 172, short: "Bowmaster", name: "Ashe" },
     { i: 173, short: "CardMaster", name: "Twisted Fate" },

@@ -24,7 +24,7 @@ export async function relaunchClient(clientSubprocess: ChildProcess | undefined,
     const { version, ip, port, key, clientId } = launchArgs
     const gcPkg = clients[version]!
 
-    const gcArgs = ['8394', 'LoLLauncher.exe', 'unknown', ([ip, port.toString(), sanitize_bfkey(key), clientId.toString()]).join(' ')]
+    const gcArgs = [ ''/*'8394'*/, ''/*'LoLLauncher.exe'*/, ''/* Unknown */, ([ip, port.toString(), sanitize_bfkey(key), clientId.toString()]).join(' ')]
     const gcArgsStr = gcArgs.map(a => `"${a}"`).join(' ')
     //console.log('%s %s', gcPkg.exe, gcArgsStr)
     //logger.log('%s %s', gcPkg.exe, gcArgsStr)

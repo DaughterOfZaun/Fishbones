@@ -25,6 +25,7 @@ export class GamePlayer {
     public port?: number
 
     stream?: ProtobufStream<LobbyRequestMessage, LobbyNotificationMessage>
+    key?: string
     
     constructor(game: Game, id: PlayerId, peerId?: PeerId){
         this.game = game

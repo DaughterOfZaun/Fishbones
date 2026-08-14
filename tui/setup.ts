@@ -97,6 +97,7 @@ export async function setup(game: LocalGame, opts: Required<AbortOptions>){
                     GameMap: gameMap(),
                     GameMode: gameMode(),
                     Firewall: checkbox(game.features.isFirewallEnabled, undefined, isDefaultVersion),
+                    PublishGame: button(undefined, game.serverVersion == KnownServers.LoLSrv),
                 }))
             },
         ),

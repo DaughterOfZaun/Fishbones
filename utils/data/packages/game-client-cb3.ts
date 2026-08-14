@@ -225,7 +225,7 @@ export class ClientDataInfoVCB3 extends ClientDataInfoCommon implements ClientDa
             },
         },
         "Permission": {
-            icon: "Info/Pirate_Square.dds",
+            icon: "Info/Permission_Square.dds",
             skins: {
                 0: { image: "permissionLoadscreen.dds" },
             },

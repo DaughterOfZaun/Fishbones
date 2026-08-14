@@ -143,7 +143,7 @@ export function combinations_find(client: ClientVersion, server: ServerVersion){
 }
 
 //HACK:
-export const superServer: ServerInfo = {
+export const superServer: ServerInfo = ({
     name: tr("Unknown"),
     version: KnownServers.Unknown,
     infoDir: "",
@@ -152,14 +152,14 @@ export const superServer: ServerInfo = {
     maps: Object.fromEntries(maps.map(map => {
         const info = {
             modes: modes.map(mode => mode.short),
-            bots: champions.map(champ => champ.short),
+            bots: [], //champions.map(champ => champ.short),
         }
         return [ map.id, info ]
     })),
     spells: Object.fromEntries(spells.map(spell => [ spell.short, {} ])),
     champions: Object.fromEntries(champions.map(champ => [ champ.short, {} ])),
     bots: champions.map(champ => champ.short)
-}
+})
 
 export function combinations_merge(){
 

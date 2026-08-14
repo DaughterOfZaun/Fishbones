@@ -132,12 +132,15 @@ export async function hostLocal(node: LibP2PNode, name: string, icon: number, lo
         serverSettings,
         gameInfos: [ gameInfo ],
     }
+
+    //@ts-expect-error Property 'isStarted' does not exist on type 'GossipSub'
+    const isPrivate = ps.isStarted() && !game.isPrivate
+
     try {
         await game.startListening(opts)
         await game.join(name, icon, undefined, opts)
-
-        //@ts-expect-error Property 'isStarted' does not exist on type 'GossipSub'
-        if(ps.isStarted() && !game.isPrivate){
+        
+        if(!isPrivate){
             game.addEventListener('update', update)
             game.addEventListener('start', start)
             game.addEventListener('stop', stop)
@@ -145,13 +148,16 @@ export async function hostLocal(node: LibP2PNode, name: string, icon: number, lo
             update()
         }
 
-        await lobby(game, opts)
+        const promise = lobby(game, opts)
+        //const combo = combinations_find(game.clientVersion, game.serverVersion)
+        //if(isPrivate && combo!.bots.size == 0) // Skip gathering phase.
+        //    game.start()
+        await promise
 
     } finally {
         game.stopListening()
 
-        //@ts-expect-error Property 'isStarted' does not exist on type 'GossipSub'
-        if(ps.isStarted() && !game.isPrivate){
+        if(!isPrivate){
             game.removeEventListener('update', update)
             game.removeEventListener('start', start)
             game.removeEventListener('stop', stop)

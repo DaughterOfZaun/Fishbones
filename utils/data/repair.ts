@@ -26,7 +26,7 @@ import { gc126Pkg, ClientDataInfoV126 } from "./packages/game-client-126"
 import { gc420Pkg, ClientDataInfoV420 } from "./packages/game-client-420"
 import { bwPkg, BrokenWingsDataInfo } from "./packages/game-server-bw"
 import { cbPkg, ChronobreakDataInfo } from "./packages/game-server-cb"
-import { LoLSrverDataInfo, lsPkg } from "./packages/game-server-ls"
+import { lsPkg, LoLSrverDataInfo } from "./packages/game-server-ls"
 import { champions } from "./constants/champions"
 import { TestGroundsDataInfo, tgPkg } from "./packages/game-server-tg"
 import { inspect } from 'node:util'
@@ -338,6 +338,7 @@ async function repairOrThrow(opts: Required<AbortOptions>){
         !(args.installLoLSrver.value) ? Promise.resolve() : (async () => {
             if(lsExeIsMissing){
                 await extractFile(embedded.lolSrvExe, lsPkg.dll, opts)
+                await fs_chmod(lsPkg.dll, rwx_rx_rx, opts)
                 lsExeIsMissing = false
             }
         })(),
@@ -469,10 +470,6 @@ async function repairOrThrow(opts: Required<AbortOptions>){
 
     let client: ClientInfo | null = null, server: ServerInfo | null = null
 
-    client = gcCB3ExeIsMissing ? null : clients_push(gcCB3Pkg, new ClientDataInfoVCB3(gcCB3Pkg.dir), KnownClients.vCB3, 'v0.9.22.14 (Closed Beta 3)')
-    server = lsExeIsMissing ? null : servers_push(lsPkg, superServer, KnownServers.LoLSrv, tr('LoLSrv (Pre Season 1)'))
-    if(client && server) combinations_push(client, server)
-
     client = gc126ExeIsMissing ? null : clients_push(gc126Pkg, new ClientDataInfoV126(gc126Pkg.dir), KnownClients.v126, 'v1.0.0.126 (Season 1)')
     if(!modFileIsMissing) Object.assign(client!.maps, modPck1.maps)
     
@@ -485,6 +482,10 @@ async function repairOrThrow(opts: Required<AbortOptions>){
     if(client && server) combinations_push(client, server)
 
     server = tgExeIsMissing ? null : servers_push(tgPkg, new TestGroundsDataInfo(tgPkg.dir), KnownServers.TestGrounds, tr('TestGrounds (Season 4)'))
+    if(client && server) combinations_push(client, server)
+
+    client = gcCB3ExeIsMissing ? null : clients_push(gcCB3Pkg, new ClientDataInfoVCB3(gcCB3Pkg.dir), KnownClients.vCB3, 'v0.9.22.14 (Closed Beta 3)')
+    server = lsExeIsMissing ? null : servers_push(lsPkg, Object.assign({}, superServer, { bots: [] }), KnownServers.LoLSrv, tr('LoLSrv (Pre Season 1)'))
     if(client && server) combinations_push(client, server)
 
     combinations_merge()

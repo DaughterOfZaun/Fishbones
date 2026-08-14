@@ -26,6 +26,7 @@ export async function launchServer(serverVersion: ServerVersion, info: GameInfo,
         const player = info.players[0]!
         cmd = [
             gsPkg.dll,
+            '0.9.22.14', //HACK:
             '--player', player.name,
             '--champion', player.champion,
             '--skin', player.skin.toString(),
