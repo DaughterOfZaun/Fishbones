@@ -12,18 +12,30 @@ export type ChildProcessWithPort = { proc: ChildProcess, port: number }
 export async function launchServer(serverVersion: ServerVersion, info: GameInfo, opts: Required<AbortOptions>, port = 0): Promise<ChildProcessWithPort> {
     const gsPkg = servers[serverVersion]!
 
-    //info.gameInfo.CONTENT_PATH = path.relative(gsPkg.dllDir, gsPkg.gcDir)
-
-    const gsInfo = path.join(gsPkg.infoDir, info.gameId ? `GameInfo.${info.gameId}.json` : `GameInfo.json`)
-    const gsInfoRel = path.relative(gsPkg.dllDir, gsInfo)
-    
-    await fs_writeFile(gsInfo, JSON.stringify(info, null, 4), { ...opts, encoding: 'utf8', rethrow: true })
-    
     if(port === 0) port = await getFreePort() //HACK:
 
-    const serverSubprocess = spawn(sdkPkg.exe, [
-        gsPkg.dll, '--port', port.toString(), '--config', gsInfoRel,
-    ], {
+    let cmd: string[]
+
+    if(gsPkg.infoDir){ // LeagueSandbox-famliy
+        //info.gameInfo.CONTENT_PATH = path.relative(gsPkg.dllDir, gsPkg.gcDir)
+        const gsInfo = path.join(gsPkg.infoDir, info.gameId ? `GameInfo.${info.gameId}.json` : `GameInfo.json`)
+        const gsInfoRel = path.relative(gsPkg.dllDir, gsInfo)
+        await fs_writeFile(gsInfo, JSON.stringify(info, null, 4), { ...opts, encoding: 'utf8', rethrow: true })
+        cmd = [ sdkPkg.exe, gsPkg.dll, '--port', port.toString(), '--config', gsInfoRel ]
+    } else { // LoLSrv
+        const player = info.players[0]!
+        cmd = [
+            gsPkg.dll,
+            '--player', player.name,
+            '--champion', player.champion,
+            '--skin', player.skin.toString(),
+            '--map', info.game.map.toString(),
+            '--port', port.toString(),
+            '--key', player.blowfishKey,
+        ]
+    }
+
+    const serverSubprocess = spawn(cmd[0]!, cmd.slice(1), {
         logPrefix: LOG_PREFIX,
         //signal: opts.signal,
         cwd: gsPkg.dllDir,
@@ -32,7 +44,7 @@ export async function launchServer(serverVersion: ServerVersion, info: GameInfo,
     })
     
     await startProcess(LOG_PREFIX, serverSubprocess, 'stdout', (chunk) => {
-        return /\b(?:Game|Server)+ (?:is )?ready\b/.test(chunk)
+        return /\b(?:Game|Server)+ (?:is )?ready\b/.test(chunk) || chunk.includes('Running!')
         //return chunk.includes("Server is ready, clients can now connect")
         //    || chunk.includes("GameServer ready for clients to connect on Port")
         /*

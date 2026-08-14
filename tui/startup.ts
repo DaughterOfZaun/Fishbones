@@ -117,7 +117,7 @@ export async function startup(mrs: MRs, opts: Required<AbortOptions>){
         ...clientLocation(() => view, gc126Pkg, 'installS1Client', 'InstallS1Client', 'S1ClientLocation', 'S1ClientCustomLocation', 'gc126Location'),
         ...clientLocation(() => view, gc420Pkg, 'installS4Client', 'InstallS4Client', 'S4ClientLocation', 'S4ClientCustomLocation', 'gc420Location'),
         
-        InstallLoLSrv: checkbox(args.installLoLSrver.value, (on) => args.installLoLSrver.save(on)),
+        InstallLoLSrver: checkbox(args.installLoLSrver.value, (on) => args.installLoLSrver.save(on)),
         InstallBWServer: checkbox(args.installBWServer.value, (on) => args.installBWServer.save(on)),
         InstallCBServer: checkbox(args.installCBServer.value, (on) => args.installCBServer.save(on)),
         InstallTGServer: checkbox(args.installTGServer.value, (on) => args.installTGServer.save(on)),

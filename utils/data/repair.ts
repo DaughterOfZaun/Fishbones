@@ -1,6 +1,6 @@
 import { build } from "./build"
 import { download, appendPartialDownloadFileExt, repairAria2, seed } from "./download/download"
-import { gc126Pkg, gc420Pkg, gitPkg, bwPkg, cbPkg, modPck1, type PkgInfo, repairTorrents, sdkPkg, type PkgInfoCSProj, packages } from "./packages"
+import { gitPkg, modPck1, type PkgInfo, repairTorrents, sdkPkg, type PkgInfoCSProj, packages } from "./packages"
 import { console_log, createBar, currentExe, extractFile } from "../../ui/remote/remote"
 import { console_log_fs_err, cwd, downloads, fs_chmod, fs_copyFile, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_overwrite, fs_readFile, fs_removeFile, fs_stat, fs_statfs, fs_truncate, fs_writeFile, rwx_rx_rx } from './fs'
 import { readTrackersTxt } from "./download/trackers"
@@ -20,11 +20,13 @@ import { DeferredView, render } from "../../ui/remote/view"
 import { button, form, label } from "../../ui/remote/types"
 import { VERSION_STRING } from "../constants-build"
 import type { StatsFs } from "node:fs"
-import { clients_push, combinations_merge, combinations_push, KnownClients, KnownServers, servers_push, type ClientInfo, type ServerInfo } from "./constants/client-server-combinations"
-import { ClientDataInfoV126 } from "./packages/game-client-126"
-import { BrokenWingsDataInfo } from "./packages/game-server-bw"
-import { ClientDataInfoV420 } from "./packages/game-client-420"
-import { ChronobreakDataInfo } from "./packages/game-server-cb"
+import { clients_push, combinations_merge, combinations_push, KnownClients, KnownServers, servers_push, superServer, type ClientInfo, type ServerInfo } from "./constants/client-server-combinations"
+import { gcCB3Pkg, ClientDataInfoVCB3 } from "./packages/game-client-cb3"
+import { gc126Pkg, ClientDataInfoV126 } from "./packages/game-client-126"
+import { gc420Pkg, ClientDataInfoV420 } from "./packages/game-client-420"
+import { bwPkg, BrokenWingsDataInfo } from "./packages/game-server-bw"
+import { cbPkg, ChronobreakDataInfo } from "./packages/game-server-cb"
+import { LoLSrverDataInfo, lsPkg } from "./packages/game-server-ls"
 import { champions } from "./constants/champions"
 import { TestGroundsDataInfo, tgPkg } from "./packages/game-server-tg"
 import { inspect } from 'node:util'
@@ -316,8 +318,10 @@ async function repairOrThrow(opts: Required<AbortOptions>){
     }
 
     let modFileIsMissing = !await fs_exists(modPck1.lockFile, opts, false)
+    let gcCB3ExeIsMissing = !await fs_exists(gcCB3Pkg.exe, opts)
     let gc126ExeIsMissing = !await fs_exists(gc126Pkg.exe, opts)
     let gc420ExeIsMissing = !await fs_exists(gc420Pkg.exe, opts)
+    let lsExeIsMissing = !await fs_exists(lsPkg.dll, opts)
     let bwExeIsMissing = !await fs_exists(bwPkg.dll, opts)
     let cbExeIsMissing = !await fs_exists(cbPkg.dll, opts)
     let tgExeIsMissing = !await fs_exists(tgPkg.dll, opts)
@@ -330,6 +334,13 @@ async function repairOrThrow(opts: Required<AbortOptions>){
         repairSelfPackage(opts).catch(err => {
             console_log(tr(`Restoring launcher package failed:`), inspect(err))
         }),
+
+        !(args.installLoLSrver.value) ? Promise.resolve() : (async () => {
+            if(lsExeIsMissing){
+                await extractFile(embedded.lolSrvExe, lsPkg.dll, opts)
+                lsExeIsMissing = false
+            }
+        })(),
 
         !(args.installBWServer.value) ? Promise.resolve() :
         Promise.allSettled([
@@ -395,6 +406,17 @@ async function repairOrThrow(opts: Required<AbortOptions>){
             await fs_writeFile(gsSettings, JSON.stringify({ autoStartClient: false }, null, 4), { ...opts, encoding: 'utf8' })
         }),
 
+        !(args.installS0Client.value) ? Promise.resolve() :
+        repairArchived(gcCB3Pkg, opts).then(async () => {
+            gcCB3ExeIsMissing = false
+
+            return Promise.allSettled([
+                repairDirectX9Dll(gcCB3Pkg, opts),
+            ]).then((results) => {
+                throwAnyRejection(results)
+            })
+        }),
+
         !(args.installS1Client.value) ? Promise.resolve() :
         Promise.allSettled([
             
@@ -446,6 +468,10 @@ async function repairOrThrow(opts: Required<AbortOptions>){
     throwAnyRejection(results)
 
     let client: ClientInfo | null = null, server: ServerInfo | null = null
+
+    client = gcCB3ExeIsMissing ? null : clients_push(gcCB3Pkg, new ClientDataInfoVCB3(gcCB3Pkg.dir), KnownClients.vCB3, 'v0.9.22.14 (Closed Beta 3)')
+    server = lsExeIsMissing ? null : servers_push(lsPkg, superServer, KnownServers.LoLSrv, tr('LoLSrv (Pre Season 1)'))
+    if(client && server) combinations_push(client, server)
 
     client = gc126ExeIsMissing ? null : clients_push(gc126Pkg, new ClientDataInfoV126(gc126Pkg.dir), KnownClients.v126, 'v1.0.0.126 (Season 1)')
     if(!modFileIsMissing) Object.assign(client!.maps, modPck1.maps)

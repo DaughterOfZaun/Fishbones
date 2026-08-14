@@ -6,10 +6,12 @@ import { maps } from "./maps"
 import { tr } from "../../translation"
 
 export type ClientVersion = number & { readonly brand: unique symbol }
+const VCB3 = versionFromString('0.9.22.14')
 const V126 = versionFromString('1.0.0.126')
 const V420 = versionFromString('4.20.0.315')
 export const KnownClients = {
     Unknown: 0 as ClientVersion,
+    "vCB3": VCB3 as ClientVersion,
     "v126": V126 as ClientVersion,
     "v420": V420 as ClientVersion,
     Default: V126 as ClientVersion,
@@ -21,6 +23,7 @@ export const KnownServers = {
     "BrokenWings": 1 as ServerVersion,
     "ChronoBreak": 2 as ServerVersion,
     "TestGrounds": 3 as ServerVersion,
+    "LoLSrv": 4 as ServerVersion,
     Default: 1 as ServerVersion,
 }
 
@@ -139,26 +142,27 @@ export function combinations_find(client: ClientVersion, server: ServerVersion){
     return combinations[index]
 }
 
+//HACK:
+export const superServer: ServerInfo = {
+    name: tr("Unknown"),
+    version: KnownServers.Unknown,
+    infoDir: "",
+    dllDir: "",
+    dll: "",
+    maps: Object.fromEntries(maps.map(map => {
+        const info = {
+            modes: modes.map(mode => mode.short),
+            bots: champions.map(champ => champ.short),
+        }
+        return [ map.id, info ]
+    })),
+    spells: Object.fromEntries(spells.map(spell => [ spell.short, {} ])),
+    champions: Object.fromEntries(champions.map(champ => [ champ.short, {} ])),
+    bots: champions.map(champ => champ.short)
+}
+
 export function combinations_merge(){
 
-    //HACK:
-    const superServer: ServerInfo = {
-        name: tr("Unknown"),
-        version: KnownServers.Unknown,
-        infoDir: "",
-        dllDir: "",
-        dll: "",
-        maps: Object.fromEntries(maps.map(map => {
-            const info = {
-                modes: modes.map(mode => mode.short),
-                bots: champions.map(champ => champ.short),
-            }
-            return [ map.id, info ]
-        })),
-        spells: Object.fromEntries(spells.map(spell => [ spell.short, {} ])),
-        champions: Object.fromEntries(champions.map(champ => [ champ.short, {} ])),
-        bots: champions.map(champ => champ.short)
-    }
     for(const client of Object.values(clients))
         combinations_push(client, superServer)
 
