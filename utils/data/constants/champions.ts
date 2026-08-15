@@ -196,6 +196,15 @@ export const champions = [
     { i: 188, short: "Voidwalker", name: "Kassadin" },
     { i: 189, short: "Wolfman", name: "Warwick" },
     { i: 190, short: "Yeti", name: "Nunu & Willump" },
+    { i: 191, short: "48thSlave", name: "Tabu" },
+    { i: 192, short: "Averdrian", name: "Averdrian" },
+    { i: 193, short: "BlindMonk", name: "Lee Sin" },
+    { i: 194, short: "DrMundo_Old", name: "Dr. Mundo" },
+    { i: 195, short: "Plantking", name: "Gavid" },
+    { i: 196, short: "RobBlackblade", name: "Rob Blackblade" },
+    { i: 197, short: "RobBlackblade_Old", name: "Rob Blackblade" },
+    { i: 198, short: "SpiderQueen", name: "Priscilla" },
+    { i: 199, short: "WaterWizard", name: "Well" },
 ]
 
 export class Champion extends PickableValue { 

@@ -21,6 +21,7 @@ import { button, form, label } from "../../ui/remote/types"
 import { VERSION_STRING } from "../constants-build"
 import type { StatsFs } from "node:fs"
 import { clients_push, combinations_merge, combinations_push, KnownClients, KnownServers, servers_push, superServer, type ClientInfo, type ServerInfo } from "./constants/client-server-combinations"
+import { gcCB2Pkg, ClientDataInfoVCB2 } from "./packages/game-client-cb2"
 import { gcCB3Pkg, ClientDataInfoVCB3 } from "./packages/game-client-cb3"
 import { gc126Pkg, ClientDataInfoV126 } from "./packages/game-client-126"
 import { gc420Pkg, ClientDataInfoV420 } from "./packages/game-client-420"
@@ -318,6 +319,7 @@ async function repairOrThrow(opts: Required<AbortOptions>){
     }
 
     let modFileIsMissing = !await fs_exists(modPck1.lockFile, opts, false)
+    let gcCB2ExeIsMissing = !await fs_exists(gcCB2Pkg.exe, opts)
     let gcCB3ExeIsMissing = !await fs_exists(gcCB3Pkg.exe, opts)
     let gc126ExeIsMissing = !await fs_exists(gc126Pkg.exe, opts)
     let gc420ExeIsMissing = !await fs_exists(gc420Pkg.exe, opts)
@@ -407,7 +409,18 @@ async function repairOrThrow(opts: Required<AbortOptions>){
             await fs_writeFile(gsSettings, JSON.stringify({ autoStartClient: false }, null, 4), { ...opts, encoding: 'utf8' })
         }),
 
-        !(args.installS0Client.value) ? Promise.resolve() :
+        !(args.installB2Client.value) ? Promise.resolve() :
+        repairArchived(gcCB2Pkg, opts).then(async () => {
+            gcCB2ExeIsMissing = false
+
+            return Promise.allSettled([
+                repairDirectX9Dll(gcCB2Pkg, opts),
+            ]).then((results) => {
+                throwAnyRejection(results)
+            })
+        }),
+
+        !(args.installB3Client.value) ? Promise.resolve() :
         repairArchived(gcCB3Pkg, opts).then(async () => {
             gcCB3ExeIsMissing = false
 
@@ -484,8 +497,12 @@ async function repairOrThrow(opts: Required<AbortOptions>){
     server = tgExeIsMissing ? null : servers_push(tgPkg, new TestGroundsDataInfo(tgPkg.dir), KnownServers.TestGrounds, tr('TestGrounds (Season 4)'))
     if(client && server) combinations_push(client, server)
 
-    client = gcCB3ExeIsMissing ? null : clients_push(gcCB3Pkg, new ClientDataInfoVCB3(gcCB3Pkg.dir), KnownClients.vCB3, 'v0.9.22.14 (Closed Beta 3)')
     server = lsExeIsMissing ? null : servers_push(lsPkg, Object.assign({}, superServer, { bots: [] }), KnownServers.LoLSrv, tr('LoLSrv (Pre Season 1)'))
+
+    client = gcCB2ExeIsMissing ? null : clients_push(gcCB2Pkg, new ClientDataInfoVCB2(gcCB2Pkg.dir), KnownClients.vCB2, 'v0.8.13.26 (Closed Beta 1)')
+    if(client && server) combinations_push(client, server)
+
+    client = gcCB3ExeIsMissing ? null : clients_push(gcCB3Pkg, new ClientDataInfoVCB3(gcCB3Pkg.dir), KnownClients.vCB3, 'v0.9.22.14 (Closed Beta 3)')
     if(client && server) combinations_push(client, server)
 
     combinations_merge()

@@ -428,15 +428,16 @@ export abstract class Game extends EventEmitter<GameEvents> {
         
         if(this.features.isHalfPingEnabled) return
 
-        const isNotCB3 = this.clientVersion != KnownClients.vCB3
-        const key = isNotCB3 ? blowfishKey : 'GLzvuWtyCfHyGhF2' //TODO: Unhardcode. Security
+        let key = blowfishKey //TODO: Unhardcode. Security
+        if(this.serverVersion == KnownServers.LoLSrv)
+            key = 'GLzvuWtyCfHyGhF2'
         for(let player of players)
             player.key = key
 
         try {
             this.node.services.probe.stop()
             const port = this.node.services.probe.port
-            this.serverSubprocess = await launchServer(this.serverVersion, this.getGameInfo(), opts, port)
+            this.serverSubprocess = await launchServer(this.clientVersion, this.serverVersion, this.getGameInfo(), opts, port)
             this.serverSubprocess.proc.once('exit', this.onServerExit)
             
             this.proxyServer = firewall(new ProxyServer(this.node), this.features.isFirewallEnabled)
@@ -537,7 +538,7 @@ export abstract class Game extends EventEmitter<GameEvents> {
                         await this.proxyClientServer.start(peerIds, opts)
 
                         //let proc: Awaited<ReturnType<typeof launchServer>>
-                        this.serverSubprocess = await launchServer(this.serverVersion, gameInfo, opts)
+                        this.serverSubprocess = await launchServer(this.clientVersion, this.serverVersion, gameInfo, opts)
                         this.serverSubprocess.proc.once('exit', this.onServerExit)
 
                         this.proxyClientServer.afterStart(this.serverSubprocess.port)

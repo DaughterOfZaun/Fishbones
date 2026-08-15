@@ -132,7 +132,8 @@ export const args = new class Args {
     installModPack = new Option('install-modpack', 'game-client-modpack-levels-install-enabled', true, tr('Install the package with additional levels'))
     spaceCheck = new Option('space-check', '', true, tr('Perform a free disk space check'))
     
-    installS0Client = new Option('install-s0-client', 'game-client-cb3-install-enabled', false, '')
+    installB2Client = new Option('install-b2-client', 'game-client-cb2-install-enabled', false, '')
+    installB3Client = new Option('install-b3-client', 'game-client-cb3-install-enabled', false, '')
     installS1Client = new Option('install-s1-client', 'game-client-126-install-enabled', true, '')
     installS4Client = new Option('install-s4-client', 'game-client-420-install-enabled', false, '')
 
@@ -141,6 +142,7 @@ export const args = new class Args {
     installCBServer = new Option('install-chronobreak', 'chronobreak-install-enabled', false, '')
     installTGServer = new Option('install-testgrounds', 'testgrounds-install-enabled', false, '')
     
+    gcCB2Location = new Option('', 'game-client-cb2-location', GC_LOCATION_AUTO)
     gcCB3Location = new Option('', 'game-client-cb3-location', GC_LOCATION_AUTO)
     gc126Location = new Option('', 'game-client-126-location', GC_LOCATION_AUTO)
     gc420Location = new Option('', 'game-client-420-location', GC_LOCATION_AUTO)

@@ -1,15 +1,16 @@
 import path from 'node:path'
 import { sdkPkg } from '../data/packages'
 import { getFreePort, killSubprocess, spawn, startProcess, type ChildProcess } from './process'
-import { servers, type ServerVersion } from '../data/constants/client-server-combinations'
+import { servers, type ClientVersion, type ServerVersion } from '../data/constants/client-server-combinations'
 import { fs_writeFile } from '../data/fs'
 import type { GameInfo } from '../../game/game-info'
 import type { AbortOptions } from '@libp2p/interface'
+import { versionToString } from '../constants-build'
 
 const LOG_PREFIX = 'SERVER'
 
 export type ChildProcessWithPort = { proc: ChildProcess, port: number }
-export async function launchServer(serverVersion: ServerVersion, info: GameInfo, opts: Required<AbortOptions>, port = 0): Promise<ChildProcessWithPort> {
+export async function launchServer(clientVersion: ClientVersion, serverVersion: ServerVersion, info: GameInfo, opts: Required<AbortOptions>, port = 0): Promise<ChildProcessWithPort> {
     const gsPkg = servers[serverVersion]!
 
     if(port === 0) port = await getFreePort() //HACK:
@@ -26,7 +27,7 @@ export async function launchServer(serverVersion: ServerVersion, info: GameInfo,
         const player = info.players[0]!
         cmd = [
             gsPkg.dll,
-            '0.9.22.14', //HACK:
+            versionToString(clientVersion),
             '--player', player.name,
             '--champion', player.champion,
             '--skin', player.skin.toString(),

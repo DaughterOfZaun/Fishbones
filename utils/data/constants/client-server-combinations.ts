@@ -6,11 +6,13 @@ import { maps } from "./maps"
 import { tr } from "../../translation"
 
 export type ClientVersion = number & { readonly brand: unique symbol }
+const VCB2 = versionFromString('0.8.13.26')
 const VCB3 = versionFromString('0.9.22.14')
 const V126 = versionFromString('1.0.0.126')
 const V420 = versionFromString('4.20.0.315')
 export const KnownClients = {
     Unknown: 0 as ClientVersion,
+    "vCB2": VCB2 as ClientVersion,
     "vCB3": VCB3 as ClientVersion,
     "v126": V126 as ClientVersion,
     "v420": V420 as ClientVersion,

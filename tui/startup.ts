@@ -11,6 +11,7 @@ import { WINE_CMD_AUTO, WINE_CMD_AUTO_IDX, WINE_CMD_AUTO_TEMPLATE, WINE_CMD_CUST
 import { profileIcons, profileIconsCount } from "../utils/data/constants/profile-icons";
 import { gc420Pkg } from "../utils/data/packages/game-client-420";
 import { gcCB3Pkg } from "../utils/data/packages/game-client-cb3";
+import { gcCB2Pkg } from "../utils/data/packages/game-client-cb2";
 import { sanitize_str } from "../utils/data/constants/values/inputable";
 //import { logger } from "../utils/log";
 //import { inspect } from 'node:util'
@@ -113,7 +114,8 @@ export async function startup(mrs: MRs, opts: Required<AbortOptions>){
             !systemLocaleSupported || usedLocale == systemLocale && usedLocale == DEFAULT_LOCALE,
         ),
 
-        ...clientLocation(() => view, gcCB3Pkg, 'installS0Client', 'InstallS0Client', 'S0ClientLocation', 'S0ClientCustomLocation', 'gcCB3Location'),
+        ...clientLocation(() => view, gcCB2Pkg, 'installB2Client', 'InstallB2Client', 'B2ClientLocation', 'B2ClientCustomLocation', 'gcCB2Location'),
+        ...clientLocation(() => view, gcCB3Pkg, 'installB3Client', 'InstallB3Client', 'B3ClientLocation', 'B3ClientCustomLocation', 'gcCB3Location'),
         ...clientLocation(() => view, gc126Pkg, 'installS1Client', 'InstallS1Client', 'S1ClientLocation', 'S1ClientCustomLocation', 'gc126Location'),
         ...clientLocation(() => view, gc420Pkg, 'installS4Client', 'InstallS4Client', 'S4ClientLocation', 'S4ClientCustomLocation', 'gc420Location'),
         
@@ -222,11 +224,11 @@ export async function startup(mrs: MRs, opts: Required<AbortOptions>){
 function clientLocation(
     getView: () => DeferredView<any>,
     gcPkg: { dir: string },
-    installClient: 'installS0Client' | 'installS1Client' | 'installS4Client',
+    installClient: 'installB2Client' | 'installB3Client' | 'installS1Client' | 'installS4Client',
     InstallClient: string,
     ClientLocation: string,
     CustomClientLocation: string,
-    gcLocation: 'gc126Location' | 'gc420Location' | 'gcCB3Location'
+    gcLocation: 'gcCB2Location' | 'gcCB3Location' | 'gc126Location' | 'gc420Location'
 ){
     const GC_LOCATION_CUSTOM_IDX = gcLocationFromStringToIndex[GC_LOCATION_CUSTOM]!
     const index = gcLocationFromStringToIndex[args[gcLocation].value] ?? GC_LOCATION_CUSTOM_IDX
