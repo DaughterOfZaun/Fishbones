@@ -16,8 +16,8 @@ func _ready() -> void:
             #key = key.substr(0, 1).to_lower() + child.name.substr(1)
             fields[key] = child
 
-        if child is Control:
-            bind_child(child as Control)
+            if child is Control:
+                bind_child(child as Control)
 
         if !(child is ArrayView || child is DictionaryView):
             var children := child.get_children(); children.reverse()

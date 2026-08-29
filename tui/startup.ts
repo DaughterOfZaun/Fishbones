@@ -87,7 +87,8 @@ export async function startup(mrs: MRs, opts: Required<AbortOptions>){
 
         EnableInternet: checkbox(args.globalDiscovery.value, (on) => args.globalDiscovery.save(on)),
         UpdateLauncher: checkbox(args.selfUpgrade.value, (on) => args.selfUpgrade.save(on)),
-        InstallModPack: checkbox(args.installModPack.value, (on) => args.installModPack.save(on)),
+        InstallModPack1: checkbox(args.installModPack1.value, (on) => args.installModPack1.save(on)),
+        InstallModPack2: checkbox(args.installModPack2.value, (on) => args.installModPack2.save(on)),
         DownloadSource: option(
             [
                 { id: DownloadSource.Torrents_and_Mega, text: tr('web + torrents + mega.nz') },

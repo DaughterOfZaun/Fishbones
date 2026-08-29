@@ -47,6 +47,7 @@ export interface ClientExeInfo {
     exe: string
 }
 export interface ClientDataInfo {
+    locales: string[]
     maps: Record<number, {}>
     spells: Record<string, { icon: string }>
     champions: Record<string, {
@@ -101,13 +102,14 @@ interface SkinInfo {
 export const clients: Record<ClientVersion, ClientInfo> = {}
 export function clients_push(exeInfo: ClientExeInfo, dataInfo: ClientDataInfo, version: ClientVersion, name: string){
     const { exe, exeDir } = exeInfo
-    const { maps, spells, champions } = dataInfo
+    const { maps, spells, champions, locales } = dataInfo
     const client: ClientInfo = {
         exe, exeDir,
         name, version,
         maps: Object.assign({}, maps),
         spells: Object.assign({}, spells),
         champions: Object.assign({}, champions),
+        locales: locales.slice(0),
     }
     clients[version] = client
     return client

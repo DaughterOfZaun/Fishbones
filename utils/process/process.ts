@@ -159,6 +159,19 @@ function onUncaughtException(err: AdvancedError){
         //&& err.fd == 15
     ) return
 
+    if(
+        false
+        || err.name == 'AbortError'
+        || err.name == 'TimeoutError'
+        || err.name == 'NoValidAddressesError'
+        || err.name == 'DNSQueryFailedError'
+        || err.name == 'AggregateError'
+        || err.name == 'EncryptionFailedError'
+        || err.name == 'InvalidPeerIdError'
+        || err.message == 'All multiaddr dials failed'
+        || err.message == 'The operation was aborted due to timeout'
+    ) return
+
     //const unwrapped = unwrapAbortError(err)
     //if(unwrapped instanceof ExitPromptError){
         //TODO: Investigate.

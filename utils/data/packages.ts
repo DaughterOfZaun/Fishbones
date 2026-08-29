@@ -8,7 +8,7 @@ import { bwPkg } from './packages/game-server-bw'
 import { cbPkg } from "./packages/game-server-cb"
 import { tgPkg } from './packages/game-server-tg'
 import { gitPkg } from './packages/git'
-import { modPck1 } from './packages/modpack-levels'
+import { modPck1 } from './packages/modpack-126-levels'
 import { sdkPkg } from './packages/sdk'
 import { fbPkg } from './upgrade'
 import { tr } from '../translation'

@@ -196,7 +196,8 @@ async function directConnect(node: LibP2PNode, opts: Required<AbortOptions>){
                 view.get('Connect').update(button(void 0, !!err))
             })
         }),
-        Error: label(),
+        Error: label(''),
+        Warning: label(''),
         Connect: button(() => view.resolve(lastPeerInfoString)),
         Cancel: button(() => view.resolve()),
     }), opts)

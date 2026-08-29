@@ -63,6 +63,7 @@ export const config = {
     },
 
     modPck1ZipTorrent: './torrents/modded_levels_paste_on_client.7z.torrent',
+    modPck2ZipTorrent: './torrents/additional_locales_for_126.7z.torrent',
 
     gcCB2ZipTorrent: './torrents/playable_client_cb2.7z.torrent',
     gcCB3ZipTorrent: './torrents/playable_client_cb3.7z.torrent',

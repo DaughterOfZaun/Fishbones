@@ -46,10 +46,11 @@ export abstract class GCPkgCommon extends PkgInfoExe implements ClientExeInfo {
         this.exeDir = this.dir
         this.exe = path.join(this.exeDir, this.exeName)
 
-        this.onDirSet?.(this.dir)
+        for(const cb of this.onDirSet)
+            cb(this.dir)
     }
 
-    onDirSet?: (gcPkg_dir: string) => void
+    onDirSet: ((gcPkg_dir: string) => void)[] = []
 }
 
 export const gc126Pkg = new class extends GCPkgCommon {
@@ -111,6 +112,9 @@ export const gc126Pkg = new class extends GCPkgCommon {
 }
 
 export class ClientDataInfoCommon {
+
+    locales = [ 'en_US' ]
+
     protected appyDir(this_dir: string){
         const info = this as unknown as ClientDataInfo
         for(const spell of Object.values(info.spells)){

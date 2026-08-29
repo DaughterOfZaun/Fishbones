@@ -240,7 +240,7 @@ export class AIDifficulty extends PickableValue {
 export class Skin extends PickableValue { 
     public static readonly name = tr('Skin')
     public static readonly values = Array(10).fill(0).map((v, i) => i)
-    public static readonly choices = Skin.values.map(i => tr(`Skin { i}`, { i }))
+    public static readonly choices = Skin.values.map(i => tr(`Skin {i}`, { i }))
 }
 
 export class Talents extends ValueDesc<

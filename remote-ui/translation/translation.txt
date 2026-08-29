@@ -1,0 +1,4311 @@
+en_US Repairing of some critical component has failed.
+it_IT La riparazione di un componente critico non è riuscita
+ru_RU Не удалось восстановить какой-то важный компонент.
+pt_BR O reparo de um componente crítico falhou.
+zh_CN 某些关键组件的修复失败
+pl_PL Naprawa niektórych krytycznych komponentów nie powiodła się.
+fr_FR La réparation d'un composant critique a échoué.
+es_ES Falló la reparación de algún componente crítico.
+en_GB Repairing of some critical component has failed.
+de_DE Die Reparatur einer kritischen Komponente ist fehlgeschlagen.
+
+en_US A fatal error occurred:
+it_IT Si è verificato un errore fatale:
+ru_RU Произошла фатальная ошибка:
+pt_BR Um erro fatal ocorreu:
+zh_CN 发生致命错误
+pl_PL Wystąpił błąd krytyczny:
+fr_FR Une erreur fatale s'est produite :
+es_ES Se ha producido un error fatal:
+en_GB A fatal error occurred:
+de_DE Ein schwerwiegender Fehler ist aufgetreten:
+
+en_US New game found
+it_IT Nuova partita trovata
+ru_RU Найдена новая игра
+pt_BR Nova partida encontrada
+zh_CN 发现新游戏
+pl_PL Znaleziono nową grę
+fr_FR Nouvelle partie trouvée
+es_ES Nueva partida encontrada
+en_GB New game found
+de_DE Neues Spiel gefunden
+
+en_US No games
+it_IT Nessuna partita
+ru_RU Нет игр
+pt_BR Nenhuma partida
+zh_CN 没有游戏
+pl_PL Brak gier
+fr_FR Aucune partie
+es_ES Sin partidas
+en_GB No games
+de_DE Keine Spiele
+
+en_US No games on local network
+it_IT Nessuna partita sulla rete locale
+ru_RU Нет игр в локальной сети
+pt_BR Nenhuma partida na rede local
+zh_CN 本地网络上没有游戏
+pl_PL Brak gier w sieci lokalnej
+fr_FR Aucune partie sur le réseau local
+es_ES Sin partidas en la red local
+en_GB No games on local network
+de_DE Keine Spiele im lokalen Netzwerk
+
+en_US Wait longer or host your own
+it_IT Aspetta più a lungo o crea tu una partita
+ru_RU Подождите дольше или создайте свою
+pt_BR Aguarde ou crie sua própria
+zh_CN 请稍等或自行主持游戏
+pl_PL Poczekaj dłużej lub utwórz własną
+fr_FR Attendez plus longtemps ou hébergez la vôtre
+es_ES Espere más tiempo o aloje la suya propia
+en_GB Wait longer or host your own
+de_DE Warten Sie länger oder hosten Sie Ihr eigenes Spiel
+
+en_US Connecting to host...
+it_IT Connessione all'host…
+ru_RU Подключение к хосту...
+pt_BR Conectando-se ao host…
+zh_CN 正在连接主机...
+pl_PL Łączenie z hostem...
+fr_FR Connexion à l'hôte...
+es_ES Conectando al anfitrión...
+en_GB Connecting to host...
+de_DE Verbindung zum Host wird hergestellt...
+
+en_US Joining the game...
+it_IT Connessione in corso…
+ru_RU Присоединение к игре...
+pt_BR Juntando-se à partida…
+zh_CN 正在加入游戏...
+pl_PL Dołączanie do gry...
+fr_FR Rejoindre la partie...
+es_ES Uniéndose a la partida...
+en_GB Joining the game...
+de_DE Der Partie wird beigetreten...
+
+en_US ms
+it_IT ms
+ru_RU мс
+pt_BR ms
+zh_CN 毫秒
+pl_PL ms
+fr_FR ms
+es_ES ms
+en_GB ms
+de_DE ms
+
+en_US Failed to open data store:
+it_IT Impossibile aprire l'archivio dati:
+ru_RU Не удалось открыть хранилище данных:
+pt_BR Falha ao abrir armazenamento de dados:
+zh_CN 无法打开数据存储
+pl_PL Nie udało się otworzyć magazynu danych:
+fr_FR Échec de l'ouverture du magasin de données :
+es_ES Error al abrir el almacén de datos:
+en_GB Failed to open data store:
+de_DE Datenstore konnte nicht geöffnet werden:
+
+en_US Failed to load private key:
+it_IT Impossibile caricare la chiave privata:
+ru_RU Не удалось загрузить закрытый ключ:
+pt_BR Falha ao carregar chave privada:
+zh_CN 无法加载私钥
+pl_PL Nie udało się załadować klucza prywatnego:
+fr_FR Échec du chargement de la clé privée :
+es_ES Error al cargar la clave privada:
+en_GB Failed to load private key:
+de_DE Privater Schlüssel konnte nicht geladen werden:
+
+en_US Envelope signature is not valid
+it_IT La firma del pacchetto non è valida
+ru_RU Подпись контакта недействительна
+pt_BR Assinatura de envelope invalida
+zh_CN 信封签名无效
+pl_PL Podpis koperty jest nieprawidłowy
+fr_FR La signature de l'enveloppe n'est pas valide
+es_ES La firma del sobre no es válida
+en_GB Envelope signature is not valid
+de_DE Umschlagssignatur ist ungültig
+
+en_US Can not dial self
+it_IT Non è possibile chiamare se stessi
+ru_RU Нельзя звонить самому себе
+pt_BR Não é possível conectar a si mesmo
+zh_CN 无法自行拨号
+pl_PL Nie można dzwonić do siebie
+fr_FR Impossible de s'appeler soi-même
+es_ES No se puede marcar a uno mismo
+en_GB Can not dial self
+de_DE Kann sich nicht selbst anrufen
+
+en_US Already connected
+it_IT Già connesso
+ru_RU Уже подключен
+pt_BR Já conectado
+zh_CN 已连接
+pl_PL Już połączono
+fr_FR Déjà connecté
+es_ES Ya conectado
+en_GB Already connected
+de_DE Bereits verbunden
+
+en_US Already in dial queue
+it_IT Già in coda di chiamata
+ru_RU Уже в очереди на набор номера
+pt_BR Já em fila de conexão
+zh_CN 已在拨号队列中
+pl_PL Już w kolejce połączeń
+fr_FR Déjà dans la file d'attente d'appel
+es_ES Ya en la cola de marcación
+en_GB Already in dial queue
+de_DE Bereits in der Wählwarteschlange
+
+en_US Waiting for the server to start...
+it_IT In attesa dell'avvio del server…
+ru_RU Ждём запуска сервера…
+pt_BR Aguardando o servidor ser iniciado…
+zh_CN 等待服务器启动...
+pl_PL Oczekiwanie na uruchomienie serwera...
+fr_FR En attente du démarrage du serveur...
+es_ES Esperando a que el servidor se inicie...
+en_GB Waiting for the server to start...
+de_DE Warten auf den Start des Servers...
+
+en_US Waiting for the end of the game...
+it_IT Aspettando la fine della partita…
+ru_RU Ждём окончания игры...
+pt_BR Aguardando o fim do jogo…
+zh_CN 等待游戏结束...
+pl_PL Oczekiwanie na koniec gry...
+fr_FR En attente de la fin de la partie...
+es_ES Esperando el final de la partida...
+en_GB Waiting for the end of the game...
+de_DE Warten auf das Ende des Spiels...
+
+en_US The client exited unexpectedly
+it_IT Il client è uscito inaspettatamente
+ru_RU Клиент неожиданно завершился
+pt_BR O cliente fechou inesperadamente
+zh_CN 客户端意外退出
+pl_PL Klient niespodziewanie zakończył działanie
+fr_FR Le client s'est arrêté de manière inattendue
+es_ES El cliente salió inesperadamente
+en_GB The client exited unexpectedly
+de_DE Der Client wurde unerwartet beendet
+
+en_US Show command to run manually
+it_IT Mostra il comando da eseguire manualmente
+ru_RU Отобразить команду для запуска вручную
+pt_BR Mostrar comando para executar manualmente
+zh_CN 显示手动运行的命令
+pl_PL Pokaż polecenie do ręcznego uruchomienia
+fr_FR Afficher la commande à exécuter manuellement
+es_ES Mostrar comando para ejecutar manualmente
+en_GB Show command to run manually
+de_DE Befehl zur manuellen Ausführung anzeigen
+
+en_US Restart the client
+it_IT Riavviare il client
+ru_RU Перезапустить клиент
+pt_BR Reiniciar Cliente
+zh_CN 重启客户端
+pl_PL Uruchom ponownie klienta
+fr_FR Redémarrer le client
+es_ES Reiniciar el cliente
+en_GB Restart the client
+de_DE Client neu starten
+
+en_US Leave
+it_IT Esci
+ru_RU Покинуть игру
+pt_BR Sair
+zh_CN 离开
+pl_PL Wyjdź
+fr_FR Quitter
+es_ES Salir
+en_GB Leave
+de_DE Verlassen
+
+en_US Run the command in the terminal or paste it into a bat file
+it_IT Esegui il comando nel terminale o incollalo in un file bat
+ru_RU Запустите команду в терминале или вставьте её в bat-файл
+pt_BR Executar comando no terminal ou colar-lo em um arquivo bat
+zh_CN 在终端中运行该命令或将其粘贴到批处理文件中
+pl_PL Uruchom polecenie w terminalu lub wklej je do pliku wsadowego
+fr_FR Exécutez la commande dans le terminal ou collez-la dans un fichier bat
+es_ES Ejecute el comando en la terminal o péguelo en un archivo bat
+en_GB Run the command in the terminal or paste it into a bat file
+de_DE Führen Sie den Befehl im Terminal aus oder fügen Sie ihn in eine Bat-Datei ein
+
+en_US Game
+it_IT Partita
+ru_RU Игра
+pt_BR Jogo
+zh_CN 游戏
+pl_PL Gra
+fr_FR Partie
+es_ES Partida
+en_GB Game
+de_DE Spiel
+
+en_US An input delay of {delay}ms is set.
+it_IT È impostato un ritardo di input di {delay}ms.
+ru_RU Установлена задержка ввода, равная {delay}мс.
+pt_BR Um atraso de input de {delay}ms for configurado.
+zh_CN 已设置 {delay}ms 的输入延迟
+pl_PL Ustawiono opóźnienie wejścia wynoszące {delay} ms.
+fr_FR Un délai d'entrée de {delay} ms est défini.
+es_ES Se ha establecido un retraso de entrada de {delay} ms.
+en_GB An input delay of {delay}ms is set.
+de_DE Eine Eingabeverzögerung von {delay} ms ist eingestellt.
+
+en_US Offense
+it_IT Attacco
+ru_RU Неистовство
+pt_BR Ataque
+zh_CN 进攻
+pl_PL Ofensywa
+fr_FR Attaque
+es_ES Ofensiva
+en_GB Offense
+de_DE Offensive
+
+en_US Defense
+it_IT Difesa
+ru_RU Храбрость
+pt_BR Defesa
+zh_CN 防守
+pl_PL Obrona
+fr_FR Défense
+es_ES Defensa
+en_GB Defense
+de_DE Verteidigung
+
+en_US Utility
+it_IT Supporto
+ru_RU Хитрость
+pt_BR Utilidade
+zh_CN 工具
+pl_PL Użytkowość
+fr_FR Utilité
+es_ES Utilidad
+en_GB Utility
+de_DE Nutzen
+
+en_US Bot
+it_IT Bot
+ru_RU Бот
+pt_BR Bot
+zh_CN 机器人
+pl_PL Bot
+fr_FR Bot
+es_ES Bot
+en_GB Bot
+de_DE Bot
+
+en_US An error occurred while unhandling the protocol: %e
+it_IT Si è verificato un errore durante la gestione del protocollo: %e
+ru_RU Произошла ошибка при отключении протокола: %e
+pt_BR Um erro ocorreu enquanto
+zh_CN 处理协议时发生错误：%e
+pl_PL Wystąpił błąd podczas obsługi protokołu: %e
+fr_FR Une erreur s'est produite lors de la gestion du protocole : %e
+es_ES Se produjo un error al manejar el protocolo: %e
+en_GB An error occurred while unhandling the protocol: %e
+de_DE Beim Behandeln des Protokolls ist ein Fehler aufgetreten: %e
+
+en_US New Page
+it_IT Nuova Pagina
+ru_RU Новая страница
+pt_BR Nova página
+zh_CN 新页面
+pl_PL Nowa strona
+fr_FR Nouvelle page
+es_ES Nueva página
+en_GB New Page
+de_DE Neue Seite
+
+en_US {name} joined the lobby
+it_IT {name} si è unito alla lobby
+ru_RU {name} присоединился к лобби
+pt_BR {name} se entrou no saguão
+zh_CN {name} 加入了游乐厅
+pl_PL {name} dołączył do poczekalni
+fr_FR {name} a rejoint le hall
+es_ES {name} se unió al vestíbulo
+en_GB {name} joined the lobby
+de_DE {name} hat die Lobby betreten
+
+en_US web + torrents + mega.nz
+it_IT web + torrents + mega.nz
+ru_RU веб-сервера + торрентов + mega.nz
+pt_BR web + torrents + mega.nz
+zh_CN 网页 + 种子 + mega.nz
+pl_PL sieć + torrenty + mega.nz
+fr_FR web + torrents + mega.nz
+es_ES web + torrents + mega.nz
+en_GB web + torrents + mega.nz
+de_DE Web + Torrents + mega.nz
+
+en_US web + torrents
+it_IT web + torrents
+ru_RU веб-сервера + торрентов
+pt_BR web + torrents
+zh_CN 网页 + 种子
+pl_PL sieć + torrenty
+fr_FR web + torrents
+es_ES web + torrents
+en_GB web + torrents
+de_DE Web + Torrents
+
+en_US web + mega.nz
+it_IT web + mega.nz
+ru_RU веб-сервера + mega.nz
+pt_BR web + mega.nz
+zh_CN 网页 + mega.nz
+pl_PL sieć + mega.nz
+fr_FR web + mega.nz
+es_ES web + mega.nz
+en_GB web + mega.nz
+de_DE Web + mega.nz
+
+en_US web
+it_IT web
+ru_RU веб-сервера
+pt_BR web
+zh_CN 网页
+pl_PL sieć
+fr_FR web
+es_ES web
+en_GB web
+de_DE Web
+
+en_US Player
+it_IT Giocatore
+ru_RU Игрок
+pt_BR Jogador
+zh_CN 玩家
+pl_PL Gracz
+fr_FR Joueur
+es_ES Jugador
+en_GB Player
+de_DE Spieler
+
+en_US New player joined
+it_IT Nuovo giocatore si è unito
+ru_RU Присоединился новый игрок
+pt_BR Novo jogardor se juntou
+zh_CN 新玩家加入
+pl_PL Dołączył nowy gracz
+fr_FR Nouveau joueur rejoint
+es_ES Nuevo jugador se unió
+en_GB New player joined
+de_DE Neuer Spieler beigetreten
+
+en_US Download files from mega.nz
+it_IT Scarica file da mega.nz
+ru_RU Скачивать файлы с mega.nz
+pt_BR Baixar arquivos via mega.nz
+zh_CN 从 mega.nz 下载文件
+pl_PL Pobierz pliki z mega.nz
+fr_FR Télécharger les fichiers depuis mega.nz
+es_ES Descargar archivos desde mega.nz
+en_GB Download files from mega.nz
+de_DE Dateien von mega.nz herunterladen
+
+en_US Download and Seed files via BitTorrent
+it_IT Scarica e distribuisci file tramite BitTorrent
+ru_RU Скачивайть и раздавать файлы через BitTorrent
+pt_BR Baixar arquivos e semear via BitTorrent
+zh_CN 通过 BitTorrent 下载和分享文件
+pl_PL Pobieraj i udostępniaj pliki przez BitTorrent
+fr_FR Télécharger et partager des fichiers via BitTorrent
+es_ES Descargar y compartir archivos vía BitTorrent
+en_GB Download and Seed files via BitTorrent
+de_DE Dateien über BitTorrent herunterladen und seeden
+
+en_US Connect to other players via Internet
+it_IT Connettiti ad altri giocatori tramite Internet
+ru_RU Подключаться к другим игрокам через Интернет
+pt_BR Conectar a outros jogadores via Internet
+zh_CN 通过互联网连接其他玩家
+pl_PL Połącz się z innymi graczami przez Internet
+fr_FR Se connecter à d'autres joueurs via Internet
+es_ES Conectarse a otros jugadores vía Internet
+en_GB Connect to other players via Internet
+de_DE Mit anderen Spielern über das Internet verbinden
+
+en_US Download game server updates
+it_IT Scarica gli aggiornamenti del server di gioco
+ru_RU Скачивать обновления для игрового сервера
+pt_BR Baixar atualizações de servidor
+zh_CN 下载游戏服务器更新
+pl_PL Pobierz aktualizacje serwera gry
+fr_FR Télécharger les mises à jour du serveur de jeu
+es_ES Descargar actualizaciones del servidor de juego
+en_GB Download game server updates
+de_DE Spielserver-Updates herunterladen
+
+en_US Download launcher updates
+it_IT Scarica gli aggiornamenti del launcher
+ru_RU Скачивать обновления для лаунчера
+pt_BR Baisar atualizaçoes do launcher
+zh_CN 下载启动器更新
+pl_PL Pobierz aktualizacje launchera
+fr_FR Télécharger les mises à jour du lanceur
+es_ES Descargar actualizaciones del lanzador
+en_GB Download launcher updates
+de_DE Launcher-Updates herunterladen
+
+en_US Set custom UDP port number to use
+it_IT Imposta il numero di porta UDP personalizzato da utilizzare
+ru_RU Укажите другой номер UDP-порта для использования
+pt_BR Buscar por porta UDP personalizada
+zh_CN 设置要使用的自定义 UDP 端口号
+pl_PL Ustaw niestandardowy numer portu UDP
+fr_FR Définir le numéro de port UDP personnalisé à utiliser
+es_ES Establecer número de puerto UDP personalizado
+en_GB Set custom UDP port number to use
+de_DE Benutzerdefinierte UDP-Portnummer festlegen
+
+en_US Install the package with additional levels
+it_IT Installa il pacchetto con livelli aggiuntivi
+ru_RU Установить пакет с дополнительными уровнями
+pt_BR Instalar pacote com mapas adicionais
+zh_CN 安装包含额外关卡的软件包
+pl_PL Zainstaluj pakiet z dodatkowymi poziomami
+fr_FR Installer le paquet avec des niveaux supplémentaires
+es_ES Instalar el paquete con niveles adicionales
+en_GB Install the package with additional levels
+de_DE Paket mit zusätzlichen Levels installieren
+
+en_US (Debug) Download+Unpack+Build missing files
+it_IT (Debug) Scarica+Estrai+Crea file mancanti
+ru_RU (Отладка) Загрузка+Распаковка+Сборка недостающих файлов
+pt_BR (Debug) Baixar+Descompactar+Buildar+Criar Arquivos ausentes
+zh_CN (调试) 下载+解压+构建缺失文件
+pl_PL (Debug) Pobierz+Rozpakuj+Zbuduj brakujące pliki
+fr_FR (Débogage) Télécharger+Décompresser+Compiler les fichiers manquants
+es_ES (Depurar) Descargar+Descomprimir+Compilar archivos faltantes
+en_GB (Debug) Download+Unpack+Build missing files
+de_DE (Debug) Fehlende Dateien herunterladen+entpacken+erstellen
+
+en_US (Debug) Download missing files
+it_IT (Debug) Scarica i file mancanti
+ru_RU (Отладка) Загрузка недостающих файлов
+pt_BR (Debug) Download missing files
+zh_CN (调试) 下载缺失文件
+pl_PL (Debug) Pobierz brakujące pliki
+fr_FR (Débogage) Télécharger les fichiers manquants
+es_ES (Depurar) Descargar archivos faltantes
+en_GB (Debug) Download missing files
+de_DE (Debug) Fehlende Dateien herunterladen
+
+en_US (Debug) Unpack missing files
+it_IT (Debug) Estrarre i file mancanti
+ru_RU (Отладка) Распаковка недостающих файлов
+pt_BR (Debug) Unpack missing files
+zh_CN (调试) 解压缺失文件
+pl_PL (Debug) Rozpakuj brakujące pliki
+fr_FR (Débogage) Décompresser les fichiers manquants
+es_ES (Depurar) Descomprimir archivos faltantes
+en_GB (Debug) Unpack missing files
+de_DE (Debug) Fehlende Dateien entpacken
+
+en_US (Debug) Build missing files
+it_IT (Debug) Compila i file mancanti
+ru_RU (Отладка) Сборка недостающих файлов
+pt_BR (Debug) Build missing files
+zh_CN (调试) 构建缺失文件
+pl_PL (Debug) Zbuduj brakujące pliki
+fr_FR (Débogage) Compiler les fichiers manquants
+es_ES (Depurar) Compilar archivos faltantes
+en_GB (Debug) Build missing files
+de_DE (Debug) Fehlende Dateien erstellen
+
+en_US Ask about custom arguments at startup
+it_IT Richiedi informazioni sugli argomenti personalizzati all'avvio
+ru_RU Спрашивать об аргументах при запуске
+pt_BR Perguntar sobre argumentos customizados ao inicializar
+zh_CN 启动时询问自定义参数
+pl_PL Pytaj o niestandardowe argumenty przy uruchamianiu
+fr_FR Demander les arguments personnalisés au démarrage
+es_ES Preguntar por argumentos personalizados al iniciar
+en_GB Ask about custom arguments at startup
+de_DE Beim Start nach benutzerdefinierten Argumenten fragen
+
+en_US (Internal) Use JSON RPC for I/O
+it_IT (Interno) Utilizzare JSON RPC per I/O
+ru_RU (Внутренний) Использовать JSON-RPC для ввода-вывода
+pt_BR (Internal) Usar JSON RPC para I/O
+zh_CN (内部) 使用 JSON RPC 进行 I/O 操作
+pl_PL (Wewnętrzne) Używaj JSON RPC do I/O
+fr_FR (Interne) Utiliser JSON RPC pour les E/S
+es_ES (Interno) Usar JSON RPC para E/S
+en_GB (Internal) Use JSON RPC for I/O
+de_DE (Intern) JSON RPC für E/A verwenden
+
+en_US (Internal) Specify the system locale
+it_IT (Interno) Specificare le impostazioni locali del sistema
+ru_RU (Внутренний) Укажите используемый системой язык
+pt_BR (Internal) Specificar a localização do sistema
+zh_CN (内部) 指定系统区域设置
+pl_PL (Wewnętrzne) Określ ustawienia regionalne systemu
+fr_FR (Interne) Spécifier les paramètres régionaux du système
+es_ES (Interno) Especificar la configuración regional del sistema
+en_GB (Internal) Specify the system locale
+de_DE (Intern) Systemgebietsschema angeben
+
+en_US Fetching a list of open requests failed:
+it_IT Impossibile recuperare l’elenco delle richieste aperte:
+ru_RU Не удалось получить список открытых запросов:
+pt_BR Falha ao obter lista de solicitações em aberto:
+zh_CN 获取已打开请求列表失败
+pl_PL Nie udało się pobrać listy otwartych żądań:
+fr_FR Échec de la récupération de la liste des requêtes ouvertes :
+es_ES Error al obtener la lista de solicitudes abiertas:
+en_GB Fetching a list of open requests failed:
+de_DE Abrufen einer Liste offener Anfragen fehlgeschlagen:
+
+en_US {mr_reference} · created by {mr_author_name}
+it_IT {mr_reference} · creato da {mr_author_name}
+ru_RU {mr_reference} · создано {mr_author_name}
+pt_BR {mr_reference} · created by {mr_author_name}
+zh_CN {mr_reference} · 由 {mr_author_name} 创建
+pl_PL {mr_reference} · utworzone przez {mr_author_name}
+fr_FR {mr_reference} · créé par {mr_author_name}
+es_ES {mr_reference} · creado por {mr_author_name}
+en_GB {mr_reference} · created by {mr_author_name}
+de_DE {mr_reference} · erstellt von {mr_author_name}
+
+en_US Disconnected
+it_IT Disconnesso
+ru_RU Отключён
+pt_BR Desconectado
+zh_CN 已断开连接
+pl_PL Rozłączono
+fr_FR Déconnecté
+es_ES Desconectado
+en_GB Disconnected
+de_DE Getrennt
+
+en_US Connecting...
+it_IT Connessione in corso…
+ru_RU Подключение…
+pt_BR Conectando…
+zh_CN 正在连接...
+pl_PL Łączenie...
+fr_FR Connexion...
+es_ES Conectando...
+en_GB Connecting...
+de_DE Verbinden...
+
+en_US Connected
+it_IT Connesso
+ru_RU Подключен
+pt_BR Conectado
+zh_CN 已连接
+pl_PL Połączono
+fr_FR Connecté
+es_ES Conectado
+en_GB Connected
+de_DE Verbunden
+
+en_US Connection failed
+it_IT Connessione fallita
+ru_RU Не удалось установить соединение
+pt_BR Conexão falhou
+zh_CN 连接失败
+pl_PL Połączenie nieudane
+fr_FR Échec de la connexion
+es_ES Conexión fallida
+en_GB Connection failed
+de_DE Verbindung fehlgeschlagen
+
+en_US No connections
+it_IT Nessuna connessione
+ru_RU Нет соединений
+pt_BR Nenhuma Conexão
+zh_CN 无连接
+pl_PL Brak połączeń
+fr_FR Aucune connexion
+es_ES Sin conexiones
+en_GB No connections
+de_DE Keine Verbindungen
+
+en_US Parsing the key failed:
+it_IT Analisi della chiave non riuscita:
+ru_RU Не удалось выполнить синтаксический анализ ключа:
+pt_BR Parsing da chave falhou:
+zh_CN 解析键失败
+pl_PL Analiza klucza nie powiodła się:
+fr_FR L'analyse de la clé a échoué :
+es_ES El análisis de la clave falló:
+en_GB Parsing the key failed:
+de_DE Parsen des Schlüssels fehlgeschlagen:
+
+en_US Connecting via key failed:
+it_IT Connessione tramite chiave non riuscita:
+ru_RU Не удалось подключиться с помощью ключа:
+pt_BR Conexão via chave falhou:
+zh_CN 通过键连接失败
+pl_PL Połączenie przez klucz nie powiodło się:
+fr_FR Échec de la connexion via la clé :
+es_ES Falló la conexión mediante clave:
+en_GB Connecting via key failed:
+de_DE Verbindung über Schlüssel fehlgeschlagen:
+
+en_US Extracting embedded torrent file failed
+it_IT Impossibile estrarre il file torrent incorporato
+ru_RU Не удалось извлечь вшитый торрент-файл
+pt_BR Falha ao extrair arquivo torrent
+zh_CN 提取嵌入的种子文件失败
+pl_PL Wyodrębnianie osadzonego pliku torrent nie powiodło się
+fr_FR Échec de l'extraction du fichier torrent intégré
+es_ES Falló la extracción del archivo torrent incrustado
+en_GB Extracting embedded torrent file failed
+de_DE Extrahieren der eingebetteten Torrent-Datei fehlgeschlagen
+
+en_US Checking for updates
+it_IT Verifica aggiornamenti in corso…
+ru_RU Не удалось проверить наличие обновлений
+pt_BR Buscando por atualizações
+zh_CN 检查更新
+pl_PL Sprawdzanie aktualizacji
+fr_FR Vérification des mises à jour
+es_ES Comprobando actualizaciones
+en_GB Checking for updates
+de_DE Nach Updates suchen
+
+en_US No suitable launcher update archive found.
+it_IT Non è stato trovato alcun archivio di aggiornamento del launcher adatto.
+ru_RU Не найден подходящий архив для обновления.
+pt_BR Nenhum arquivo de launcher adequado encontrado.
+zh_CN 未找到合适的启动器更新存档
+pl_PL Nie znaleziono odpowiedniego archiwum aktualizacji launchera.
+fr_FR Aucune archive de mise à jour du lanceur appropriée trouvée.
+es_ES No se encontró ningún archivo de actualización del lanzador adecuado.
+en_GB No suitable launcher update archive found.
+de_DE Kein geeignetes Launcher-Update-Archiv gefunden.
+
+en_US Already using the latest launcher version.
+it_IT Stai già usando l’ultima versione del launcher
+ru_RU Уже используется последняя версия лаунчера.
+pt_BR Já utilizando versão mais recente.
+zh_CN 已使用最新启动器版本
+pl_PL Już używasz najnowszej wersji launchera.
+fr_FR Vous utilisez déjà la dernière version du lanceur.
+es_ES Ya está utilizando la última versión del lanzador.
+en_GB Already using the latest launcher version.
+de_DE Bereits die neueste Version des Launchers wird verwendet.
+
+en_US {fbPkg_zipTorrent} exists already
+it_IT {fbPkg_zipTorrent} esiste già
+ru_RU {fbPkg_zipTorrent} уже существует
+pt_BR {fbPkg_zipTorrent} já existe
+zh_CN {fbPkg_zipTorrent} 已存在
+pl_PL {fbPkg_zipTorrent} już istnieje
+fr_FR {fbPkg_zipTorrent} existe déjà
+es_ES {fbPkg_zipTorrent} ya existe
+en_GB {fbPkg_zipTorrent} exists already
+de_DE {fbPkg_zipTorrent} existiert bereits
+
+en_US {fbPkg_zipTorrent} download failed:
+it_IT {fbPkg_zipTorrent} download fallito:
+ru_RU Не удалось загрузить {fbPkg_zipTorrent}:
+pt_BR {fbPkg_zipTorrent} download falhou:
+zh_CN {fbPkg_zipTorrent} 下载失败
+pl_PL Pobieranie {fbPkg_zipTorrent} nie powiodło się:
+fr_FR Échec du téléchargement de {fbPkg_zipTorrent} :
+es_ES Falló la descarga de {fbPkg_zipTorrent}:
+en_GB {fbPkg_zipTorrent} download failed:
+de_DE Download von {fbPkg_zipTorrent} fehlgeschlagen:
+
+en_US Update check failed:
+it_IT Controllo aggiornamenti non riuscito:
+ru_RU Не удалось проверить обновление:
+pt_BR Verificação de atualização falhou:
+zh_CN 更新检查失败
+pl_PL Sprawdzanie aktualizacji nie powiodło się:
+fr_FR Échec de la vérification des mises à jour :
+es_ES Falló la comprobación de actualizaciones:
+en_GB Update check failed:
+de_DE Update-Prüfung fehlgeschlagen:
+
+en_US Official Server #{i_plus_one}
+it_IT Server Ufficiale #{i_plus_one}
+ru_RU Официальный сервер #{i_plus_one}
+pt_BR Servidor Oficial #{i_plus_one}
+zh_CN 官方服务器 #{i_plus_one}
+pl_PL Oficjalny Serwer #{i_plus_one}
+fr_FR Serveur Officiel #{i_plus_one}
+es_ES Servidor Oficial #{i_plus_one}
+en_GB Official Server #{i_plus_one}
+de_DE Offizieller Server #{i_plus_one}
+
+en_US Unknown #ERROR
+it_IT Sconosciuto #ERRORE
+ru_RU Неизвестная #ОШИБКА
+pt_BR #ERRO Desconhecido
+zh_CN 未知 #ERROR
+pl_PL Nieznany #BŁĄD
+fr_FR Inconnu #ERREUR
+es_ES Desconocido #ERROR
+en_GB Unknown #ERROR
+de_DE Unbekannt #FEHLER
+
+en_US Unknown
+it_IT Sconosciuto
+ru_RU Неизвестно
+pt_BR Desconhecido
+zh_CN 未知
+pl_PL Nieznany
+fr_FR Inconnu
+es_ES Desconocido
+en_GB Unknown
+de_DE Unbekannt
+
+en_US ERROR
+it_IT ERRORE
+ru_RU ОШИБКА
+pt_BR ERRO
+zh_CN ERROR
+pl_PL BŁĄD
+fr_FR ERREUR
+es_ES ERROR
+en_GB ERROR
+de_DE FEHLER
+
+en_US Anonymous #{hashtag} (You)
+it_IT Anonimo #{hashtag} (Tu)
+ru_RU Аноним #{hashtag} (Вы)
+pt_BR Anônimo #{hashtag} (You)
+zh_CN 匿名 #{hashtag} (您)
+pl_PL Anonimowy #{hashtag} (Ty)
+fr_FR Anonyme #{hashtag} (Vous)
+es_ES Anónimo #{hashtag} (Tú)
+en_GB Anonymous #{hashtag} (You)
+de_DE Anonym #{hashtag} (Sie)
+
+en_US Anonymous #{hashtag}
+it_IT Anonimo #{hashtag}
+ru_RU Аноним #{hashtag}
+pt_BR Anônimo #{hashtag}
+zh_CN 匿名 #{hashtag}
+pl_PL Anonimowy #{hashtag}
+fr_FR Anonyme #{hashtag}
+es_ES Anónimo #{hashtag}
+en_GB Anonymous #{hashtag}
+de_DE Anonym #{hashtag}
+
+en_US Anonymous
+it_IT Anonimo
+ru_RU Аноним
+pt_BR Anônimo
+zh_CN 匿名
+pl_PL Anonimowy
+fr_FR Anonyme
+es_ES Anónimo
+en_GB Anonymous
+de_DE Anonym
+
+en_US {championName} (Bot)
+it_IT {championName} (Bot)
+ru_RU {championName} (Бот)
+pt_BR {championName} (Bot)
+zh_CN {championName}（机器人）
+pl_PL {championName} (Bot)
+fr_FR {championName} (Bot)
+es_ES {championName} (Bot)
+en_GB {championName} (Bot)
+de_DE {championName} (Bot)
+
+en_US Checking file existance failed
+it_IT Impossibile controllare l'esistenza del file
+ru_RU Не удалось проверить существование файла
+pt_BR Falha ao checar existência de arquivo
+zh_CN 检查文件是否存在失败
+pl_PL Sprawdzanie istnienia pliku nie powiodło się
+fr_FR Échec de la vérification de l'existence du fichier
+es_ES Falló la comprobación de la existencia del archivo
+en_GB Checking file existance failed
+de_DE Überprüfung der Dateiexistenz fehlgeschlagen
+
+en_US File size mismatch
+it_IT Mancata corrispondenza delle dimensioni del file
+ru_RU Несоответствие размера файла
+pt_BR Tamanho de arquivo inesperado
+zh_CN 文件大小不匹配
+pl_PL Niezgodność rozmiaru pliku
+fr_FR Taille de fichier incorrecte
+es_ES Tamaño de archivo incorrecto
+en_GB File size mismatch
+de_DE Dateigröße stimmt nicht überein
+
+en_US Checking file size failed
+it_IT Impossibile controllare le dimensioni del file
+ru_RU Не удалось проверить размер файла
+pt_BR Falha ao verificar tamnho de arquivo
+zh_CN 检查文件大小失败
+pl_PL Sprawdzanie rozmiaru pliku nie powiodło się
+fr_FR Échec de la vérification de la taille du fichier
+es_ES Falló la comprobación del tamaño del archivo
+en_GB Checking file size failed
+de_DE Überprüfung der Dateigröße fehlgeschlagen
+
+en_US Copying file failed
+it_IT Impossibile copiare il file
+ru_RU Не удалось скопировать файл
+pt_BR Falha ao copiar arquivo
+zh_CN 复制文件失败
+pl_PL Kopiowanie pliku nie powiodło się
+fr_FR Échec de la copie du fichier
+es_ES Falló la copia del archivo
+en_GB Copying file failed
+de_DE Kopieren der Datei fehlgeschlagen
+
+en_US Opening file failed
+it_IT Impossibile aprire il file
+ru_RU Не удалось открыть файл
+pt_BR Falha ao abrir arquivo
+zh_CN 打开文件失败
+pl_PL Otwieranie pliku nie powiodło się
+fr_FR Échec de l'ouverture du fichier
+es_ES Falló la apertura del archivo
+en_GB Opening file failed
+de_DE Öffnen der Datei fehlgeschlagen
+
+en_US Saving file failed
+it_IT Impossibile salvare il file
+ru_RU Не удалось сохранить файл
+pt_BR Falha ao salvar arquivo
+zh_CN 保存文件失败
+pl_PL Zapisywanie pliku nie powiodło się
+fr_FR Échec de l'enregistrement du fichier
+es_ES Falló el guardado del archivo
+en_GB Saving file failed
+de_DE Speichern der Datei fehlgeschlagen
+
+en_US Changing file mode failed
+it_IT Impossibile modificare i permessi del file
+ru_RU Не удалось измененить режим файла
+pt_BR Falha ao alterar mode de arquivo
+zh_CN 更改文件权限失败
+pl_PL Zmiana trybu pliku nie powiodła się
+fr_FR Échec du changement de mode du fichier
+es_ES Falló el cambio de modo del archivo
+en_GB Changing file mode failed
+de_DE Ändern des Dateimodus fehlgeschlagen
+
+en_US Moving file failed
+it_IT Impossibile spostare il file
+ru_RU Не удалось переместить файл
+pt_BR Falha ao mover arquivo
+zh_CN 移动文件失败
+pl_PL Przenoszenie pliku nie powiodło się
+fr_FR Échec du déplacement du fichier
+es_ES Falló el movimiento del archivo
+en_GB Moving file failed
+de_DE Verschieben der Datei fehlgeschlagen
+
+en_US Removing file failed
+it_IT Impossibile rimuovere il file
+ru_RU Не удалось удалить файл
+pt_BR Falha ao remover arquivo
+zh_CN 删除文件失败
+pl_PL Usuwanie pliku nie powiodło się
+fr_FR Échec de la suppression du fichier
+es_ES Falló la eliminación del archivo
+en_GB Removing file failed
+de_DE Entfernen der Datei fehlgeschlagen
+
+en_US Resizing file failed
+it_IT Impossibile ridimensionare il file
+ru_RU Не удалось измененить размер файла
+pt_BR Falha ao redimensionar arquivo
+zh_CN 调整文件大小失败
+pl_PL Zmiana rozmiaru pliku nie powiodła się
+fr_FR Échec du redimensionnement du fichier
+es_ES Falló el redimensionamiento del archivo
+en_GB Resizing file failed
+de_DE Größenänderung der Datei fehlgeschlagen
+
+en_US File not found
+it_IT File non trovato
+ru_RU Файл не найден
+pt_BR Arquivo não encontrado
+zh_CN 未找到文件
+pl_PL Nie znaleziono pliku
+fr_FR Fichier introuvable
+es_ES Archivo no encontrado
+en_GB File not found
+de_DE Datei nicht gefunden
+
+en_US Reading directory failed
+it_IT Impossibile leggere la directory:
+ru_RU Не удалось прочитать каталог
+pt_BR Falha ao ler diretório
+zh_CN 读取目录失败
+pl_PL Odczytywanie katalogu nie powiodło się
+fr_FR Échec de la lecture du répertoire
+es_ES Falló la lectura del directorio
+en_GB Reading directory failed
+de_DE Lesen des Verzeichnisses fehlgeschlagen
+
+en_US Reading file stats failed
+it_IT Impossibile leggere le informazioni del file:
+ru_RU Не удалось прочитать статистику файла
+pt_BR Falha ao ler arquivo de stats
+zh_CN 读取文件属性失败
+pl_PL Odczytywanie statystyk pliku nie powiodło się
+fr_FR Échec de la lecture des statistiques du fichier
+es_ES Falló la lectura de las estadísticas del archivo
+en_GB Reading file stats failed
+de_DE Lesen der Dateistatistiken fehlgeschlagen
+
+en_US Blind Pick
+it_IT Selezione alla cieca
+ru_RU Выбор вслепую
+pt_BR Escolha às cegas
+zh_CN 盲选
+pl_PL Losowy wybór
+fr_FR Sélection aveugle
+es_ES Selección a ciegas
+en_GB Blind Pick
+de_DE Blindauswahl
+
+en_US Team
+it_IT Squadra
+ru_RU Команда
+pt_BR Equipe
+zh_CN 队伍
+pl_PL Drużyna
+fr_FR Équipe
+es_ES Equipo
+en_GB Team
+de_DE Team
+
+en_US Blue
+it_IT Blu
+ru_RU Синий
+pt_BR Azul
+zh_CN 蓝方
+pl_PL Niebieski
+fr_FR Bleu
+es_ES Azul
+en_GB Blue
+de_DE Blau
+
+en_US Purple
+it_IT Viola
+ru_RU Фиолетовый
+pt_BR Roxo
+zh_CN 紫方
+pl_PL Fioletowy
+fr_FR Violet
+es_ES Morado
+en_GB Purple
+de_DE Lila
+
+en_US Neutral
+it_IT Neutrale
+ru_RU Нейтральный
+pt_BR Neutro
+zh_CN 中立
+pl_PL Neutralny
+fr_FR Neutre
+es_ES Neutral
+en_GB Neutral
+de_DE Neutral
+
+en_US Lock
+it_IT Blocca
+ru_RU Блокировка
+pt_BR Bloquear
+zh_CN 锁定
+pl_PL Zablokuj
+fr_FR Verrouiller
+es_ES Bloquear
+en_GB Lock
+de_DE Sperren
+
+en_US Unlocked
+it_IT Scbloccato
+ru_RU Разблокирован
+pt_BR Desbloqueado
+zh_CN 已解锁
+pl_PL Odblokowany
+fr_FR Déverrouillé
+es_ES Desbloqueado
+en_GB Unlocked
+de_DE Entsperrt
+
+en_US Locked
+it_IT Bloccato
+ru_RU Заблокирован
+pt_BR Bloqueado
+zh_CN 已锁定
+pl_PL Zablokowany
+fr_FR Verrouillé
+es_ES Bloqueado
+en_GB Locked
+de_DE Gesperrt
+
+en_US Player Count
+it_IT Numero giocatori
+ru_RU Количество игроков
+pt_BR Número de Jogadores
+zh_CN 玩家数量
+pl_PL Liczba graczy
+fr_FR Nombre de joueurs
+es_ES Número de jugadores
+en_GB Player Count
+de_DE Spieleranzahl
+
+en_US Tick Rate
+it_IT Frequenza tick
+ru_RU Частота обновлений
+pt_BR Tickrate
+zh_CN 更新频率
+pl_PL Częstotliwość ticków
+fr_FR Fréquence de tick
+es_ES Tasa de ticks
+en_GB Tick Rate
+de_DE Tick-Rate
+
+en_US Password
+it_IT Password
+ru_RU Пароль
+pt_BR Senha
+zh_CN 密码
+pl_PL Hasło
+fr_FR Mot de passe
+es_ES Contraseña
+en_GB Password
+de_DE Passwort
+
+en_US undefined
+it_IT non definita
+ru_RU не указан
+pt_BR Indefinido
+zh_CN 未定义
+pl_PL niezdefiniowane
+fr_FR indéfini
+es_ES indefinido
+en_GB undefined
+de_DE undefiniert
+
+en_US Name
+it_IT Nome
+ru_RU Имя
+pt_BR Nome
+zh_CN 名称
+pl_PL Nazwa
+fr_FR Nom
+es_ES Nombre
+en_GB Name
+de_DE Name
+
+en_US Rank
+it_IT Classifica
+ru_RU Ранг
+pt_BR Ranque
+zh_CN 段位
+pl_PL Ranga
+fr_FR Rang
+es_ES Rango
+en_GB Rank
+de_DE Rang
+
+en_US BRONZE
+it_IT BRONZO
+ru_RU Бронзовый
+pt_BR BRONZE
+zh_CN 青铜
+pl_PL BRĄZ
+fr_FR BRONZE
+es_ES BRONCE
+en_GB BRONZE
+de_DE BRONZE
+
+en_US GOLD
+it_IT ORO
+ru_RU Золотой
+pt_BR OURO
+zh_CN 黄金
+pl_PL ZŁOTO
+fr_FR OR
+es_ES ORO
+en_GB GOLD
+de_DE GOLD
+
+en_US PLATINUM
+it_IT PLATINO
+ru_RU Платиновый
+pt_BR PLATINA
+zh_CN 铂金
+pl_PL PLATYNA
+fr_FR PLATINE
+es_ES PLATINO
+en_GB PLATINUM
+de_DE PLATIN
+
+en_US SILVER
+it_IT ARGENTO
+ru_RU Серебряный
+pt_BR PRATA
+zh_CN 白银
+pl_PL SREBRO
+fr_FR ARGENT
+es_ES PLATA
+en_GB SILVER
+de_DE SILBER
+
+en_US UNRANKED
+it_IT NON CLASSIFICATO
+ru_RU Безранговый
+pt_BR Não Rankeado
+zh_CN 无段位
+pl_PL BEZ RANGI
+fr_FR NON CLASSÉ
+es_ES SIN RANGO
+en_GB UNRANKED
+de_DE OHNE RANG
+
+en_US Features Enabled
+it_IT Funzionalità abilitate
+ru_RU Включённые опции
+pt_BR Habilitar configurações extras
+zh_CN 已启用功能
+pl_PL Włączone funkcje
+fr_FR Fonctionnalités activées
+es_ES Funciones habilitadas
+en_GB Features Enabled
+de_DE Funktionen aktiviert
+
+en_US Enable Cheats
+it_IT Abilita trucchi
+ru_RU Включить читы
+pt_BR Habilitar Cheats
+zh_CN 启用作弊
+pl_PL Włącz cheaty
+fr_FR Activer les triches
+es_ES Activar trucos
+en_GB Enable Cheats
+de_DE Cheats aktivieren
+
+en_US Disable Manacosts
+it_IT Disabilita costi mana
+ru_RU Отключить Стоимости
+pt_BR Desabilitar custos de mana (quando aplicável)
+zh_CN 禁用法力消耗
+pl_PL Wyłącz koszty many
+fr_FR Désactiver les coûts de mana
+es_ES Desactivar costes de maná
+en_GB Disable Manacosts
+de_DE Manakosten deaktivieren
+
+en_US Disable Cooldowns
+it_IT Disabilita tempi di recupero
+ru_RU Отключить Перезарядки
+pt_BR Desabilitar Cooldowns (quando aplicável)
+zh_CN 禁用冷却时间
+pl_PL Wyłącz czasy odnowienia
+fr_FR Désactiver les temps de recharge
+es_ES Desactivar tiempos de reutilización
+en_GB Disable Cooldowns
+de_DE Abklingzeiten deaktivieren
+
+en_US Disable Minions
+it_IT Disabilita minion
+ru_RU Отключить Миньонов
+pt_BR Desabilitar Minions
+zh_CN 禁用小兵
+pl_PL Wyłącz miniony
+fr_FR Désactiver les sbires
+es_ES Desactivar súbditos
+en_GB Disable Minions
+de_DE Vasallen deaktivieren
+
+en_US Enable Half-Ping Mode
+it_IT Abilita modalità Half-Ping
+ru_RU Включить режим полупинга
+pt_BR Habilitar modo "Meio-Ping"
+zh_CN 启用半平模式
+pl_PL Włącz tryb Half-Ping
+fr_FR Activer le mode Demi-Ping
+es_ES Activar modo Medio-Ping
+en_GB Enable Half-Ping Mode
+de_DE Half-Ping-Modus aktivieren
+
+en_US Using built-in list of torrent-trackers
+it_IT Utilizzo della lista integrata dei tracker torrent
+ru_RU Используется вшитый список торрент-трекеров
+pt_BR Utilizar list padrão de rastreadores torrent
+zh_CN 使用内置的种子追踪器列表
+pl_PL Używanie wbudowanej listy trackerów torrent
+fr_FR Utilisation de la liste intégrée de trackers torrent
+es_ES Usando la lista integrada de rastreadores torrent
+en_GB Using built-in list of torrent-trackers
+de_DE Integrierte Liste von Torrent-Trackern wird verwendet
+
+en_US Downloading
+it_IT Download in corso
+ru_RU Скачивается
+pt_BR Baixando…
+zh_CN 正在下载
+pl_PL Pobieranie
+fr_FR Téléchargement
+es_ES Descargando
+en_GB Downloading
+de_DE Herunterladen
+
+en_US Downloading torrent-tracker list failed:
+it_IT Impossibile scaricare la lista dei tracker torrent:
+ru_RU Не удалось загрузить список торрент-трекеров:
+pt_BR Falha ao baixar lista de rastreadores torrent:
+zh_CN 下载种子追踪器列表失败
+pl_PL Pobieranie listy trackerów torrent nie powiodło się:
+fr_FR Échec du téléchargement de la liste de trackers torrent :
+es_ES Falló la descarga de la lista de rastreadores torrent:
+en_GB Downloading torrent-tracker list failed:
+de_DE Herunterladen der Torrent-Tracker-Liste fehlgeschlagen:
+
+en_US Unpacking
+it_IT Decompressione
+ru_RU Распаковывается
+pt_BR Descompactando
+zh_CN 正在解压
+pl_PL Rozpakowywanie
+fr_FR Décompression
+es_ES Descomprimiendo
+en_GB Unpacking
+de_DE Entpacken
+
+en_US Packing
+it_IT Compressione
+ru_RU Упаковывается
+pt_BR Compactando
+zh_CN 正在打包
+pl_PL Pakowanie
+fr_FR Compression
+es_ES Comprimiendo
+en_GB Packing
+de_DE Packen
+
+en_US Restoring torrent trackers list failed:
+it_IT Impossibile ripristinare la lista dei tracker torrent:
+ru_RU Не удалось восстановить список торрент-трекеров:
+pt_BR Falha ao restaurar lista de rastreadores torrent
+zh_CN 恢复种子追踪器列表失败
+pl_PL Przywracanie listy trackerów torrent nie powiodło się:
+fr_FR Échec de la restauration de la liste de trackers torrent :
+es_ES Falló la restauración de la lista de rastreadores torrent:
+en_GB Restoring torrent trackers list failed:
+de_DE Wiederherstellen der Torrent-Tracker-Liste fehlgeschlagen:
+
+en_US Restoring torrent files failed:
+it_IT Impossibile ripristinare i file torrent:
+ru_RU Не удалось восстановить торрент-файлы:
+pt_BR Falha ao restaurar arquivos torrent
+zh_CN 恢复种子文件失败
+pl_PL Przywracanie plików torrent nie powiodło się:
+fr_FR Échec de la restauration des fichiers torrent :
+es_ES Falló la restauración de los archivos torrent:
+en_GB Restoring torrent files failed:
+de_DE Wiederherstellen der Torrent-Dateien fehlgeschlagen:
+
+en_US Restoring 7z archiver executable failed:
+it_IT Impossibile ripristinare l’eseguibile dell’archiviatore 7z:
+ru_RU Не удалось восстановить исполняемый файл архиватора 7z:
+pt_BR Falha ao restaurar executável 7z
+zh_CN 恢复 7z 压缩软件可执行文件失败
+pl_PL Przywracanie pliku wykonywalnego archiwizatora 7z nie powiodło się:
+fr_FR Échec de la restauration de l'exécutable de l'archiveur 7z :
+es_ES Falló la restauración del ejecutable del archivador 7z:
+en_GB Restoring 7z archiver executable failed:
+de_DE Wiederherstellen der 7z-Archivierer-Executable fehlgeschlagen:
+
+en_US Restoring Aria2 downloader executable failed:
+it_IT Impossibile ripristinare l’eseguibile di Aria2:
+ru_RU Не удалось восстановить исполняемый файл скачивателя Aria2:
+pt_BR Falha ao restaurar executável Aria2 Downloader
+zh_CN 恢复 Aria2 下载器可执行文件失败
+pl_PL Przywracanie pliku wykonywalnego pobieracza Aria2 nie powiodło się:
+fr_FR Échec de la restauration de l'exécutable du téléchargeur Aria2 :
+es_ES Falló la restauración del ejecutable del descargador Aria2:
+en_GB Restoring Aria2 downloader executable failed:
+de_DE Wiederherstellen der Aria2-Downloader-Executable fehlgeschlagen:
+
+en_US Copying
+it_IT Copia
+ru_RU Копируется
+pt_BR Copiando
+zh_CN 正在复制
+pl_PL Kopiowanie
+fr_FR Copie
+es_ES Copiando
+en_GB Copying
+de_DE Kopieren
+
+en_US Moving
+it_IT Spostamento
+ru_RU Перемещается
+pt_BR Movendo
+zh_CN 正在移动
+pl_PL Przenoszenie
+fr_FR Déplacement
+es_ES Moviendo
+en_GB Moving
+de_DE Verschieben
+
+en_US Failed to seed {pkg_zipName}:
+it_IT Impossibile inizializzare {pkg_zipName}:
+ru_RU Не удалось поставить на раздачу {pkg_zipName}:
+pt_BR Falha ao semear {pkg_zipName}:
+zh_CN 无法为 {pkg_zipName} 提供种子
+pl_PL Nie udało się seedować {pkg_zipName}:
+fr_FR Échec du seeding de {pkg_zipName} :
+es_ES Falló el seeding de {pkg_zipName}:
+en_GB Failed to seed {pkg_zipName}:
+de_DE Seeding von {pkg_zipName} fehlgeschlagen:
+
+en_US Moving required file failed
+it_IT Spostamento del file richiesto non riuscito
+ru_RU Не удалось переместить необходимый файл
+pt_BR Falha ao mover arquivo arquivo necessário
+zh_CN 移动必需文件失败
+pl_PL Przenoszenie wymaganego pliku nie powiodło się
+fr_FR Échec du déplacement du fichier requis
+es_ES Falló el movimiento del archivo requerido
+en_GB Moving required file failed
+de_DE Verschieben der erforderlichen Datei fehlgeschlagen
+
+en_US Moving optional file failed
+it_IT Spostamento del file opzionale non riuscito
+ru_RU Не удалось переместить необязательный файл
+pt_BR Falha ao mover arquivo opcional
+zh_CN 移动可选文件失败
+pl_PL Przenoszenie opcjonalnego pliku nie powiodło się
+fr_FR Échec du déplacement du fichier optionnel
+es_ES Falló el movimiento del archivo opcional
+en_GB Moving optional file failed
+de_DE Verschieben der optionalen Datei fehlgeschlagen
+
+en_US Found temporary unpacker file:
+it_IT Trovato file temporaneo dell’estrattore:
+ru_RU Найден временный файл распаковщика:
+pt_BR Descompactador temporário encontrado:
+zh_CN 发现临时解压文件
+pl_PL Znaleziono tymczasowy plik rozpakowujący:
+fr_FR Fichier de décompression temporaire trouvé :
+es_ES Se encontró archivo temporal de descompresión:
+en_GB Found temporary unpacker file:
+de_DE Temporäre Entpacker-Datei gefunden:
+
+en_US Found temporary downloader file:
+it_IT Trovato file temporaneo del downloader:
+ru_RU Найден временный файл скачивателя:
+pt_BR Arquivo downloader temporário encontrado:
+zh_CN 发现临时下载器文件
+pl_PL Znaleziono tymczasowy plik pobierający:
+fr_FR Fichier de téléchargement temporaire trouvé :
+es_ES Se encontró archivo temporal de descarga:
+en_GB Found temporary downloader file:
+de_DE Temporäre Downloader-Datei gefunden:
+
+en_US Unpacking failed
+it_IT Impossibile decomprimere
+ru_RU Не удалось распаковать
+pt_BR Falha ao descompactar
+zh_CN 解压失败
+pl_PL Rozpakowywanie nie powiodło się
+fr_FR Échec de la décompression
+es_ES Falló la descompresión
+en_GB Unpacking failed
+de_DE Entpacken fehlgeschlagen
+
+en_US Launcher
+it_IT Launcher
+ru_RU Лаунчер
+pt_BR Launcher
+zh_CN 启动器
+pl_PL Launcher
+fr_FR Lanceur
+es_ES Lanzador
+en_GB Launcher
+de_DE Launcher
+
+en_US Game Client
+it_IT Client di gioco
+ru_RU Игровой клиент
+pt_BR Cliente do Jogo
+zh_CN 游戏客户端
+pl_PL Klient gry
+fr_FR Client de jeu
+es_ES Cliente del juego
+en_GB Game Client
+de_DE Spielclient
+
+en_US Game Server
+it_IT Server di gioco
+ru_RU Игровой сервер
+pt_BR Servidor do Jogo
+zh_CN 游戏服务器
+pl_PL Serwer gry
+fr_FR Serveur de jeu
+es_ES Servidor del juego
+en_GB Game Server
+de_DE Spielserver
+
+en_US .NET SDK
+it_IT .NET SDK
+ru_RU .NET SDK
+pt_BR SKD .NET
+zh_CN .NET SDK
+pl_PL .NET SDK
+fr_FR .NET SDK
+es_ES .NET SDK
+en_GB .NET SDK
+de_DE .NET SDK
+
+en_US Git
+it_IT Git
+ru_RU Git
+pt_BR Git
+zh_CN Git
+pl_PL Git
+fr_FR Git
+es_ES Git
+en_GB Git
+de_DE Git
+
+en_US Additional Maps Modpack
+it_IT Modpack mappe aggiuntive
+ru_RU Пакет с дополнительными картами
+pt_BR Modpack de mapa adicionais
+zh_CN 额外地图模组包
+pl_PL Modpakiet z dodatkowymi mapami
+fr_FR Modpack de cartes supplémentaires
+es_ES Modpack de mapas adicionales
+en_GB Additional Maps Modpack
+de_DE Zusätzliche Karten-Modpack
+
+en_US Updating
+it_IT Aggiornamento in corso
+ru_RU Обновляется
+pt_BR Atualizando
+zh_CN 正在更新
+pl_PL Aktualizowanie
+fr_FR Mise à jour
+es_ES Actualizando
+en_GB Updating
+de_DE Aktualisieren
+
+en_US Switching the branch to {newBranchName}...
+it_IT Cambio del ramo in {newBranchName}...
+ru_RU Переключение ветви на {newBranchName}...
+pt_BR Trocando banch para {newBranchName}…
+zh_CN 切换分支至 {newBranchName}...
+pl_PL Przełączanie gałęzi na {newBranchName}...
+fr_FR Changement de branche vers {newBranchName}...
+es_ES Cambiando la rama a {newBranchName}...
+en_GB Switching the branch to {newBranchName}...
+de_DE Wechseln der Branche zu {newBranchName}...
+
+en_US The update failed, see the log for details.
+it_IT L'aggiornamento non è riuscito, vedere log.txt per i dettagli.
+ru_RU Обновление завершилось неудачно, подробности смотрите в журнале.
+pt_BR A atuailzação falhou, cheque os logs para mais detalhes.
+zh_CN 更新失败，请查看日志了解详情
+pl_PL Aktualizacja nie powiodła się, zobacz dziennik, aby uzyskać szczegóły.
+fr_FR La mise à jour a échoué, voir le journal pour plus de détails.
+es_ES La actualización falló, consulte el registro para más detalles.
+en_GB The update failed, see the log for details.
+de_DE Das Update ist fehlgeschlagen, siehe Log für Details.
+
+en_US Time synchronization successful. Offset: {offset}. Precision: {precision}
+it_IT Sincronizzazione dell’orologio riuscita. Scostamento: {offset}. Precisione: {precision}
+ru_RU Синхронизация времени прошла успешно. Смещение: {offset}. Точность: {precision}
+pt_BR Sincronização de tempo bem sucedida. Offset: {offset}. Precisão: {precision}
+zh_CN 时间同步成功偏移量：{offset}精度：{precision}
+pl_PL Synchronizacja czasu powiodła się. Przesunięcie: {offset}. Precyzja: {precision}
+fr_FR Synchronisation de l'heure réussie. Décalage : {offset}. Précision : {precision}
+es_ES Sincronización de tiempo exitosa. Desplazamiento: {offset}. Precisión: {precision}
+en_GB Time synchronization successful. Offset: {offset}. Precision: {precision}
+de_DE Zeitsynchronisierung erfolgreich. Versatz: {offset}. Genauigkeit: {precision}
+
+en_US Alistar
+it_IT Alistar
+ru_RU Алистар
+pt_BR Alistar
+zh_CN 阿利斯塔
+pl_PL Alistar
+fr_FR Alistar
+es_ES Alistar
+en_GB Alistar
+de_DE Alistar
+
+en_US Annie
+it_IT Annie
+ru_RU Энни
+pt_BR Annie
+zh_CN 安妮
+pl_PL Annie
+fr_FR Annie
+es_ES Annie
+en_GB Annie
+de_DE Annie
+
+en_US Ashe
+it_IT Ashe
+ru_RU Эш
+pt_BR Ashe
+zh_CN 艾希
+pl_PL Ashe
+fr_FR Ashe
+es_ES Ashe
+en_GB Ashe
+de_DE Ashe
+
+en_US Champion
+it_IT Campione
+ru_RU Чемпион
+pt_BR Campeões
+zh_CN 英雄
+pl_PL Mistrz
+fr_FR Champion
+es_ES Campeón
+en_GB Champion
+de_DE Champion
+
+en_US AI Champions
+it_IT Campioni controllati dall’IA
+ru_RU ИИ-Чемпионы
+pt_BR Bots
+zh_CN AI英雄
+pl_PL Mistrzowie AI
+fr_FR Champions IA
+es_ES Campeones IA
+en_GB AI Champions
+de_DE KI-Champions
+
+en_US AI Difficulty
+it_IT Difficoltà dell'IA
+ru_RU Сложность ИИ
+pt_BR Dificuldade da IA
+zh_CN AI难度
+pl_PL Trudność AI
+fr_FR Difficulté IA
+es_ES Dificultad IA
+en_GB AI Difficulty
+de_DE KI-Schwierigkeit
+
+en_US Newbie
+it_IT Novellino
+ru_RU Новичок
+pt_BR Iniciante
+zh_CN 新手
+pl_PL Nowicjusz
+fr_FR Débutant
+es_ES Principiante
+en_GB Newbie
+de_DE Anfänger
+
+en_US Intermediate
+it_IT Intermedio
+ru_RU Средний
+pt_BR Intermediário
+zh_CN 中级
+pl_PL Średniozaawansowany
+fr_FR Intermédiaire
+es_ES Intermedio
+en_GB Intermediate
+de_DE Mittel
+
+en_US Advanced
+it_IT Avanzato
+ru_RU Продвинутый
+pt_BR Avançado
+zh_CN 高级
+pl_PL Zaawansowany
+fr_FR Avancé
+es_ES Avanzado
+en_GB Advanced
+de_DE Fortgeschritten
+
+en_US Skin
+it_IT Skin
+ru_RU Скин
+pt_BR Skin
+zh_CN 皮肤
+pl_PL Skórka
+fr_FR Skin
+es_ES Aspecto
+en_GB Skin
+de_DE Skin
+
+en_US Classic
+it_IT Classica
+ru_RU Классический
+pt_BR Clássico
+zh_CN 经典
+pl_PL Klasyczny
+fr_FR Classique
+es_ES Clásico
+en_GB Classic
+de_DE Klassisch
+
+en_US ARAM
+it_IT ARAM
+ru_RU ARAM
+pt_BR ARAM
+zh_CN ARAM
+pl_PL ARAM
+fr_FR ARAM
+es_ES ARAM
+en_GB ARAM
+de_DE ARAM
+
+en_US ODIN
+it_IT ODIN
+ru_RU ODIN
+pt_BR ODIN
+zh_CN ODIN
+pl_PL ODIN
+fr_FR ODIN
+es_ES ODIN
+en_GB ODIN
+de_DE ODIN
+
+en_US Tutorial
+it_IT Tutorial
+ru_RU Обучение
+pt_BR Tutorial
+zh_CN 教程
+pl_PL Samouczek
+fr_FR Tutoriel
+es_ES Tutorial
+en_GB Tutorial
+de_DE Tutorial
+
+en_US Game Mode
+it_IT Modalità di gioco
+ru_RU Игровой режим
+pt_BR Modo de Jogo
+zh_CN 游戏模式
+pl_PL Tryb gry
+fr_FR Mode de jeu
+es_ES Modo de juego
+en_GB Game Mode
+de_DE Spielmodus
+
+en_US {wrapped_name}s Enabled
+it_IT {wrapped_name} Abilitato/i
+ru_RU Включённые {wrapped_name}
+pt_BR {wrapped_name}s Enabled
+zh_CN 已启用 {wrapped_name}
+pl_PL Włączono {wrapped_name}
+fr_FR {wrapped_name} activé(s)
+es_ES {wrapped_name} habilitado(s)
+en_GB {wrapped_name}s Enabled
+de_DE {wrapped_name} aktiviert
+
+en_US Check {this_name}
+it_IT Controlla {this_name}
+ru_RU Выберите {this_name}
+pt_BR Check {this_name}
+zh_CN 勾选 {this_name}
+pl_PL Zaznacz {this_name}
+fr_FR Cocher {this_name}
+es_ES Marcar {this_name}
+en_GB Check {this_name}
+de_DE {this_name} prüfen
+
+en_US {this_value_length} of {this_choices_length} checked
+it_IT {this_value_length} di {this_choices_length} controllato
+ru_RU {this_value_length} из {this_choices_length} выбрано
+pt_BR {this_value_length} of {this_choices_length} checked
+zh_CN 已勾选 {this_value_length} 个（共 {this_choices_length} 个）
+pl_PL Zaznaczono {this_value_length} z {this_choices_length}
+fr_FR {this_value_length} sur {this_choices_length} cochés
+es_ES {this_value_length} de {this_choices_length} marcados
+en_GB {this_value_length} of {this_choices_length} checked
+de_DE {this_value_length} von {this_choices_length} geprüft
+
+en_US Select {this_name}
+it_IT Seleziona {this_name}
+ru_RU Выберите {this_name}
+pt_BR Select {this_name}
+zh_CN 选择 {this_name}
+pl_PL Wybierz {this_name}
+fr_FR Sélectionner {this_name}
+es_ES Seleccionar {this_name}
+en_GB Select {this_name}
+de_DE {this_name} auswählen
+
+en_US Test
+it_IT Test
+ru_RU Тест
+pt_BR Teste
+zh_CN 测试
+pl_PL Test
+fr_FR Test
+es_ES Prueba
+en_GB Test
+de_DE Test
+
+en_US Old Summoner's Rift
+it_IT Vecchia Landa dell'Evocatore
+ru_RU Старое Ущелье призывателей
+pt_BR Summoner's Rift Antigo
+zh_CN 旧版召唤师峡谷
+pl_PL Stara Szczelina Przywoływacza
+fr_FR Ancienne Faille de l'Invocateur
+es_ES Grieta del Invocador antigua
+en_GB Old Summoner's Rift
+de_DE Alte Kluft der Beschwörer
+
+en_US Old Summoner's Rift Autumn
+it_IT Vecchia Landa dell'Evocatore - Autunno
+ru_RU Старое Ущелье призывателей (Осень)
+pt_BR Summoner's Rift Antigo - Outono
+zh_CN 旧版召唤师峡谷·秋季
+pl_PL Stara Szczelina Przywoływacza - Jesień
+fr_FR Ancienne Faille de l'Invocateur - Automne
+es_ES Grieta del Invocador antigua - Otoño
+en_GB Old Summoner's Rift Autumn
+de_DE Alte Kluft der Beschwörer - Herbst
+
+en_US Proving Grounds
+it_IT Campi di Prova
+ru_RU Земли испытаний
+pt_BR Proving Grounds
+zh_CN 试炼场
+pl_PL Poligon
+fr_FR Terrains d'essai
+es_ES Terreno de pruebas
+en_GB Proving Grounds
+de_DE Bewährungsgründe
+
+en_US Unknown (5)
+it_IT Sconosciuto (5)
+ru_RU Название неизвестно (5)
+pt_BR Desconhecido
+zh_CN 未知 (5)
+pl_PL Nieznany (5)
+fr_FR Inconnu (5)
+es_ES Desconocido (5)
+en_GB Unknown (5)
+de_DE Unbekannt (5)
+
+en_US Summoner's Rift Winter (2011)
+it_IT Landa dell'Evocatore – Inverno (2011)
+ru_RU Ущелье призывателей (Зима 2011)
+pt_BR Summoner's Rift - Inverno (2011)
+zh_CN 召唤师峡谷 冬季（2011）
+pl_PL Szczelina Przywoływacza - Zima (2011)
+fr_FR Faille de l'Invocateur - Hiver (2011)
+es_ES Grieta del Invocador - Invierno (2011)
+en_GB Summoner's Rift Winter (2011)
+de_DE Kluft der Beschwörer - Winter (2011)
+
+en_US Summoner's Rift Winter (2009)
+it_IT Landa dell'Evocatore – Inverno (2009)
+ru_RU Ущелье призывателей (Зима 2009)
+pt_BR Summoner's Rift - Inverno (2009)
+zh_CN 召唤师峡谷 冬季（2009）
+pl_PL Szczelina Przywoływacza - Zima (2009)
+fr_FR Faille de l'Invocateur - Hiver (2009)
+es_ES Grieta del Invocador - Invierno (2009)
+en_GB Summoner's Rift Winter (2009)
+de_DE Kluft der Beschwörer - Winter (2009)
+
+en_US Crystal Scar
+it_IT Landa di Cristallo
+ru_RU Кристальный каньон
+pt_BR Crystal Scar
+zh_CN 水晶裂谷
+pl_PL Kryształowa Blizna
+fr_FR Cicatrice de cristal
+es_ES Cicatriz de cristal
+en_GB Crystal Scar
+de_DE Kristallnarbe
+
+en_US Dominion Test
+it_IT Dominion Test
+ru_RU Доминион (тест)
+pt_BR Dominion Teste
+zh_CN 统治测试
+pl_PL Test Dominium
+fr_FR Test Dominion
+es_ES Prueba de Dominion
+en_GB Dominion Test
+de_DE Dominion-Test
+
+en_US New Twisted Treeline
+it_IT Nuovo Sentiero Tortuoso
+ru_RU Новый Проклятый лес
+pt_BR Twisted Treeline (2012)
+zh_CN 新扭曲丛林
+pl_PL Nowa Skręcona Linia Drzew
+fr_FR Nouvelle Ligne tortueuse
+es_ES Línea retorcida nueva
+en_GB New Twisted Treeline
+de_DE Neue Verdrehte Baumlinie
+
+en_US New Summoner's Rift
+it_IT Nuova Landa dell'Evocatore
+ru_RU Новое Ущелье призывателей
+pt_BR Summoner's Rift (2015)
+zh_CN 新召唤师峡谷
+pl_PL Nowa Szczelina Przywoływacza
+fr_FR Nouvelle Faille de l'Invocateur
+es_ES Grieta del Invocador nueva
+en_GB New Summoner's Rift
+de_DE Neue Kluft der Beschwörer
+
+en_US Howling Abyss
+it_IT Abisso Urlante
+ru_RU Воющая бездна
+pt_BR Howling Abyss
+zh_CN 嚎叫深渊
+pl_PL Wyjący Otchłań
+fr_FR Gouffre hurlant
+es_ES Abismo de los Lamentos
+en_GB Howling Abyss
+de_DE Heulender Abgrund
+
+en_US Magma Chamber
+it_IT Camera di Magma
+ru_RU Магматическая камера
+pt_BR Magma Chamber
+zh_CN 岩浆之室
+pl_PL Komora Magmy
+fr_FR Chambre de magma
+es_ES Cámara de magma
+en_GB Magma Chamber
+de_DE Magmakammer
+
+en_US Butcher's Bridge
+it_IT Ponte del Macellaio
+ru_RU Мост мясника
+pt_BR Ponte da Carnificina
+zh_CN 屠夫之桥
+pl_PL Most Rzeźnika
+fr_FR Pont du boucher
+es_ES Puente del carnicero
+en_GB Butcher's Bridge
+de_DE Metzgerbrücke
+
+en_US Unknown (15)
+it_IT Sconosciuto (15)
+ru_RU Название неизвестно (15)
+pt_BR Desconhecido (15)
+zh_CN 未知（15）
+pl_PL Nieznany (15)
+fr_FR Inconnu (15)
+es_ES Desconocido (15)
+en_GB Unknown (15)
+de_DE Unbekannt (15)
+
+en_US Cosmic Ruins
+it_IT Rovine Cosmiche
+ru_RU Космические руины
+pt_BR Ruínas Cósmicas
+zh_CN 宇宙废墟
+pl_PL Kosmiczne Ruiny
+fr_FR Ruines cosmiques
+es_ES Ruinas cósmicas
+en_GB Cosmic Ruins
+de_DE Kosmische Ruinen
+
+en_US Unknown (17)
+it_IT Sconociuto (17)
+ru_RU Название неизвестно (17)
+pt_BR Desconhecido (17)
+zh_CN 未知 (17)
+pl_PL Nieznany (17)
+fr_FR Inconnu (17)
+es_ES Desconocido (17)
+en_GB Unknown (17)
+de_DE Unbekannt (17)
+
+en_US Valoran City Park
+it_IT Parco Cittadino di Valoran
+ru_RU Валоранский городской парк
+pt_BR Parque Municipal de Valoran
+zh_CN 瓦洛兰城市公园
+pl_PL Park Miejski Valoran
+fr_FR Parc urbain de Valoran
+es_ES Parque urbano de Valoran
+en_GB Valoran City Park
+de_DE Valoran Stadtpark
+
+en_US Substructure 43
+it_IT Sottostruttura 43
+ru_RU Субструктура 43
+pt_BR Subestrutura 43
+zh_CN 43号地下结构
+pl_PL Podstruktura 43
+fr_FR Sous-structure 43
+es_ES Subestructura 43
+en_GB Substructure 43
+de_DE Unterstruktur 43
+
+en_US Crash Site
+it_IT Sito dell’Incidente
+ru_RU Место крушения
+pt_BR Local de acidente
+zh_CN 坠机现场
+pl_PL Miejsce Katastrofy
+fr_FR Lieu du crash
+es_ES Lugar del accidente
+en_GB Crash Site
+de_DE Absturzstelle
+
+en_US Temple of Lily and Lotus
+it_IT Tempio del Giglio e del Loto
+ru_RU Храм лилий и лотосов
+pt_BR Templo do Lírio e do Lótus
+zh_CN 百合与莲花神殿
+pl_PL Świątynia Lilii i Lotosu
+fr_FR Temple du lys et du lotus
+es_ES Templo del lirio y el loto
+en_GB Temple of Lily and Lotus
+de_DE Tempel der Lilie und des Lotus
+
+en_US Magma Chamber (recreated in Minecraft)
+it_IT Camera di Magma (ricreata in Minecraft)
+ru_RU Магматическая камера (воссоздана в Minecraft)
+pt_BR Magma Chamber (Recriado no Minecraft)
+zh_CN 岩浆之室（在《我的世界》中重制）
+pl_PL Komora Magmy (odtworzona w Minecraft)
+fr_FR Chambre de magma (recréée dans Minecraft)
+es_ES Cámara de magma (recreada en Minecraft)
+en_GB Magma Chamber (recreated in Minecraft)
+de_DE Magmakammer (in Minecraft nachgebaut)
+
+en_US Arena: Rings of Wrath
+it_IT Arena: Anelli dell’Ira
+ru_RU Арена: Кольца Гнева
+pt_BR Arena
+zh_CN 竞技场：愤怒之环
+pl_PL Arena: Pierścienie Gniewu
+fr_FR Arène : Anneaux de la colère
+es_ES Arena: Anillos de ira
+en_GB Arena: Rings of Wrath
+de_DE Arena: Ringe des Zorns
+
+en_US New Proving Grounds
+it_IT Nuovi Campi di Prova
+ru_RU Новые Земли испытаний
+pt_BR Novo Proving Grounds
+zh_CN 新试炼场
+pl_PL Nowy Poligon
+fr_FR Nouveaux terrains d'essai
+es_ES Nuevo terreno de pruebas
+en_GB New Proving Grounds
+de_DE Neue Bewährungsgründe
+
+en_US The Bandlewood
+it_IT La Foresta di Bandle
+ru_RU Бандловое древо
+pt_BR Bandópolis
+zh_CN 班德尔森林
+pl_PL Las Bandle
+fr_FR La forêt de Bandle
+es_ES El bosque de Bandle
+en_GB The Bandlewood
+de_DE Der Bandlewald
+
+en_US Enter {this_name}
+it_IT Inserisci {this_name}
+ru_RU Введите {this_name}
+pt_BR Insira {this_name}
+zh_CN 输入 {this_name}
+pl_PL Wprowadź {this_name}
+fr_FR Entrez {this_name}
+es_ES Introduzca {this_name}
+en_GB Enter {this_name}
+de_DE Geben Sie {this_name} ein
+
+en_US Heal
+it_IT Cura
+ru_RU Исцеление
+pt_BR Curar
+zh_CN 治疗
+pl_PL Leczenie
+fr_FR Soigner
+es_ES Curar
+en_GB Heal
+de_DE Heilen
+
+en_US Ghost
+it_IT Fantasmi
+ru_RU Призрак
+pt_BR Fantasma
+zh_CN 幽灵
+pl_PL Duch
+fr_FR Fantôme
+es_ES Fantasma
+en_GB Ghost
+de_DE Geist
+
+en_US Barrier
+it_IT Barriera
+ru_RU Барьер
+pt_BR Barreira
+zh_CN 屏障
+pl_PL Bariera
+fr_FR Barrière
+es_ES Barrera
+en_GB Barrier
+de_DE Barriere
+
+en_US Exhaust
+it_IT Esaurimento
+ru_RU Изнурение
+pt_BR Exaustão
+zh_CN 虚弱
+pl_PL Wyczerpanie
+fr_FR Épuisement
+es_ES Agotar
+en_GB Exhaust
+de_DE Erschöpfung
+
+en_US Mark
+it_IT Marchio
+ru_RU Метка
+pt_BR Marca
+zh_CN 标记
+pl_PL Znak
+fr_FR Marque
+es_ES Marca
+en_GB Mark
+de_DE Markierung
+
+en_US Dash
+it_IT Scatto
+ru_RU Рывок
+pt_BR Avanço
+zh_CN 冲刺
+pl_PL Szarża
+fr_FR Ruée
+es_ES Embestida
+en_GB Dash
+de_DE Sprint
+
+en_US Clarity
+it_IT Chiarezza
+ru_RU Ясность
+pt_BR Clareza
+zh_CN 明晰
+pl_PL Jasność
+fr_FR Clarté
+es_ES Claridad
+en_GB Clarity
+de_DE Klarheit
+
+en_US Flash
+it_IT Scatto lampo
+ru_RU Скачок
+pt_BR Flash
+zh_CN 闪现
+pl_PL Błysk
+fr_FR Flash
+es_ES Destello
+en_GB Flash
+de_DE Blitz
+
+en_US Teleport
+it_IT Teletrasporto
+ru_RU Телепорт
+pt_BR Teleporte
+zh_CN 传送
+pl_PL Teleportacja
+fr_FR Téléportation
+es_ES Teletransporte
+en_GB Teleport
+de_DE Teleport
+
+en_US Smite
+it_IT Colpo di Fato
+ru_RU Кара
+pt_BR Golpear
+zh_CN 惩戒
+pl_PL Porażenie
+fr_FR Châtiment
+es_ES Castigar
+en_GB Smite
+de_DE Zerschmettern
+
+en_US Cleanse
+it_IT Purificazione
+ru_RU Очищение
+pt_BR Purificar
+zh_CN 净化
+pl_PL Oczyszczenie
+fr_FR Purification
+es_ES Purificar
+en_GB Cleanse
+de_DE Reinigen
+
+en_US Ignite
+it_IT Accensione
+ru_RU Воспламенение
+pt_BR Incendiar
+zh_CN 点燃
+pl_PL Podpalenie
+fr_FR Embrasement
+es_ES Prender fuego
+en_GB Ignite
+de_DE Entzünden
+
+en_US BattleCry
+it_IT Grido di Battaglia
+ru_RU Боевой клич
+pt_BR Grito de Batalha
+zh_CN 战吼
+pl_PL Okrzyk Bojowy
+fr_FR Cri de guerre
+es_ES Grito de guerra
+en_GB BattleCry
+de_DE Kriegsruf
+
+en_US Boost
+it_IT Potenzia
+ru_RU Улучшение
+pt_BR Clareza
+zh_CN 加速
+pl_PL Wzmocnienie
+fr_FR Booster
+es_ES Impulso
+en_GB Boost
+de_DE Boost
+
+en_US Clairvoyance
+it_IT Chiaroveggenza
+ru_RU Ясновидение
+pt_BR Clarividência
+zh_CN 预知
+pl_PL Jasnowidzenie
+fr_FR Clairvoyance
+es_ES Clarividencia
+en_GB Clairvoyance
+de_DE Hellsehen
+
+en_US Dot
+it_IT Danno nel tempo
+ru_RU Точка
+pt_BR Incendiar
+zh_CN 持续伤害
+pl_PL Obrażenia co sekundę
+fr_FR Dot
+es_ES Daño periódico
+en_GB Dot
+de_DE Dot
+
+en_US Fortify
+it_IT Fortificazione
+ru_RU Укрепление
+pt_BR Fortificar
+zh_CN 强化
+pl_PL Umocnienie
+fr_FR Fortifier
+es_ES Fortificar
+en_GB Fortify
+de_DE Befestigen
+
+en_US Haste
+it_IT Frenesia
+ru_RU Спешка
+pt_BR Fantasma
+zh_CN 急速
+pl_PL Przyspieszenie
+fr_FR Hâte
+es_ES Prisa
+en_GB Haste
+de_DE Hast
+
+en_US Mana
+it_IT Mana
+ru_RU Мана
+pt_BR Clareza
+zh_CN 法力
+pl_PL Mana
+fr_FR Mana
+es_ES Maná
+en_GB Mana
+de_DE Mana
+
+en_US Rally
+it_IT Raduno
+ru_RU Ралли
+pt_BR Revigorar
+zh_CN 集结
+pl_PL Mobilizacja
+fr_FR Rassemblement
+es_ES Reunir
+en_GB Rally
+de_DE Sammeln
+
+en_US Revive
+it_IT Rianimazione
+ru_RU Возрождение
+pt_BR Ressucitar
+zh_CN 复活
+pl_PL Ożywienie
+fr_FR Réanimation
+es_ES Reanimar
+en_GB Revive
+de_DE Wiederbeleben
+
+en_US Promote
+it_IT Promuovi
+ru_RU Повышение
+pt_BR Promover
+zh_CN 晋升
+pl_PL Awans
+fr_FR Promouvoir
+es_ES Promover
+en_GB Promote
+de_DE Befördern
+
+en_US OdinPromote
+it_IT Promuovi (Odin)
+ru_RU Повышение (ODIN)
+pt_BR Promover (Dominion)
+zh_CN OdinPromote.
+pl_PL Awans (Odin)
+fr_FR Promouvoir (Odin)
+es_ES Promover (Odin)
+en_GB OdinPromote
+de_DE OdinBefördern
+
+en_US OdinSabotage
+it_IT Sabotaggio (Odin)
+ru_RU Саботаж (ODIN)
+pt_BR Sabotar (Dominion)
+zh_CN OdinSabotage.
+pl_PL Sabotaż (Odin)
+fr_FR Sabotage (Odin)
+es_ES Sabotaje (Odin)
+en_GB OdinSabotage
+de_DE OdinSabotage
+
+en_US OdinGarrison
+it_IT Guarnigione (Odin)
+ru_RU Гарнизон (ODIN)
+pt_BR Fortificar (Dominion)
+zh_CN OdinGarrison.
+pl_PL Garnizon (Odin)
+fr_FR Garnison (Odin)
+es_ES Guarnición (Odin)
+en_GB OdinGarrison
+de_DE OdinGarnison
+
+en_US PromoteSR
+it_IT Promuovi (Landa)
+ru_RU Повышение (УП)
+pt_BR Promover (SR)
+zh_CN PromoteSR.
+pl_PL Awans (Szczelina)
+fr_FR Promouvoir (Faille)
+es_ES Promover (Grieta)
+en_GB PromoteSR
+de_DE BefördernSR
+
+en_US Observer
+it_IT Osservatore
+ru_RU Наблюдение
+pt_BR Observar
+zh_CN Observer.
+pl_PL Obserwator
+fr_FR Observateur
+es_ES Observador
+en_GB Observer
+de_DE Beobachter
+
+en_US ReviveSpeedBoost
+it_IT Rianima e Potenzia Velocità
+ru_RU Ускорение при возраждении
+pt_BR Aceleração do Renascimento
+zh_CN ReviveSpeedBoost.
+pl_PL Ożywienie i Przyspieszenie
+fr_FR Réanimation et Boost de vitesse
+es_ES Reanimar y acelerar
+en_GB ReviveSpeedBoost
+de_DE WiederbelebenGeschwindigkeitsBoost
+
+en_US Summoner Spell
+it_IT Incantesimo dell'Evocatore
+ru_RU Заклинание призывателя
+pt_BR Feitiço de Invocador
+zh_CN Summoner Spell.
+pl_PL Zaklęcie Przywoływacza
+fr_FR Sortilège d'invocateur
+es_ES Hechizo de invocador
+en_GB Summoner Spell
+de_DE Beschwörerzauber
+
+en_US FISHBONES
+it_IT FISHBONES
+ru_RU СКЕЛЕТНИЦА
+pt_BR FISHBONES
+zh_CN FISHBONES.
+pl_PL FISHBONES
+fr_FR FISHBONES
+es_ES FISHBONES
+en_GB FISHBONES
+de_DE FISHBONES
+
+en_US Loading...
+it_IT Caricamento...
+ru_RU Загрузка...
+pt_BR Carregando…
+zh_CN 加载中...
+pl_PL Ładowanie...
+fr_FR Chargement...
+es_ES Cargando...
+en_GB Loading...
+de_DE Laden...
+
+en_US Check and download launcher updates
+it_IT Controlla e scarica gli aggiornamenti del launcher
+ru_RU Проверять и скачивать обновления лаунчера
+pt_BR Checar e baixar atualizações do launcher
+zh_CN 检查并下载启动器更新
+pl_PL Sprawdź i pobierz aktualizacje launchera
+fr_FR Vérifier et télécharger les mises à jour du lanceur
+es_ES Comprobar y descargar actualizaciones del lanzador
+en_GB Check and download launcher updates
+de_DE Launcher-Updates prüfen und herunterladen
+
+en_US Install the additional levels package
+it_IT Installa il pacchetto di livelli aggiuntivi
+ru_RU Установить пакет с дополнительными уровнями
+pt_BR Instalar pacote adicional de mapas
+zh_CN 安装额外关卡包
+pl_PL Zainstaluj pakiet dodatkowych poziomów
+fr_FR Installer le paquet de niveaux supplémentaires
+es_ES Instalar el paquete de niveles adicionales
+en_GB Install the additional levels package
+de_DE Paket mit zusätzlichen Levels installieren
+
+en_US Download files from
+it_IT Scarica file da
+ru_RU Скачивать файлы с
+pt_BR Baixar arquivos do
+zh_CN 从以下来源下载文件：
+pl_PL Pobierz pliki z
+fr_FR Télécharger les fichiers depuis
+es_ES Descargar archivos desde
+en_GB Download files from
+de_DE Dateien herunterladen von
+
+en_US torrent + mega.nz
+it_IT torrent + mega.nz
+ru_RU торрентов + mega.nz
+pt_BR torrent + mega.nz
+zh_CN torrent + mega.nz
+pl_PL torrent + mega.nz
+fr_FR torrent + mega.nz
+es_ES torrent + mega.nz
+en_GB torrent + mega.nz
+de_DE Torrent + mega.nz
+
+en_US torrent
+it_IT torrent
+ru_RU торрентов
+pt_BR torrent
+zh_CN torrent
+pl_PL torrent
+fr_FR torrent
+es_ES torrent
+en_GB torrent
+de_DE Torrent
+
+en_US mega.nz
+it_IT mega.nz
+ru_RU mega.nz
+pt_BR mega.nz
+zh_CN mega.nz
+pl_PL mega.nz
+fr_FR mega.nz
+es_ES mega.nz
+en_GB mega.nz
+de_DE mega.nz
+
+en_US Download game server updates from
+it_IT Scarica gli aggiornamenti del server di gioco da
+ru_RU Скачивать обновления игрового сервера от
+pt_BR Baixar atualizações do servidor do jogo de
+zh_CN 从以下来源下载游戏服务器更新：
+pl_PL Pobierz aktualizacje serwera gry z
+fr_FR Télécharger les mises à jour du serveur de jeu depuis
+es_ES Descargar actualizaciones del servidor de juego desde
+en_GB Download game server updates from
+de_DE Spielserver-Updates herunterladen von
+
+en_US repo
+it_IT repo
+ru_RU репозитория
+pt_BR Repositorio
+zh_CN 存储库
+pl_PL repozytorium
+fr_FR dépôt
+es_ES repositorio
+en_GB repo
+de_DE Repo
+
+en_US PLAY
+it_IT GIOCA
+ru_RU ИГРАТЬ
+pt_BR Jogar
+zh_CN 播放
+pl_PL GRAJ
+fr_FR JOUER
+es_ES JUGAR
+en_GB PLAY
+de_DE SPIELEN
+
+en_US TEST
+it_IT TESTA
+ru_RU ТЕСТИРОВАТЬ
+pt_BR Testar
+zh_CN 测试
+pl_PL TESTUJ
+fr_FR TESTER
+es_ES PROBAR
+en_GB TEST
+de_DE TESTEN
+
+en_US Please wait for the text to appear
+it_IT Si prega di attendere che il testo venga visualizzato
+ru_RU Пожалуйста, дождитесь появления текста
+pt_BR Por favor, aguarde a próxima mensagem aparecer
+zh_CN 请等待文字显示
+pl_PL Poczekaj na pojawienie się tekstu
+fr_FR Veuillez attendre que le texte apparaisse
+es_ES Espere a que aparezca el texto
+en_GB Please wait for the text to appear
+de_DE Bitte warten Sie, bis der Text erscheint
+
+en_US WARNING
+it_IT ATTENZIONE
+ru_RU ПРЕДУПРЕЖДЕНИЕ
+pt_BR ALERTA
+zh_CN 警告
+pl_PL OSTRZEŻENIE
+fr_FR AVERTISSEMENT
+es_ES ADVERTENCIA
+en_GB WARNING
+de_DE WARNUNG
+
+en_US Cancel
+it_IT Cancella
+ru_RU Отменить
+pt_BR Cancelar
+zh_CN 取消
+pl_PL Anuluj
+fr_FR Annuler
+es_ES Cancelar
+en_GB Cancel
+de_DE Abbrechen
+
+en_US Copy
+it_IT Copia
+ru_RU Копировать
+pt_BR Copiar
+zh_CN 复制
+pl_PL Kopiuj
+fr_FR Copier
+es_ES Copiar
+en_GB Copy
+de_DE Kopieren
+
+en_US Paste
+it_IT Incolla
+ru_RU Вставить
+pt_BR Colar
+zh_CN 粘贴
+pl_PL Wklej
+fr_FR Coller
+es_ES Pegar
+en_GB Paste
+de_DE Einfügen
+
+en_US Connect
+it_IT Connettiti
+ru_RU Подключиться
+pt_BR Conectar
+zh_CN 连接
+pl_PL Połącz
+fr_FR Se connecter
+es_ES Conectar
+en_GB Connect
+de_DE Verbinden
+
+en_US Manacosts
+it_IT Costo mana
+ru_RU Стоимости
+pt_BR Custos de Mana
+zh_CN 法力消耗
+pl_PL Koszty many
+fr_FR Coûts de mana
+es_ES Costes de maná
+en_GB Manacosts
+de_DE Manakosten
+
+en_US Cooldowns
+it_IT Tempo di recupero
+ru_RU Перезарядки
+pt_BR Cooldowns
+zh_CN 冷却时间
+pl_PL Czasy odnowienia
+fr_FR Temps de recharge
+es_ES Tiempos de reutilización
+en_GB Cooldowns
+de_DE Abklingzeiten
+
+en_US Minions
+it_IT Minion
+ru_RU Миньоны
+pt_BR Minions
+zh_CN 小兵
+pl_PL Miniony
+fr_FR Sbires
+es_ES Súbditos
+en_GB Minions
+de_DE Vasallen
+
+en_US Cheats
+it_IT Trucchi
+ru_RU Читы
+pt_BR Cheats
+zh_CN 作弊码
+pl_PL Cheat'y
+fr_FR Triches
+es_ES Trucos
+en_GB Cheats
+de_DE Cheats
+
+en_US Game Name
+it_IT Nome della partita
+ru_RU Название игры
+pt_BR Nome do Jogo
+zh_CN 游戏名称
+pl_PL Nazwa gry
+fr_FR Nom de la partie
+es_ES Nombre de la partida
+en_GB Game Name
+de_DE Spielname
+
+en_US Owner
+it_IT Proprietario
+ru_RU Владелец
+pt_BR Líder
+zh_CN 所有者
+pl_PL Właściciel
+fr_FR Propriétaire
+es_ES Propietario
+en_GB Owner
+de_DE Besitzer
+
+en_US Ping
+it_IT Ping
+ru_RU Пинг
+pt_BR Ping
+zh_CN 延迟
+pl_PL Ping
+fr_FR Ping
+es_ES Ping
+en_GB Ping
+de_DE Ping
+
+en_US Slots
+it_IT Slot
+ru_RU Слоты
+pt_BR Slot
+zh_CN 席位
+pl_PL Sloty
+fr_FR Emplacements
+es_ES Ranuras
+en_GB Slots
+de_DE Slots
+
+en_US Mode
+it_IT Modalità
+ru_RU Режим
+pt_BR Modo
+zh_CN 模式
+pl_PL Tryb
+fr_FR Mode
+es_ES Modo
+en_GB Mode
+de_DE Modus
+
+en_US Map
+it_IT Mappa
+ru_RU Карта
+pt_BR Mapa
+zh_CN 地图
+pl_PL Mapa
+fr_FR Carte
+es_ES Mapa
+en_GB Map
+de_DE Karte
+
+en_US CLASSIC
+it_IT CLASSICO
+ru_RU КЛАССИЧЕСКИЙ
+pt_BR CLÁSSICO
+zh_CN 经典
+pl_PL KLASYCZNY
+fr_FR CLASSIQUE
+es_ES CLÁSICO
+en_GB CLASSIC
+de_DE KLASSISCH
+
+en_US The commit (version) of the remote server does not match the commit (version) of your local server
+it_IT Il commit (versione) del server remoto non corrisponde al commit (versione) del tuo server locale
+ru_RU Коммит (версия) удаленного сервера не соответствует коммиту (версии) вашего локального сервера
+pt_BR A versão do servidor remoto não condiz com a versão do servidor local
+zh_CN 远程服务器的提交（版本）与您的本地服务器的提交（版本）不匹配
+pl_PL Commit (wersja) zdalnego serwera nie zgadza się z commitem (wersją) twojego lokalnego serwera
+fr_FR Le commit (version) du serveur distant ne correspond pas au commit (version) de votre serveur local
+es_ES El commit (versión) del servidor remoto no coincide con el commit (versión) de su servidor local
+en_GB The commit (version) of the remote server does not match the commit (version) of your local server
+de_DE Der Commit (Version) des Remote-Servers stimmt nicht mit dem Commit (Version) Ihres lokalen Servers überein
+
+en_US Waiting for the servers to appear on the local network...
+it_IT In attesa che i server appaiano sulla rete locale...
+ru_RU Ждем, пока серверы появятся в локальной сети...
+pt_BR Aguardando servidores aparecerem na rede local…
+zh_CN 正在等待本地网络中出现服务器……
+pl_PL Oczekiwanie na pojawienie się serwerów w sieci lokalnej...
+fr_FR En attente que les serveurs apparaissent sur le réseau local...
+es_ES Esperando a que los servidores aparezcan en la red local...
+en_GB Waiting for the servers to appear on the local network...
+de_DE Warten darauf, dass die Server im lokalen Netzwerk erscheinen...
+
+en_US Quit
+it_IT Esci
+ru_RU Выйти
+pt_BR Sair
+zh_CN 退出
+pl_PL Wyjdź
+fr_FR Quitter
+es_ES Salir
+en_GB Quit
+de_DE Beenden
+
+en_US Host Game
+it_IT Ospita partita
+ru_RU Создать игру
+pt_BR Hospedar partida
+zh_CN 主持游戏
+pl_PL Gospodarz gry
+fr_FR Héberger une partie
+es_ES Alojar partida
+en_GB Host Game
+de_DE Spiel hosten
+
+en_US Game Map
+it_IT Mappa di gioco
+ru_RU Игровая карта
+pt_BR Mapa do Jogo
+zh_CN 游戏地图
+pl_PL Mapa gry
+fr_FR Carte de jeu
+es_ES Mapa del juego
+en_GB Game Map
+de_DE Spielkarte
+
+en_US Summoner's Rift
+it_IT Landa dell'Evocatore
+ru_RU Ущелье призывателей
+pt_BR Summoner's Rift
+zh_CN 召唤师峡谷
+pl_PL Szczelina Przywoływacza
+fr_FR Faille de l'Invocateur
+es_ES Grieta del Invocador
+en_GB Summoner's Rift
+de_DE Kluft der Beschwörer
+
+en_US Game Mode
+it_IT Modalita di gioco
+ru_RU Игровой режим
+pt_BR Modo de Jogo
+zh_CN 游戏模式
+pl_PL Tryb gry
+fr_FR Mode de jeu
+es_ES Modo de juego
+en_GB Game Mode
+de_DE Spielmodus
+
+en_US Classic
+it_IT Classico
+ru_RU Классический
+pt_BR Clássico
+zh_CN 经典
+pl_PL Klasyczny
+fr_FR Classique
+es_ES Clásico
+en_GB Classic
+de_DE Klassisch
+
+en_US Game Type
+it_IT Tipo di partita
+ru_RU Тип игры
+pt_BR Tipo de Jogo
+zh_CN 游戏类型
+pl_PL Typ gry
+fr_FR Type de partie
+es_ES Tipo de partida
+en_GB Game Type
+de_DE Spieltyp
+
+en_US Blind Pick
+it_IT Selezione alla cieca
+ru_RU Выбор вслепую
+pt_BR Escolha às Cegas
+zh_CN 盲选
+pl_PL Losowy wybór
+fr_FR Sélection aveugle
+es_ES Selección a ciegas
+en_GB Blind Pick
+de_DE Blindauswahl
+
+en_US Tick Rate
+it_IT Frequenza tick
+ru_RU Частота обновлений
+pt_BR Tick Rate
+zh_CN 刷新率
+pl_PL Częstotliwość ticków
+fr_FR Fréquence de tick
+es_ES Tasa de ticks
+en_GB Tick Rate
+de_DE Tick-Rate
+
+en_US Team Size
+it_IT Dimensione della squadra
+ru_RU Размер команды
+pt_BR Tamanho da Equipe
+zh_CN 队伍规模
+pl_PL Rozmiar drużyny
+fr_FR Taille de l'équipe
+es_ES Tamaño del equipo
+en_GB Team Size
+de_DE Teamgröße
+
+en_US Password (Optional)
+it_IT Password (Opzionale)
+ru_RU Пароль (необязательно)
+pt_BR Senha (Opcional)
+zh_CN 密码（可选）
+pl_PL Hasło (Opcjonalne)
+fr_FR Mot de passe (Optionnel)
+es_ES Contraseña (Opcional)
+en_GB Password (Optional)
+de_DE Passwort (Optional)
+
+en_US password
+it_IT password
+ru_RU пароль
+pt_BR senha
+zh_CN 密码
+pl_PL hasło
+fr_FR mot de passe
+es_ES contraseña
+en_GB password
+de_DE passwort
+
+en_US Champions
+it_IT Champions
+ru_RU Чемпионы
+pt_BR Campeões
+zh_CN 英雄
+pl_PL Mistrzowie
+fr_FR Champions
+es_ES Campeones
+en_GB Champions
+de_DE Champions
+
+en_US Click to select
+it_IT Fare clic per selezionare
+ru_RU Нажмите для выбора
+pt_BR Clique para selecionar
+zh_CN 点击选择
+pl_PL Kliknij, aby wybrać
+fr_FR Cliquez pour sélectionner
+es_ES Haga clic para seleccionar
+en_GB Click to select
+de_DE Klicken zum Auswählen
+
+en_US Summoner Spells
+it_IT Incantesimi dell'evocatore
+ru_RU Заклинания призывателя
+pt_BR Feitiços de Invocador
+zh_CN 召唤师技能
+pl_PL Zaklęcia Przywoływacza
+fr_FR Sortilèges d'invocateur
+es_ES Hechizos de invocador
+en_GB Summoner Spells
+de_DE Beschwörerzauber
+
+en_US Features
+it_IT Caratteristiche
+ru_RU Опции
+pt_BR Configurações
+zh_CN 功能
+pl_PL Funkcje
+fr_FR Fonctionnalités
+es_ES Características
+en_GB Features
+de_DE Funktionen
+
+en_US Summoner's Name
+it_IT Nome dell'evocatore
+ru_RU Имя призывателя
+pt_BR Nome de Invocador
+zh_CN 召唤师名称
+pl_PL Nazwa Przywoływacza
+fr_FR Nom de l'invocateur
+es_ES Nombre del invocador
+en_GB Summoner's Name
+de_DE Name des Beschwörers
+
+en_US Join
+it_IT Unisciti
+ru_RU Присоединиться
+pt_BR Juntar-se
+zh_CN 加入
+pl_PL Dołącz
+fr_FR Rejoindre
+es_ES Unirse
+en_GB Join
+de_DE Beitreten
+
+en_US Add Bot
+it_IT Aggiungi Bot
+ru_RU Добавить бота
+pt_BR Adicionar Bot
+zh_CN 添加机器人
+pl_PL Dodaj Bota
+fr_FR Ajouter un bot
+es_ES Añadir bot
+en_GB Add Bot
+de_DE Bot hinzufügen
+
+en_US Autofill
+it_IT Riempimento automatico
+ru_RU Автозаполнение
+pt_BR Preenchimento Automático
+zh_CN 自动填充
+pl_PL Autouzupełnianie
+fr_FR Remplissage automatique
+es_ES Autorrelleno
+en_GB Autofill
+de_DE Autoausfüllen
+
+en_US Start Game
+it_IT Inizia partita
+ru_RU Начать игру
+pt_BR Iniciar partida
+zh_CN 开始游戏
+pl_PL Rozpocznij grę
+fr_FR Commencer la partie
+es_ES Iniciar partida
+en_GB Start Game
+de_DE Spiel starten
+
+en_US You cannot start the game until all players are fully connected (☑)
+it_IT Non puoi iniziare la partita finché tutti i giocatori non sono completamente connessi (☑)
+ru_RU Вы не можете начать игру, пока все игроки не будут полностью подключены (☑)
+pt_BR Não é possível iniciar partida até que todos jogadores estejam conectados  (☑)
+zh_CN 在所有玩家完全连接（☑）之前，您无法开始游戏
+pl_PL Nie możesz rozpocząć gry, dopóki wszyscy gracze nie będą w pełni połączeni (☑)
+fr_FR Vous ne pouvez pas commencer la partie tant que tous les joueurs ne sont pas entièrement connectés (☑)
+es_ES No puedes iniciar la partida hasta que todos los jugadores estén completamente conectados (☑)
+en_GB You cannot start the game until all players are fully connected (☑)
+de_DE Sie können das Spiel nicht starten, bis alle Spieler vollständig verbunden sind (☑)
+
+en_US You cannot start the game until all players are fully connected and marked by ✅
+it_IT Non puoi iniziare la partita finché tutti i giocatori non sono completamente connessi e contrassegnati da ✅
+ru_RU Вы не можете начать игру, пока все игроки не будут полностью подключены и отмечены ✅
+pt_BR Não é possível iniciar partida até que todos jogadores estejam conectados e marcados com ✅
+zh_CN 在所有玩家完全连接并显示✅标记之前，您无法开始游戏
+pl_PL Nie możesz rozpocząć gry, dopóki wszyscy gracze nie będą w pełni połączeni i oznaczeni ✅
+fr_FR Vous ne pouvez pas commencer la partie tant que tous les joueurs ne sont pas entièrement connectés et marqués par ✅
+es_ES No puedes iniciar la partida hasta que todos los jugadores estén completamente conectados y marcados con ✅
+en_GB You cannot start the game until all players are fully connected and marked by ✅
+de_DE Sie können das Spiel nicht starten, bis alle Spieler vollständig verbunden und mit ✅ markiert sind
+
+en_US Offline
+it_IT Offline
+ru_RU Не в сети
+pt_BR Offline
+zh_CN 离线
+pl_PL Offline
+fr_FR Hors ligne
+es_ES Sin conexión
+en_GB Offline
+de_DE Offline
+
+en_US Edit Masteries
+it_IT Modifica Maestrie
+ru_RU Править Таланты
+pt_BR Editar Talentos
+zh_CN 编辑天赋
+pl_PL Edytuj Umiejętności
+fr_FR Modifier les maîtrises
+es_ES Editar maestrías
+en_GB Edit Masteries
+de_DE Meisterschaften bearbeiten
+
+en_US Connections
+it_IT Connessioni
+ru_RU Соединения
+pt_BR Conexões
+zh_CN 连接
+pl_PL Połączenia
+fr_FR Connexions
+es_ES Conexiones
+en_GB Connections
+de_DE Verbindungen
+
+en_US Invite / Connect
+it_IT Invita / Connettiti
+ru_RU Пригласить / Подключиться
+pt_BR Convidar / Conectar
+zh_CN 邀请/连接
+pl_PL Zaprosz / Połącz
+fr_FR Inviter / Se connecter
+es_ES Invitar / Conectar
+en_GB Invite / Connect
+de_DE Einladen / Verbinden
+
+en_US No connections
+it_IT Nessuna connessione
+ru_RU Нет соединений
+pt_BR Sem Conexões
+zh_CN 无连接
+pl_PL Brak połączeń
+fr_FR Aucune connexion
+es_ES Sin conexiones
+en_GB No connections
+de_DE Keine Verbindungen
+
+en_US Mastery Page 1
+it_IT Pagina Maestria 1
+ru_RU Страница Талантов 1
+pt_BR Pagina de Talentos 1
+zh_CN 天赋第1页
+pl_PL Strona Umiejętności 1
+fr_FR Page de maîtrise 1
+es_ES Página de maestría 1
+en_GB Mastery Page 1
+de_DE Meisterschaftsseite 1
+
+en_US Lock In
+it_IT Conferma
+ru_RU Блокировать
+pt_BR Confirmar
+zh_CN 锁定
+pl_PL Zatwierdź
+fr_FR Verrouiller
+es_ES Bloquear
+en_GB Lock In
+de_DE Festlegen
+
+en_US Loading data...
+it_IT Caricamento dati in corso…
+ru_RU Загрузка данных...
+pt_BR Carregando dados…
+zh_CN 加载数据……
+pl_PL Ładowanie danych...
+fr_FR Chargement des données...
+es_ES Cargando datos...
+en_GB Loading data...
+de_DE Daten werden geladen...
+
+en_US There are no merge requests for testing
+it_IT Non ci sono merge request da testare
+ru_RU Нет запросов на слияние доступных для тестирования
+pt_BR Não há merge requests para testar
+zh_CN 没有待测试的合并请求
+pl_PL Nie ma żądań scalania do przetestowania
+fr_FR Il n'y a aucune demande de fusion à tester
+es_ES No hay solicitudes de fusión para probar
+en_GB There are no merge requests for testing
+de_DE Es gibt keine Merge-Anfragen zum Testen
+
+en_US !36 · created 20 hours ago by Jinx
+it_IT !36 · creato 20 ore fa da Jinx
+ru_RU !36 · создано 20 часов назад пользователем Jinx
+pt_BR
+zh_CN !36 · 20小时前由Jinx创建
+pl_PL !36 · utworzone 20 godzin temu przez Jinx
+fr_FR !36 · créé il y a 20 heures par Jinx
+es_ES !36 · creado hace 20 horas por Jinx
+en_GB !36 · created 20 hours ago by Jinx
+de_DE !36 · vor 20 Stunden von Jinx erstellt
+
+en_US Don't change the branch
+it_IT Non cambiare il ramo
+ru_RU Не менять ветку
+pt_BR Não mudar de branch
+zh_CN 请勿更改分支
+pl_PL Nie zmieniaj gałęzi
+fr_FR Ne changez pas de branche
+es_ES No cambie la rama
+en_GB Don't change the branch
+de_DE Ändern Sie nicht die Branche
+
+en_US Play
+it_IT Gioca
+ru_RU Играть
+pt_BR Jogar
+zh_CN 开始游戏
+pl_PL Graj
+fr_FR Jouer
+es_ES Jugar
+en_GB Play
+de_DE Spielen
+
+en_US Delete
+it_IT Elimina
+ru_RU Удалить
+pt_BR Deletar
+zh_CN 删除
+pl_PL Usuń
+fr_FR Supprimer
+es_ES Eliminar
+en_GB Delete
+de_DE Löschen
+
+en_US Revert
+it_IT Ripristina
+ru_RU Вернуть
+pt_BR Reverter
+zh_CN 回滚
+pl_PL Przywróć
+fr_FR Rétablir
+es_ES Revertir
+en_GB Revert
+de_DE Zurücksetzen
+
+en_US Save
+it_IT Salva
+ru_RU Сохранить
+pt_BR Salvar
+zh_CN 保存
+pl_PL Zapisz
+fr_FR Enregistrer
+es_ES Guardar
+en_GB Save
+de_DE Speichern
+
+en_US Offense
+it_IT Offense
+ru_RU Неистовство
+pt_BR Ataque
+zh_CN 进攻
+pl_PL Ofensywa
+fr_FR Attaque
+es_ES Ofensiva
+en_GB Offense
+de_DE Offensive
+
+en_US Points Available:
+it_IT Punti Disponibili:
+ru_RU Доступные баллы:
+pt_BR Pontos Diponíveis:
+zh_CN 可用点数
+pl_PL Dostępne punkty:
+fr_FR Points disponibles :
+es_ES Puntos disponibles:
+en_GB Points Available:
+de_DE Verfügbare Punkte:
+
+en_US Enter your message here
+it_IT Inserisci qui il tuo messaggio
+ru_RU Введите свое сообщение здесь
+pt_BR Digite sua mensagem aqui
+zh_CN 在此输入您的消息
+pl_PL Wpisz swoją wiadomość tutaj
+fr_FR Entrez votre message ici
+es_ES Introduzca su mensaje aquí
+en_GB Enter your message here
+de_DE Geben Sie hier Ihre Nachricht ein
+
+en_US Discord
+it_IT Discord
+ru_RU Дискорд
+pt_BR Discord
+zh_CN Discord
+pl_PL Discord
+fr_FR Discord
+es_ES Discord
+en_GB Discord
+de_DE Discord
+
+en_US New game found!
+it_IT Nuova partita trovata!
+ru_RU Найдена новая игра!
+pt_BR Nova partida encontrada!
+zh_CN 找到新游戏！
+pl_PL Znaleziono nową grę!
+fr_FR Nouvelle partie trouvée !
+es_ES ¡Nueva partida encontrada!
+en_GB New game found!
+de_DE Neues Spiel gefunden!
+
+en_US Copy the text below and send it to players you trust so they can connect
+it_IT Copia il testo qui sotto e invialo ai giocatori di cui ti fidi in modo che possano connettersi
+ru_RU Скопируйте текст ниже и отправьте его игрокам, которым вы доверяете, чтобы они могли подключиться
+pt_BR Copie o texto abaixo e envie para outros jogadores que você confia para ele conectarem
+zh_CN 复制下方文本并发送给您信任的玩家，以便他们连接
+pl_PL Skopiuj poniższy tekst i wyślij go graczom, którym ufasz, aby mogli się połączyć
+fr_FR Copiez le texte ci-dessous et envoyez-le aux joueurs en qui vous avez confiance afin qu'ils puissent se connecter
+es_ES Copie el texto de abajo y envíelo a los jugadores en los que confía para que puedan conectarse
+en_GB Copy the text below and send it to players you trust so they can connect
+de_DE Kopieren Sie den Text unten und senden Sie ihn an Spieler, denen Sie vertrauen, damit sie sich verbinden können
+
+en_US Paste the text you received from someone you trust and click connect
+it_IT Incolla il testo che hai ricevuto da qualcuno di cui ti fidi e clicca su Connetti
+ru_RU Вставьте текст, полученный от человека, которому вы доверяете, и нажмите подключиться
+pt_BR Cole o texto que você recebeu de um jogador que você confia e clique em conectar
+zh_CN 粘贴您从可信联系人处收到的文本，然后点击“连接”
+pl_PL Wklej tekst otrzymany od osoby, której ufasz, i kliknij połącz
+fr_FR Collez le texte que vous avez reçu de quelqu'un en qui vous avez confiance et cliquez sur se connecter
+es_ES Pegue el texto que recibió de alguien en quien confía y haga clic en conectar
+en_GB Paste the text you received from someone you trust and click connect
+de_DE Fügen Sie den Text ein, den Sie von jemandem erhalten haben, dem Sie vertrauen, und klicken Sie auf verbinden
+
+en_US Continue
+it_IT Continua
+ru_RU Продолжить
+pt_BR Continuar
+zh_CN 继续
+pl_PL Kontynuuj
+fr_FR Continuer
+es_ES Continuar
+en_GB Continue
+de_DE Weiter
+
+en_US {i}v{i}
+it_IT {i}v{i}
+ru_RU {i} на {i}
+pt_BR {i}v{i}
+zh_CN {i}v{i}
+pl_PL {i} na {i}
+fr_FR {i} contre {i}
+es_ES {i} contra {i}
+en_GB {i}v{i}
+de_DE {i} gegen {i}
+
+en_US {v} fps
+it_IT {v} fps
+ru_RU {v} герц
+pt_BR {v} fps
+zh_CN {v} fps
+pl_PL {v} fps
+fr_FR {v} fps
+es_ES {v} fps
+en_GB {v} fps
+de_DE {v} fps
+
+en_US Force the use of English, ignoring the system settings
+it_IT Force the use of English, ignoring the system settings
+ru_RU Force the use of English, ignoring the system settings
+pt_BR Force the use of English, ignoring the system settings
+zh_CN Force the use of English, ignoring the system settings
+pl_PL Force the use of English, ignoring the system settings
+fr_FR Force the use of English, ignoring the system settings
+es_ES Force the use of English, ignoring the system settings
+en_GB Force the use of English, ignoring the system settings
+de_DE Force the use of English, ignoring the system settings
+
+en_US Draft Pick
+it_IT Selezione draft
+ru_RU Выбор по очереди
+pt_BR Escolha por draft
+zh_CN 选人模式
+pl_PL Wybór projektowy
+fr_FR Sélection par draft
+es_ES Selección por draft
+en_GB Draft Pick
+de_DE Draft-Auswahl
+
+en_US All Random
+it_IT Tutto casuale
+ru_RU Все случайные
+pt_BR Tudo aleatório
+zh_CN 全随机
+pl_PL Całkowicie losowy
+fr_FR Tout aléatoire
+es_ES Todo aleatorio
+en_GB All Random
+de_DE Alles zufällig
+
+en_US Enable Firewall Mode
+it_IT Abilita modalità firewall
+ru_RU Включить режим брандмауэра
+pt_BR Ativar modo de firewall
+zh_CN 启用防火墙模式
+pl_PL Włącz tryb zapory sieciowej
+fr_FR Activer le mode pare-feu
+es_ES Activar modo cortafuegos
+en_GB Enable Firewall Mode
+de_DE Firewall-Modus aktivieren
+
+en_US Enable Bypass Mode
+it_IT Abilita modalità bypass
+ru_RU Включить режим обхода
+pt_BR Ativar modo de bypass
+zh_CN 启用绕过模式
+pl_PL Włącz tryb obejścia
+fr_FR Activer le mode contournement
+es_ES Activar modo de omisión
+en_GB Enable Bypass Mode
+de_DE Umgehungsmodus aktivieren
+
+en_US Perform a free disk space check
+it_IT Esegui controllo spazio su disco libero
+ru_RU Выполнить проверку свободного места на диске
+pt_BR Verificar espaço livre em disco
+zh_CN 检查可用磁盘空间
+pl_PL Sprawdź wolne miejsce na dysku
+fr_FR Vérifier l'espace disque libre
+es_ES Comprobar espacio libre en disco
+en_GB Perform a free disk space check
+de_DE Freien Speicherplatz überprüfen
+
+en_US (Internal) Specify the auto-suggested locale to use
+it_IT (Interno) Specificare le impostazioni locali suggerite automaticamente da utilizzare
+ru_RU (Внутренний) Укажите автоматически предложенный язык для использования
+pt_BR (Interno) Especificar a localidade sugerida automaticamente para usar
+zh_CN (内部) 指定要使用的自动建议区域设置
+pl_PL (Wewnętrzne) Określ automatycznie sugerowane ustawienia regionalne do użycia
+fr_FR (Interne) Spécifier les paramètres régionaux suggérés automatiquement à utiliser
+es_ES (Interno) Especificar la configuración regional sugerida automáticamente para usar
+en_GB (Internal) Specify the auto-suggested locale to use
+de_DE (Intern) Geben Sie das automatisch vorgeschlagene Gebietsschema an, das verwendet werden soll
+
+en_US (Internal) Specify the locale to use
+it_IT (Interno) Specificare le impostazioni locali da utilizzare
+ru_RU (Внутренний) Укажите язык для использования
+pt_BR (Interno) Especificar a localidade a ser usada
+zh_CN (内部) 指定要使用的区域设置
+pl_PL (Wewnętrzne) Określ ustawienia regionalne do użycia
+fr_FR (Interne) Spécifier les paramètres régionaux à utiliser
+es_ES (Interno) Especificar la configuración regional a usar
+en_GB (Internal) Specify the locale to use
+de_DE (Intern) Geben Sie das zu verwendende Gebietsschema an
+
+en_US An unexpected exception occurred:
+it_IT Si è verificata un'eccezione imprevista:
+ru_RU Произошло непредвиденное исключение:
+pt_BR Ocorreu uma exceção inesperada:
+zh_CN 发生意外异常
+pl_PL Wystąpił nieoczekiwany wyjątek:
+fr_FR Une exception inattendue s'est produite :
+es_ES Se produjo una excepción inesperada:
+en_GB An unexpected exception occurred:
+de_DE Eine unerwartete Ausnahme ist aufgetreten:
+
+en_US Reading filesystem stats failed
+it_IT Lettura delle statistiche del filesystem non riuscita
+ru_RU Не удалось прочитать статистику файловой системы
+pt_BR Falha ao ler estatísticas do sistema de arquivos
+zh_CN 读取文件系统统计信息失败
+pl_PL Odczytywanie statystyk systemu plików nie powiodło się
+fr_FR Échec de la lecture des statistiques du système de fichiers
+es_ES Falló la lectura de las estadísticas del sistema de archivos
+en_GB Reading filesystem stats failed
+de_DE Lesen der Dateisystemstatistiken fehlgeschlagen
+
+en_US {size} more disk space required on {path}
+it_IT Richiesti {size} di spazio su disco in più su {path}
+ru_RU Требуется еще {size} дискового пространства на {path}
+pt_BR Mais {size} de espaço em disco necessário em {path}
+zh_CN {path} 路径下需要 {size} 更多磁盘空间
+pl_PL Na ścieżce {path} wymagane jest {size} więcej miejsca na dysku
+fr_FR {size} d'espace disque supplémentaire requis sur {path}
+es_ES Se requiere {size} más de espacio en disco en {path}
+en_GB {size} more disk space required on {path}
+de_DE Auf {path} sind {size} mehr Speicherplatz erforderlich
+
+en_US Restoring launcher package failed:
+it_IT Ripristino del pacchetto del launcher non riuscito:
+ru_RU Не удалось восстановить пакет лаунчера:
+pt_BR Falha ao restaurar o pacote do launcher:
+zh_CN 恢复启动器包失败
+pl_PL Przywracanie pakietu launchera nie powiodło się:
+fr_FR Échec de la restauration du paquet du lanceur :
+es_ES Falló la restauración del paquete del lanzador:
+en_GB Restoring launcher package failed:
+de_DE Wiederherstellen des Launcher-Pakets fehlgeschlagen:
+
+en_US Moving "{foundPkgDir}" to "{pkg_dir}"...
+it_IT Spostamento di "{foundPkgDir}" in "{pkg_dir}"...
+ru_RU Перемещение "{foundPkgDir}" в "{pkg_dir}"...
+pt_BR Movendo "{foundPkgDir}" para "{pkg_dir}"...
+zh_CN 将 “{foundPkgDir}” 移动到 “{pkg_dir}”...
+pl_PL Przenoszenie „{foundPkgDir}” do „{pkg_dir}”...
+fr_FR Déplacement de « {foundPkgDir} » vers « {pkg_dir} »...
+es_ES Moviendo "{foundPkgDir}" a "{pkg_dir}"...
+en_GB Moving "{foundPkgDir}" to "{pkg_dir}"...
+de_DE Verschieben von „{foundPkgDir}“ nach „{pkg_dir}“...
+
+en_US Moving files from "{foundPkgDir}" to "{pkg_dir}"...
+it_IT Spostamento dei file da "{foundPkgDir}" a "{pkg_dir}"...
+ru_RU Перемещение файлов из "{foundPkgDir}" в "{pkg_dir}"...
+pt_BR Movendo arquivos de "{foundPkgDir}" para "{pkg_dir}"...
+zh_CN 将文件从 “{foundPkgDir}” 移动到 “{pkg_dir}”...
+pl_PL Przenoszenie plików z „{foundPkgDir}” do „{pkg_dir}”...
+fr_FR Déplacement des fichiers de « {foundPkgDir} » vers « {pkg_dir} »...
+es_ES Moviendo archivos de "{foundPkgDir}" a "{pkg_dir}"...
+en_GB Moving files from "{foundPkgDir}" to "{pkg_dir}"...
+de_DE Verschieben von Dateien von „{foundPkgDir}“ nach „{pkg_dir}“...
+
+en_US Skipping "{foundPkgDir}" because it does not contain some files: {missingEntries}
+it_IT Saltando "{foundPkgDir}" perché mancano alcuni file: {missingEntries}
+ru_RU Пропуск "{foundPkgDir}", так как отсутствуют некоторые файлы: {missingEntries}
+pt_BR Ignorando "{foundPkgDir}" porque não contém alguns arquivos: {missingEntries}
+zh_CN 跳过 “{foundPkgDir}”，因为它缺少以下文件：{missingEntries}
+pl_PL Pomijanie „{foundPkgDir}”, ponieważ brakuje w nim niektórych plików: {missingEntries}
+fr_FR Ignorer « {foundPkgDir} » car il ne contient pas certains fichiers : {missingEntries}
+es_ES Omitiendo "{foundPkgDir}" porque no contiene algunos archivos: {missingEntries}
+en_GB Skipping "{foundPkgDir}" because it does not contain some files: {missingEntries}
+de_DE „{foundPkgDir}“ wird übersprungen, da einige Dateien fehlen: {missingEntries}
+
+en_US Moving "{foundPkgZip}" to "{pkg_zip}"
+it_IT Spostamento di "{foundPkgZip}" in "{pkg_zip}"
+ru_RU Перемещение "{foundPkgZip}" в "{pkg_zip}"
+pt_BR Movendo "{foundPkgZip}" para "{pkg_zip}"
+zh_CN 将 “{foundPkgZip}” 移动到 “{pkg_zip}”
+pl_PL Przenoszenie „{foundPkgZip}” do „{pkg_zip}”
+fr_FR Déplacement de « {foundPkgZip} » vers « {pkg_zip} »
+es_ES Moviendo "{foundPkgZip}" a "{pkg_zip}"
+en_GB Moving "{foundPkgZip}" to "{pkg_zip}"
+de_DE Verschieben von „{foundPkgZip}“ nach „{pkg_zip}“
+
+en_US Running
+it_IT In esecuzione
+ru_RU Запуск
+pt_BR Executando
+zh_CN 正在运行
+pl_PL Uruchamianie
+fr_FR En cours d'exécution
+es_ES Ejecutando
+en_GB Running
+de_DE Läuft
+
+en_US Out-of-date data cleanup failed.
+it_IT Pulizia dei dati obsoleti non riuscita.
+ru_RU Очистка устаревших данных не удалась.
+pt_BR Falha na limpeza de dados desatualizados.
+zh_CN 过期数据清理失败
+pl_PL Czyszczenie nieaktualnych danych nie powiodło się.
+fr_FR Échec du nettoyage des données obsolètes.
+es_ES Falló la limpieza de datos obsoletos.
+en_GB Out-of-date data cleanup failed.
+de_DE Bereinigung veralteter Daten fehlgeschlagen.
+
+en_US Enter player name
+it_IT Inserisci nome giocatore
+ru_RU Введите имя игрока
+pt_BR Digite o nome do jogador
+zh_CN 输入玩家名称
+pl_PL Wprowadź nazwę gracza
+fr_FR Entrez le nom du joueur
+es_ES Introduzca el nombre del jugador
+en_GB Enter player name
+de_DE Spielernamen eingeben
+
+en_US Checkbox
+it_IT Casella di controllo
+ru_RU Флажок
+pt_BR Caixa de seleção
+zh_CN 复选框
+pl_PL Pole wyboru
+fr_FR Case à cocher
+es_ES Casilla de verificación
+en_GB Checkbox
+de_DE Kontrollkästchen
+
+en_US Check Features Enabled
+it_IT Controlla funzionalità abilitate
+ru_RU Отметьте включенные функции
+pt_BR Marcar recursos ativados
+zh_CN 勾选已启用功能
+pl_PL Zaznacz Włączone funkcje
+fr_FR Cocher Fonctionnalités activées
+es_ES Marcar Funciones habilitadas
+en_GB Check Features Enabled
+de_DE Aktivierte Funktionen prüfen
+
+en_US Select a custom game lobby
+it_IT Seleziona una lobby di gioco personalizzata
+ru_RU Выберите пользовательское игровое лобби
+pt_BR Selecione um saguão de jogo personalizado
+zh_CN 选择自定义游戏大厅
+pl_PL Wybierz niestandardową poczekalnię gry
+fr_FR Sélectionner un hall de jeu personnalisé
+es_ES Seleccionar un vestíbulo de juego personalizado
+en_GB Select a custom game lobby
+de_DE Benutzerdefinierte Spiel-Lobby auswählen
+
+en_US Insufficient disk space
+it_IT Spazio su disco insufficiente
+ru_RU Недостаточно места на диске
+pt_BR Espaço em disco insuficiente
+zh_CN 磁盘空间不足
+pl_PL Niewystarczająca ilość miejsca na dysku
+fr_FR Espace disque insuffisant
+es_ES Espacio en disco insuficiente
+en_GB Insufficient disk space
+de_DE Nicht genügend Speicherplatz
+
+en_US Retry ↻
+it_IT Riprova ↻
+ru_RU Повторить ↻
+pt_BR Tentar novamente ↻
+zh_CN 重试 ↻
+pl_PL Ponów ↻
+fr_FR Réessayer ↻
+es_ES Reintentar ↻
+en_GB Retry ↻
+de_DE Wiederholen ↻
+
+en_US Experiments
+it_IT Sperimentazioni
+ru_RU Эксперименты
+pt_BR Experimentos
+zh_CN 实验功能
+pl_PL Eksperymenty
+fr_FR Expériences
+es_ES Experimentos
+en_GB Experiments
+de_DE Experimente
+
+en_US HALF-PING: Trying to lower the ping and equalize it for everyone. Causes desynchronization!
+it_IT HALF-PING: Tentativo di ridurre il ping e uniformarlo per tutti. Provoca desincronizzazione!
+ru_RU HALF-PING: Попытка снизить пинг и выровнять его для всех. Вызывает десинхронизацию!
+pt_BR HALF-PING: Tentando reduzir o ping e igualá-lo para todos. Causa dessincronização!
+zh_CN HALF-PING：尝试降低延迟并使其对所有人保持一致会导致不同步！
+pl_PL HALF-PING: Próba obniżenia pingu i wyrównania go dla wszystkich. Powoduje desynchronizację!
+fr_FR HALF-PING : Essayer de réduire le ping et de l'égaliser pour tout le monde. Provoque une désynchronisation !
+es_ES HALF-PING: Intentar reducir el ping y igualarlo para todos. ¡Causa desincronización!
+en_GB HALF-PING: Trying to lower the ping and equalize it for everyone. Causes desynchronization!
+de_DE HALF-PING: Versuch, den Ping zu senken und für alle auszugleichen. Verursacht Desynchronisation!
+
+en_US BYPASS: Connect the client to the local server directly.
+it_IT BYPASS: Connetti il client direttamente al server locale.
+ru_RU BYPASS: Подключить клиент к локальному серверу напрямую.
+pt_BR BYPASS: Conectar o cliente ao servidor local diretamente.
+zh_CN BYPASS：将客户端直接连接到本地服务器
+pl_PL BYPASS: Bezpośrednie połączenie klienta z serwerem lokalnym.
+fr_FR BYPASS : Connecter le client directement au serveur local.
+es_ES BYPASS: Conectar el cliente al servidor local directamente.
+en_GB BYPASS: Connect the client to the local server directly.
+de_DE BYPASS: Den Client direkt mit dem lokalen Server verbinden.
+
+en_US Play Alone
+it_IT Gioca da solo
+ru_RU Играть в одиночку
+pt_BR Jogar sozinho
+zh_CN 单人游玩
+pl_PL Graj sam
+fr_FR Jouer seul
+es_ES Jugar solo
+en_GB Play Alone
+de_DE Allein spielen
+
+en_US Publish Game
+it_IT Pubblica partita
+ru_RU Опубликовать игру
+pt_BR Publicar partida
+zh_CN 发布游戏
+pl_PL Opublikuj grę
+fr_FR Publier la partie
+es_ES Publicar partida
+en_GB Publish Game
+de_DE Spiel veröffentlichen
+
+en_US Building
+it_IT Compilazione
+ru_RU Сборка
+pt_BR Compilando
+zh_CN 建筑
+pl_PL Budowanie
+fr_FR Construction
+es_ES Construyendo
+en_GB Building
+de_DE Bauen
+
+en_US automatic command
+it_IT comando automatico
+ru_RU автоматическая команда
+pt_BR comando automático
+zh_CN 自动命令
+pl_PL polecenie automatyczne
+fr_FR commande automatique
+es_ES comando automático
+en_GB automatic command
+de_DE automatischer Befehl
+
+en_US custom command
+it_IT comando personalizzato
+ru_RU пользовательская команда
+pt_BR comando personalizado
+zh_CN 自定义命令
+pl_PL polecenie niestandardowe
+fr_FR commande personnalisée
+es_ES comando personalizado
+en_GB custom command
+de_DE benutzerdefinierter Befehl
+
+en_US automatic location
+it_IT posizione automatica
+ru_RU автоматическое расположение
+pt_BR localização automática
+zh_CN 自动位置
+pl_PL lokalizacja automatyczna
+fr_FR emplacement automatique
+es_ES ubicación automática
+en_GB automatic location
+de_DE automatische Position
+
+en_US C drive
+it_IT unità C
+ru_RU диск C
+pt_BR unidade C
+zh_CN C 盘
+pl_PL dysk C
+fr_FR lecteur C
+es_ES unidad C
+en_GB C drive
+de_DE Laufwerk C
+
+en_US Fishbones_Data folder
+it_IT cartella Fishbones_Data
+ru_RU папка Fishbones_Data
+pt_BR pasta Fishbones_Data
+zh_CN Fishbones_Data 文件夹
+pl_PL folder Fishbones_Data
+fr_FR dossier Fishbones_Data
+es_ES carpeta Fishbones_Data
+en_GB Fishbones_Data folder
+de_DE Fishbones_Data-Ordner
+
+en_US custom location
+it_IT posizione personalizzata
+ru_RU пользовательское расположение
+pt_BR localização personalizada
+zh_CN 自定义位置
+pl_PL lokalizacja niestandardowa
+fr_FR emplacement personnalisé
+es_ES ubicación personalizada
+en_GB custom location
+de_DE benutzerdefinierte Position
+
+en_US The file is unavailable, please try updating at least once.
+it_IT Il file non è disponibile, provare ad aggiornare almeno una volta.
+ru_RU Файл недоступен, попробуйте обновить хотя бы один раз.
+pt_BR O arquivo não está disponível, tente atualizar pelo menos uma vez.
+zh_CN 文件不可用，请至少尝试更新一次。
+pl_PL Plik jest niedostępny, spróbuj zaktualizować przynajmniej raz.
+fr_FR Le fichier n'est pas disponible, veuillez essayer de mettre à jour au moins une fois.
+es_ES El archivo no está disponible, intente actualizar al menos una vez.
+en_GB The file is unavailable, please try updating at least once.
+de_DE Die Datei ist nicht verfügbar, bitte versuchen Sie mindestens einmal zu aktualisieren.
+
+en_US No servers with suitable clients are installed
+it_IT Non sono installati server con client appropriati
+ru_RU Не установлены серверы с подходящими клиентами
+pt_BR Nenhum servidor com clientes adequados está instalado
+zh_CN 未安装具有合适客户端的服务器
+pl_PL Nie zainstalowano żadnych serwerów z odpowiednimi klientami
+fr_FR Aucun serveur avec des clients appropriés n'est installé
+es_ES No hay servidores instalados con clientes adecuados
+en_GB No servers with suitable clients are installed
+de_DE Keine Server mit geeigneten Clients installiert
+
+en_US You do not have the client version required to play on this server
+it_IT Non hai la versione del client richiesta per giocare su questo server
+ru_RU У вас нет версии клиента, необходимой для игры на этом сервере
+pt_BR Você não tem a versão do cliente necessária para jogar neste servidor
+zh_CN 您没有在此服务器上玩游戏所需的客户端版本
+pl_PL Nie masz wymaganej wersji klienta do gry na tym serwerze
+fr_FR Vous n'avez pas la version du client requise pour jouer sur ce serveur
+es_ES No tiene la versión del cliente requerida para jugar en este servidor
+en_GB You do not have the client version required to play on this server
+de_DE Sie haben nicht die Client-Version, die erforderlich ist, um auf diesem Server zu spielen
+
+en_US The game client will crash at the beginning of the game
+it_IT Il client di gioco si bloccherà all'inizio della partita
+ru_RU Игровой клиент вылетит в начале игры
+pt_BR O cliente do jogo irá travar no início da partida
+zh_CN 游戏客户端将在游戏开始时崩溃
+pl_PL Klient gry zawiesi się na początku gry
+fr_FR Le client de jeu plantera au début de la partie
+es_ES El cliente del juego se bloqueará al comienzo de la partida
+en_GB The game client will crash at the beginning of the game
+de_DE Der Spielclient wird am Anfang des Spiels abstürzen
+
+en_US Unknown #UNK
+it_IT Sconosciuto #UNK
+ru_RU Неизвестно #UNK
+pt_BR Desconhecido #UNK
+zh_CN 未知 #UNK
+pl_PL Nieznany #UNK
+fr_FR Inconnu #UNK
+es_ES Desconocido #UNK
+en_GB Unknown #UNK
+de_DE Unbekannt #UNK
+
+en_US Anonymous {champion}
+it_IT Anonimo {champion}
+ru_RU Аноним {champion}
+pt_BR Anônimo {champion}
+zh_CN 匿名 {champion}
+pl_PL Anonimowy {champion}
+fr_FR Anonyme {champion}
+es_ES Anónimo {champion}
+en_GB Anonymous {champion}
+de_DE Anonym {champion}
+
+en_US Install the package with additional locales
+it_IT Installa il pacchetto con impostazioni locali aggiuntive
+ru_RU Установить пакет с дополнительными языковыми стандартами
+pt_BR Instalar o pacote com localidades adicionais
+zh_CN 安装包含额外区域设置的包
+pl_PL Zainstaluj pakiet z dodatkowymi ustawieniami regionalnymi
+fr_FR Installer le paquet avec des paramètres régionaux supplémentaires
+es_ES Instalar el paquete con configuraciones regionales adicionales
+en_GB Install the package with additional locales
+de_DE Paket mit zusätzlichen Gebietsschemas installieren
+
+en_US (Debug) Update git repositories
+it_IT (Debug) Aggiorna repository git
+ru_RU (Отладка) Обновить git-репозитории
+pt_BR (Debug) Atualizar repositórios git
+zh_CN (调试) 更新 git 仓库
+pl_PL (Debug) Aktualizuj repozytoria git
+fr_FR (Débogage) Mettre à jour les dépôts git
+es_ES (Depurar) Actualizar repositorios git
+en_GB (Debug) Update git repositories
+de_DE (Debug) Git-Repositories aktualisieren
+
+en_US Disable Summoner Spells
+it_IT Disabilita incantesimi dell'evocatore
+ru_RU Отключить заклинания призывателя
+pt_BR Desativar feitiços de invocador
+zh_CN 禁用召唤师技能
+pl_PL Wyłącz zaklęcia przywoływacza
+fr_FR Désactiver les sortilèges d'invocateur
+es_ES Desactivar hechizos de invocador
+en_GB Disable Summoner Spells
+de_DE Beschwörerzauber deaktivieren
+
+en_US Enable All Champions
+it_IT Abilita tutti i campioni
+ru_RU Включить всех чемпионов
+pt_BR Ativar todos os campeões
+zh_CN 启用所有英雄
+pl_PL Włącz wszystkich mistrzów
+fr_FR Activer tous les champions
+es_ES Activar todos los campeones
+en_GB Enable All Champions
+de_DE Alle Champions aktivieren
+
+en_US Latest version on releases page:
+it_IT Ultima versione nella pagina delle release:
+ru_RU Последняя версия на странице релизов:
+pt_BR Última versão na página de lançamentos:
+zh_CN 发布页面上的最新版本：
+pl_PL Najnowsza wersja na stronie wydań:
+fr_FR Dernière version sur la page des versions :
+es_ES Última versión en la página de versiones:
+en_GB Latest version on releases page:
+de_DE Neueste Version auf der Releases-Seite:
+
+en_US The public key is not the official one that is hardcoded in the program.
+it_IT La chiave pubblica non è quella ufficiale codificata nel programma.
+ru_RU Открытый ключ не является официальным, который жестко прописан в программе.
+pt_BR A chave pública não é a oficial que está codificada no programa.
+zh_CN 公钥不是程序中硬编码的官方公钥。
+pl_PL Klucz publiczny nie jest oficjalnym kluczem zakodowanym na stałe w programie.
+fr_FR La clé publique n'est pas celle officielle qui est codée en dur dans le programme.
+es_ES La clave pública no es la oficial que está codificada en el programa.
+en_GB The public key is not the official one that is hardcoded in the program.
+de_DE Der öffentliche Schlüssel ist nicht der offizielle, der im Programm fest codiert ist.
+
+en_US The file version is not newer than the latest known version file.
+it_IT La versione del file non è più recente dell'ultimo file di versione conosciuto.
+ru_RU Версия файла не новее последнего известного файла версии.
+pt_BR A versão do arquivo não é mais recente que o último arquivo de versão conhecido.
+zh_CN 文件版本不晚于最新的已知版本文件。
+pl_PL Wersja pliku nie jest nowsza niż najnowsza znana wersja pliku.
+fr_FR La version du fichier n'est pas plus récente que le dernier fichier de version connu.
+es_ES La versión del archivo no es más reciente que el último archivo de versión conocido.
+en_GB The file version is not newer than the latest known version file.
+de_DE Die Dateiversion ist nicht neuer als die neueste bekannte Versionsdatei.
+
+en_US The file does not contain a current platform.
+it_IT Il file non contiene una piattaforma corrente.
+ru_RU Файл не содержит текущей платформы.
+pt_BR O arquivo não contém uma plataforma atual.
+zh_CN 文件不包含当前平台。
+pl_PL Plik nie zawiera bieżącej platformy.
+fr_FR Le fichier ne contient pas de plateforme actuelle.
+es_ES El archivo no contiene una plataforma actual.
+en_GB The file does not contain a current platform.
+de_DE Die Datei enthält keine aktuelle Plattform.
+
+en_US Code:
+it_IT Codice:
+ru_RU Код:
+pt_BR Código:
+zh_CN 代码：
+pl_PL Kod:
+fr_FR Code :
+es_ES Código:
+en_GB Code:
+de_DE Code:
+
+en_US BrokenWings (Season 1)
+it_IT BrokenWings (Stagione 1)
+ru_RU BrokenWings (Сезон 1)
+pt_BR BrokenWings (Temporada 1)
+zh_CN BrokenWings（第1赛季）
+pl_PL BrokenWings (Sezon 1)
+fr_FR BrokenWings (Saison 1)
+es_ES BrokenWings (Temporada 1)
+en_GB BrokenWings (Season 1)
+de_DE BrokenWings (Staffel 1)
+
+en_US Repairing failed
+it_IT Riparazione non riuscita
+ru_RU Восстановление не удалось
+pt_BR Reparo falhou
+zh_CN 修复失败
+pl_PL Naprawa nie powiodła się
+fr_FR La réparation a échoué
+es_ES Falló la reparación
+en_GB Repairing failed
+de_DE Reparatur fehlgeschlagen
+
+en_US Updating game server package failed:
+it_IT Aggiornamento del pacchetto del server di gioco non riuscito:
+ru_RU Не удалось обновить пакет игрового сервера:
+pt_BR Falha ao atualizar o pacote do servidor de jogo:
+zh_CN 更新游戏服务器包失败：
+pl_PL Aktualizacja pakietu serwera gry nie powiodła się:
+fr_FR Échec de la mise à jour du paquet du serveur de jeu :
+es_ES Falló la actualización del paquete del servidor de juego:
+en_GB Updating game server package failed:
+de_DE Aktualisierung des Spielserver-Pakets fehlgeschlagen:
+
+en_US Chronobreak (Season 1)
+it_IT Chronobreak (Stagione 1)
+ru_RU Chronobreak (Сезон 1)
+pt_BR Chronobreak (Temporada 1)
+zh_CN Chronobreak（第1赛季）
+pl_PL Chronobreak (Sezon 1)
+fr_FR Chronobreak (Saison 1)
+es_ES Chronobreak (Temporada 1)
+en_GB Chronobreak (Season 1)
+de_DE Chronobreak (Staffel 1)
+
+en_US TestGrounds (Season 4)
+it_IT TestGrounds (Stagione 4)
+ru_RU TestGrounds (Сезон 4)
+pt_BR TestGrounds (Temporada 4)
+zh_CN TestGrounds（第4赛季）
+pl_PL TestGrounds (Sezon 4)
+fr_FR TestGrounds (Saison 4)
+es_ES TestGrounds (Temporada 4)
+en_GB TestGrounds (Season 4)
+de_DE TestGrounds (Staffel 4)
+
+en_US LoLSrv (Pre Season 1)
+it_IT LoLSrv (Pre Stagione 1)
+ru_RU LoLSrv (До Сезона 1)
+pt_BR LoLSrv (Pré-Temporada 1)
+zh_CN LoLSrv（第1赛季前）
+pl_PL LoLSrv (Przed Sezonem 1)
+fr_FR LoLSrv (Avant la saison 1)
+es_ES LoLSrv (Antes de la temporada 1)
+en_GB LoLSrv (Pre Season 1)
+de_DE LoLSrv (Vor Staffel 1)
+
+en_US SDK installation is probably corrupted
+it_IT L'installazione dell'SDK è probabilmente danneggiata
+ru_RU Установка SDK, вероятно, повреждена
+pt_BR A instalação do SDK provavelmente está corrompida
+zh_CN SDK 安装可能已损坏
+pl_PL Instalacja SDK jest prawdopodobnie uszkodzona
+fr_FR L'installation du SDK est probablement corrompue
+es_ES La instalación del SDK probablemente esté dañada
+en_GB SDK installation is probably corrupted
+de_DE SDK-Installation ist wahrscheinlich beschädigt
+
+en_US exit code is {exitCode}
+it_IT il codice di uscita è {exitCode}
+ru_RU код выхода равен {exitCode}
+pt_BR o código de saída é {exitCode}
+zh_CN 退出代码为 {exitCode}
+pl_PL kod wyjścia to {exitCode}
+fr_FR le code de sortie est {exitCode}
+es_ES el código de salida es {exitCode}
+en_GB exit code is {exitCode}
+de_DE Exit-Code ist {exitCode}
+
+en_US TestGrounds
+it_IT TestGrounds
+ru_RU TestGrounds
+pt_BR TestGrounds
+zh_CN TestGrounds
+pl_PL TestGrounds
+fr_FR TestGrounds
+es_ES TestGrounds
+en_GB TestGrounds
+de_DE TestGrounds
+
+en_US Additional Locales For 1.0.0.126
+it_IT Impostazioni locali aggiuntive per 1.0.0.126
+ru_RU Дополнительные языковые стандарты для 1.0.0.126
+pt_BR Localidades adicionais para 1.0.0.126
+zh_CN 1.0.0.126 的额外区域设置
+pl_PL Dodatkowe ustawienia regionalne dla 1.0.0.126
+fr_FR Paramètres régionaux supplémentaires pour 1.0.0.126
+es_ES Configuraciones regionales adicionales para 1.0.0.126
+en_GB Additional Locales For 1.0.0.126
+de_DE Zusätzliche Gebietsschemas für 1.0.0.126
+
+en_US Wine
+it_IT Wine
+ru_RU Wine
+pt_BR Wine
+zh_CN Wine
+pl_PL Wine
+fr_FR Wine
+es_ES Wine
+en_GB Wine
+de_DE Wine
+
+en_US The update failed, see the log for details.
+it_IT L'aggiornamento non è riuscito, vedere il log per i dettagli.
+ru_RU Обновление не удалось, подробности см. в журнале.
+pt_BR A atualização falhou, veja o log para detalhes.
+zh_CN 更新失败，请参阅日志了解详情。
+pl_PL Aktualizacja nie powiodła się, zobacz dziennik, aby uzyskać szczegóły.
+fr_FR La mise à jour a échoué, voir le journal pour plus de détails.
+es_ES La actualización falló, consulte el registro para más detalles.
+en_GB The update failed, see the log for details.
+de_DE Das Update ist fehlgeschlagen, siehe Log für Details.
+
+en_US Skin {i}
+it_IT Skin {i}
+ru_RU Скин {i}
+pt_BR Skin {i}
+zh_CN 皮肤 {i}
+pl_PL Skórka {i}
+fr_FR Skin {i}
+es_ES Aspecto {i}
+en_GB Skin {i}
+de_DE Skin {i}
+
+en_US First Blood
+it_IT Prima sangue
+ru_RU Первая кровь
+pt_BR Primeira morte
+zh_CN 第一滴血
+pl_PL Pierwsza Krew
+fr_FR Premier sang
+es_ES Primera sangre
+en_GB First Blood
+de_DE First Blood
+
+en_US Ascension
+it_IT Ascesa
+ru_RU Возвышение
+pt_BR Ascensão
+zh_CN 飞升
+pl_PL Wniebowstąpienie
+fr_FR Ascension
+es_ES Ascensión
+en_GB Ascension
+de_DE Aufstieg
+
+en_US BrokenWings
+it_IT BrokenWings
+ru_RU BrokenWings
+pt_BR BrokenWings
+zh_CN BrokenWings
+pl_PL BrokenWings
+fr_FR BrokenWings
+es_ES BrokenWings
+en_GB BrokenWings
+de_DE BrokenWings
+
+en_US Chronobreak
+it_IT Chronobreak
+ru_RU Chronobreak
+pt_BR Chronobreak
+zh_CN Chronobreak
+pl_PL Chronobreak
+fr_FR Chronobreak
+es_ES Chronobreak
+en_GB Chronobreak
+de_DE Chronobreak
+
+en_US Minor rework of character data.
+it_IT Rielaborazione minore dei dati dei personaggi.
+ru_RU Незначительная переработка данных персонажей.
+pt_BR Pequena reformulação dos dados dos personagens.
+zh_CN 角色数据的微小重做。
+pl_PL Drobna zmiana danych postaci.
+fr_FR Refonte mineure des données de personnage.
+es_ES Retoque menor de los datos de personaje.
+en_GB Minor rework of character data.
+de_DE Kleine Überarbeitung der Charakterdaten.
+
+en_US Enable online updates
+it_IT Abilita aggiornamenti online
+ru_RU Включить онлайн-обновления
+pt_BR Ativar atualizações online
+zh_CN 启用在线更新
+pl_PL Włącz aktualizacje online
+fr_FR Activer les mises à jour en ligne
+es_ES Activar actualizaciones en línea
+en_GB Enable online updates
+de_DE Online-Updates aktivieren
+
+en_US Search for players online
+it_IT Cerca giocatori online
+ru_RU Поиск игроков онлайн
+pt_BR Procurar jogadores online
+zh_CN 在线搜索玩家
+pl_PL Szukaj graczy online
+fr_FR Rechercher des joueurs en ligne
+es_ES Buscar jugadores en línea
+en_GB Search for players online
+de_DE Nach Spielern online suchen
+
+en_US Enable Season 1 (Recommended)
+it_IT Abilita Stagione 1 (Consigliato)
+ru_RU Включить Сезон 1 (Рекомендуется)
+pt_BR Ativar Temporada 1 (Recomendado)
+zh_CN 启用第1赛季（推荐）
+pl_PL Włącz Sezon 1 (Zalecane)
+fr_FR Activer la saison 1 (Recommandé)
+es_ES Activar temporada 1 (Recomendado)
+en_GB Enable Season 1 (Recommended)
+de_DE Staffel 1 aktivieren (Empfohlen)
+
+en_US Enable Season 4 (Experimental)
+it_IT Abilita Stagione 4 (Sperimentale)
+ru_RU Включить Сезон 4 (Экспериментально)
+pt_BR Ativar Temporada 4 (Experimental)
+zh_CN 启用第4赛季（实验性）
+pl_PL Włącz Sezon 4 (Eksperymentalne)
+fr_FR Activer la saison 4 (Expérimental)
+es_ES Activar temporada 4 (Experimental)
+en_GB Enable Season 4 (Experimental)
+de_DE Staffel 4 aktivieren (Experimentell)
+
+en_US Force the use of English, ignoring the system settings
+it_IT Forza l'uso dell'inglese, ignorando le impostazioni di sistema
+ru_RU Принудительно использовать английский, игнорируя настройки системы
+pt_BR Forçar o uso do inglês, ignorando as configurações do sistema
+zh_CN 强制使用英语，忽略系统设置
+pl_PL Wymuś użycie języka angielskiego, ignorując ustawienia systemowe
+fr_FR Forcer l'utilisation de l'anglais, en ignorant les paramètres du système
+es_ES Forzar el uso del inglés, ignorando la configuración del sistema
+en_GB Force the use of English, ignoring the system settings
+de_DE Erzwingen Sie die Verwendung von Englisch, indem Sie die Systemeinstellungen ignorieren
+
+en_US Install 1st season game client to
+it_IT Installa il client di gioco della 1ª stagione in
+ru_RU Установить клиент игры 1-го сезона в
+pt_BR Instalar cliente de jogo da 1ª temporada em
+zh_CN 安装第1赛季游戏客户端到
+pl_PL Zainstaluj klienta gry z 1. sezonu do
+fr_FR Installer le client de jeu de la 1ère saison dans
+es_ES Instalar cliente de juego de la 1ª temporada en
+en_GB Install 1st season game client to
+de_DE Spielclient der 1. Staffel installieren nach
+
+en_US Install the additional languages package
+it_IT Installa il pacchetto di lingue aggiuntive
+ru_RU Установить пакет дополнительных языков
+pt_BR Instalar o pacote de idiomas adicionais
+zh_CN 安装额外语言包
+pl_PL Zainstaluj pakiet dodatkowych języków
+fr_FR Installer le paquet de langues supplémentaires
+es_ES Instalar el paquete de idiomas adicionales
+en_GB Install the additional languages package
+de_DE Paket mit zusätzlichen Sprachen installieren
+
+en_US Install ChildrenOfTheGrave game server
+it_IT Installa il server di gioco ChildrenOfTheGrave
+ru_RU Установить игровой сервер ChildrenOfTheGrave
+pt_BR Instalar servidor de jogo ChildrenOfTheGrave
+zh_CN 安装 ChildrenOfTheGrave 游戏服务器
+pl_PL Zainstaluj serwer gry ChildrenOfTheGrave
+fr_FR Installer le serveur de jeu ChildrenOfTheGrave
+es_ES Instalar servidor de juego ChildrenOfTheGrave
+en_GB Install ChildrenOfTheGrave game server
+de_DE ChildrenOfTheGrave-Spielserver installieren
+
+en_US Install 4th season game client to
+it_IT Installa il client di gioco della 4ª stagione in
+ru_RU Установить клиент игры 4-го сезона в
+pt_BR Instalar cliente de jogo da 4ª temporada em
+zh_CN 安装第4赛季游戏客户端到
+pl_PL Zainstaluj klienta gry z 4. sezonu do
+fr_FR Installer le client de jeu de la 4ème saison dans
+es_ES Instalar cliente de juego de la 4ª temporada en
+en_GB Install 4th season game client to
+de_DE Spielclient der 4. Staffel installieren nach
+
+en_US Install Chronobreak game server
+it_IT Installa il server di gioco Chronobreak
+ru_RU Установить игровой сервер Chronobreak
+pt_BR Instalar servidor de jogo Chronobreak
+zh_CN 安装 Chronobreak 游戏服务器
+pl_PL Zainstaluj serwer gry Chronobreak
+fr_FR Installer le serveur de jeu Chronobreak
+es_ES Instalar servidor de juego Chronobreak
+en_GB Install Chronobreak game server
+de_DE Chronobreak-Spielserver installieren
+
+en_US Install TestGrounds game server
+it_IT Installa il server di gioco TestGrounds
+ru_RU Установить игровой сервер TestGrounds
+pt_BR Instalar servidor de jogo TestGrounds
+zh_CN 安装 TestGrounds 游戏服务器
+pl_PL Zainstaluj serwer gry TestGrounds
+fr_FR Installer le serveur de jeu TestGrounds
+es_ES Instalar servidor de juego TestGrounds
+en_GB Install TestGrounds game server
+de_DE TestGrounds-Spielserver installieren
+
+en_US Update TestGrounds game server
+it_IT Aggiorna il server di gioco TestGrounds
+ru_RU Обновить игровой сервер TestGrounds
+pt_BR Atualizar servidor de jogo TestGrounds
+zh_CN 更新 TestGrounds 游戏服务器
+pl_PL Aktualizuj serwer gry TestGrounds
+fr_FR Mettre à jour le serveur de jeu TestGrounds
+es_ES Actualizar servidor de juego TestGrounds
+en_GB Update TestGrounds game server
+de_DE TestGrounds-Spielserver aktualisieren
+
+en_US Install closed beta 1 game client to
+it_IT Installa il client di gioco della closed beta 1 in
+ru_RU Установить клиент игры закрытой беты 1 в
+pt_BR Instalar cliente de jogo da beta fechada 1 em
+zh_CN 安装封闭测试版1游戏客户端到
+pl_PL Zainstaluj klienta gry zamkniętej bety 1 do
+fr_FR Installer le client de jeu bêta fermée 1 dans
+es_ES Instalar cliente de juego beta cerrada 1 en
+en_GB Install closed beta 1 game client to
+de_DE Geschlossenen Beta-1-Spielclient installieren nach
+
+en_US Install closed beta 3 game client to
+it_IT Installa il client di gioco della closed beta 3 in
+ru_RU Установить клиент игры закрытой беты 3 в
+pt_BR Instalar cliente de jogo da beta fechada 3 em
+zh_CN 安装封闭测试版3游戏客户端到
+pl_PL Zainstaluj klienta gry zamkniętej bety 3 do
+fr_FR Installer le client de jeu bêta fermée 3 dans
+es_ES Instalar cliente de juego beta cerrada 3 en
+en_GB Install closed beta 3 game client to
+de_DE Geschlossenen Beta-3-Spielclient installieren nach
+
+en_US Install LoLSrv game server
+it_IT Installa il server di gioco LoLSrv
+ru_RU Установить игровой сервер LoLSrv
+pt_BR Instalar servidor de jogo LoLSrv
+zh_CN 安装 LoLSrv 游戏服务器
+pl_PL Zainstaluj serwer gry LoLSrv
+fr_FR Installer le serveur de jeu LoLSrv
+es_ES Instalar servidor de juego LoLSrv
+en_GB Install LoLSrv game server
+de_DE LoLSrv-Spielserver installieren
+
+en_US Use WINE to run game client with an
+it_IT Usa WINE per eseguire il client di gioco con un
+ru_RU Использовать WINE для запуска игрового клиента с
+pt_BR Usar WINE para executar o cliente de jogo com um
+zh_CN 使用 WINE 运行游戏客户端，带有
+pl_PL Użyj WINE do uruchomienia klienta gry z
+fr_FR Utiliser WINE pour exécuter le client de jeu avec un
+es_ES Usar WINE para ejecutar el cliente del juego con un
+en_GB Use WINE to run game client with an
+de_DE WINE verwenden, um den Spielclient mit einem auszuführen
+
+en_US Share or apply launcher update code
+it_IT Condividi o applica il codice di aggiornamento del launcher
+ru_RU Поделиться или применить код обновления лаунчера
+pt_BR Compartilhar ou aplicar código de atualização do launcher
+zh_CN 分享或应用启动器更新代码
+pl_PL Udostępnij lub zastosuj kod aktualizacji launchera
+fr_FR Partager ou appliquer le code de mise à jour du lanceur
+es_ES Compartir o aplicar código de actualización del lanzador
+en_GB Share or apply launcher update code
+de_DE Launcher-Update-Code teilen oder anwenden
+
+en_US Show decoded
+it_IT Mostra decodificato
+ru_RU Показать декодированное
+pt_BR Mostrar decodificado
+zh_CN 显示解码后内容
+pl_PL Pokaż zdekodowane
+fr_FR Afficher décodé
+es_ES Mostrar decodificado
+en_GB Show decoded
+de_DE Dekodiert anzeigen
+
+en_US Select the [server + client] combination to use
+it_IT Seleziona la combinazione [server + client] da utilizzare
+ru_RU Выберите комбинацию [сервер + клиент] для использования
+pt_BR Selecione a combinação [servidor + cliente] a usar
+zh_CN 选择要使用的 [服务器 + 客户端] 组合
+pl_PL Wybierz kombinację [serwer + klient] do użycia
+fr_FR Sélectionnez la combinaison [serveur + client] à utiliser
+es_ES Seleccione la combinación [servidor + cliente] a usar
+en_GB Select the [server + client] combination to use
+de_DE Wählen Sie die zu verwendende Kombination [Server + Client] aus
+
+en_US Broken Wings (Season 1) + v1.0.0.126 (Season 1)
+it_IT Broken Wings (Stagione 1) + v1.0.0.126 (Stagione 1)
+ru_RU Broken Wings (Сезон 1) + v1.0.0.126 (Сезон 1)
+pt_BR Broken Wings (Temporada 1) + v1.0.0.126 (Temporada 1)
+zh_CN Broken Wings（第1赛季）+ v1.0.0.126（第1赛季）
+pl_PL Broken Wings (Sezon 1) + v1.0.0.126 (Sezon 1)
+fr_FR Broken Wings (Saison 1) + v1.0.0.126 (Saison 1)
+es_ES Broken Wings (Temporada 1) + v1.0.0.126 (Temporada 1)
+en_GB Broken Wings (Season 1) + v1.0.0.126 (Season 1)
+de_DE Broken Wings (Staffel 1) + v1.0.0.126 (Staffel 1)
+
+en_US Chronobreak (Season 1) + v4.20 (Season 4)
+it_IT Chronobreak (Stagione 1) + v4.20 (Stagione 4)
+ru_RU Chronobreak (Сезон 1) + v4.20 (Сезон 4)
+pt_BR Chronobreak (Temporada 1) + v4.20 (Temporada 4)
+zh_CN Chronobreak（第1赛季）+ v4.20（第4赛季）
+pl_PL Chronobreak (Sezon 1) + v4.20 (Sezon 4)
+fr_FR Chronobreak (Saison 1) + v4.20 (Saison 4)
+es_ES Chronobreak (Temporada 1) + v4.20 (Temporada 4)
+en_GB Chronobreak (Season 1) + v4.20 (Season 4)
+de_DE Chronobreak (Staffel 1) + v4.20 (Staffel 4)
+
+en_US Reduce the amount of transmitted traffic. Causes crash and wired behaviours!
+it_IT Riduci la quantità di traffico trasmesso. Provoca crash e comportamenti strani!
+ru_RU Уменьшить объем передаваемого трафика. Вызывает вылеты и странное поведение!
+pt_BR Reduzir a quantidade de tráfego transmitido. Causa travamentos e comportamentos estranhos!
+zh_CN 减少传输流量。会导致崩溃和奇怪的行为！
+pl_PL Zmniejsz ilość przesyłanego ruchu. Powoduje awarie i dziwne zachowania!
+fr_FR Réduire la quantité de trafic transmis. Provoque des plantages et des comportements étranges !
+es_ES Reducir la cantidad de tráfico transmitido. ¡Causa bloqueos y comportamientos extraños!
+en_GB Reduce the amount of transmitted traffic. Causes crash and wired behaviours!
+de_DE Menge des übertragenen Verkehrs reduzieren. Verursacht Abstürze und seltsames Verhalten!
+
+en_US Allow to choose any champion. Causes missing spells and passives!
+it_IT Consenti di scegliere qualsiasi campione. Provoca incantesimi e passive mancanti!
+ru_RU Разрешить выбор любого чемпиона. Вызывает отсутствие заклинаний и пассивных навыков!
+pt_BR Permitir escolher qualquer campeão. Causa feitiços e passivas faltantes!
+zh_CN 允许选择任何英雄。会导致缺失技能和被动效果！
+pl_PL Pozwala wybrać dowolnego mistrza. Powoduje brakujące zaklęcia i pasywki!
+fr_FR Permet de choisir n'importe quel champion. Provoque des sorts et des passifs manquants !
+es_ES Permite elegir cualquier campeón. ¡Causa hechizos y pasivas faltantes!
+en_GB Allow to choose any champion. Causes missing spells and passives!
+de_DE Erlaubt die Auswahl eines beliebigen Champions. Verursacht fehlende Zauber und Passiven!
+
+en_US Warning
+it_IT Avvertimento
+ru_RU Предупреждение
+pt_BR Aviso
+zh_CN 警告
+pl_PL Ostrzeżenie
+fr_FR Avertissement
+es_ES Advertencia
+en_GB Warning
+de_DE Warnung
+
+en_US Search
+it_IT Cerca
+ru_RU Поиск
+pt_BR Pesquisar
+zh_CN 搜索
+pl_PL Szukaj
+fr_FR Rechercher
+es_ES Buscar
+en_GB Search
+de_DE Suchen
+
+en_US Copy the launcher update code below and share it
+it_IT Copia il codice di aggiornamento del launcher qui sotto e condividilo
+ru_RU Скопируйте код обновления лаунчера ниже и поделитесь им
+pt_BR Copie o código de atualização do launcher abaixo e compartilhe
+zh_CN 复制下面的启动器更新代码并分享
+pl_PL Skopiuj poniższy kod aktualizacji launchera i udostępnij go
+fr_FR Copiez le code de mise à jour du lanceur ci-dessous et partagez-le
+es_ES Copie el código de actualización del lanzador de abajo y compártalo
+en_GB Copy the launcher update code below and share it
+de_DE Kopieren Sie den Launcher-Update-Code unten und teilen Sie ihn
+
+en_US Find and paste the launcher update code below
+it_IT Trova e incolla il codice di aggiornamento del launcher qui sotto
+ru_RU Найдите и вставьте код обновления лаунчера ниже
+pt_BR Encontre e cole o código de atualização do launcher abaixo
+zh_CN 找到并粘贴下面的启动器更新代码
+pl_PL Znajdź i wklej poniżej kod aktualizacji launchera
+fr_FR Trouvez et collez le code de mise à jour du lanceur ci-dessous
+es_ES Encuentre y pegue el código de actualización del lanzador a continuación
+en_GB Find and paste the launcher update code below
+de_DE Finden und fügen Sie den Launcher-Update-Code unten ein
+
+en_US The launcher update code will appear here for copying and sharing
+it_IT Il codice di aggiornamento del launcher apparirà qui per essere copiato e condiviso
+ru_RU Код обновления лаунчера появится здесь для копирования и обмена
+pt_BR O código de atualização do launcher aparecerá aqui para copiar e compartilhar
+zh_CN 启动器更新代码将显示在此处以供复制和分享
+pl_PL Kod aktualizacji launchera pojawi się tutaj do skopiowania i udostępnienia
+fr_FR Le code de mise à jour du lanceur apparaîtra ici pour être copié et partagé
+es_ES El código de actualización del lanzador aparecerá aquí para copiar y compartir
+en_GB The launcher update code will appear here for copying and sharing
+de_DE Der Launcher-Update-Code wird hier zum Kopieren und Teilen angezeigt
+
+en_US Paste the found launcher update code here
+it_IT Incolla qui il codice di aggiornamento del launcher trovato
+ru_RU Вставьте найденный код обновления лаунчера сюда
+pt_BR Cole o código de atualização do launcher encontrado aqui
+zh_CN 将找到的启动器更新代码粘贴到这里
+pl_PL Wklej tutaj znaleziony kod aktualizacji launchera
+fr_FR Collez le code de mise à jour du lanceur trouvé ici
+es_ES Pegue el código de actualización del lanzador encontrado aquí
+en_GB Paste the found launcher update code here
+de_DE Fügen Sie den gefundenen Launcher-Update-Code hier ein
+
+en_US Apply
+it_IT Applica
+ru_RU Применить
+pt_BR Aplicar
+zh_CN 应用
+pl_PL Zastosuj
+fr_FR Appliquer
+es_ES Aplicar
+en_GB Apply
+de_DE Anwenden

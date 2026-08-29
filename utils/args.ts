@@ -129,7 +129,8 @@ export const args = new class Args {
     
     port = new Option('port', '', 5119, tr('Set custom UDP port number to use'))
 
-    installModPack = new Option('install-modpack', 'game-client-modpack-levels-install-enabled', true, tr('Install the package with additional levels'))
+    installModPack1 = new Option('install-additional-levels', 'game-client-modpack-levels-install-enabled', true, tr('Install the package with additional levels'))
+    installModPack2 = new Option('install-additional-locales', 'game-client-126-additional-locales-install-enabled', true, tr('Install the package with additional locales'))
     spaceCheck = new Option('space-check', '', true, tr('Perform a free disk space check'))
     
     installB2Client = new Option('install-b2-client', 'game-client-cb2-install-enabled', false, '')

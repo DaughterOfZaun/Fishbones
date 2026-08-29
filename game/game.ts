@@ -23,7 +23,7 @@ import { GameMode } from '../utils/data/constants/modes'
 import { runes } from '../utils/data/constants/runes'
 import { champions, ChampionsEnabled } from '../utils/data/constants/champions'
 import { SummonerSpellsEnabled } from '../utils/data/constants/spells'
-import { KnownClients, KnownServers, type ClientVersion, type ServerVersion } from '../utils/data/constants/client-server-combinations'
+import { clients, KnownClients, KnownServers, type ClientVersion, type ServerVersion } from '../utils/data/constants/client-server-combinations'
 import { VERSION_STRING, versionFromString, versionToString } from '../utils/constants-build'
 import { tr } from '../utils/translation'
 import { firewall } from '../utils/proxy/proxy-firewall'
@@ -613,8 +613,8 @@ export abstract class Game extends EventEmitter<GameEvents> {
 
         try {
             if(this.clientVersion == KnownClients.v126){
-                await Promise.all(
-                    [...this.players.values()]
+                await Promise.all([
+                    ...[...this.players.values()]
                     .filter(player => player.isBot)
                     .map(async (player) => {
                         const champion = player.champion.toString()
@@ -636,8 +636,34 @@ export abstract class Game extends EventEmitter<GameEvents> {
                         const buffer = ini.toBuffer()
                         await fs_ensureDir(scriptsDir, opts)
                         await fs_writeFile(spellsInibin, buffer, { ...opts, encoding: 'binary' })
-                    })
-                )
+                    }),
+                    (async () => {
+                        const client = clients[this.clientVersion]!
+                        const locale = client.locales.includes(args.usedLocale.value) ?
+                            args.usedLocale.value :
+                            client.locales[0]!
+                        
+                        let configPath = path.join(gc126Pkg.dir, 'DATA', 'CFG', 'game.cfg')
+                        let config = await fs_readFile(configPath, { ...opts, encoding: 'utf8' }) ?? ''
+                        
+                        const localeLine = `LanguageLocaleRegion=${locale}`
+                        const generalLocaleLine = `[General]\n${localeLine}`
+
+                        if(config.includes(localeLine))
+                            return
+                        else if(config.includes('LanguageLocaleRegion='))
+                            config = config.replace(/^LanguageLocaleRegion=.*/, localeLine)
+                        else if(config.includes('[General]'))
+                            config = config.replace('[General]', generalLocaleLine)
+                        else {
+                            //config = config.trim()
+                            if(config != '') config += '\n'
+                            config += generalLocaleLine + '\n'
+                        }
+
+                        await fs_writeFile(configPath, config, { ...opts, encoding: 'utf8' })
+                    })(),
+                ])
             }
             this.clientLaunchArgs = { version: this.clientVersion, ip: host, port, key, clientId }
             this.clientSubprocess = await launchClient(this.clientLaunchArgs, opts)

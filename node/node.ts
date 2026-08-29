@@ -397,8 +397,12 @@ async function setup(node: LibP2PNode, opts: Required<AbortOptions>){
     const cm_openConnection = cm.openConnection.bind(cm)
     cm.openConnection = async (peer, options) => {
 
-        if(!isPeerId(peer))
-            return cm_openConnection(peer, options)
+        if(!isPeerId(peer)) try {
+            const connection = await cm_openConnection(peer, options)
+            return connection
+        } catch(err) {
+            throw err
+        }
 
         options ??= {}
         const options_onProgress = options.onProgress

@@ -1,6 +1,6 @@
 import { build } from "./build"
 import { download, appendPartialDownloadFileExt, repairAria2, seed } from "./download/download"
-import { gitPkg, modPck1, type PkgInfo, repairTorrents, sdkPkg, type PkgInfoCSProj, packages } from "./packages"
+import { gitPkg, type PkgInfo, repairTorrents, sdkPkg, type PkgInfoCSProj, packages } from "./packages"
 import { console_log, createBar, currentExe, extractFile } from "../../ui/remote/remote"
 import { console_log_fs_err, cwd, downloads, fs_chmod, fs_copyFile, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_overwrite, fs_readFile, fs_removeFile, fs_stat, fs_statfs, fs_truncate, fs_writeFile, rwx_rx_rx } from './fs'
 import { readTrackersTxt } from "./download/trackers"
@@ -28,6 +28,8 @@ import { gc420Pkg, ClientDataInfoV420 } from "./packages/game-client-420"
 import { bwPkg, BrokenWingsDataInfo } from "./packages/game-server-bw"
 import { cbPkg, ChronobreakDataInfo } from "./packages/game-server-cb"
 import { lsPkg, LoLSrverDataInfo } from "./packages/game-server-ls"
+import { modPck1 } from "./packages/modpack-126-levels"
+import { modPck2 } from "./packages/modpack-126-locales"
 import { champions } from "./constants/champions"
 import { TestGroundsDataInfo, tgPkg } from "./packages/game-server-tg"
 import { inspect } from 'node:util'
@@ -111,13 +113,15 @@ async function repairArchived_gitPkg(opts: Required<AbortOptions>){
         await runPostInstall(opts)
 }
 
+let args_installModPack2_value: boolean
 async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>){
     //console.log('Running data check and repair...')
 
     await fs_ensureDir(downloads, opts)
 
-    if(!args.installS1Client.value)
-        args.installModPack.set(false) //HACK?
+    args_installModPack2_value = args.installModPack2.value
+    if(!modPck2.locales.includes(args.usedLocale.value))
+        args_installModPack2_value = false //HACK:
 
     while(args.spaceCheck.value){
         const msg = await checkFreeSpaceAndGetErrorMsg(opts)
@@ -208,10 +212,15 @@ async function checkFreeSpaceAndGetErrorMsg(opts: Required<AbortOptions>){
             checkFileSize(path.join(downloads, 'mastery-pages.json'), 1494, opts),
             checkFileSize(path.join(downloads, 'log.txt'), 1834, opts),
             
-            ...((args.installModPack.value) ? [
+            ...((args.installModPack1.value) ? [
                 //checkDirSize(modPck1.checkUnpackBy, modPck1.zip, modPck1.size, opts),
                 checkFileSize(modPck1.zip, modPck1.zipSize, opts),
                 checkFileSize(modPck1.zipTorrent, 37085, opts),
+            ] : []),
+            ...((args_installModPack2_value) ? [
+                //checkDirSize(modPck2.checkUnpackBy, modPck2.zip, modPck2.size, opts),
+                checkFileSize(modPck2.zip, modPck2.zipSize, opts),
+                checkFileSize(modPck2.zipTorrent, 133528, opts),
             ] : []),
 
             checkFileSize(path.join(downloads, path.basename(embedded.dataChannelLib)), 10231328, opts),
@@ -234,8 +243,11 @@ async function checkFreeSpaceAndGetErrorMsg(opts: Required<AbortOptions>){
             ...((args.installS1Client.value) ? [
                 checkDirSize(gc126Pkg.checkUnpackBy, gc126Pkg.zip, gc126Pkg.size, opts),
             ] :[]),
-            ...((args.installModPack.value) ? [
+            ...((args.installModPack1.value) ? [
                 checkDirSize(modPck1.lockFile, modPck1.zip, modPck1.size, opts),
+            ] :[]),
+            ...((args_installModPack2_value) ? [
+                checkDirSize(modPck2.lockFile, modPck2.zip, modPck2.size, opts),
             ] :[]),
             ...((args.installS4Client.value) ? [
                 checkDirSize(gc420Pkg.checkUnpackBy, gc420Pkg.zip, gc420Pkg.size, opts),
@@ -318,7 +330,8 @@ async function repairOrThrow(opts: Required<AbortOptions>){
         console_log(tr(`Restoring launcher package failed:`), inspect(err))
     }
 
-    let modFileIsMissing = !await fs_exists(modPck1.lockFile, opts, false)
+    let modPack1IsMissing = !await fs_exists(modPck1.lockFile, opts, false)
+    let modPack2IsMissing = !await fs_exists(modPck2.lockFile, opts, false)
     let gcCB2ExeIsMissing = !await fs_exists(gcCB2Pkg.exe, opts)
     let gcCB3ExeIsMissing = !await fs_exists(gcCB3Pkg.exe, opts)
     let gc126ExeIsMissing = !await fs_exists(gc126Pkg.exe, opts)
@@ -446,25 +459,24 @@ async function repairOrThrow(opts: Required<AbortOptions>){
                 })
             }),
             
-            !(args.installModPack.value && modFileIsMissing) ? Promise.resolve() :
+            !(args.installModPack1.value && modPack1IsMissing) ? Promise.resolve() :
             repairArchived(modPck1, { ...opts, ignoreUnpacked: true }),
+
+            !(args_installModPack2_value && modPack2IsMissing) ? Promise.resolve() :
+            repairArchived(modPck2, { ...opts, ignoreUnpacked: true }),
 
         ]).then(async (results) => {
 
             throwAnyRejection(results)
 
-            if (args.installModPack.value && modFileIsMissing){
-                const bar = createBar(tr('Moving'), modPck1.name)
-                try {
-                    await fs_overwrite(modPck1.dir, gc126Pkg.dir, opts)
-                } finally {
-                    bar.stop()
-                }
-                await fs_removeFile(modPck1.dir, { ...opts, recursive: true, force: true })
-                //const fs_opts = { ...opts, recursive: true }
-                await fs_ensureDir(path.dirname(modPck1.lockFile), opts)
-                await fs_writeFile(modPck1.lockFile, '', { ...opts, encoding: 'utf8' })
-                modFileIsMissing = false
+            if (args.installModPack1.value && modPack1IsMissing){
+                await moveModPack(modPck1, gc126Pkg, opts)
+                modPack1IsMissing = false
+            }
+
+            if (args_installModPack2_value && modPack2IsMissing){
+                await moveModPack(modPck2, gc126Pkg, opts)
+                modPack2IsMissing = false
             }
         }),
 
@@ -484,7 +496,8 @@ async function repairOrThrow(opts: Required<AbortOptions>){
     let client: ClientInfo | null = null, server: ServerInfo | null = null
 
     client = gc126ExeIsMissing ? null : clients_push(gc126Pkg, new ClientDataInfoV126(gc126Pkg.dir), KnownClients.v126, 'v1.0.0.126 (Season 1)')
-    if(!modFileIsMissing) Object.assign(client!.maps, modPck1.maps)
+    if(client && !modPack1IsMissing) Object.assign(client.maps, modPck1.maps)
+    if(client && !modPack2IsMissing) client.locales.push(...modPck2.locales)
     
     server = bwExeIsMissing ? null : servers_push(bwPkg, new BrokenWingsDataInfo(bwPkg.dir), KnownServers.BrokenWings, tr('BrokenWings (Season 1)'))
     if(client && server) combinations_push(client, server)
@@ -524,6 +537,23 @@ async function repairOrThrow(opts: Required<AbortOptions>){
             }
         })
     }
+}
+
+async function moveModPack(
+    modPck: { name: string, dir: string, lockFile: string },
+    gcPkg: { dir: string },
+    opts: Required<AbortOptions>
+){
+    const bar = createBar(tr('Moving'), modPck.name)
+    try {
+        await fs_overwrite(modPck.dir, gcPkg.dir, opts)
+    } finally {
+        bar.stop()
+    }
+    await fs_removeFile(modPck.dir, { ...opts, recursive: true, force: true })
+    //const fs_opts = { ...opts, recursive: true }
+    await fs_ensureDir(path.dirname(modPck.lockFile), opts)
+    await fs_writeFile(modPck.lockFile, '', { ...opts, encoding: 'utf8' })
 }
 
 async function repairDirectX9Dll(gcPkg: { exeDir: string }, opts: Required<AbortOptions>){

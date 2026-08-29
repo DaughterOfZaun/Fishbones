@@ -11,5 +11,5 @@
     <br>
     <br>
     <sub><a href="https://github.com/DaughterOfZaun/Fishbones/releases">all downloads</a></sub><br>
-    <sup><a href="https://discord.gg/tdxas6nKXP">discord</a></sup>
+    <sup><a href="https://discord.gg/Zbg8xqSEg">discord</a></sup>
 </p>
