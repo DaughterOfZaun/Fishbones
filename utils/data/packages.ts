@@ -9,6 +9,8 @@ import { cbPkg } from "./packages/game-server-cb"
 import { tgPkg } from './packages/game-server-tg'
 import { gitPkg } from './packages/git'
 import { modPck1 } from './packages/modpack-126-levels'
+import { modPck2 } from './packages/modpack-126-locales'
+import { modPck3 } from './packages/modpack-420-locales'
 import { sdkPkg } from './packages/sdk'
 import { fbPkg } from './upgrade'
 import { tr } from '../translation'
@@ -16,7 +18,7 @@ import { tr } from '../translation'
 export type { PkgInfo, PkgInfoCSProj, PkgInfoGit } from './packages/shared'
 export { bwPkg, cbPkg, gc126Pkg, gc420Pkg, sdkPkg, gitPkg, modPck1 }
 
-export const packages = [ gc126Pkg, gc420Pkg, bwPkg, cbPkg, tgPkg, gitPkg, modPck1, sdkPkg, fbPkg ]
+export const packages = [ gc126Pkg, gc420Pkg, bwPkg, cbPkg, tgPkg, gitPkg, modPck1, modPck2, modPck3, sdkPkg, fbPkg ]
 
 if(false) //TODO:
 for(const a of packages)

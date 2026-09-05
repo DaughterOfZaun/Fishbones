@@ -3,8 +3,7 @@ import { downloads } from "../fs"
 import { gc126Pkg } from "./game-client-126"
 import { gdrive, magnet, PkgInfo } from "./shared"
 import { HARDCODED_HTTP_SERVER_URL } from '../../constants-build'
-import { tr } from "../../translation"
-import { args } from "../../args"
+import { tr, usedLocale } from "../../translation"
 import path from 'node:path'
 
 export const modPck2 = new class ModPackTwo extends PkgInfo {
@@ -41,7 +40,7 @@ export const modPck2 = new class ModPackTwo extends PkgInfo {
     topLevelEntriesOptional = []
 
     locales = [ 'pl_PL', 'fr_FR', 'es_ES', 'en_GB', 'de_DE' ]
-    get isSupported(){ return this.locales.includes(args.usedLocale.value) }
+    get isSupported(){ return this.locales.includes(usedLocale) }
 
     constructor(){
         super()

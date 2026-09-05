@@ -25,7 +25,7 @@ import { champions, ChampionsEnabled } from '../utils/data/constants/champions'
 import { SummonerSpellsEnabled } from '../utils/data/constants/spells'
 import { clients, KnownClients, KnownServers, type ClientVersion, type ServerVersion } from '../utils/data/constants/client-server-combinations'
 import { VERSION_STRING, versionFromString, versionToString } from '../utils/constants-build'
-import { tr } from '../utils/translation'
+import { tr, usedLocale } from '../utils/translation'
 import { firewall } from '../utils/proxy/proxy-firewall'
 import { fs_ensureDir, fs_readdir, fs_readFile, fs_writeFile } from '../utils/data/fs'
 import path from 'node:path'
@@ -613,8 +613,8 @@ export abstract class Game extends EventEmitter<GameEvents> {
         try {
 
             const promises: Promise<void>[] = []
-            promises.push(this.setClientLocale('game.cfg', opts))
-            promises.push(this.setClientLocale('locale.cfg', opts))
+            promises.push(this.setClientLocale('CFG', 'game.cfg', opts))
+            promises.push(this.setClientLocale('cfg', 'locale.cfg', opts))
             if(this.clientVersion == KnownClients.v126){
                 for(const player of this.players.values()){
                     if(player.isBot){
@@ -657,14 +657,12 @@ export abstract class Game extends EventEmitter<GameEvents> {
         await fs_ensureDir(scriptsDir, opts)
         await fs_writeFile(spellsInibin, buffer, { ...opts, encoding: 'binary' })
     }
-    async setClientLocale(configName: string, opts: Required<AbortOptions>){
+    async setClientLocale(cfgDirName: string, configName: string, opts: Required<AbortOptions>){
 
         const client = clients[this.clientVersion]!
-        const locale = client.locales.includes(args.usedLocale.value) ?
-            args.usedLocale.value :
-            client.locales[0]!
+        const locale = client.locales.includes(usedLocale) ? usedLocale : client.locales[0]!
         
-        let configPath = path.join(client.exeDir, 'DATA', 'CFG', configName)
+        let configPath = path.join(client.exeDir, 'DATA', cfgDirName, configName)
         let config = await fs_readFile(configPath, { ...opts, encoding: 'utf8' }) ?? ''
         
         const localeLine = `LanguageLocaleRegion=${locale}`

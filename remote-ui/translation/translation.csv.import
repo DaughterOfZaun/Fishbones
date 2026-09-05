@@ -6,14 +6,14 @@ uid="uid://bgmm3awfhlomc"
 
 [deps]
 
-files=["res://translation/translation.en_US.translation", "res://translation/translation.it_IT.translation", "res://translation/translation.ru_RU.translation", "res://translation/translation.pt_BR.translation", "res://translation/translation.zh_CN.translation", "res://translation/translation.pl_PL.translation", "res://translation/translation.fr_FR.translation", "res://translation/translation.es_ES.translation", "res://translation/translation.en_GB.translation", "res://translation/translation.de_DE.translation"]
+files=["res://translation/translation.en_US.translation", "res://translation/translation.en_GB.translation", "res://translation/translation.en_AU.translation", "res://translation/translation.es_ES.translation", "res://translation/translation.es_AR.translation", "res://translation/translation.es_MX.translation", "res://translation/translation.pt_BR.translation", "res://translation/translation.fr_FR.translation", "res://translation/translation.it_IT.translation", "res://translation/translation.ro_RO.translation", "res://translation/translation.cs_CZ.translation", "res://translation/translation.pl_PL.translation", "res://translation/translation.ru_RU.translation", "res://translation/translation.de_DE.translation", "res://translation/translation.el_GR.translation", "res://translation/translation.hu_HU.translation", "res://translation/translation.tr_TR.translation", "res://translation/translation.ko_KR.translation", "res://translation/translation.zh_CN.translation"]
 
 source_file="res://translation/translation.csv"
-dest_files=["res://translation/translation.en_US.translation", "res://translation/translation.it_IT.translation", "res://translation/translation.ru_RU.translation", "res://translation/translation.pt_BR.translation", "res://translation/translation.zh_CN.translation", "res://translation/translation.pl_PL.translation", "res://translation/translation.fr_FR.translation", "res://translation/translation.es_ES.translation", "res://translation/translation.en_GB.translation", "res://translation/translation.de_DE.translation"]
+dest_files=["res://translation/translation.en_US.translation", "res://translation/translation.en_GB.translation", "res://translation/translation.en_AU.translation", "res://translation/translation.es_ES.translation", "res://translation/translation.es_AR.translation", "res://translation/translation.es_MX.translation", "res://translation/translation.pt_BR.translation", "res://translation/translation.fr_FR.translation", "res://translation/translation.it_IT.translation", "res://translation/translation.ro_RO.translation", "res://translation/translation.cs_CZ.translation", "res://translation/translation.pl_PL.translation", "res://translation/translation.ru_RU.translation", "res://translation/translation.de_DE.translation", "res://translation/translation.el_GR.translation", "res://translation/translation.hu_HU.translation", "res://translation/translation.tr_TR.translation", "res://translation/translation.ko_KR.translation", "res://translation/translation.zh_CN.translation"]
 
 [params]
 
-compress=0
+compress=1
 delimiter=0
-unescape_keys=false
+unescape_keys=true
 unescape_translations=true

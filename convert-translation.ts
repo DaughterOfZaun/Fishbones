@@ -6,7 +6,7 @@ const locales = [
     'fr_FR', 'it_IT', 'ro_RO',
     'cs_CZ', 'pl_PL', 'ru_RU',
     'de_DE', 'el_GR',  'hu_HU', 'tr_TR',
-    'ko_KR',
+    'ko_KR', 'zh_CN',
 ]
 
 // This code is extracted from utils/translation.ts

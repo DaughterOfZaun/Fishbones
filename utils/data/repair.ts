@@ -360,8 +360,8 @@ async function repairOrThrow(opts: Required<AbortOptions>){
     }
 
     let modPack1IsMissing = !await fs_exists(modPck1.lockFile, opts, false)
-    let modPack2IsMissing = !await fs_exists(modPck2.lockFile, opts, false)
-    let modPack3IsMissing = !await fs_exists(modPck3.lockFile, opts, false)
+    let modPack2IsMissing = !modPck2.isSupported || !await fs_exists(modPck2.lockFile, opts, false)
+    let modPack3IsMissing = !modPck3.isSupported || !await fs_exists(modPck3.lockFile, opts, false)
     let gcCB2ExeIsMissing = !await fs_exists(gcCB2Pkg.exe, opts)
     let gcCB3ExeIsMissing = !await fs_exists(gcCB3Pkg.exe, opts)
     let gc126ExeIsMissing = !await fs_exists(gc126Pkg.exe, opts)
@@ -530,7 +530,7 @@ async function repairOrThrow(opts: Required<AbortOptions>){
 
             throwAnyRejection(results)
 
-            if (args.installModPack3.value && modPack3IsMissing){
+            if (args_installModPack3_value && modPack3IsMissing){
                 await moveModPack(modPck3, { dir: modPck3.moveTo }, opts)
                 modPack3IsMissing = false
             }

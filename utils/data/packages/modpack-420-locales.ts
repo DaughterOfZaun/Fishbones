@@ -3,7 +3,7 @@ import { downloads } from "../fs"
 import { gc420Pkg } from "./game-client-420"
 import { gdrive, magnet, PkgInfo } from "./shared"
 import { HARDCODED_HTTP_SERVER_URL } from '../../constants-build'
-import { tr } from "../../translation"
+import { tr, usedLocale } from "../../translation"
 import { args } from "../../args"
 import path from 'node:path'
 import { pickRandom } from "../../helpers"
@@ -24,7 +24,7 @@ const archives: Archive[] = [
         name: 'romance.1',
         dirs: [ 'es_ES', 'es_MX', 'pt_BR' ],
         locales: [ 'es_AR', 'es_ES', 'es_MX', 'pt_BR' ],
-        gdrive: gdrive('1VkWd3Ybeg2CjO8TmIG5Uhak-OxveDDbG'),
+        gdrive: '1VkWd3Ybeg2CjO8TmIG5Uhak-OxveDDbG',
         mega: 'https://mega.nz/file/3rgRzRJZ#qYEp3jY4g1DeBW-iUdud54CBMrCZh7woH2sfWvh9XYc',
         ihv1: '0d37bb7d62c7e6a490bdde4a3597a986f8e0ccfd',
         torrent: embedded.modPck3ZipTorrent,
@@ -35,7 +35,7 @@ const archives: Archive[] = [
         name: 'romance.2',
         dirs: [ 'it_IT', 'ro_RO', 'fr_FR' ],
         locales: [ 'it_IT', 'ro_RO', 'fr_FR' ],
-        gdrive: gdrive('1bZHdBKny0ibrrqGrAsQ-40uTwimNCNhH'),
+        gdrive: '1bZHdBKny0ibrrqGrAsQ-40uTwimNCNhH',
         mega: 'https://mega.nz/file/H6xSVZAR#MlzDsUoQStF6pPZbU7ieROgk1VYLl6rM3ymoFNbp_Ts',
         ihv1: 'f4e36e698ef1a166618ed4afbf297c44e044b41e',
         torrent: embedded.modPck4ZipTorrent,
@@ -46,7 +46,7 @@ const archives: Archive[] = [
         name: 'slavic',
         dirs: [ 'cs_CZ', 'pl_PL', 'ru_RU' ],
         locales: [ 'cs_CZ', 'pl_PL', 'ru_RU' ],
-        gdrive: gdrive('1W6bzuVaVqyvq6neQ-cZXxgUiwql1IGG-'),
+        gdrive: '1W6bzuVaVqyvq6neQ-cZXxgUiwql1IGG-',
         mega: 'https://mega.nz/file/j3ZnFJaA#2SF-JjcTNqo2EwTAfQtwtcMgt1DMDZT-v9HxK36V_ag',
         ihv1: '2edf66d0decb0da41baad6e9862ee4e43da44f2d',
         torrent: embedded.modPck5ZipTorrent,
@@ -57,7 +57,7 @@ const archives: Archive[] = [
         name: 'asian',
         dirs: [ 'ko_KR' ],
         locales: [ 'ko_KR' ],
-        gdrive: gdrive('1xqSs8QqtOATGdoPxnNMQeo7Gdo0ztLl_'),
+        gdrive: '1xqSs8QqtOATGdoPxnNMQeo7Gdo0ztLl_',
         mega: 'https://mega.nz/file/aqZwgaRY#0jmCyuUjFIYDL8nh9GySClYinCsutYt1uH_bkKxd-8c',
         ihv1: 'd1db354654a781fc3e3c0e71ec43092ff0d13e77',
         torrent: embedded.modPck6ZipTorrent,
@@ -68,7 +68,7 @@ const archives: Archive[] = [
         name: 'other',
         dirs: [ 'de_DE', 'el_GR', 'hu_HU', 'tr_TR' ],
         locales: [ 'de_DE', 'el_GR', 'hu_HU', 'tr_TR' ],
-        gdrive: gdrive('1M6ieBxLGL6JAbo54eSWMroGyAd4Z9we8'),
+        gdrive: '1M6ieBxLGL6JAbo54eSWMroGyAd4Z9we8',
         mega: 'https://mega.nz/file/e6ZBxRAQ#BbVatwM4erYb6RlC7T9QE61Hgv3HhtkhilNvgRQyS1c',
         ihv1: '629ec8431aac972e9a618f88e355c8c4dac4b6af',
         torrent: embedded.modPck7ZipTorrent,
@@ -76,17 +76,30 @@ const archives: Archive[] = [
         size: 1178618572,
     },
 ]
+//const emptyArchive: Archive = undefined!
+const emptyArchive: Archive = {
+    name: 'none',
+    dirs: [],
+    locales: [],
+    gdrive: '',
+    mega: '',
+    ihv1: '',
+    torrent: '',
+    zipSize: 0,
+    size: 0,
+}
 
 const archivesByLocale = Object.fromEntries(archives.flatMap(archive => archive.locales.map(locale => [ locale, archive ])))
 
-args.usedLocale.on('change', locale => modPck3.setLocale(locale))
+args.usedLocale.on('change', () => modPck3.setLocale(usedLocale))
 gc420Pkg.onDirSet.push(dir => modPck3.setDir(dir))
 
 export const modPck3 = new class ModPackThree extends PkgInfo {
 
     private gcPkg!: { dir: string }
-    private archive!: Archive
-    get isSupported(){ return !!this.archive }
+    private archive: Archive = emptyArchive
+    
+    get isSupported(){ return this.archive != emptyArchive }
 
     get name(){ return tr('Additional Locales For 4.20') }
     get id(){ return `additional_locales_${this.archive.name.replaceAll('.', '_')}` } 
@@ -104,10 +117,10 @@ export const modPck3 = new class ModPackThree extends PkgInfo {
     get dir(){ return path.join(path.dirname(this.gcPkg.dir), this.dirName) }
     get moveTo(){ return path.join(this.gcPkg.dir, 'DATA', 'Sounds', 'Wwise', 'VO') }
 
-    get zipTorrentEmbedded(){ return this.archive.torrent }
-    get zipTorrentName(){ return `${this.zipName}.torrent` }
-    get zipTorrent(){ return `${this.zip}.torrent` }
-    get zipMagnet(){ return magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize) }
+    get zipTorrentEmbedded(){ return this.isSupported ? this.archive.torrent : '' }
+    get zipTorrentName(){ return this.isSupported ? `${this.zipName}.torrent` : '' }
+    get zipTorrent(){ return this.isSupported ? `${this.zip}.torrent` : '' }
+    get zipMagnet(){ return this.isSupported ? magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize) : '' }
 
     get checkUnpackBy(){
         //TODO: Set meaningful value.
@@ -124,7 +137,7 @@ export const modPck3 = new class ModPackThree extends PkgInfo {
     constructor(){
         super()
         this.setDir(gc420Pkg.dir)
-        this.setLocale(args.usedLocale.value)
+        this.setLocale(usedLocale)
     }
 
     setDir(gcPkg_dir: string){
@@ -133,7 +146,10 @@ export const modPck3 = new class ModPackThree extends PkgInfo {
     }
 
     setLocale(locale: string){
-        this.archive = archivesByLocale[locale]!
+        
+        this.archive = archivesByLocale[locale] ?? emptyArchive
+        if(!this.isSupported) return
+
         this.zipMega = this.archive.mega
         this.zipWebSeeds = [
             gdrive(this.archive.gdrive),

@@ -134,7 +134,7 @@ export async function hostLocal(node: LibP2PNode, name: string, icon: number, lo
     }
 
     //@ts-expect-error Property 'isStarted' does not exist on type 'GossipSub'
-    const isPrivate = ps.isStarted() && !game.isPrivate
+    const isPrivate = !ps.isStarted() || game.isPrivate
 
     try {
         await game.startListening(opts)
