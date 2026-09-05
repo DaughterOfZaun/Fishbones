@@ -30,6 +30,7 @@ import { cbPkg, ChronobreakDataInfo } from "./packages/game-server-cb"
 import { lsPkg, LoLSrverDataInfo } from "./packages/game-server-ls"
 import { modPck1 } from "./packages/modpack-126-levels"
 import { modPck2 } from "./packages/modpack-126-locales"
+import { modPck3 } from "./packages/modpack-420-locales"
 import { champions } from "./constants/champions"
 import { TestGroundsDataInfo, tgPkg } from "./packages/game-server-tg"
 import { inspect } from 'node:util'
@@ -80,19 +81,6 @@ const formatSize = (v: number) => {
     return str
 }
 
-const checkDriveSizeAndGetErrorMsg = (fsStats: StatsFs | undefined, root: string, sizeRequired: number) => {
-    if(!fsStats) return
-    const spaceAvaible = fsStats.bavail * fsStats.bsize
-    const spaceDeficit = sizeRequired - spaceAvaible
-    //console_log('checkDriveSizeAndGetErrorMsg', spaceAvaible, 'vs', spaceDeficit)
-    if(spaceDeficit > 0){
-        return tr('{size} more disk space required on {path}', {
-            size: formatSize(spaceDeficit),
-            path: root,
-        })
-    }
-}
-
 let repairArchived_sdkPkg_opts: Promise<void> | null = null
 async function repairSDK(opts: Required<AbortOptions> & { ignoreUnpacked?: boolean }){
     return repairArchived_sdkPkg_opts ??=
@@ -114,14 +102,14 @@ async function repairArchived_gitPkg(opts: Required<AbortOptions>){
 }
 
 let args_installModPack2_value: boolean
+let args_installModPack3_value: boolean
 async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>){
     //console.log('Running data check and repair...')
 
     await fs_ensureDir(downloads, opts)
 
-    args_installModPack2_value = args.installModPack2.value
-    if(!modPck2.locales.includes(args.usedLocale.value))
-        args_installModPack2_value = false //HACK:
+    args_installModPack2_value = args.installModPack2.value && modPck2.isSupported
+    args_installModPack3_value = args.installModPack3.value && modPck3.isSupported
 
     while(args.spaceCheck.value){
         const msg = await checkFreeSpaceAndGetErrorMsg(opts)
@@ -152,24 +140,33 @@ async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>
 //TODO: Rework.
 async function checkFreeSpaceAndGetErrorMsg(opts: Required<AbortOptions>){
 
-    const downloadsRoot = path.parse(downloads).root
-    const gcInstallRoot = path.parse(gc126Pkg.dir).root
-    const isSingleRoot = downloadsRoot == gcInstallRoot
-    
-    //TODO: Extract embeds sizes.
-    let [
-        downloadsStats,
-        gcInstallDirStats,
-        downloadsSizeRequired,
-        gcInstallDirSizeRequired,
-    ] = await Promise.all([
+    const coefficient = 1.1
+    const roots = new Map<string, Space>()
+    type Space = { required: number, available: number }
+    async function func1(dir: string, promises: Promise<number>[]) {
+        const root = path.parse(dir).root
+        let space = roots.get(root)
+        if (!space) {
+            space = { required: 0, available: 0 }
+            roots.set(root, space)
+        }
+        const results = await Promise.all(promises)
+        space.required += results.reduce((a, v) => a + v, 0) * coefficient 
+    }
+    async function func2() {
+        return Promise.all([...roots.entries()].map(func3))
+    }
+    async function func3([root, space]: [root: string, space: Space]) {
+        const statfs = await fs_statfs(root, opts)
+        if (statfs) {
+            space.available = statfs.bavail * statfs.bsize
+        }
+    }
 
-        fs_statfs(downloads, opts),
-        //(!isSingleRoot) ?
-        fs_statfs(gc126Pkg.dir, opts)
-        //: Promise.resolve(undefined)
-        ,
-        Promise.all([
+    //TODO: Extract embeds sizes.
+    await Promise.all([
+
+        func1(downloads, [
             
             checkFileSize(path.join(downloads, path.basename(embedded.s7zExe)), 3759224, opts),
             checkFileSize(path.join(downloads, path.basename(embedded.ariaExe)), 9926088, opts),
@@ -222,12 +219,25 @@ async function checkFreeSpaceAndGetErrorMsg(opts: Required<AbortOptions>){
                 checkFileSize(modPck2.zip, modPck2.zipSize, opts),
                 checkFileSize(modPck2.zipTorrent, 133528, opts),
             ] : []),
+            ...((args_installModPack3_value) ? [
+                //checkDirSize(modPck3.checkUnpackBy, modPck3.zip, modPck3.size, opts),
+                checkFileSize(modPck3.zip, modPck3.zipSize, opts),
+                checkFileSize(modPck3.zipTorrent, 46108, opts),
+            ] : []),
 
             checkFileSize(path.join(downloads, path.basename(embedded.dataChannelLib)), 10231328, opts),
             
-            //checkDirSize(gc126Pkg.checkUnpackBy, gc126Pkg.zip, gc126Pkg.size, opts),
-            checkFileSize(gc126Pkg.zip, gc126Pkg.zipSize, opts),
-            checkFileSize(gc126Pkg.zipTorrent, 90417, opts),
+            ...((args.installS1Client.value) ? [
+                //checkDirSize(gc126Pkg.checkUnpackBy, gc126Pkg.zip, gc126Pkg.size, opts),
+                checkFileSize(gc126Pkg.zip, gc126Pkg.zipSize, opts),
+                checkFileSize(gc126Pkg.zipTorrent, 90417, opts),
+            ] : []),
+
+            ...((args.installS4Client.value) ? [
+                //checkDirSize(gc420Pkg.checkUnpackBy, gc420Pkg.zip, gc420Pkg.size, opts),
+                checkFileSize(gc420Pkg.zip, gc420Pkg.zipSize, opts),
+                checkFileSize(gc420Pkg.zipTorrent, 10695, opts),
+            ] : []),
 
             ...((os.platform() === 'win32') ? [
                 checkDirSize(gitPkg.checkUnpackBy, gitPkg.zip, gitPkg.size, opts),
@@ -236,10 +246,21 @@ async function checkFreeSpaceAndGetErrorMsg(opts: Required<AbortOptions>){
             ] : []),
 
             checkFileSize(path.join(downloads, 'trackers.txt'), 809, opts),
-        ])
-        .then(results => results.reduce((a, v) => a + v, 0)),
+        ]),
 
-        Promise.all([
+        func1(gcCB2Pkg.dir, [
+            ...((args.installB2Client.value) ? [
+                checkDirSize(gcCB2Pkg.checkUnpackBy, gcCB2Pkg.zip, gcCB2Pkg.size, opts),
+            ] :[]),
+        ]),
+
+        func1(gcCB3Pkg.dir, [
+            ...((args.installB3Client.value) ? [
+                checkDirSize(gcCB3Pkg.checkUnpackBy, gcCB3Pkg.zip, gcCB3Pkg.size, opts),
+            ] :[]),
+        ]),
+
+        func1(gc126Pkg.dir, [
             ...((args.installS1Client.value) ? [
                 checkDirSize(gc126Pkg.checkUnpackBy, gc126Pkg.zip, gc126Pkg.size, opts),
             ] :[]),
@@ -249,26 +270,34 @@ async function checkFreeSpaceAndGetErrorMsg(opts: Required<AbortOptions>){
             ...((args_installModPack2_value) ? [
                 checkDirSize(modPck2.lockFile, modPck2.zip, modPck2.size, opts),
             ] :[]),
+        ]),
+
+        func1(gc420Pkg.dir, [
             ...((args.installS4Client.value) ? [
                 checkDirSize(gc420Pkg.checkUnpackBy, gc420Pkg.zip, gc420Pkg.size, opts),
             ] :[]),
-        ])
-        .then(results => results.reduce((a, v) => a + v, 0)),
+            ...((args_installModPack3_value) ? [
+                checkDirSize(modPck3.lockFile, modPck3.zip, modPck3.size, opts),
+            ] :[]),
+        ]),
+
+        func2(),
+    
     ])
-
-    downloadsSizeRequired *= 1.1
-    gcInstallDirSizeRequired *= 1.1
-
-    let msg: string | undefined
-    if(!isSingleRoot)
-        msg = ([
-            checkDriveSizeAndGetErrorMsg(downloadsStats, downloadsRoot, downloadsSizeRequired),
-            checkDriveSizeAndGetErrorMsg(gcInstallDirStats, gcInstallRoot, gcInstallDirSizeRequired),
-        ]).filter(msg => msg).join('\n')
-    else
-        msg = checkDriveSizeAndGetErrorMsg(downloadsStats, downloadsRoot, downloadsSizeRequired + gcInstallDirSizeRequired)
-
-    return msg
+    
+    return [...roots.entries()]
+        .map(([ root, space ]) => {
+            const spaceDeficit = space.required - space.available
+            //console_log('checkDriveSizeAndGetErrorMsg', spaceAvaible, 'vs', spaceDeficit)
+            if(spaceDeficit > 0){
+                return tr('{size} more disk space required on {path}', {
+                    size: formatSize(spaceDeficit),
+                    path: root,
+                })
+            }
+        })
+        .filter(msg => msg)
+        .join('\n')
 }
 
 async function retryPrompt(title: string, msg: string, opts: Required<AbortOptions>){
@@ -332,6 +361,7 @@ async function repairOrThrow(opts: Required<AbortOptions>){
 
     let modPack1IsMissing = !await fs_exists(modPck1.lockFile, opts, false)
     let modPack2IsMissing = !await fs_exists(modPck2.lockFile, opts, false)
+    let modPack3IsMissing = !await fs_exists(modPck3.lockFile, opts, false)
     let gcCB2ExeIsMissing = !await fs_exists(gcCB2Pkg.exe, opts)
     let gcCB3ExeIsMissing = !await fs_exists(gcCB3Pkg.exe, opts)
     let gc126ExeIsMissing = !await fs_exists(gc126Pkg.exe, opts)
@@ -480,15 +510,30 @@ async function repairOrThrow(opts: Required<AbortOptions>){
             }
         }),
 
-        !(args.installS4Client.value) ? Promise.resolve() :
-        repairArchived(gc420Pkg, opts).then(async () => {
-            gc420ExeIsMissing = false
+        Promise.allSettled([
+             
+            !(args.installS4Client.value) ? Promise.resolve() :
+            repairArchived(gc420Pkg, opts).then(async () => {
+                gc420ExeIsMissing = false
 
-            return Promise.allSettled([
-                repairDirectX9Dll(gc420Pkg, opts),
-            ]).then((results) => {
-                throwAnyRejection(results)
-            })
+                return Promise.allSettled([
+                    repairDirectX9Dll(gc420Pkg, opts),
+                ]).then((results) => {
+                    throwAnyRejection(results)
+                })
+            }),
+
+            !(args_installModPack3_value && modPack3IsMissing) ? Promise.resolve() :
+            repairArchived(modPck3, { ...opts, ignoreUnpacked: true }),
+
+        ]).then(async (results) => {
+
+            throwAnyRejection(results)
+
+            if (args.installModPack3.value && modPack3IsMissing){
+                await moveModPack(modPck3, { dir: modPck3.moveTo }, opts)
+                modPack3IsMissing = false
+            }
         }),
     ])
     throwAnyRejection(results)
@@ -503,6 +548,7 @@ async function repairOrThrow(opts: Required<AbortOptions>){
     if(client && server) combinations_push(client, server)
 
     client = gc420ExeIsMissing ? null : clients_push(gc420Pkg, new ClientDataInfoV420(gc420Pkg.dir), KnownClients.v420, 'v4.20 (Season 4)')
+    if(client && !modPack3IsMissing) client.locales.push(...modPck3.locales)
 
     server = cbExeIsMissing ? null : servers_push(cbPkg, new ChronobreakDataInfo(cbPkg.dir), KnownServers.ChronoBreak, tr('Chronobreak (Season 1)'))
     if(client && server) combinations_push(client, server)

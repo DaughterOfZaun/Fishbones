@@ -504,6 +504,12 @@ theme_override_font_sizes/font_size = 14
 placeholder_text = "C:\\..."
 editable = false
 
+[node name="#InstallModPack3" type="CheckBox" parent="Container/TabContainer/#Startup/ScrollContainer/VBoxContainer/FoldableContainer/VBoxContainer" unique_id=1824656760]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+button_pressed = true
+text = "Install the additional languages package"
+
 [node name="#InstallCBServer" type="CheckBox" parent="Container/TabContainer/#Startup/ScrollContainer/VBoxContainer/FoldableContainer/VBoxContainer" unique_id=181209216]
 layout_mode = 2
 theme_override_font_sizes/font_size = 14

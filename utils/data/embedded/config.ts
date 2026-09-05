@@ -64,6 +64,11 @@ export const config = {
 
     modPck1ZipTorrent: './torrents/modded_levels_paste_on_client.7z.torrent',
     modPck2ZipTorrent: './torrents/additional_locales_for_126.7z.torrent',
+    modPck3ZipTorrent: './torrents/additional_locales_for_420.romance.1.7z.torrent',
+    modPck4ZipTorrent: './torrents/additional_locales_for_420.romance.2.7z.torrent',
+    modPck5ZipTorrent: './torrents/additional_locales_for_420.slavic.7z.torrent',
+    modPck6ZipTorrent: './torrents/additional_locales_for_420.asian.7z.torrent',
+    modPck7ZipTorrent: './torrents/additional_locales_for_420.other.7z.torrent',
 
     gcCB2ZipTorrent: './torrents/playable_client_cb2.7z.torrent',
     gcCB3ZipTorrent: './torrents/playable_client_cb3.7z.torrent',

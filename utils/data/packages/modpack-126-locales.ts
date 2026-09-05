@@ -8,6 +8,7 @@ import { args } from "../../args"
 import path from 'node:path'
 
 export const modPck2 = new class ModPackTwo extends PkgInfo {
+
     id = 'additional_locales_1'
     name = tr('Additional Locales For 1.0.0.126')
     dirName = 'additional_locales_for_126'
@@ -40,6 +41,7 @@ export const modPck2 = new class ModPackTwo extends PkgInfo {
     topLevelEntriesOptional = []
 
     locales = [ 'pl_PL', 'fr_FR', 'es_ES', 'en_GB', 'de_DE' ]
+    get isSupported(){ return this.locales.includes(args.usedLocale.value) }
 
     constructor(){
         super()

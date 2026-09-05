@@ -59,3 +59,7 @@ export function shuffleInplace<T>(a: T[]): T[] {
     }
     return a
 }
+
+export function pickRandom<T>(a: T[]): T {
+    return a[Math.floor(Math.random() * a.length)]!
+}

@@ -28,7 +28,6 @@ import { VERSION_STRING, versionFromString, versionToString } from '../utils/con
 import { tr } from '../utils/translation'
 import { firewall } from '../utils/proxy/proxy-firewall'
 import { fs_ensureDir, fs_readdir, fs_readFile, fs_writeFile } from '../utils/data/fs'
-import { gc126Pkg } from '../utils/data/packages' //TODO: Unhardcode.
 import path from 'node:path'
 import { args } from '../utils/args'
 import { INI } from '../utils/data/ini'
@@ -612,59 +611,19 @@ export abstract class Game extends EventEmitter<GameEvents> {
         }
 
         try {
+
+            const promises: Promise<void>[] = []
+            promises.push(this.setClientLocale('game.cfg', opts))
+            promises.push(this.setClientLocale('locale.cfg', opts))
             if(this.clientVersion == KnownClients.v126){
-                await Promise.all([
-                    ...[...this.players.values()]
-                    .filter(player => player.isBot)
-                    .map(async (player) => {
-                        const champion = player.champion.toString()
-                        const scriptsDir = path.join(gc126Pkg.dir, 'DATA', 'Characters', champion, 'Scripts')
-                        const spellsInibin = path.join(scriptsDir, `${champion}BotSummonerSpells.inibin`)
-                        const summoner1 = (player.spell1.value !== undefined) ? player.spell1.toString() : ''
-                        const summoner2 = (player.spell1.value !== undefined) ? player.spell2.toString() : ''
-                        const ini = new INI()
-                        ini.push(1262429119, summoner1)
-                        ini.push(1262429120, summoner2)
-                        ini.push(1960928736, summoner1)
-                        ini.push(1960928737, summoner2)
-                        ini.push(2721268055, summoner1)
-                        ini.push(2721268056, summoner2)
-                        ini.push(3491215323, summoner1)
-                        ini.push(3491215324, summoner2)
-                        ini.push(3858056187, summoner1)
-                        ini.push(3858056188, summoner2)
-                        const buffer = ini.toBuffer()
-                        await fs_ensureDir(scriptsDir, opts)
-                        await fs_writeFile(spellsInibin, buffer, { ...opts, encoding: 'binary' })
-                    }),
-                    (async () => {
-                        const client = clients[this.clientVersion]!
-                        const locale = client.locales.includes(args.usedLocale.value) ?
-                            args.usedLocale.value :
-                            client.locales[0]!
-                        
-                        let configPath = path.join(gc126Pkg.dir, 'DATA', 'CFG', 'game.cfg')
-                        let config = await fs_readFile(configPath, { ...opts, encoding: 'utf8' }) ?? ''
-                        
-                        const localeLine = `LanguageLocaleRegion=${locale}`
-                        const generalLocaleLine = `[General]\n${localeLine}`
-
-                        if(config.includes(localeLine))
-                            return
-                        else if(config.includes('LanguageLocaleRegion='))
-                            config = config.replace(/^LanguageLocaleRegion=.*/, localeLine)
-                        else if(config.includes('[General]'))
-                            config = config.replace('[General]', generalLocaleLine)
-                        else {
-                            //config = config.trim()
-                            if(config != '') config += '\n'
-                            config += generalLocaleLine + '\n'
-                        }
-
-                        await fs_writeFile(configPath, config, { ...opts, encoding: 'utf8' })
-                    })(),
-                ])
+                for(const player of this.players.values()){
+                    if(player.isBot){
+                        promises.push(this.hackFixBotSpells(player, opts))
+                    }
+                }
             }
+            await Promise.all(promises)
+
             this.clientLaunchArgs = { version: this.clientVersion, ip: host, port, key, clientId }
             this.clientSubprocess = await launchClient(this.clientLaunchArgs, opts)
             this.clientSubprocess.once('exit', this.onClientExit)
@@ -675,6 +634,55 @@ export abstract class Game extends EventEmitter<GameEvents> {
             this.onClientExit(code)
             return false
         }
+    }
+    async hackFixBotSpells(bot: GamePlayer, opts: Required<AbortOptions>) {
+        const client = clients[this.clientVersion]!
+        const champion = bot.champion.toString()
+        const scriptsDir = path.join(client.exeDir, 'DATA', 'Characters', champion, 'Scripts')
+        const spellsInibin = path.join(scriptsDir, `${champion}BotSummonerSpells.inibin`)
+        const summoner1 = (bot.spell1.value !== undefined) ? bot.spell1.toString() : ''
+        const summoner2 = (bot.spell1.value !== undefined) ? bot.spell2.toString() : ''
+        const ini = new INI()
+        ini.push(1262429119, summoner1)
+        ini.push(1262429120, summoner2)
+        ini.push(1960928736, summoner1)
+        ini.push(1960928737, summoner2)
+        ini.push(2721268055, summoner1)
+        ini.push(2721268056, summoner2)
+        ini.push(3491215323, summoner1)
+        ini.push(3491215324, summoner2)
+        ini.push(3858056187, summoner1)
+        ini.push(3858056188, summoner2)
+        const buffer = ini.toBuffer()
+        await fs_ensureDir(scriptsDir, opts)
+        await fs_writeFile(spellsInibin, buffer, { ...opts, encoding: 'binary' })
+    }
+    async setClientLocale(configName: string, opts: Required<AbortOptions>){
+
+        const client = clients[this.clientVersion]!
+        const locale = client.locales.includes(args.usedLocale.value) ?
+            args.usedLocale.value :
+            client.locales[0]!
+        
+        let configPath = path.join(client.exeDir, 'DATA', 'CFG', configName)
+        let config = await fs_readFile(configPath, { ...opts, encoding: 'utf8' }) ?? ''
+        
+        const localeLine = `LanguageLocaleRegion=${locale}`
+        const generalLocaleLine = `[General]\n${localeLine}`
+
+        if(config.includes(localeLine))
+            return
+        else if(config.includes('LanguageLocaleRegion='))
+            config = config.replace(/^LanguageLocaleRegion=.*/, localeLine)
+        else if(config.includes('[General]'))
+            config = config.replace('[General]', generalLocaleLine)
+        else {
+            //config = config.trim()
+            if(config != '') config += '\n'
+            config += generalLocaleLine + '\n'
+        }
+
+        await fs_writeFile(configPath, config, { ...opts, encoding: 'utf8' })
     }
     public relaunch(){
         this.relaunchAsync(shutdownOptions).catch(err => {
@@ -699,10 +707,11 @@ export abstract class Game extends EventEmitter<GameEvents> {
 
         let isSpellCrash = false
         //if(code && (code & 0xfd) != 0){
-            const exeDirEntries = await fs_readdir(gc126Pkg.exeDir, opts)
+            const client = clients[this.clientVersion]!
+            const exeDirEntries = await fs_readdir(client.exeDir, opts)
             const latestR3DLogName = exeDirEntries.filter(name => name.endsWith('_r3dlog.txt')).toSorted().at(-1)
             if(latestR3DLogName){
-                const r3dLogTxtPath = path.join(gc126Pkg.exeDir, latestR3DLogName)
+                const r3dLogTxtPath = path.join(client.exeDir, latestR3DLogName)
                 const r3dLogTxtContent = await fs_readFile(r3dLogTxtPath, { ...opts, encoding: 'utf8' })
                 if(
                     r3dLogTxtContent?.includes('Function: Spellbook::AvatarInit') &&

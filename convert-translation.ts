@@ -1,6 +1,13 @@
 import fs from 'node:fs/promises'
 
-const locales = [ 'en_US', 'it_IT', 'ru_RU', 'pt_BR', 'zh_CN', 'pl_PL', 'fr_FR', 'es_ES', 'en_GB', 'de_DE' ]
+const locales = [
+    'en_US', 'en_GB', 'en_AU',
+    'es_ES', 'es_AR', 'es_MX', 'pt_BR',
+    'fr_FR', 'it_IT', 'ro_RO',
+    'cs_CZ', 'pl_PL', 'ru_RU',
+    'de_DE', 'el_GR',  'hu_HU', 'tr_TR',
+    'ko_KR',
+]
 
 // This code is extracted from utils/translation.ts
 const CSV_COLUMN_REGEX = /(?:"((?:""|[^"]|\n)*)")?(,|\n|$)/g
@@ -27,12 +34,11 @@ if(from.endsWith('.csv')){
     const csv = await fs.readFile(from, 'utf8')
     const table = parseCSV(csv)
     const header = table.shift()!
-    for(const locale of locales)
-        if(!header.includes(locale))
-            header.push(locale)
     for(const line of table){
-        for(let i = 1; i < header.length; i++)
-            console.log(header[i], line[i] ?? ((i == 1) ? line[0] : ''))
+        for(const locale of locales){
+            const i = header.indexOf(locale)
+            console.log(locale, line[i] ?? '')
+        }
         console.log('')
     }
 }
