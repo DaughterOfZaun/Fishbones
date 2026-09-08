@@ -89,7 +89,14 @@ export class ClientDataInfoV420 extends ClientDataInfoCommon implements ClientDa
         this.appyDir(dir)
     }
 
-    locales = [ 'en_AU', 'en_GB', 'en_US' ]
+    locales = [
+        'en_US', 'en_GB', 'en_AU', // Base
+        'es_ES', 'es_AR', 'es_MX', 'pt_BR', // Romanian 1
+        'fr_FR', 'it_IT', 'ro_RO', // Romanian 2
+        'cs_CZ', 'pl_PL', 'ru_RU', // Slavic
+        'de_DE', 'el_GR',  'hu_HU', 'tr_TR', // Other
+        'ko_KR', 'ja_JP', // Asian
+    ]
 
     maps = {
         1: {},

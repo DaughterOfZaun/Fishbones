@@ -17,6 +17,10 @@ hu_HU Egyes kritikus komponensek javítása sikertelen.
 tr_TR Bazı kritik bileşenlerin onarımı başarısız oldu.
 ko_KR 일부 중요 구성 요소의 복구에 실패했습니다.
 zh_CN 某些关键组件的修复失败
+zh_TW 修復某些關鍵元件失敗。
+vn_VN Sửa chữa một số thành phần quan trọng đã thất bại.
+th_TH การซ่อมแซมส่วนประกอบสำคัญบางรายการล้มเหลว
+ja_JP 重要なコンポーネントの修復に失敗しました。
 
 en_US A fatal error occurred:
 en_GB A fatal error occurred:
@@ -37,6 +41,10 @@ hu_HU Végzetes hiba történt:
 tr_TR Ölümcül bir hata oluştu:
 ko_KR 치명적인 오류가 발생했습니다:
 zh_CN 发生致命错误
+zh_TW 發生嚴重錯誤：
+vn_VN Đã xảy ra lỗi nghiêm trọng:
+th_TH เกิดข้อผิดพลาดร้ายแรง:
+ja_JP 致命的なエラーが発生しました：
 
 en_US New game found
 en_GB New game found
@@ -57,6 +65,10 @@ hu_HU Új játék található
 tr_TR Yeni oyun bulundu
 ko_KR 새 게임 발견됨
 zh_CN 发现新游戏
+zh_TW 發現新遊戲
+vn_VN Tìm thấy trò chơi mới
+th_TH พบเกมใหม่
+ja_JP 新しいゲームが見つかりました
 
 en_US No games
 en_GB No games
@@ -77,6 +89,10 @@ hu_HU Nincsenek játékok
 tr_TR Oyun yok
 ko_KR 게임 없음
 zh_CN 没有游戏
+zh_TW 沒有遊戲
+vn_VN Không có trò chơi nào
+th_TH ไม่มีเกม
+ja_JP ゲームがありません
 
 en_US No games on local network
 en_GB No games on local network
@@ -97,6 +113,10 @@ hu_HU Nincsenek játékok a helyi hálózaton
 tr_TR Yerel ağda oyun yok
 ko_KR 로컬 네트워크에 게임 없음
 zh_CN 本地网络上没有游戏
+zh_TW 區域網路上沒有遊戲
+vn_VN Không có trò chơi nào trên mạng cục bộ
+th_TH ไม่มีเกมบนเครือข่ายท้องถิ่น
+ja_JP ローカルネットワーク上にゲームがありません
 
 en_US Wait longer or host your own
 en_GB Wait longer or host your own
@@ -117,6 +137,10 @@ hu_HU Várjon tovább, vagy hozzon létre sajátot
 tr_TR Daha uzun bekleyin veya kendi sunucunuzu açın
 ko_KR 더 오래 기다리거나 직접 호스팅하세요
 zh_CN 请稍等或自行主持游戏
+zh_TW 請稍候或自行建立主機
+vn_VN Vui lòng đợi thêm hoặc tự tạo máy chủ
+th_TH กรุณารอสักครู่หรือสร้างโฮสต์ของคุณเอง
+ja_JP もう少し待つか、自分でホストしてください
 
 en_US Connecting to host...
 en_GB Connecting to host...
@@ -137,6 +161,10 @@ hu_HU Csatlakozás a kiszolgálóhoz...
 tr_TR Sunucuya bağlanılıyor...
 ko_KR 호스트에 연결 중...
 zh_CN 正在连接主机...
+zh_TW 正在連線至主機...
+vn_VN Đang kết nối đến máy chủ...
+th_TH กำลังเชื่อมต่อกับโฮสต์...
+ja_JP ホストに接続中...
 
 en_US Joining the game...
 en_GB Joining the game...
@@ -157,6 +185,10 @@ hu_HU Csatlakozás a játékhoz...
 tr_TR Oyuna katılınıyor...
 ko_KR 게임 참여 중...
 zh_CN 正在加入游戏...
+zh_TW 正在加入遊戲...
+vn_VN Đang tham gia trò chơi...
+th_TH กำลังเข้าร่วมเกม...
+ja_JP ゲームに参加中...
 
 en_US ms
 en_GB ms
@@ -177,6 +209,10 @@ hu_HU ms
 tr_TR ms
 ko_KR ms
 zh_CN 毫秒
+zh_TW 毫秒
+vn_VN ms
+th_TH มิลลิวินาที
+ja_JP ミリ秒
 
 en_US Failed to open data store:
 en_GB Failed to open data store:
@@ -197,6 +233,10 @@ hu_HU Adattár megnyitása sikertelen:
 tr_TR Veri deposu açılamadı:
 ko_KR 데이터 저장소 열기 실패:
 zh_CN 无法打开数据存储
+zh_TW 無法開啟資料儲存區：
+vn_VN Không thể mở kho lưu trữ dữ liệu:
+th_TH ไม่สามารถเปิดที่เก็บข้อมูลได้:
+ja_JP データストアを開けませんでした：
 
 en_US Failed to load private key:
 en_GB Failed to load private key:
@@ -217,6 +257,10 @@ hu_HU Privát kulcs betöltése sikertelen:
 tr_TR Özel anahtar yüklenemedi:
 ko_KR 개인 키 로드 실패:
 zh_CN 无法加载私钥
+zh_TW 無法載入私密金鑰：
+vn_VN Không thể tải khóa riêng tư:
+th_TH ไม่สามารถโหลดคีย์ส่วนตัวได้:
+ja_JP 秘密鍵を読み込めませんでした：
 
 en_US Envelope signature is not valid
 en_GB Envelope signature is not valid
@@ -237,6 +281,10 @@ hu_HU A boríték aláírása érvénytelen
 tr_TR Zarf imzası geçerli değil
 ko_KR 봉투 서명이 유효하지 않습니다
 zh_CN 信封签名无效
+zh_TW 信封簽章無效
+vn_VN Chữ ký bao thư không hợp lệ
+th_TH ลายเซ็นซองจดหมายไม่ถูกต้อง
+ja_JP エンベロープ署名が無効です
 
 en_US Can not dial self
 en_GB Can not dial self
@@ -257,6 +305,10 @@ hu_HU Nem hívhatja önmagát
 tr_TR Kendinizi arayamazsınız
 ko_KR 자기 자신에게 걸 수 없습니다
 zh_CN 无法自行拨号
+zh_TW 無法對自身撥號
+vn_VN Không thể quay số chính mình
+th_TH ไม่สามารถโทรหาตัวเองได้
+ja_JP 自分自身にはダイヤルできません
 
 en_US Already connected
 en_GB Already connected
@@ -277,6 +329,10 @@ hu_HU Már csatlakoztatva
 tr_TR Zaten bağlı
 ko_KR 이미 연결됨
 zh_CN 已连接
+zh_TW 已連線
+vn_VN Đã kết nối
+th_TH เชื่อมต่อแล้ว
+ja_JP 既に接続済みです
 
 en_US Already in dial queue
 en_GB Already in dial queue
@@ -297,6 +353,10 @@ hu_HU Már a tárcsázási sorban
 tr_TR Zaten arama sırasında
 ko_KR 이미 다이얼 대기열에 있음
 zh_CN 已在拨号队列中
+zh_TW 已在撥號佇列中
+vn_VN Đã nằm trong hàng đợi quay số
+th_TH อยู่ในคิวการโทรแล้ว
+ja_JP 既にダイヤルキューに入っています
 
 en_US Waiting for the server to start...
 en_GB Waiting for the server to start...
@@ -317,6 +377,10 @@ hu_HU Várakozás a szerver indulására...
 tr_TR Sunucunun başlaması bekleniyor...
 ko_KR 서버 시작 대기 중...
 zh_CN 等待服务器启动...
+zh_TW 正在等待伺服器啟動...
+vn_VN Đang chờ máy chủ khởi động...
+th_TH กำลังรอให้เซิร์ฟเวอร์เริ่มทำงาน...
+ja_JP サーバーの起動を待機中...
 
 en_US Waiting for the end of the game...
 en_GB Waiting for the end of the game...
@@ -337,6 +401,10 @@ hu_HU Várakozás a játék végére...
 tr_TR Oyunun bitişi bekleniyor...
 ko_KR 게임 종료 대기 중...
 zh_CN 等待游戏结束...
+zh_TW 正在等待遊戲結束...
+vn_VN Đang chờ kết thúc trò chơi...
+th_TH กำลังรอให้เกมจบลง...
+ja_JP ゲームの終了を待機中...
 
 en_US The client exited unexpectedly
 en_GB The client exited unexpectedly
@@ -357,6 +425,10 @@ hu_HU A kliens váratlanul kilépett
 tr_TR İstemci beklenmedik şekilde kapandı
 ko_KR 클라이언트가 예기치 않게 종료되었습니다
 zh_CN 客户端意外退出
+zh_TW 用戶端意外結束
+vn_VN Máy khách đã thoát đột ngột
+th_TH ไคลเอนต์ออกโดยไม่คาดคิด
+ja_JP クライアントが予期せず終了しました
 
 en_US Show command to run manually
 en_GB Show command to run manually
@@ -377,6 +449,10 @@ hu_HU Parancs megjelenítése manuális futtatáshoz
 tr_TR Manuel olarak çalıştırmak için komutu göster
 ko_KR 수동으로 실행할 명령 표시
 zh_CN 显示手动运行的命令
+zh_TW 顯示手動執行指令
+vn_VN Hiển thị lệnh để chạy thủ công
+th_TH แสดงคำสั่งเพื่อเรียกใช้ด้วยตนเอง
+ja_JP 手動で実行するコマンドを表示
 
 en_US Restart the client
 en_GB Restart the client
@@ -397,6 +473,10 @@ hu_HU Kliens újraindítása
 tr_TR İstemciyi yeniden başlat
 ko_KR 클라이언트 재시작
 zh_CN 重启客户端
+zh_TW 重新啟動用戶端
+vn_VN Khởi động lại máy khách
+th_TH รีสตาร์ทไคลเอนต์
+ja_JP クライアントを再起動
 
 en_US Leave
 en_GB Leave
@@ -417,6 +497,10 @@ hu_HU Kilépés
 tr_TR Ayrıl
 ko_KR 나가기
 zh_CN 离开
+zh_TW 離開
+vn_VN Rời khỏi
+th_TH ออก
+ja_JP 退出
 
 en_US Run the command in the terminal or paste it into a bat file
 en_GB Run the command in the terminal or paste it into a bat file
@@ -437,6 +521,10 @@ hu_HU Futtassa a parancsot a terminálban, vagy illessze be egy bat fájlba
 tr_TR Komutu terminalde çalıştırın veya bir bat dosyasına yapıştırın
 ko_KR 터미널에서 명령을 실행하거나 bat 파일에 붙여넣으세요
 zh_CN 在终端中运行该命令或将其粘贴到批处理文件中
+zh_TW 在終端機中執行指令，或將其貼上至 bat 檔案
+vn_VN Chạy lệnh trong thiết bị đầu cuối hoặc dán vào tệp bat
+th_TH เรียกใช้คำสั่งในเทอร์มินัลหรือวางลงในไฟล์ bat
+ja_JP ターミナルでコマンドを実行するか、batファイルに貼り付けてください
 
 en_US Game
 en_GB Game
@@ -457,6 +545,10 @@ hu_HU Játék
 tr_TR Oyun
 ko_KR 게임
 zh_CN 游戏
+zh_TW 遊戲
+vn_VN Trò chơi
+th_TH เกม
+ja_JP ゲーム
 
 en_US An input delay of {delay}ms is set.
 en_GB An input delay of {delay}ms is set.
@@ -477,6 +569,10 @@ hu_HU {delay}ms bemeneti késleltetés van beállítva.
 tr_TR {delay}ms giriş gecikmesi ayarlandı.
 ko_KR {delay}ms의 입력 지연이 설정되었습니다.
 zh_CN 已设置 {delay}ms 的输入延迟
+zh_TW 已設定 {delay}ms 的輸入延遲。
+vn_VN Đã thiết lập độ trễ đầu vào là {delay}ms.
+th_TH ตั้งค่าความล่าช้าของอินพุตไว้ที่ {delay}ms
+ja_JP {delay}msの入力遅延が設定されています。
 
 en_US Offense
 en_GB Offense
@@ -497,6 +593,10 @@ hu_HU Támadás
 tr_TR Saldırı
 ko_KR 공격
 zh_CN 进攻
+zh_TW 攻擊
+vn_VN Tấn công
+th_TH โจมตี
+ja_JP 攻撃
 
 en_US Defense
 en_GB Defense
@@ -517,6 +617,10 @@ hu_HU Védekezés
 tr_TR Savunma
 ko_KR 방어
 zh_CN 防守
+zh_TW 防禦
+vn_VN Phòng thủ
+th_TH ป้องกัน
+ja_JP 防御
 
 en_US Utility
 en_GB Utility
@@ -537,6 +641,10 @@ hu_HU Hasznosság
 tr_TR Destek
 ko_KR 유틸리티
 zh_CN 工具
+zh_TW 實用
+vn_VN Tiện ích
+th_TH อรรถประโยชน์
+ja_JP ユーティリティ
 
 en_US Bot
 en_GB Bot
@@ -557,6 +665,10 @@ hu_HU Bot
 tr_TR Bot
 ko_KR 봇
 zh_CN 机器人
+zh_TW 機器人
+vn_VN Bot
+th_TH บอท
+ja_JP ボット
 
 en_US An error occurred while unhandling the protocol: %e
 en_GB An error occurred while unhandling the protocol: %e
@@ -577,6 +689,10 @@ hu_HU Hiba történt a protokoll kezelése közben: %e
 tr_TR Protokol işlenirken bir hata oluştu: %e
 ko_KR 프로토콜 처리 중 오류가 발생했습니다: %e
 zh_CN 处理协议时发生错误：%e
+zh_TW 取消處理通訊協定時發生錯誤：%e
+vn_VN Đã xảy ra lỗi khi hủy xử lý giao thức: %e
+th_TH เกิดข้อผิดพลาดขณะยกเลิกการจัดการโปรโตคอล: %e
+ja_JP プロトコルの処理中にエラーが発生しました：%e
 
 en_US New Page
 en_GB New Page
@@ -597,6 +713,10 @@ hu_HU Új oldal
 tr_TR Yeni sayfa
 ko_KR 새 페이지
 zh_CN 新页面
+zh_TW 新頁面
+vn_VN Trang mới
+th_TH หน้าใหม่
+ja_JP 新しいページ
 
 en_US {name} joined the lobby
 en_GB {name} joined the lobby
@@ -617,6 +737,10 @@ hu_HU {name} csatlakozott a lobbyhoz
 tr_TR {name} lobye katıldı
 ko_KR {name}님이 로비에 참여했습니다
 zh_CN {name} 加入了游乐厅
+zh_TW {name} 加入了大廳
+vn_VN {name} đã tham gia sảnh chờ
+th_TH {name} เข้าร่วมล็อบบี้แล้ว
+ja_JP {name} がロビーに参加しました
 
 en_US web + torrents + mega.nz
 en_GB web + torrents + mega.nz
@@ -637,6 +761,10 @@ hu_HU web + torrentek + mega.nz
 tr_TR web + torrentler + mega.nz
 ko_KR 웹 + 토렌트 + mega.nz
 zh_CN 网页 + 种子 + mega.nz
+zh_TW 網頁 + Torrents + mega.nz
+vn_VN web + torrents + mega.nz
+th_TH เว็บ + ทอร์เรนต์ + mega.nz
+ja_JP Web + Torrents + mega.nz
 
 en_US web + torrents
 en_GB web + torrents
@@ -657,6 +785,10 @@ hu_HU web + torrentek
 tr_TR web + torrentler
 ko_KR 웹 + 토렌트
 zh_CN 网页 + 种子
+zh_TW 網頁 + Torrents
+vn_VN web + torrents
+th_TH เว็บ + ทอร์เรนต์
+ja_JP Web + Torrents
 
 en_US web + mega.nz
 en_GB web + mega.nz
@@ -677,6 +809,10 @@ hu_HU web + mega.nz
 tr_TR web + mega.nz
 ko_KR 웹 + mega.nz
 zh_CN 网页 + mega.nz
+zh_TW 網頁 + mega.nz
+vn_VN web + mega.nz
+th_TH เว็บ + mega.nz
+ja_JP Web + mega.nz
 
 en_US web
 en_GB web
@@ -697,6 +833,10 @@ hu_HU web
 tr_TR web
 ko_KR 웹
 zh_CN 网页
+zh_TW 網頁
+vn_VN web
+th_TH เว็บ
+ja_JP Web
 
 en_US Player
 en_GB Player
@@ -717,6 +857,10 @@ hu_HU Játékos
 tr_TR Oyuncu
 ko_KR 플레이어
 zh_CN 玩家
+zh_TW 玩家
+vn_VN Người chơi
+th_TH ผู้เล่น
+ja_JP プレイヤー
 
 en_US New player joined
 en_GB New player joined
@@ -737,6 +881,10 @@ hu_HU Új játékos csatlakozott
 tr_TR Yeni oyuncu katıldı
 ko_KR 새 플레이어가 참여했습니다
 zh_CN 新玩家加入
+zh_TW 新玩家已加入
+vn_VN Người chơi mới đã tham gia
+th_TH ผู้เล่นใหม่เข้าร่วมแล้ว
+ja_JP 新しいプレイヤーが参加しました
 
 en_US Download files from mega.nz
 en_GB Download files from mega.nz
@@ -757,6 +905,10 @@ hu_HU Fájlok letöltése a mega.nz-ről
 tr_TR Dosyaları mega.nz'den indir
 ko_KR mega.nz에서 파일 다운로드
 zh_CN 从 mega.nz 下载文件
+zh_TW 從 mega.nz 下載檔案
+vn_VN Tải tệp từ mega.nz
+th_TH ดาวน์โหลดไฟล์จาก mega.nz
+ja_JP mega.nzからファイルをダウンロード
 
 en_US Download and Seed files via BitTorrent
 en_GB Download and Seed files via BitTorrent
@@ -777,6 +929,10 @@ hu_HU Fájlok letöltése és megosztása BitTorrenthoz
 tr_TR BitTorrent üzerinden dosya indir ve paylaş
 ko_KR BitTorrent를 통해 파일 다운로드 및 시딩
 zh_CN 通过 BitTorrent 下载和分享文件
+zh_TW 透過 BitTorrent 下載並做種檔案
+vn_VN Tải và chia sẻ tệp qua BitTorrent
+th_TH ดาวน์โหลดและแบ่งปันไฟล์ผ่าน BitTorrent
+ja_JP BitTorrent経由でファイルをダウンロードおよびシード
 
 en_US Connect to other players via Internet
 en_GB Connect to other players via Internet
@@ -797,6 +953,10 @@ hu_HU Csatlakozás más játékosokhoz az interneten keresztül
 tr_TR Diğer oyunculara internet üzerinden bağlan
 ko_KR 인터넷을 통해 다른 플레이어와 연결
 zh_CN 通过互联网连接其他玩家
+zh_TW 透過網際網路連線至其他玩家
+vn_VN Kết nối với người chơi khác qua Internet
+th_TH เชื่อมต่อกับผู้เล่นคนอื่นผ่านอินเทอร์เน็ต
+ja_JP インターネット経由で他のプレイヤーと接続
 
 en_US Download game server updates
 en_GB Download game server updates
@@ -817,6 +977,10 @@ hu_HU Játékszerver-frissítések letöltése
 tr_TR Oyun sunucusu güncellemelerini indir
 ko_KR 게임 서버 업데이트 다운로드
 zh_CN 下载游戏服务器更新
+zh_TW 下載遊戲伺服器更新
+vn_VN Tải bản cập nhật máy chủ trò chơi
+th_TH ดาวน์โหลดอัปเดตเซิร์ฟเวอร์เกม
+ja_JP ゲームサーバーのアップデートをダウンロード
 
 en_US Download launcher updates
 en_GB Download launcher updates
@@ -837,6 +1001,10 @@ hu_HU Indítóprogram-frissítések letöltése
 tr_TR Başlatıcı güncellemelerini indir
 ko_KR 런처 업데이트 다운로드
 zh_CN 下载启动器更新
+zh_TW 下載啟動器更新
+vn_VN Tải bản cập nhật trình khởi chạy
+th_TH ดาวน์โหลดอัปเดตตัวเรียกใช้งาน
+ja_JP ランチャーのアップデートをダウンロード
 
 en_US Set custom UDP port number to use
 en_GB Set custom UDP port number to use
@@ -857,6 +1025,10 @@ hu_HU Egyéni UDP-portszám beállítása
 tr_TR Kullanılacak özel UDP bağlantı noktası numarasını ayarla
 ko_KR 사용할 사용자 지정 UDP 포트 번호 설정
 zh_CN 设置要使用的自定义 UDP 端口号
+zh_TW 設定要使用的自訂 UDP 連接埠號碼
+vn_VN Đặt số cổng UDP tùy chỉnh để sử dụng
+th_TH ตั้งค่าหมายเลขพอร์ต UDP ที่กำหนดเองเพื่อใช้งาน
+ja_JP 使用するカスタムUDPポート番号を設定
 
 en_US Install the package with additional levels
 en_GB Install the package with additional levels
@@ -877,6 +1049,10 @@ hu_HU Csomag telepítése további pályákkal
 tr_TR Ek seviyeler içeren paketi yükle
 ko_KR 추가 레벨이 포함된 패키지 설치
 zh_CN 安装包含额外关卡的软件包
+zh_TW 安裝包含額外關卡的套件
+vn_VN Cài đặt gói chứa các màn chơi bổ sung
+th_TH ติดตั้งแพ็กเกจที่มีด่านเพิ่มเติม
+ja_JP 追加レベルを含むパッケージをインストール
 
 en_US (Debug) Download+Unpack+Build missing files
 en_GB (Debug) Download+Unpack+Build missing files
@@ -897,6 +1073,10 @@ hu_HU (Hibakeresés) Hiányzó fájlok letöltése+kicsomagolása+fordítása
 tr_TR (Hata Ayıklama) Eksik dosyaları indir+aç+derle
 ko_KR (디버그) 누락된 파일 다운로드+압축 해제+빌드
 zh_CN (调试) 下载+解压+构建缺失文件
+zh_TW (偵錯) 下載+解壓縮+建置缺少的檔案
+vn_VN (Gỡ lỗi) Tải xuống+Giải nén+Tạo tệp còn thiếu
+th_TH (ดีบัก) ดาวน์โหลด+แตกไฟล์+สร้างไฟล์ที่หายไป
+ja_JP (デバッグ) 不足しているファイルのダウンロード+展開+ビルド
 
 en_US (Debug) Download missing files
 en_GB (Debug) Download missing files
@@ -917,6 +1097,10 @@ hu_HU (Hibakeresés) Hiányzó fájlok letöltése
 tr_TR (Hata Ayıklama) Eksik dosyaları indir
 ko_KR (디버그) 누락된 파일 다운로드
 zh_CN (调试) 下载缺失文件
+zh_TW (偵錯) 下載缺少的檔案
+vn_VN (Gỡ lỗi) Tải xuống tệp còn thiếu
+th_TH (ดีบัก) ดาวน์โหลดไฟล์ที่หายไป
+ja_JP (デバッグ) 不足しているファイルのダウンロード
 
 en_US (Debug) Unpack missing files
 en_GB (Debug) Unpack missing files
@@ -937,6 +1121,10 @@ hu_HU (Hibakeresés) Hiányzó fájlok kicsomagolása
 tr_TR (Hata Ayıklama) Eksik dosyaları aç
 ko_KR (디버그) 누락된 파일 압축 해제
 zh_CN (调试) 解压缺失文件
+zh_TW (偵錯) 解壓縮缺少的檔案
+vn_VN (Gỡ lỗi) Giải nén tệp còn thiếu
+th_TH (ดีบัก) แตกไฟล์ที่หายไป
+ja_JP (デバッグ) 不足しているファイルの展開
 
 en_US (Debug) Build missing files
 en_GB (Debug) Build missing files
@@ -957,6 +1145,10 @@ hu_HU (Hibakeresés) Hiányzó fájlok fordítása
 tr_TR (Hata Ayıklama) Eksik dosyaları derle
 ko_KR (디버그) 누락된 파일 빌드
 zh_CN (调试) 构建缺失文件
+zh_TW (偵錯) 建置缺少的檔案
+vn_VN (Gỡ lỗi) Tạo tệp còn thiếu
+th_TH (ดีบัก) สร้างไฟล์ที่หายไป
+ja_JP (デバッグ) 不足しているファイルのビルド
 
 en_US Ask about custom arguments at startup
 en_GB Ask about custom arguments at startup
@@ -977,6 +1169,10 @@ hu_HU Kérdezzen egyéni argumentumokról indításkor
 tr_TR Başlangıçta özel argümanlar hakkında sor
 ko_KR 시작 시 사용자 지정 인수 묻기
 zh_CN 启动时询问自定义参数
+zh_TW 啟動時詢問自訂引數
+vn_VN Hỏi về các đối số tùy chỉnh khi khởi động
+th_TH ถามเกี่ยวกับอาร์กิวเมนต์ที่กำหนดเองเมื่อเริ่มต้น
+ja_JP 起動時にカスタム引数について確認
 
 en_US (Internal) Use JSON RPC for I/O
 en_GB (Internal) Use JSON RPC for I/O
@@ -997,6 +1193,10 @@ hu_HU (Belső) JSON RPC használata I/O-hoz
 tr_TR (Dahili) G/Ç için JSON RPC kullan
 ko_KR (내부) I/O에 JSON RPC 사용
 zh_CN (内部) 使用 JSON RPC 进行 I/O 操作
+zh_TW (內部) 使用 JSON RPC 進行 I/O
+vn_VN (Nội bộ) Sử dụng JSON RPC cho I/O
+th_TH (ภายใน) ใช้ JSON RPC สำหรับ I/O
+ja_JP (内部) I/OにJSON RPCを使用
 
 en_US (Internal) Specify the system locale
 en_GB (Internal) Specify the system locale
@@ -1017,6 +1217,10 @@ hu_HU (Belső) Rendszer területi beállításának megadása
 tr_TR (Dahili) Sistem yerel ayarını belirt
 ko_KR (내부) 시스템 로케일 지정
 zh_CN (内部) 指定系统区域设置
+zh_TW (內部) 指定系統地區設定
+vn_VN (Nội bộ) Chỉ định ngôn ngữ hệ thống
+th_TH (ภายใน) ระบุตำแหน่งที่ตั้งของระบบ
+ja_JP (内部) システムロケールを指定
 
 en_US Fetching a list of open requests failed:
 en_GB Fetching a list of open requests failed:
@@ -1037,6 +1241,10 @@ hu_HU Nyitott kérések listájának lekérése sikertelen:
 tr_TR Açık isteklerin listesini alma başarısız oldu:
 ko_KR 열린 요청 목록 가져오기 실패:
 zh_CN 获取已打开请求列表失败
+zh_TW 取得開啟請求清單失敗：
+vn_VN Không thể lấy danh sách yêu cầu đang mở:
+th_TH การดึงรายการคำขอที่เปิดอยู่ล้มเหลว:
+ja_JP オープンリクエストのリスト取得に失敗しました：
 
 en_US {mr_reference} · created by {mr_author_name}
 en_GB {mr_reference} · created by {mr_author_name}
@@ -1057,6 +1265,10 @@ hu_HU {mr_reference} · készítette: {mr_author_name}
 tr_TR {mr_reference} · {mr_author_name} tarafından oluşturuldu
 ko_KR {mr_reference} · {mr_author_name}이(가) 생성함
 zh_CN {mr_reference} · 由 {mr_author_name} 创建
+zh_TW {mr_reference} · 由 {mr_author_name} 建立
+vn_VN {mr_reference} · được tạo bởi {mr_author_name}
+th_TH {mr_reference} · สร้างโดย {mr_author_name}
+ja_JP {mr_reference} · {mr_author_name} によって作成
 
 en_US Disconnected
 en_GB Disconnected
@@ -1077,6 +1289,10 @@ hu_HU Szétkapcsolva
 tr_TR Bağlantı kesildi
 ko_KR 연결 끊김
 zh_CN 已断开连接
+zh_TW 已斷線
+vn_VN Đã ngắt kết nối
+th_TH ตัดการเชื่อมต่อแล้ว
+ja_JP 切断されました
 
 en_US Connecting...
 en_GB Connecting...
@@ -1097,6 +1313,10 @@ hu_HU Csatlakozás...
 tr_TR Bağlanıyor...
 ko_KR 연결 중...
 zh_CN 正在连接...
+zh_TW 正在連線...
+vn_VN Đang kết nối...
+th_TH กำลังเชื่อมต่อ...
+ja_JP 接続中...
 
 en_US Connected
 en_GB Connected
@@ -1117,6 +1337,10 @@ hu_HU Csatlakoztatva
 tr_TR Bağlı
 ko_KR 연결됨
 zh_CN 已连接
+zh_TW 已連線
+vn_VN Đã kết nối
+th_TH เชื่อมต่อแล้ว
+ja_JP 接続済み
 
 en_US Connection failed
 en_GB Connection failed
@@ -1137,6 +1361,10 @@ hu_HU Csatlakozás sikertelen
 tr_TR Bağlantı başarısız
 ko_KR 연결 실패
 zh_CN 连接失败
+zh_TW 連線失敗
+vn_VN Kết nối thất bại
+th_TH การเชื่อมต่อล้มเหลว
+ja_JP 接続に失敗しました
 
 en_US No connections
 en_GB No connections
@@ -1157,6 +1385,10 @@ hu_HU Nincsenek kapcsolatok
 tr_TR Bağlantı yok
 ko_KR 연결 없음
 zh_CN 无连接
+zh_TW 無連線
+vn_VN Không có kết nối nào
+th_TH ไม่มีการเชื่อมต่อ
+ja_JP 接続なし
 
 en_US Parsing the key failed:
 en_GB Parsing the key failed:
@@ -1177,6 +1409,10 @@ hu_HU Kulcs elemzése sikertelen:
 tr_TR Anahtar ayrıştırma başarısız:
 ko_KR 키 구문 분석 실패:
 zh_CN 解析键失败
+zh_TW 剖析金鑰失敗：
+vn_VN Phân tích cú pháp khóa thất bại:
+th_TH การแยกวิเคราะห์คีย์ล้มเหลว:
+ja_JP キーの解析に失敗しました：
 
 en_US Connecting via key failed:
 en_GB Connecting via key failed:
@@ -1197,6 +1433,10 @@ hu_HU Kapcsolódás kulccsal sikertelen:
 tr_TR Anahtar ile bağlantı başarısız:
 ko_KR 키를 통한 연결 실패:
 zh_CN 通过键连接失败
+zh_TW 透過金鑰連線失敗：
+vn_VN Kết nối qua khóa thất bại:
+th_TH การเชื่อมต่อผ่านคีย์ล้มเหลว:
+ja_JP キーによる接続に失敗しました：
 
 en_US Extracting embedded torrent file failed
 en_GB Extracting embedded torrent file failed
@@ -1217,6 +1457,10 @@ hu_HU Beágyazott torrent fájl kibontása sikertelen
 tr_TR Gömülü torrent dosyası çıkarma başarısız
 ko_KR 내장된 토렌트 파일 추출 실패
 zh_CN 提取嵌入的种子文件失败
+zh_TW 解壓縮內嵌 Torrent 檔案失敗
+vn_VN Trích xuất tệp torrent nhúng thất bại
+th_TH การแตกไฟล์ทอร์เรนต์ที่ฝังอยู่ล้มเหลว
+ja_JP 埋め込みtorrentファイルの抽出に失敗しました
 
 en_US Checking for updates
 en_GB Checking for updates
@@ -1237,6 +1481,10 @@ hu_HU Frissítések keresése
 tr_TR Güncellemeler kontrol ediliyor
 ko_KR 업데이트 확인 중
 zh_CN 检查更新
+zh_TW 正在檢查更新
+vn_VN Đang kiểm tra bản cập nhật
+th_TH กำลังตรวจสอบการอัปเดต
+ja_JP アップデートを確認中
 
 en_US No suitable launcher update archive found.
 en_GB No suitable launcher update archive found.
@@ -1257,6 +1505,10 @@ hu_HU Nem található megfelelő indítóprogram-frissítési archívum.
 tr_TR Uygun başlatıcı güncelleme arşivi bulunamadı.
 ko_KR 적절한 런처 업데이트 아카이브를 찾을 수 없습니다.
 zh_CN 未找到合适的启动器更新存档
+zh_TW 找不到合適的啟動器更新封存檔。
+vn_VN Không tìm thấy tệp lưu trữ bản cập nhật trình khởi chạy phù hợp.
+th_TH ไม่พบไฟล์เก็บถาวรอัปเดตตัวเรียกใช้งานที่เหมาะสม
+ja_JP 適切なランチャー更新アーカイブが見つかりません。
 
 en_US Already using the latest launcher version.
 en_GB Already using the latest launcher version.
@@ -1277,6 +1529,10 @@ hu_HU Már a legújabb indítóprogram verziót használja.
 tr_TR Zaten en son başlatıcı sürümünü kullanıyorsunuz.
 ko_KR 이미 최신 런처 버전을 사용하고 있습니다.
 zh_CN 已使用最新启动器版本
+zh_TW 已在使用最新版本的啟動器。
+vn_VN Đã sử dụng phiên bản trình khởi chạy mới nhất.
+th_TH ใช้ตัวเรียกใช้งานเวอร์ชันล่าสุดอยู่แล้ว
+ja_JP 既に最新のランチャーバージョンを使用しています。
 
 en_US {fbPkg_zipTorrent} exists already
 en_GB {fbPkg_zipTorrent} exists already
@@ -1297,6 +1553,10 @@ hu_HU A {fbPkg_zipTorrent} már létezik
 tr_TR {fbPkg_zipTorrent} zaten mevcut
 ko_KR {fbPkg_zipTorrent}이 이미 존재합니다
 zh_CN {fbPkg_zipTorrent} 已存在
+zh_TW {fbPkg_zipTorrent} 已存在
+vn_VN {fbPkg_zipTorrent} đã tồn tại
+th_TH {fbPkg_zipTorrent} มีอยู่แล้ว
+ja_JP {fbPkg_zipTorrent} は既に存在します
 
 en_US {fbPkg_zipTorrent} download failed:
 en_GB {fbPkg_zipTorrent} download failed:
@@ -1317,6 +1577,10 @@ hu_HU {fbPkg_zipTorrent} letöltése sikertelen:
 tr_TR {fbPkg_zipTorrent} indirme başarısız:
 ko_KR {fbPkg_zipTorrent} 다운로드 실패:
 zh_CN {fbPkg_zipTorrent} 下载失败
+zh_TW {fbPkg_zipTorrent} 下載失敗：
+vn_VN Tải xuống {fbPkg_zipTorrent} thất bại:
+th_TH การดาวน์โหลด {fbPkg_zipTorrent} ล้มเหลว:
+ja_JP {fbPkg_zipTorrent} のダウンロードに失敗しました：
 
 en_US Update check failed:
 en_GB Update check failed:
@@ -1337,6 +1601,10 @@ hu_HU Frissítés ellenőrzése sikertelen:
 tr_TR Güncelleme kontrolü başarısız:
 ko_KR 업데이트 확인 실패:
 zh_CN 更新检查失败
+zh_TW 更新檢查失敗：
+vn_VN Kiểm tra bản cập nhật thất bại:
+th_TH การตรวจสอบการอัปเดตล้มเหลว:
+ja_JP アップデートチェックに失敗しました：
 
 en_US Official Server #{i_plus_one}
 en_GB Official Server #{i_plus_one}
@@ -1357,6 +1625,10 @@ hu_HU Hivatalos Szerver #{i_plus_one}
 tr_TR Resmi Sunucu #{i_plus_one}
 ko_KR 공식 서버 #{i_plus_one}
 zh_CN 官方服务器 #{i_plus_one}
+zh_TW 官方伺服器 #{i_plus_one}
+vn_VN Máy chủ chính thức #{i_plus_one}
+th_TH เซิร์ฟเวอร์ทางการ #{i_plus_one}
+ja_JP 公式サーバー #{i_plus_one}
 
 en_US Unknown #ERROR
 en_GB Unknown #ERROR
@@ -1377,6 +1649,10 @@ hu_HU Ismeretlen #HIBA
 tr_TR Bilinmeyen #HATA
 ko_KR 알 수 없음 #오류
 zh_CN 未知 #ERROR
+zh_TW 不明 #ERROR
+vn_VN Không xác định #ERROR
+th_TH ไม่รู้จัก #ERROR
+ja_JP 不明 #ERROR
 
 en_US Unknown
 en_GB Unknown
@@ -1397,6 +1673,10 @@ hu_HU Ismeretlen
 tr_TR Bilinmiyor
 ko_KR 알 수 없음
 zh_CN 未知
+zh_TW 不明
+vn_VN Không xác định
+th_TH ไม่รู้จัก
+ja_JP 不明
 
 en_US ERROR
 en_GB ERROR
@@ -1417,6 +1697,10 @@ hu_HU HIBA
 tr_TR HATA
 ko_KR 오류
 zh_CN ERROR
+zh_TW 錯誤
+vn_VN LỖI
+th_TH ข้อผิดพลาด
+ja_JP エラー
 
 en_US Anonymous #{hashtag} (You)
 en_GB Anonymous #{hashtag} (You)
@@ -1437,6 +1721,10 @@ hu_HU Névtelen #{hashtag} (Ön)
 tr_TR Anonim #{hashtag} (Sen)
 ko_KR 익명 #{hashtag} (당신)
 zh_CN 匿名 #{hashtag} (您)
+zh_TW 匿名 #{hashtag} (你)
+vn_VN Ẩn danh #{hashtag} (Bạn)
+th_TH ไม่ระบุชื่อ #{hashtag} (คุณ)
+ja_JP 匿名 #{hashtag} (あなた)
 
 en_US Anonymous #{hashtag}
 en_GB Anonymous #{hashtag}
@@ -1457,6 +1745,10 @@ hu_HU Névtelen #{hashtag}
 tr_TR Anonim #{hashtag}
 ko_KR 익명 #{hashtag}
 zh_CN 匿名 #{hashtag}
+zh_TW 匿名 #{hashtag}
+vn_VN Ẩn danh #{hashtag}
+th_TH ไม่ระบุชื่อ #{hashtag}
+ja_JP 匿名 #{hashtag}
 
 en_US Anonymous
 en_GB Anonymous
@@ -1477,6 +1769,10 @@ hu_HU Névtelen
 tr_TR Anonim
 ko_KR 익명
 zh_CN 匿名
+zh_TW 匿名
+vn_VN Ẩn danh
+th_TH ไม่ระบุชื่อ
+ja_JP 匿名
 
 en_US {championName} (Bot)
 en_GB {championName} (Bot)
@@ -1497,6 +1793,10 @@ hu_HU {championName} (Bot)
 tr_TR {championName} (Bot)
 ko_KR {championName} (봇)
 zh_CN {championName}（机器人）
+zh_TW {championName} (機器人)
+vn_VN {championName} (Bot)
+th_TH {championName} (บอท)
+ja_JP {championName} (ボット)
 
 en_US Checking file existance failed
 en_GB Checking file existance failed
@@ -1517,6 +1817,10 @@ hu_HU Fájl létezésének ellenőrzése sikertelen
 tr_TR Dosya varlığı kontrolü başarısız
 ko_KR 파일 존재 확인 실패
 zh_CN 检查文件是否存在失败
+zh_TW 檢查檔案是否存在失敗
+vn_VN Kiểm tra sự tồn tại của tệp thất bại
+th_TH การตรวจสอบการมีอยู่ของไฟล์ล้มเหลว
+ja_JP ファイルの存在確認に失敗しました
 
 en_US File size mismatch
 en_GB File size mismatch
@@ -1537,6 +1841,10 @@ hu_HU Fájlméret eltérés
 tr_TR Dosya boyutu uyuşmazlığı
 ko_KR 파일 크기 불일치
 zh_CN 文件大小不匹配
+zh_TW 檔案大小不符
+vn_VN Kích thước tệp không khớp
+th_TH ขนาดไฟล์ไม่ตรงกัน
+ja_JP ファイルサイズが一致しません
 
 en_US Checking file size failed
 en_GB Checking file size failed
@@ -1557,6 +1865,10 @@ hu_HU Fájlméret ellenőrzése sikertelen
 tr_TR Dosya boyutu kontrolü başarısız
 ko_KR 파일 크기 확인 실패
 zh_CN 检查文件大小失败
+zh_TW 檢查檔案大小失敗
+vn_VN Kiểm tra kích thước tệp thất bại
+th_TH การตรวจสอบขนาดไฟล์ล้มเหลว
+ja_JP ファイルサイズの確認に失敗しました
 
 en_US Copying file failed
 en_GB Copying file failed
@@ -1577,6 +1889,10 @@ hu_HU Fájl másolása sikertelen
 tr_TR Dosya kopyalama başarısız
 ko_KR 파일 복사 실패
 zh_CN 复制文件失败
+zh_TW 複製檔案失敗
+vn_VN Sao chép tệp thất bại
+th_TH การคัดลอกไฟล์ล้มเหลว
+ja_JP ファイルのコピーに失敗しました
 
 en_US Opening file failed
 en_GB Opening file failed
@@ -1597,6 +1913,10 @@ hu_HU Fájl megnyitása sikertelen
 tr_TR Dosya açma başarısız
 ko_KR 파일 열기 실패
 zh_CN 打开文件失败
+zh_TW 開啟檔案失敗
+vn_VN Mở tệp thất bại
+th_TH การเปิดไฟล์ล้มเหลว
+ja_JP ファイルの開くことに失敗しました
 
 en_US Saving file failed
 en_GB Saving file failed
@@ -1617,6 +1937,10 @@ hu_HU Fájl mentése sikertelen
 tr_TR Dosya kaydetme başarısız
 ko_KR 파일 저장 실패
 zh_CN 保存文件失败
+zh_TW 儲存檔案失敗
+vn_VN Lưu tệp thất bại
+th_TH การบันทึกไฟล์ล้มเหลว
+ja_JP ファイルの保存に失敗しました
 
 en_US Changing file mode failed
 en_GB Changing file mode failed
@@ -1637,6 +1961,10 @@ hu_HU Fájl módjának módosítása sikertelen
 tr_TR Dosya modunu değiştirme başarısız
 ko_KR 파일 모드 변경 실패
 zh_CN 更改文件权限失败
+zh_TW 變更檔案模式失敗
+vn_VN Thay đổi chế độ tệp thất bại
+th_TH การเปลี่ยนโหมดไฟล์ล้มเหลว
+ja_JP ファイルモードの変更に失敗しました
 
 en_US Moving file failed
 en_GB Moving file failed
@@ -1657,6 +1985,10 @@ hu_HU Fájl áthelyezése sikertelen
 tr_TR Dosya taşıma başarısız
 ko_KR 파일 이동 실패
 zh_CN 移动文件失败
+zh_TW 移動檔案失敗
+vn_VN Di chuyển tệp thất bại
+th_TH การย้ายไฟล์ล้มเหลว
+ja_JP ファイルの移動に失敗しました
 
 en_US Removing file failed
 en_GB Removing file failed
@@ -1677,6 +2009,10 @@ hu_HU Fájl eltávolítása sikertelen
 tr_TR Dosya silme başarısız
 ko_KR 파일 삭제 실패
 zh_CN 删除文件失败
+zh_TW 移除檔案失敗
+vn_VN Xóa tệp thất bại
+th_TH การลบไฟล์ล้มเหลว
+ja_JP ファイルの削除に失敗しました
 
 en_US Resizing file failed
 en_GB Resizing file failed
@@ -1697,6 +2033,10 @@ hu_HU Fájl átméretezése sikertelen
 tr_TR Dosya boyutlandırma başarısız
 ko_KR 파일 크기 조정 실패
 zh_CN 调整文件大小失败
+zh_TW 調整檔案大小失敗
+vn_VN Thay đổi kích thước tệp thất bại
+th_TH การปรับขนาดไฟล์ล้มเหลว
+ja_JP ファイルのリサイズに失敗しました
 
 en_US File not found
 en_GB File not found
@@ -1717,6 +2057,10 @@ hu_HU Fájl nem található
 tr_TR Dosya bulunamadı
 ko_KR 파일을 찾을 수 없음
 zh_CN 未找到文件
+zh_TW 找不到檔案
+vn_VN Không tìm thấy tệp
+th_TH ไม่พบไฟล์
+ja_JP ファイルが見つかりません
 
 en_US Reading directory failed
 en_GB Reading directory failed
@@ -1737,6 +2081,10 @@ hu_HU Könyvtár olvasása sikertelen
 tr_TR Dizin okuma başarısız
 ko_KR 디렉터리 읽기 실패
 zh_CN 读取目录失败
+zh_TW 讀取目錄失敗
+vn_VN Đọc thư mục thất bại
+th_TH การอ่านไดเรกทอรีล้มเหลว
+ja_JP ディレクトリの読み取りに失敗しました
 
 en_US Reading file stats failed
 en_GB Reading file stats failed
@@ -1757,6 +2105,10 @@ hu_HU Fájl statisztikák olvasása sikertelen
 tr_TR Dosya istatistikleri okuma başarısız
 ko_KR 파일 통계 읽기 실패
 zh_CN 读取文件属性失败
+zh_TW 讀取檔案統計資訊失敗
+vn_VN Đọc thông tin tệp thất bại
+th_TH การอ่านสถิติไฟล์ล้มเหลว
+ja_JP ファイル統計情報の読み取りに失敗しました
 
 en_US Blind Pick
 en_GB Blind Pick
@@ -1777,6 +2129,10 @@ hu_HU Vak választás
 tr_TR Kör Seçim
 ko_KR 무작위 선택
 zh_CN 盲选
+zh_TW 盲選
+vn_VN Chọn ẩn
+th_TH เลือกแบบสุ่มไม่เห็นฝ่ายตรงข้าม
+ja_JP ブラインドピック
 
 en_US Team
 en_GB Team
@@ -1797,6 +2153,10 @@ hu_HU Csapat
 tr_TR Takım
 ko_KR 팀
 zh_CN 队伍
+zh_TW 隊伍
+vn_VN Đội
+th_TH ทีม
+ja_JP チーム
 
 en_US Blue
 en_GB Blue
@@ -1817,6 +2177,10 @@ hu_HU Kék
 tr_TR Mavi
 ko_KR 파랑
 zh_CN 蓝方
+zh_TW 藍隊
+vn_VN Xanh
+th_TH น้ำเงิน
+ja_JP 青
 
 en_US Purple
 en_GB Purple
@@ -1837,6 +2201,10 @@ hu_HU Lila
 tr_TR Mor
 ko_KR 보라
 zh_CN 紫方
+zh_TW 紫隊
+vn_VN Tím
+th_TH ม่วง
+ja_JP 紫
 
 en_US Neutral
 en_GB Neutral
@@ -1857,6 +2225,10 @@ hu_HU Semleges
 tr_TR Tarafsız
 ko_KR 중립
 zh_CN 中立
+zh_TW 中立
+vn_VN Trung lập
+th_TH เป็นกลาง
+ja_JP 中立
 
 en_US Lock
 en_GB Lock
@@ -1877,6 +2249,10 @@ hu_HU Zárolás
 tr_TR Kilitle
 ko_KR 잠금
 zh_CN 锁定
+zh_TW 鎖定
+vn_VN Khóa
+th_TH ล็อก
+ja_JP ロック
 
 en_US Unlocked
 en_GB Unlocked
@@ -1897,6 +2273,10 @@ hu_HU Feloldva
 tr_TR Kilitli değil
 ko_KR 잠금 해제됨
 zh_CN 已解锁
+zh_TW 已解鎖
+vn_VN Đã mở khóa
+th_TH ปลดล็อกแล้ว
+ja_JP ロック解除済み
 
 en_US Locked
 en_GB Locked
@@ -1917,6 +2297,10 @@ hu_HU Zárolva
 tr_TR Kilitli
 ko_KR 잠김
 zh_CN 已锁定
+zh_TW 已鎖定
+vn_VN Đã khóa
+th_TH ล็อกแล้ว
+ja_JP ロック済み
 
 en_US Player Count
 en_GB Player Count
@@ -1937,6 +2321,10 @@ hu_HU Játékosok száma
 tr_TR Oyuncu Sayısı
 ko_KR 플레이어 수
 zh_CN 玩家数量
+zh_TW 玩家人數
+vn_VN Số lượng người chơi
+th_TH จำนวนผู้เล่น
+ja_JP プレイヤー数
 
 en_US Tick Rate
 en_GB Tick Rate
@@ -1957,6 +2345,10 @@ hu_HU Tick sebesség
 tr_TR Tick Oranı
 ko_KR 틱 레이트
 zh_CN 更新频率
+zh_TW 更新頻率
+vn_VN Tần suất cập nhật
+th_TH อัตราการอัปเดต
+ja_JP ティックレート
 
 en_US Password
 en_GB Password
@@ -1977,6 +2369,10 @@ hu_HU Jelszó
 tr_TR Şifre
 ko_KR 비밀번호
 zh_CN 密码
+zh_TW 密碼
+vn_VN Mật khẩu
+th_TH รหัสผ่าน
+ja_JP パスワード
 
 en_US undefined
 en_GB undefined
@@ -1997,6 +2393,10 @@ hu_HU meghatározatlan
 tr_TR tanımsız
 ko_KR 정의되지 않음
 zh_CN 未定义
+zh_TW 未定義
+vn_VN Chưa xác định
+th_TH ไม่ได้กำหนด
+ja_JP 未定義
 
 en_US Name
 en_GB Name
@@ -2017,6 +2417,10 @@ hu_HU Név
 tr_TR İsim
 ko_KR 이름
 zh_CN 名称
+zh_TW 名稱
+vn_VN Tên
+th_TH ชื่อ
+ja_JP 名前
 
 en_US Rank
 en_GB Rank
@@ -2037,6 +2441,10 @@ hu_HU Rang
 tr_TR Rütbe
 ko_KR 등급
 zh_CN 段位
+zh_TW 階級
+vn_VN Xếp hạng
+th_TH อันดับ
+ja_JP ランク
 
 en_US BRONZE
 en_GB BRONZE
@@ -2057,6 +2465,10 @@ hu_HU BRONZ
 tr_TR BRONZ
 ko_KR 브론즈
 zh_CN 青铜
+zh_TW 青銅
+vn_VN ĐỒNG
+th_TH ทองแดง
+ja_JP ブロンズ
 
 en_US GOLD
 en_GB GOLD
@@ -2077,6 +2489,10 @@ hu_HU ARANY
 tr_TR ALTIN
 ko_KR 골드
 zh_CN 黄金
+zh_TW 黃金
+vn_VN VÀNG
+th_TH ทอง
+ja_JP ゴールド
 
 en_US PLATINUM
 en_GB PLATINUM
@@ -2097,6 +2513,10 @@ hu_HU PLATINA
 tr_TR PLATİN
 ko_KR 플래티넘
 zh_CN 铂金
+zh_TW 白金
+vn_VN BẠCH KIM
+th_TH แพลทินัม
+ja_JP プラチナ
 
 en_US SILVER
 en_GB SILVER
@@ -2117,6 +2537,10 @@ hu_HU EZÜST
 tr_TR GÜMÜŞ
 ko_KR 실버
 zh_CN 白银
+zh_TW 白銀
+vn_VN BẠC
+th_TH เงิน
+ja_JP シルバー
 
 en_US UNRANKED
 en_GB UNRANKED
@@ -2137,6 +2561,10 @@ hu_HU NEM RANGSOROLT
 tr_TR SIRASIZ
 ko_KR 언랭크
 zh_CN 无段位
+zh_TW 未排名
+vn_VN CHƯA XẾP HẠNG
+th_TH ยังไม่จัดอันดับ
+ja_JP 未ランク
 
 en_US Features Enabled
 en_GB Features Enabled
@@ -2157,6 +2585,10 @@ hu_HU Engedélyezett funkciók
 tr_TR Özellikler Etkin
 ko_KR 기능 활성화
 zh_CN 已启用功能
+zh_TW 已啟用功能
+vn_VN Tính năng đã bật
+th_TH เปิดใช้งานฟีเจอร์แล้ว
+ja_JP 有効な機能
 
 en_US Enable Cheats
 en_GB Enable Cheats
@@ -2177,6 +2609,10 @@ hu_HU Csalások engedélyezése
 tr_TR Hileleri Etkinleştir
 ko_KR 치트 활성화
 zh_CN 启用作弊
+zh_TW 啟用作弊
+vn_VN Bật gian lận
+th_TH เปิดใช้งานสูตรโกง
+ja_JP チートを有効にする
 
 en_US Disable Manacosts
 en_GB Disable Manacosts
@@ -2197,6 +2633,10 @@ hu_HU Mana költség kikapcsolása
 tr_TR Mana maliyetlerini devre dışı bırak
 ko_KR 마나 비용 비활성화
 zh_CN 禁用法力消耗
+zh_TW 停用魔力消耗
+vn_VN Tắt tiêu hao năng lượng
+th_TH ปิดการใช้มานา
+ja_JP マナコストを無効にする
 
 en_US Disable Cooldowns
 en_GB Disable Cooldowns
@@ -2217,6 +2657,10 @@ hu_HU Lehűlési idők kikapcsolása
 tr_TR Bekleme sürelerini devre dışı bırak
 ko_KR 재사용 대기시간 비활성화
 zh_CN 禁用冷却时间
+zh_TW 停用冷卻時間
+vn_VN Tắt thời gian hồi chiêu
+th_TH ปิดเวลาคูลดาวน์
+ja_JP クールダウンを無効にする
 
 en_US Disable Minions
 en_GB Disable Minions
@@ -2237,6 +2681,10 @@ hu_HU Minionok kikapcsolása
 tr_TR Minyonları devre dışı bırak
 ko_KR 미니언 비활성화
 zh_CN 禁用小兵
+zh_TW 停用小兵
+vn_VN Tắt lính
+th_TH ปิดมินเนี่ยน
+ja_JP ミニオンを無効にする
 
 en_US Enable Half-Ping Mode
 en_GB Enable Half-Ping Mode
@@ -2257,6 +2705,10 @@ hu_HU Half-Ping mód engedélyezése
 tr_TR Yarı-Ping Modunu Etkinleştir
 ko_KR 하프 핑 모드 활성화
 zh_CN 启用半平模式
+zh_TW 啟用半 Ping 模式
+vn_VN Bật chế độ Half-Ping
+th_TH เปิดใช้งานโหมด Half-Ping
+ja_JP ハーフピングモードを有効にする
 
 en_US Using built-in list of torrent-trackers
 en_GB Using built-in list of torrent-trackers
@@ -2277,6 +2729,10 @@ hu_HU Beépített torrent-tracker lista használata
 tr_TR Yerleşik torrent izleyici listesi kullanılıyor
 ko_KR 내장된 토렌트 트래커 목록 사용 중
 zh_CN 使用内置的种子追踪器列表
+zh_TW 使用內建 Torrent Tracker 清單
+vn_VN Sử dụng danh sách máy theo dõi torrent tích hợp sẵn
+th_TH ใช้รายการทอร์เรนต์แทร็กเกอร์ในตัว
+ja_JP 内蔵のトラッカーリストを使用
 
 en_US Downloading
 en_GB Downloading
@@ -2297,6 +2753,10 @@ hu_HU Letöltés
 tr_TR İndiriliyor
 ko_KR 다운로드 중
 zh_CN 正在下载
+zh_TW 正在下載
+vn_VN Đang tải xuống
+th_TH กำลังดาวน์โหลด
+ja_JP ダウンロード中
 
 en_US Downloading torrent-tracker list failed:
 en_GB Downloading torrent-tracker list failed:
@@ -2317,6 +2777,10 @@ hu_HU Torrent-tracker lista letöltése sikertelen:
 tr_TR Torrent izleyici listesi indirme başarısız:
 ko_KR 토렌트 트래커 목록 다운로드 실패:
 zh_CN 下载种子追踪器列表失败
+zh_TW 下載 Torrent Tracker 清單失敗：
+vn_VN Tải xuống danh sách máy theo dõi torrent thất bại:
+th_TH การดาวน์โหลดรายการทอร์เรนต์แทร็กเกอร์ล้มเหลว:
+ja_JP トラッカーリストのダウンロードに失敗しました：
 
 en_US Unpacking
 en_GB Unpacking
@@ -2337,6 +2801,10 @@ hu_HU Kicsomagolás
 tr_TR Açılıyor
 ko_KR 압축 해제 중
 zh_CN 正在解压
+zh_TW 正在解壓縮
+vn_VN Đang giải nén
+th_TH กำลังแตกไฟล์
+ja_JP 展開中
 
 en_US Packing
 en_GB Packing
@@ -2357,6 +2825,10 @@ hu_HU Csomagolás
 tr_TR Paketleniyor
 ko_KR 압축 중
 zh_CN 正在打包
+zh_TW 正在壓縮
+vn_VN Đang nén
+th_TH กำลังบีบอัด
+ja_JP 圧縮中
 
 en_US Restoring torrent trackers list failed:
 en_GB Restoring torrent trackers list failed:
@@ -2377,6 +2849,10 @@ hu_HU Torrent-tracker lista visszaállítása sikertelen:
 tr_TR Torrent izleyici listesi geri yükleme başarısız:
 ko_KR 토렌트 트래커 목록 복원 실패:
 zh_CN 恢复种子追踪器列表失败
+zh_TW 還原 Torrent Tracker 清單失敗：
+vn_VN Khôi phục danh sách máy theo dõi torrent thất bại:
+th_TH การกู้คืนรายการทอร์เรนต์แทร็กเกอร์ล้มเหลว:
+ja_JP トラッカーリストの復元に失敗しました：
 
 en_US Restoring torrent files failed:
 en_GB Restoring torrent files failed:
@@ -2397,6 +2873,10 @@ hu_HU Torrent fájlok visszaállítása sikertelen:
 tr_TR Torrent dosyaları geri yükleme başarısız:
 ko_KR 토렌트 파일 복원 실패:
 zh_CN 恢复种子文件失败
+zh_TW 還原 Torrent 檔案失敗：
+vn_VN Khôi phục tệp torrent thất bại:
+th_TH การกู้คืนไฟล์ทอร์เรนต์ล้มเหลว:
+ja_JP torrentファイルの復元に失敗しました：
 
 en_US Restoring 7z archiver executable failed:
 en_GB Restoring 7z archiver executable failed:
@@ -2417,6 +2897,10 @@ hu_HU 7z archíváló végrehajtható fájl visszaállítása sikertelen:
 tr_TR 7z arşivleyici yürütülebilir dosyası geri yükleme başarısız:
 ko_KR 7z 압축 프로그램 실행 파일 복원 실패:
 zh_CN 恢复 7z 压缩软件可执行文件失败
+zh_TW 還原 7z 壓縮程式執行檔失敗：
+vn_VN Khôi phục tệp thực thi trình lưu trữ 7z thất bại:
+th_TH การกู้คืนไฟล์ปฏิบัติการของโปรแกรมบีบอัด 7z ล้มเหลว:
+ja_JP 7zアーカイバ実行ファイルの復元に失敗しました：
 
 en_US Restoring Aria2 downloader executable failed:
 en_GB Restoring Aria2 downloader executable failed:
@@ -2437,6 +2921,10 @@ hu_HU Aria2 letöltő végrehajtható fájl visszaállítása sikertelen:
 tr_TR Aria2 indirici yürütülebilir dosyası geri yükleme başarısız:
 ko_KR Aria2 다운로더 실행 파일 복원 실패:
 zh_CN 恢复 Aria2 下载器可执行文件失败
+zh_TW 還原 Aria2 下載器執行檔失敗：
+vn_VN Khôi phục tệp thực thi trình tải xuống Aria2 thất bại:
+th_TH การกู้คืนไฟล์ปฏิบัติการของตัวดาวน์โหลด Aria2 ล้มเหลว:
+ja_JP Aria2ダウンローダ実行ファイルの復元に失敗しました：
 
 en_US Copying
 en_GB Copying
@@ -2457,6 +2945,10 @@ hu_HU Másolás
 tr_TR Kopyalanıyor
 ko_KR 복사 중
 zh_CN 正在复制
+zh_TW 正在複製
+vn_VN Đang sao chép
+th_TH กำลังคัดลอก
+ja_JP コピー中
 
 en_US Moving
 en_GB Moving
@@ -2477,6 +2969,10 @@ hu_HU Áthelyezés
 tr_TR Taşınıyor
 ko_KR 이동 중
 zh_CN 正在移动
+zh_TW 正在移動
+vn_VN Đang di chuyển
+th_TH กำลังย้าย
+ja_JP 移動中
 
 en_US Failed to seed {pkg_zipName}:
 en_GB Failed to seed {pkg_zipName}:
@@ -2497,6 +2993,10 @@ hu_HU {pkg_zipName} seedelése sikertelen:
 tr_TR {pkg_zipName} seedleme başarısız:
 ko_KR {pkg_zipName} 시딩 실패:
 zh_CN 无法为 {pkg_zipName} 提供种子
+zh_TW 無法為 {pkg_zipName} 做種：
+vn_VN Không thể chia sẻ {pkg_zipName}:
+th_TH ไม่สามารถแชร์ {pkg_zipName} ได้:
+ja_JP {pkg_zipName} のシードに失敗しました：
 
 en_US Moving required file failed
 en_GB Moving required file failed
@@ -2517,6 +3017,10 @@ hu_HU Szükséges fájl áthelyezése sikertelen
 tr_TR Gerekli dosya taşıma başarısız
 ko_KR 필수 파일 이동 실패
 zh_CN 移动必需文件失败
+zh_TW 移動必要檔案失敗
+vn_VN Di chuyển tệp bắt buộc thất bại
+th_TH การย้ายไฟล์ที่จำเป็นล้มเหลว
+ja_JP 必須ファイルの移動に失敗しました
 
 en_US Moving optional file failed
 en_GB Moving optional file failed
@@ -2537,6 +3041,10 @@ hu_HU Opcionális fájl áthelyezése sikertelen
 tr_TR İsteğe bağlı dosya taşıma başarısız
 ko_KR 선택적 파일 이동 실패
 zh_CN 移动可选文件失败
+zh_TW 移動選用檔案失敗
+vn_VN Di chuyển tệp tùy chọn thất bại
+th_TH การย้ายไฟล์ทางเลือกที่ไม่จำเป็นล้มเหลว
+ja_JP オプションファイルの移動に失敗しました
 
 en_US Found temporary unpacker file:
 en_GB Found temporary unpacker file:
@@ -2557,6 +3065,10 @@ hu_HU Ideiglenes kicsomagoló fájl található:
 tr_TR Geçici açıcı dosyası bulundu:
 ko_KR 임시 압축 해제 파일 발견:
 zh_CN 发现临时解压文件
+zh_TW 找到臨時解壓縮檔案：
+vn_VN Tìm thấy tệp giải nén tạm thời:
+th_TH พบไฟล์แตกไฟล์ชั่วคราว:
+ja_JP 一時展開ファイルが見つかりました：
 
 en_US Found temporary downloader file:
 en_GB Found temporary downloader file:
@@ -2577,6 +3089,10 @@ hu_HU Ideiglenes letöltő fájl található:
 tr_TR Geçici indirici dosyası bulundu:
 ko_KR 임시 다운로더 파일 발견:
 zh_CN 发现临时下载器文件
+zh_TW 找到臨時下載器檔案：
+vn_VN Tìm thấy tệp tải xuống tạm thời:
+th_TH พบไฟล์ดาวน์โหลดชั่วคราว:
+ja_JP 一時ダウンローダファイルが見つかりました：
 
 en_US Unpacking failed
 en_GB Unpacking failed
@@ -2597,6 +3113,10 @@ hu_HU Kicsomagolás sikertelen
 tr_TR Açma başarısız
 ko_KR 압축 해제 실패
 zh_CN 解压失败
+zh_TW 解壓縮失敗
+vn_VN Giải nén thất bại
+th_TH การแตกไฟล์ล้มเหลว
+ja_JP 展開に失敗しました
 
 en_US Launcher
 en_GB Launcher
@@ -2617,6 +3137,10 @@ hu_HU Indítóprogram
 tr_TR Başlatıcı
 ko_KR 런처
 zh_CN 启动器
+zh_TW 啟動器
+vn_VN Trình khởi chạy
+th_TH ตัวเรียกใช้งาน
+ja_JP ランチャー
 
 en_US Game Client
 en_GB Game Client
@@ -2637,6 +3161,10 @@ hu_HU Játék kliens
 tr_TR Oyun İstemcisi
 ko_KR 게임 클라이언트
 zh_CN 游戏客户端
+zh_TW 遊戲用戶端
+vn_VN Máy khách trò chơi
+th_TH ไคลเอนต์เกม
+ja_JP ゲームクライアント
 
 en_US Game Server
 en_GB Game Server
@@ -2657,6 +3185,10 @@ hu_HU Játék szerver
 tr_TR Oyun Sunucusu
 ko_KR 게임 서버
 zh_CN 游戏服务器
+zh_TW 遊戲伺服器
+vn_VN Máy chủ trò chơi
+th_TH เซิร์ฟเวอร์เกม
+ja_JP ゲームサーバー
 
 en_US .NET SDK
 en_GB .NET SDK
@@ -2677,6 +3209,10 @@ hu_HU .NET SDK
 tr_TR .NET SDK
 ko_KR .NET SDK
 zh_CN .NET SDK
+zh_TW .NET SDK
+vn_VN .NET SDK
+th_TH .NET SDK
+ja_JP .NET SDK
 
 en_US Git
 en_GB Git
@@ -2697,6 +3233,10 @@ hu_HU Git
 tr_TR Git
 ko_KR Git
 zh_CN Git
+zh_TW Git
+vn_VN Git
+th_TH Git
+ja_JP Git
 
 en_US Additional Maps Modpack
 en_GB Additional Maps Modpack
@@ -2717,6 +3257,10 @@ hu_HU További térképek modcsomag
 tr_TR Ek Haritalar Mod Paketi
 ko_KR 추가 맵 모드팩
 zh_CN 额外地图模组包
+zh_TW 額外地圖模組包
+vn_VN Gói mod bản đồ bổ sung
+th_TH แพ็กม็อดแผนที่เพิ่มเติม
+ja_JP 追加マップモッドパック
 
 en_US Updating
 en_GB Updating
@@ -2737,6 +3281,10 @@ hu_HU Frissítés
 tr_TR Güncelleniyor
 ko_KR 업데이트 중
 zh_CN 正在更新
+zh_TW 正在更新
+vn_VN Đang cập nhật
+th_TH กำลังอัปเดต
+ja_JP 更新中
 
 en_US Switching the branch to {newBranchName}...
 en_GB Switching the branch to {newBranchName}...
@@ -2757,6 +3305,10 @@ hu_HU Ágváltás erre: {newBranchName}...
 tr_TR Dal {newBranchName} olarak değiştiriliyor...
 ko_KR 브랜치를 {newBranchName}(으)로 전환 중...
 zh_CN 切换分支至 {newBranchName}...
+zh_TW 正在切換分支至 {newBranchName}...
+vn_VN Đang chuyển nhánh sang {newBranchName}...
+th_TH กำลังสลับสาขาเป็น {newBranchName}...
+ja_JP ブランチを {newBranchName} に切り替え中...
 
 en_US The update failed, see the log for details.
 en_GB The update failed, see the log for details.
@@ -2777,6 +3329,10 @@ hu_HU A frissítés sikertelen, részletekért lásd a naplót.
 tr_TR Güncelleme başarısız, ayrıntılar için günlüğe bakın.
 ko_KR 업데이트 실패, 자세한 내용은 로그를 참조하세요.
 zh_CN 更新失败，请查看日志了解详情
+zh_TW 更新失敗，請檢視記錄檔以了解詳細資訊。
+vn_VN Cập nhật thất bại, xem nhật ký để biết chi tiết.
+th_TH การอัปเดตล้มเหลว โปรดดูบันทึกสำหรับรายละเอียด
+ja_JP 更新に失敗しました。詳細はログをご覧ください。
 
 en_US Time synchronization successful. Offset: {offset}. Precision: {precision}
 en_GB Time synchronization successful. Offset: {offset}. Precision: {precision}
@@ -2797,6 +3353,10 @@ hu_HU Időszinkronizáció sikeres. Eltolás: {offset}. Pontosság: {precision}
 tr_TR Zaman senkronizasyonu başarılı. Ofset: {offset}. Hassasiyet: {precision}
 ko_KR 시간 동기화 성공. 오프셋: {offset}. 정확도: {precision}
 zh_CN 时间同步成功偏移量：{offset}精度：{precision}
+zh_TW 時間同步成功。偏移量：{offset}。精確度：{precision}
+vn_VN Đồng bộ thời gian thành công. Độ lệch: {offset}. Độ chính xác: {precision}
+th_TH ซิงโครไนซ์เวลาสำเร็จ ค่าชดเชย: {offset} ความแม่นยำ: {precision}
+ja_JP 時刻同期に成功しました。オフセット：{offset}。精度：{precision}
 
 en_US Alistar
 en_GB Alistar
@@ -2817,6 +3377,10 @@ hu_HU Alistar
 tr_TR Alistar
 ko_KR 알리스타
 zh_CN 阿利斯塔
+zh_TW 亞歷斯塔
+vn_VN Alistar
+th_TH อาลิสตาร์
+ja_JP アリスター
 
 en_US Annie
 en_GB Annie
@@ -2837,6 +3401,10 @@ hu_HU Annie
 tr_TR Annie
 ko_KR 애니
 zh_CN 安妮
+zh_TW 安妮
+vn_VN Annie
+th_TH แอนนี่
+ja_JP アニー
 
 en_US Ashe
 en_GB Ashe
@@ -2857,6 +3425,10 @@ hu_HU Ashe
 tr_TR Ashe
 ko_KR 애쉬
 zh_CN 艾希
+zh_TW 艾希
+vn_VN Ashe
+th_TH แอช
+ja_JP アッシュ
 
 en_US Champion
 en_GB Champion
@@ -2877,6 +3449,10 @@ hu_HU Bajnok
 tr_TR Şampiyon
 ko_KR 챔피언
 zh_CN 英雄
+zh_TW 英雄
+vn_VN Tướng
+th_TH แชมเปี้ยน
+ja_JP チャンピオン
 
 en_US AI Champions
 en_GB AI Champions
@@ -2897,6 +3473,10 @@ hu_HU AI Bajnokok
 tr_TR Yapay Zeka Şampiyonları
 ko_KR AI 챔피언
 zh_CN AI英雄
+zh_TW AI 英雄
+vn_VN Tướng AI
+th_TH แชมเปี้ยน AI
+ja_JP AIチャンピオン
 
 en_US AI Difficulty
 en_GB AI Difficulty
@@ -2917,6 +3497,10 @@ hu_HU AI Nehézség
 tr_TR Yapay Zeka Zorluğu
 ko_KR AI 난이도
 zh_CN AI难度
+zh_TW AI 難度
+vn_VN Độ khó AI
+th_TH ระดับความยาก AI
+ja_JP AI難易度
 
 en_US Newbie
 en_GB Newbie
@@ -2937,6 +3521,10 @@ hu_HU Újonc
 tr_TR Acemi
 ko_KR 초보자
 zh_CN 新手
+zh_TW 新手
+vn_VN Mới chơi
+th_TH มือใหม่
+ja_JP 初心者
 
 en_US Intermediate
 en_GB Intermediate
@@ -2957,6 +3545,10 @@ hu_HU Közepes
 tr_TR Orta Seviye
 ko_KR 중급
 zh_CN 中级
+zh_TW 中級
+vn_VN Trung bình
+th_TH ปานกลาง
+ja_JP 中級
 
 en_US Advanced
 en_GB Advanced
@@ -2977,6 +3569,10 @@ hu_HU Haladó
 tr_TR İleri Seviye
 ko_KR 고급
 zh_CN 高级
+zh_TW 進階
+vn_VN Nâng cao
+th_TH ขั้นสูง
+ja_JP 上級
 
 en_US Skin
 en_GB Skin
@@ -2997,6 +3593,10 @@ hu_HU Kinézet
 tr_TR Kostüm
 ko_KR 스킨
 zh_CN 皮肤
+zh_TW 造型
+vn_VN Trang phục
+th_TH สกิน
+ja_JP スキン
 
 en_US Classic
 en_GB Classic
@@ -3017,6 +3617,10 @@ hu_HU Klasszikus
 tr_TR Klasik
 ko_KR 클래식
 zh_CN 经典
+zh_TW 經典
+vn_VN Cổ điển
+th_TH คลาสสิก
+ja_JP クラシック
 
 en_US ARAM
 en_GB ARAM
@@ -3037,6 +3641,10 @@ hu_HU ARAM
 tr_TR ARAM
 ko_KR ARAM
 zh_CN ARAM
+zh_TW ARAM
+vn_VN ARAM
+th_TH ARAM
+ja_JP ARAM
 
 en_US ODIN
 en_GB ODIN
@@ -3057,6 +3665,10 @@ hu_HU ODIN
 tr_TR ODIN
 ko_KR ODIN
 zh_CN ODIN
+zh_TW ODIN
+vn_VN ODIN
+th_TH ODIN
+ja_JP ODIN
 
 en_US Tutorial
 en_GB Tutorial
@@ -3077,6 +3689,10 @@ hu_HU Oktatóanyag
 tr_TR Eğitim
 ko_KR 튜토리얼
 zh_CN 教程
+zh_TW 教學
+vn_VN Hướng dẫn
+th_TH บทช่วยสอน
+ja_JP チュートリアル
 
 en_US Game Mode
 en_GB Game Mode
@@ -3097,6 +3713,10 @@ hu_HU Játék mód
 tr_TR Oyun Modu
 ko_KR 게임 모드
 zh_CN 游戏模式
+zh_TW 遊戲模式
+vn_VN Chế độ chơi
+th_TH โหมดเกม
+ja_JP ゲームモード
 
 en_US {wrapped_name}s Enabled
 en_GB {wrapped_name}s Enabled
@@ -3117,6 +3737,10 @@ hu_HU {wrapped_name} Engedélyezve
 tr_TR {wrapped_name} Etkin
 ko_KR {wrapped_name} 활성화됨
 zh_CN 已启用 {wrapped_name}
+zh_TW 已啟用 {wrapped_name}
+vn_VN Đã bật {wrapped_name}
+th_TH เปิดใช้งาน {wrapped_name} แล้ว
+ja_JP {wrapped_name} が有効
 
 en_US Check {this_name}
 en_GB Check {this_name}
@@ -3137,6 +3761,10 @@ hu_HU Jelöld ki: {this_name}
 tr_TR {this_name} işaretleyin
 ko_KR {this_name} 선택
 zh_CN 勾选 {this_name}
+zh_TW 勾選 {this_name}
+vn_VN Chọn {this_name}
+th_TH ตรวจสอบ {this_name}
+ja_JP {this_name} をチェック
 
 en_US {this_value_length} of {this_choices_length} checked
 en_GB {this_value_length} of {this_choices_length} checked
@@ -3157,6 +3785,10 @@ hu_HU {this_value_length} / {this_choices_length} kiválasztva
 tr_TR {this_choices_length} tan {this_value_length} seçili
 ko_KR {this_choices_length}개 중 {this_value_length}개 선택됨
 zh_CN 已勾选 {this_value_length} 个（共 {this_choices_length} 个）
+zh_TW 已勾選 {this_value_length} / {this_choices_length} 項
+vn_VN Đã chọn {this_value_length} trên {this_choices_length}
+th_TH เลือกแล้ว {this_value_length} จาก {this_choices_length} รายการ
+ja_JP {this_value_length}/{this_choices_length} 個選択済み
 
 en_US Select {this_name}
 en_GB Select {this_name}
@@ -3177,6 +3809,10 @@ hu_HU Válassz ki: {this_name}
 tr_TR {this_name} seçin
 ko_KR {this_name} 선택
 zh_CN 选择 {this_name}
+zh_TW 選擇 {this_name}
+vn_VN Chọn {this_name}
+th_TH เลือก {this_name}
+ja_JP {this_name} を選択
 
 en_US Test
 en_GB Test
@@ -3197,6 +3833,10 @@ hu_HU Teszt
 tr_TR Test
 ko_KR 테스트
 zh_CN 测试
+zh_TW 測試
+vn_VN Thử nghiệm
+th_TH ทดสอบ
+ja_JP テスト
 
 en_US Old Summoner's Rift
 en_GB Old Summoner's Rift
@@ -3217,6 +3857,10 @@ hu_HU Régi Idézők Hasadéka
 tr_TR Eski Sihirdar Vadisi
 ko_KR 구 소환사의 협곡
 zh_CN 旧版召唤师峡谷
+zh_TW 舊版召喚峽谷
+vn_VN Rift Triệu Hồi cũ
+th_TH ช่องเขาผู้เรียกเก่า
+ja_JP 旧サモナーズリフト
 
 en_US Old Summoner's Rift Autumn
 en_GB Old Summoner's Rift Autumn
@@ -3237,6 +3881,10 @@ hu_HU Régi Idézők Hasadéka - Ősz
 tr_TR Eski Sihirdar Vadisi - Sonbahar
 ko_KR 구 소환사의 협곡 가을
 zh_CN 旧版召唤师峡谷·秋季
+zh_TW 舊版召喚峽谷秋季版
+vn_VN Rift Triệu Hồi cũ Mùa thu
+th_TH ช่องเขาผู้เรียกเก่า ฤดูใบไม้ร่วง
+ja_JP 旧サモナーズリフト 秋
 
 en_US Proving Grounds
 en_GB Proving Grounds
@@ -3257,6 +3905,10 @@ hu_HU Próbaterület
 tr_TR Deneme Sahası
 ko_KR 시험장
 zh_CN 试炼场
+zh_TW 試煉之地
+vn_VN Đấu trường thử thách
+th_TH สนามพิสูจน์ฝีมือ
+ja_JP プルービンググラウンド
 
 en_US Unknown (5)
 en_GB Unknown (5)
@@ -3277,6 +3929,10 @@ hu_HU Ismeretlen (5)
 tr_TR Bilinmiyor (5)
 ko_KR 알 수 없음 (5)
 zh_CN 未知 (5)
+zh_TW 不明 (5)
+vn_VN Không xác định (5)
+th_TH ไม่รู้จัก (5)
+ja_JP 不明 (5)
 
 en_US Summoner's Rift Winter (2011)
 en_GB Summoner's Rift Winter (2011)
@@ -3297,6 +3953,10 @@ hu_HU Idézők Hasadéka - Tél (2011)
 tr_TR Sihirdar Vadisi - Kış (2011)
 ko_KR 소환사의 협곡 겨울 (2011)
 zh_CN 召唤师峡谷 冬季（2011）
+zh_TW 召喚峽谷冬季版 (2011)
+vn_VN Rift Triệu Hồi Mùa đông (2011)
+th_TH ช่องเขาผู้เรียก ฤดูหนาว (2011)
+ja_JP サモナーズリフト 冬 (2011)
 
 en_US Summoner's Rift Winter (2009)
 en_GB Summoner's Rift Winter (2009)
@@ -3317,6 +3977,10 @@ hu_HU Idézők Hasadéka - Tél (2009)
 tr_TR Sihirdar Vadisi - Kış (2009)
 ko_KR 소환사의 협곡 겨울 (2009)
 zh_CN 召唤师峡谷 冬季（2009）
+zh_TW 召喚峽谷冬季版 (2009)
+vn_VN Rift Triệu Hồi Mùa đông (2009)
+th_TH ช่องเขาผู้เรียก ฤดูหนาว (2009)
+ja_JP サモナーズリフト 冬 (2009)
 
 en_US Crystal Scar
 en_GB Crystal Scar
@@ -3337,6 +4001,10 @@ hu_HU Kristály Heg
 tr_TR Kristal Yarası
 ko_KR 크리스탈 스카
 zh_CN 水晶裂谷
+zh_TW 水晶之痕
+vn_VN Vết sẹo pha lê
+th_TH รอยแผลเป็นคริสตัล
+ja_JP クリスタルスカー
 
 en_US Dominion Test
 en_GB Dominion Test
@@ -3357,6 +4025,10 @@ hu_HU Dominion Teszt
 tr_TR Hakimiyet Testi
 ko_KR 도미니언 테스트
 zh_CN 统治测试
+zh_TW 統治測試
+vn_VN Thử nghiệm Thống trị
+th_TH ทดสอบโดมิเนียน
+ja_JP ドミニオンテスト
 
 en_US New Twisted Treeline
 en_GB New Twisted Treeline
@@ -3377,6 +4049,10 @@ hu_HU Új Csavart Faösvény
 tr_TR Yeni Dönük Ağaç Yolu
 ko_KR 새로운 뒤틀린 숲
 zh_CN 新扭曲丛林
+zh_TW 新版扭曲叢林
+vn_VN Khu rừng xoắn ốc mới
+th_TH ป่าบิดเบี้ยวใหม่
+ja_JP 新ツイステッドツリーライン
 
 en_US New Summoner's Rift
 en_GB New Summoner's Rift
@@ -3397,6 +4073,10 @@ hu_HU Új Idézők Hasadéka
 tr_TR Yeni Sihirdar Vadisi
 ko_KR 새로운 소환사의 협곡
 zh_CN 新召唤师峡谷
+zh_TW 新版召喚峽谷
+vn_VN Rift Triệu Hồi mới
+th_TH ช่องเขาผู้เรียกใหม่
+ja_JP 新サモナーズリフト
 
 en_US Howling Abyss
 en_GB Howling Abyss
@@ -3417,6 +4097,10 @@ hu_HU Üvöltő Mélység
 tr_TR Uluyan Çukur
 ko_KR 울부짖는 심연
 zh_CN 嚎叫深渊
+zh_TW 咆嘯深淵
+vn_VN Vực thẳm gầm thét
+th_TH หุบเหวกรีดร้อง
+ja_JP ハウリングアビス
 
 en_US Magma Chamber
 en_GB Magma Chamber
@@ -3437,6 +4121,10 @@ hu_HU Magma Kamra
 tr_TR Magma Odası
 ko_KR 마그마 챔버
 zh_CN 岩浆之室
+zh_TW 熔岩洞窟
+vn_VN Hang dung nham
+th_TH ห้องแมกมา
+ja_JP マグマチェンバー
 
 en_US Butcher's Bridge
 en_GB Butcher's Bridge
@@ -3457,6 +4145,10 @@ hu_HU Mészáros Hídja
 tr_TR Kasap Köprüsü
 ko_KR 학살자의 다리
 zh_CN 屠夫之桥
+zh_TW 屠夫之橋
+vn_VN Cầu Đồ tể
+th_TH สะพานคนชำแหละเนื้อ
+ja_JP ブッチャーズブリッジ
 
 en_US Unknown (15)
 en_GB Unknown (15)
@@ -3477,6 +4169,10 @@ hu_HU Ismeretlen (15)
 tr_TR Bilinmiyor (15)
 ko_KR 알 수 없음 (15)
 zh_CN 未知（15）
+zh_TW 不明 (15)
+vn_VN Không xác định (15)
+th_TH ไม่รู้จัก (15)
+ja_JP 不明 (15)
 
 en_US Cosmic Ruins
 en_GB Cosmic Ruins
@@ -3497,6 +4193,10 @@ hu_HU Kozmikus Romok
 tr_TR Kozmik Harabeler
 ko_KR 우주 폐허
 zh_CN 宇宙废墟
+zh_TW 宇宙廢墟
+vn_VN Tàn tích vũ trụ
+th_TH ซากปรักหักพังคอสมิก
+ja_JP コズミック・ルインズ
 
 en_US Unknown (17)
 en_GB Unknown (17)
@@ -3517,6 +4217,10 @@ hu_HU Ismeretlen (17)
 tr_TR Bilinmiyor (17)
 ko_KR 알 수 없음 (17)
 zh_CN 未知 (17)
+zh_TW 不明 (17)
+vn_VN Không xác định (17)
+th_TH ไม่รู้จัก (17)
+ja_JP 不明 (17)
 
 en_US Valoran City Park
 en_GB Valoran City Park
@@ -3537,6 +4241,10 @@ hu_HU Valoran Városi Park
 tr_TR Valoran Şehir Parkı
 ko_KR 발로란 시티 공원
 zh_CN 瓦洛兰城市公园
+zh_TW 瓦羅蘭城市公園
+vn_VN Công viên thành phố Valoran
+th_TH สวนสาธารณะเมืองวาลอรัน
+ja_JP ヴァロランシティパーク
 
 en_US Substructure 43
 en_GB Substructure 43
@@ -3557,6 +4265,10 @@ hu_HU Alstruktúra 43
 tr_TR Alt Yapı 43
 ko_KR 하부 구조 43
 zh_CN 43号地下结构
+zh_TW 43 號地下結構
+vn_VN Cấu trúc ngầm 43
+th_TH โครงสร้างใต้ดิน 43
+ja_JP サブストラクチャー43
 
 en_US Crash Site
 en_GB Crash Site
@@ -3577,6 +4289,10 @@ hu_HU Szerencsétlenség Helye
 tr_TR Kaza Yeri
 ko_KR 추락 지점
 zh_CN 坠机现场
+zh_TW 墜機現場
+vn_VN Địa điểm rơi
+th_TH จุดเกิดเหตุเครื่องบินตก
+ja_JP クラッシュサイト
 
 en_US Temple of Lily and Lotus
 en_GB Temple of Lily and Lotus
@@ -3597,6 +4313,10 @@ hu_HU Liliom és Lótusz Temploma
 tr_TR Zambak ve Nilüfer Tapınağı
 ko_KR 백합과 연꽃의 신전
 zh_CN 百合与莲花神殿
+zh_TW 百合與蓮花神殿
+vn_VN Đền thờ Hoa huệ và Hoa sen
+th_TH วิหารดอกบัวและลิลลี่
+ja_JP リリーとロータスの寺院
 
 en_US Magma Chamber (recreated in Minecraft)
 en_GB Magma Chamber (recreated in Minecraft)
@@ -3617,6 +4337,10 @@ hu_HU Magma Kamra (újraalkotva a Minecraftban)
 tr_TR Magma Odası (Minecraft'ta yeniden yaratıldı)
 ko_KR 마그마 챔버 (마인크래프트에서 재현)
 zh_CN 岩浆之室（在《我的世界》中重制）
+zh_TW 熔岩洞窟 (於 Minecraft 中重製)
+vn_VN Hang dung nham (tái tạo trong Minecraft)
+th_TH ห้องแมกมา (สร้างขึ้นใหม่ใน Minecraft)
+ja_JP マグマチェンバー (Minecraftで再現)
 
 en_US Arena: Rings of Wrath
 en_GB Arena: Rings of Wrath
@@ -3637,6 +4361,10 @@ hu_HU Aréna: Harag Gyűrűi
 tr_TR Arena: Öfke Halkaları
 ko_KR 아레나: 분노의 고리
 zh_CN 竞技场：愤怒之环
+zh_TW 競技場：憤怒之環
+vn_VN Đấu trường: Vòng đai phẫn nộ
+th_TH อารีน่า: วงแหวนแห่งความโกรธแค้น
+ja_JP アリーナ：怒りの輪
 
 en_US New Proving Grounds
 en_GB New Proving Grounds
@@ -3657,6 +4385,10 @@ hu_HU Új Próbaterület
 tr_TR Yeni Deneme Sahası
 ko_KR 새로운 시험장
 zh_CN 新试炼场
+zh_TW 新版試煉之地
+vn_VN Đấu trường thử thách mới
+th_TH สนามพิสูจน์ฝีมือใหม่
+ja_JP 新プルービンググラウンド
 
 en_US The Bandlewood
 en_GB The Bandlewood
@@ -3677,6 +4409,10 @@ hu_HU A Bandle Erdő
 tr_TR Bandle Ormanı
 ko_KR 밴들우드
 zh_CN 班德尔森林
+zh_TW 班德爾森林
+vn_VN Rừng Bandle
+th_TH ป่าแบนเดิลวูด
+ja_JP バンドルウッド
 
 en_US Enter {this_name}
 en_GB Enter {this_name}
@@ -3697,6 +4433,10 @@ hu_HU Írd be: {this_name}
 tr_TR {this_name} girin
 ko_KR {this_name} 입력
 zh_CN 输入 {this_name}
+zh_TW 輸入 {this_name}
+vn_VN Nhập {this_name}
+th_TH กรอก {this_name}
+ja_JP {this_name} を入力
 
 en_US Heal
 en_GB Heal
@@ -3717,6 +4457,10 @@ hu_HU Gyógyítás
 tr_TR İyileşme
 ko_KR 회복
 zh_CN 治疗
+zh_TW 治療
+vn_VN Hồi máu
+th_TH รักษา
+ja_JP ヒール
 
 en_US Ghost
 en_GB Ghost
@@ -3737,6 +4481,10 @@ hu_HU Szellem
 tr_TR Hayalet
 ko_KR 유령
 zh_CN 幽灵
+zh_TW 鬼步
+vn_VN Tốc biến ma
+th_TH ผี
+ja_JP ゴースト
 
 en_US Barrier
 en_GB Barrier
@@ -3757,6 +4505,10 @@ hu_HU Pajzs
 tr_TR Bariyer
 ko_KR 보호막
 zh_CN 屏障
+zh_TW 護盾
+vn_VN Lá chắn
+th_TH เกราะป้องกัน
+ja_JP バリア
 
 en_US Exhaust
 en_GB Exhaust
@@ -3777,6 +4529,10 @@ hu_HU Kimerülés
 tr_TR Bitkinlik
 ko_KR 탈진
 zh_CN 虚弱
+zh_TW 虛弱
+vn_VN Kiệt sức
+th_TH ทำให้อ่อนแรง
+ja_JP イグゾースト
 
 en_US Mark
 en_GB Mark
@@ -3797,6 +4553,10 @@ hu_HU Jelölés
 tr_TR İşaret
 ko_KR 표식
 zh_CN 标记
+zh_TW 標記
+vn_VN Đánh dấu
+th_TH ทำเครื่องหมาย
+ja_JP マーク
 
 en_US Dash
 en_GB Dash
@@ -3817,6 +4577,10 @@ hu_HU Roham
 tr_TR Hamle
 ko_KR 돌진
 zh_CN 冲刺
+zh_TW 衝刺
+vn_VN Tăng tốc
+th_TH พุ่งไปข้างหน้า
+ja_JP ダッシュ
 
 en_US Clarity
 en_GB Clarity
@@ -3837,6 +4601,10 @@ hu_HU Tisztulás
 tr_TR Berraklık
 ko_KR 명료함
 zh_CN 明晰
+zh_TW 清晰
+vn_VN Minh mẫn
+th_TH ความชัดเจน
+ja_JP クラリティ
 
 en_US Flash
 en_GB Flash
@@ -3857,6 +4625,10 @@ hu_HU Villanás
 tr_TR Işınlanma
 ko_KR 점멸
 zh_CN 闪现
+zh_TW 閃現
+vn_VN Tốc biến
+th_TH วาร์ป
+ja_JP フラッシュ
 
 en_US Teleport
 en_GB Teleport
@@ -3877,6 +4649,10 @@ hu_HU Teleportálás
 tr_TR Işınlanma
 ko_KR 순간이동
 zh_CN 传送
+zh_TW 傳送
+vn_VN Dịch chuyển
+th_TH เทเลพอร์ต
+ja_JP テレポート
 
 en_US Smite
 en_GB Smite
@@ -3897,6 +4673,10 @@ hu_HU Sújtás
 tr_TR Cezalandırma
 ko_KR 강타
 zh_CN 惩戒
+zh_TW 重擊
+vn_VN Trừng phạt
+th_TH ลงโทษ
+ja_JP スマイト
 
 en_US Cleanse
 en_GB Cleanse
@@ -3917,6 +4697,10 @@ hu_HU Tisztulás
 tr_TR Arınma
 ko_KR 정화
 zh_CN 净化
+zh_TW 淨化
+vn_VN Thanh tẩy
+th_TH ล้างมลทิน
+ja_JP クレンズ
 
 en_US Ignite
 en_GB Ignite
@@ -3937,6 +4721,10 @@ hu_HU Lángolás
 tr_TR Tutuşturma
 ko_KR 점화
 zh_CN 点燃
+zh_TW 點燃
+vn_VN Thiêu đốt
+th_TH จุดไฟ
+ja_JP イグナイト
 
 en_US BattleCry
 en_GB BattleCry
@@ -3957,6 +4745,10 @@ hu_HU Csatakiáltás
 tr_TR Savaş Çığlığı
 ko_KR 전투 함성
 zh_CN 战吼
+zh_TW 戰吼
+vn_VN Tiếng hét chiến trận
+th_TH เสียงร้องศึก
+ja_JP バトルクライ
 
 en_US Boost
 en_GB Boost
@@ -3977,6 +4769,10 @@ hu_HU Fokozás
 tr_TR Güçlendirme
 ko_KR 부스트
 zh_CN 加速
+zh_TW 強化
+vn_VN Tăng cường
+th_TH เพิ่มพลัง
+ja_JP ブースト
 
 en_US Clairvoyance
 en_GB Clairvoyance
@@ -3997,6 +4793,10 @@ hu_HU Látnokság
 tr_TR Görü
 ko_KR 천리안
 zh_CN 预知
+zh_TW 洞察
+vn_VN Tiên tri
+th_TH ตาทิพย์
+ja_JP クレアボヤンス
 
 en_US Dot
 en_GB Dot
@@ -4017,6 +4817,10 @@ hu_HU Sebzés idővel
 tr_TR Sürekli Hasar
 ko_KR 지속 피해
 zh_CN 持续伤害
+zh_TW 持續傷害
+vn_VN Sát thương theo thời gian
+th_TH ความเสียหายต่อเนื่อง
+ja_JP DoT
 
 en_US Fortify
 en_GB Fortify
@@ -4037,6 +4841,10 @@ hu_HU Megerősítés
 tr_TR Tahkimat
 ko_KR 요새화
 zh_CN 强化
+zh_TW 固守
+vn_VN Củng cố
+th_TH เสริมความแข็งแกร่ง
+ja_JP フォーティファイ
 
 en_US Haste
 en_GB Haste
@@ -4057,6 +4865,10 @@ hu_HU Sietség
 tr_TR Acele
 ko_KR 신속
 zh_CN 急速
+zh_TW 疾速
+vn_VN Nhanh nhẹn
+th_TH ความรวดเร็ว
+ja_JP ヘイスト
 
 en_US Mana
 en_GB Mana
@@ -4077,6 +4889,10 @@ hu_HU Mana
 tr_TR Mana
 ko_KR 마나
 zh_CN 法力
+zh_TW 魔力
+vn_VN Năng lượng
+th_TH มานา
+ja_JP マナ
 
 en_US Rally
 en_GB Rally
@@ -4097,6 +4913,10 @@ hu_HU Összegyűjtés
 tr_TR Toplanma
 ko_KR 집결
 zh_CN 集结
+zh_TW 集結
+vn_VN Tập hợp
+th_TH รวมพล
+ja_JP ラリー
 
 en_US Revive
 en_GB Revive
@@ -4117,6 +4937,10 @@ hu_HU Újjáélesztés
 tr_TR Diriltme
 ko_KR 부활
 zh_CN 复活
+zh_TW 重生
+vn_VN Hồi sinh
+th_TH ฟื้นคืนชีพ
+ja_JP リバイブ
 
 en_US Promote
 en_GB Promote
@@ -4137,6 +4961,10 @@ hu_HU Előléptetés
 tr_TR Yükseltme
 ko_KR 승격
 zh_CN 晋升
+zh_TW 晉升
+vn_VN Thăng cấp
+th_TH เลื่อนยศ
+ja_JP プロモート
 
 en_US OdinPromote
 en_GB OdinPromote
@@ -4157,6 +4985,10 @@ hu_HU Odin Előléptetés
 tr_TR Odin Yükseltme
 ko_KR 오딘 승격
 zh_CN OdinPromote.
+zh_TW OdinPromote
+vn_VN OdinPromote
+th_TH OdinPromote
+ja_JP OdinPromote
 
 en_US OdinSabotage
 en_GB OdinSabotage
@@ -4177,6 +5009,10 @@ hu_HU Odin Szabotázs
 tr_TR Odin Sabotaj
 ko_KR 오딘 방해
 zh_CN OdinSabotage.
+zh_TW OdinSabotage
+vn_VN OdinSabotage
+th_TH OdinSabotage
+ja_JP OdinSabotage
 
 en_US OdinGarrison
 en_GB OdinGarrison
@@ -4197,6 +5033,10 @@ hu_HU Odin Helyőrség
 tr_TR Odin Garnizon
 ko_KR 오딘 주둔지
 zh_CN OdinGarrison.
+zh_TW OdinGarrison
+vn_VN OdinGarrison
+th_TH OdinGarrison
+ja_JP OdinGarrison
 
 en_US PromoteSR
 en_GB PromoteSR
@@ -4217,6 +5057,10 @@ hu_HU SR Előléptetés
 tr_TR SR Yükseltme
 ko_KR SR 승격
 zh_CN PromoteSR.
+zh_TW PromoteSR
+vn_VN PromoteSR
+th_TH PromoteSR
+ja_JP PromoteSR
 
 en_US Observer
 en_GB Observer
@@ -4237,6 +5081,10 @@ hu_HU Megfigyelő
 tr_TR Gözlemci
 ko_KR 관전자
 zh_CN Observer.
+zh_TW 觀察者
+vn_VN Quan sát viên
+th_TH ผู้สังเกตการณ์
+ja_JP オブザーバー
 
 en_US ReviveSpeedBoost
 en_GB ReviveSpeedBoost
@@ -4257,6 +5105,10 @@ hu_HU Újjáélesztés és Gyorsítás
 tr_TR Diriltme Hız Artışı
 ko_KR 부활 속도 증가
 zh_CN ReviveSpeedBoost.
+zh_TW ReviveSpeedBoost
+vn_VN ReviveSpeedBoost
+th_TH ReviveSpeedBoost
+ja_JP ReviveSpeedBoost
 
 en_US Summoner Spell
 en_GB Summoner Spell
@@ -4277,6 +5129,10 @@ hu_HU Idéző Varázs
 tr_TR Sihirdar Büyüsü
 ko_KR 소환사 주문
 zh_CN Summoner Spell.
+zh_TW 召喚師技能
+vn_VN Phép bổ trợ
+th_TH เวทมนตร์ผู้เรียก
+ja_JP サモナースペル
 
 en_US FISHBONES
 en_GB FISHBONES
@@ -4297,6 +5153,10 @@ hu_HU FISHBONES
 tr_TR FISHBONES
 ko_KR 피쉬본즈
 zh_CN FISHBONES.
+zh_TW FISHBONES
+vn_VN FISHBONES
+th_TH FISHBONES
+ja_JP FISHBONES
 
 en_US Loading...
 en_GB Loading...
@@ -4317,6 +5177,10 @@ hu_HU Betöltés...
 tr_TR Yükleniyor...
 ko_KR 로딩 중...
 zh_CN 加载中...
+zh_TW 載入中...
+vn_VN Đang tải...
+th_TH กำลังโหลด...
+ja_JP 読み込み中...
 
 en_US Check and download launcher updates
 en_GB Check and download launcher updates
@@ -4337,6 +5201,10 @@ hu_HU Indítóprogram-frissítések ellenőrzése és letöltése
 tr_TR Başlatıcı güncellemelerini kontrol et ve indir
 ko_KR 런처 업데이트 확인 및 다운로드
 zh_CN 检查并下载启动器更新
+zh_TW 檢查並下載啟動器更新
+vn_VN Kiểm tra và tải bản cập nhật trình khởi chạy
+th_TH ตรวจสอบและดาวน์โหลดอัปเดตตัวเรียกใช้งาน
+ja_JP ランチャーのアップデートを確認してダウンロード
 
 en_US Install the additional levels package
 en_GB Install the additional levels package
@@ -4357,6 +5225,10 @@ hu_HU További pályák csomagjának telepítése
 tr_TR Ek seviye paketini yükle
 ko_KR 추가 레벨 패키지 설치
 zh_CN 安装额外关卡包
+zh_TW 安裝額外關卡套件
+vn_VN Cài đặt gói màn chơi bổ sung
+th_TH ติดตั้งแพ็กเกจด่านเพิ่มเติม
+ja_JP 追加レベルパッケージをインストール
 
 en_US Download files from
 en_GB Download files from
@@ -4377,6 +5249,10 @@ hu_HU Fájlok letöltése innen
 tr_TR Dosyaları şuradan indir
 ko_KR 파일 다운로드 위치
 zh_CN 从以下来源下载文件：
+zh_TW 從下列來源下載檔案：
+vn_VN Tải tệp từ
+th_TH ดาวน์โหลดไฟล์จาก
+ja_JP ファイルをダウンロード元：
 
 en_US torrent + mega.nz
 en_GB torrent + mega.nz
@@ -4397,6 +5273,10 @@ hu_HU torrent + mega.nz
 tr_TR torrent + mega.nz
 ko_KR 토렌트 + mega.nz
 zh_CN torrent + mega.nz
+zh_TW Torrent + mega.nz
+vn_VN torrent + mega.nz
+th_TH ทอร์เรนต์ + mega.nz
+ja_JP torrent + mega.nz
 
 en_US torrent
 en_GB torrent
@@ -4417,6 +5297,10 @@ hu_HU torrent
 tr_TR torrent
 ko_KR 토렌트
 zh_CN torrent
+zh_TW Torrent
+vn_VN torrent
+th_TH ทอร์เรนต์
+ja_JP torrent
 
 en_US mega.nz
 en_GB mega.nz
@@ -4437,6 +5321,10 @@ hu_HU mega.nz
 tr_TR mega.nz
 ko_KR mega.nz
 zh_CN mega.nz
+zh_TW mega.nz
+vn_VN mega.nz
+th_TH mega.nz
+ja_JP mega.nz
 
 en_US Download game server updates from
 en_GB Download game server updates from
@@ -4457,6 +5345,10 @@ hu_HU Játékszerver-frissítések letöltése innen
 tr_TR Oyun sunucusu güncellemelerini şuradan indir
 ko_KR 게임 서버 업데이트 다운로드 위치
 zh_CN 从以下来源下载游戏服务器更新：
+zh_TW 從下列來源下載遊戲伺服器更新：
+vn_VN Tải bản cập nhật máy chủ trò chơi từ
+th_TH ดาวน์โหลดอัปเดตเซิร์ฟเวอร์เกมจาก
+ja_JP ゲームサーバーのアップデートをダウンロード元：
 
 en_US repo
 en_GB repo
@@ -4477,6 +5369,10 @@ hu_HU tároló
 tr_TR depo
 ko_KR 저장소
 zh_CN 存储库
+zh_TW 存放庫
+vn_VN kho lưu trữ
+th_TH พื้นที่เก็บข้อมูล
+ja_JP リポジトリ
 
 en_US PLAY
 en_GB PLAY
@@ -4497,6 +5393,10 @@ hu_HU JÁTÉK
 tr_TR OYNA
 ko_KR 플레이
 zh_CN 播放
+zh_TW 開始遊戲
+vn_VN CHƠI
+th_TH เล่น
+ja_JP プレイ
 
 en_US TEST
 en_GB TEST
@@ -4517,6 +5417,10 @@ hu_HU TESZT
 tr_TR TEST ET
 ko_KR 테스트
 zh_CN 测试
+zh_TW 測試
+vn_VN THỬ NGHIỆM
+th_TH ทดสอบ
+ja_JP テスト
 
 en_US Please wait for the text to appear
 en_GB Please wait for the text to appear
@@ -4537,6 +5441,10 @@ hu_HU Kérjük, várjon a szöveg megjelenésére
 tr_TR Lütfen metnin görünmesini bekleyin
 ko_KR 텍스트가 나타날 때까지 기다려 주세요
 zh_CN 请等待文字显示
+zh_TW 請等待文字顯示
+vn_VN Vui lòng đợi văn bản xuất hiện
+th_TH กรุณารอให้ข้อความปรากฏ
+ja_JP テキストが表示されるまでお待ちください
 
 en_US WARNING
 en_GB WARNING
@@ -4557,6 +5465,10 @@ hu_HU FIGYELMEZTETÉS
 tr_TR UYARI
 ko_KR 경고
 zh_CN 警告
+zh_TW 警告
+vn_VN CẢNH BÁO
+th_TH คำเตือน
+ja_JP 警告
 
 en_US Cancel
 en_GB Cancel
@@ -4577,6 +5489,10 @@ hu_HU Mégse
 tr_TR İptal
 ko_KR 취소
 zh_CN 取消
+zh_TW 取消
+vn_VN Hủy
+th_TH ยกเลิก
+ja_JP キャンセル
 
 en_US Copy
 en_GB Copy
@@ -4597,6 +5513,10 @@ hu_HU Másolás
 tr_TR Kopyala
 ko_KR 복사
 zh_CN 复制
+zh_TW 複製
+vn_VN Sao chép
+th_TH คัดลอก
+ja_JP コピー
 
 en_US Paste
 en_GB Paste
@@ -4617,6 +5537,10 @@ hu_HU Beillesztés
 tr_TR Yapıştır
 ko_KR 붙여넣기
 zh_CN 粘贴
+zh_TW 貼上
+vn_VN Dán
+th_TH วาง
+ja_JP 貼り付け
 
 en_US Connect
 en_GB Connect
@@ -4637,6 +5561,10 @@ hu_HU Csatlakozás
 tr_TR Bağlan
 ko_KR 연결
 zh_CN 连接
+zh_TW 連線
+vn_VN Kết nối
+th_TH เชื่อมต่อ
+ja_JP 接続
 
 en_US Manacosts
 en_GB Manacosts
@@ -4657,6 +5585,10 @@ hu_HU Mana költségek
 tr_TR Mana Maliyetleri
 ko_KR 마나 비용
 zh_CN 法力消耗
+zh_TW 魔力消耗
+vn_VN Tiêu hao năng lượng
+th_TH ค่าใช้จ่ายมานา
+ja_JP マナコスト
 
 en_US Cooldowns
 en_GB Cooldowns
@@ -4677,6 +5609,10 @@ hu_HU Lehűlési idők
 tr_TR Bekleme Süreleri
 ko_KR 재사용 대기시간
 zh_CN 冷却时间
+zh_TW 冷卻時間
+vn_VN Thời gian hồi chiêu
+th_TH เวลาคูลดาวน์
+ja_JP クールダウン
 
 en_US Minions
 en_GB Minions
@@ -4697,6 +5633,10 @@ hu_HU Minionok
 tr_TR Minyonlar
 ko_KR 미니언
 zh_CN 小兵
+zh_TW 小兵
+vn_VN Lính
+th_TH มินเนี่ยน
+ja_JP ミニオン
 
 en_US Cheats
 en_GB Cheats
@@ -4717,6 +5657,10 @@ hu_HU Csalások
 tr_TR Hileler
 ko_KR 치트
 zh_CN 作弊码
+zh_TW 作弊
+vn_VN Gian lận
+th_TH สูตรโกง
+ja_JP チート
 
 en_US Game Name
 en_GB Game Name
@@ -4737,6 +5681,10 @@ hu_HU Játék Neve
 tr_TR Oyun Adı
 ko_KR 게임 이름
 zh_CN 游戏名称
+zh_TW 遊戲名稱
+vn_VN Tên trò chơi
+th_TH ชื่อเกม
+ja_JP ゲーム名
 
 en_US Owner
 en_GB Owner
@@ -4757,6 +5705,10 @@ hu_HU Tulajdonos
 tr_TR Sahip
 ko_KR 소유자
 zh_CN 所有者
+zh_TW 擁有者
+vn_VN Chủ sở hữu
+th_TH เจ้าของ
+ja_JP オーナー
 
 en_US Ping
 en_GB Ping
@@ -4777,6 +5729,10 @@ hu_HU Ping
 tr_TR Ping
 ko_KR 핑
 zh_CN 延迟
+zh_TW 延遲
+vn_VN Độ trễ
+th_TH ปิง
+ja_JP ピング
 
 en_US Slots
 en_GB Slots
@@ -4797,6 +5753,10 @@ hu_HU Helyek
 tr_TR Yuvalar
 ko_KR 슬롯
 zh_CN 席位
+zh_TW 位置
+vn_VN Chỗ trống
+th_TH ช่องว่าง
+ja_JP スロット
 
 en_US Mode
 en_GB Mode
@@ -4817,6 +5777,10 @@ hu_HU Mód
 tr_TR Mod
 ko_KR 모드
 zh_CN 模式
+zh_TW 模式
+vn_VN Chế độ
+th_TH โหมด
+ja_JP モード
 
 en_US Map
 en_GB Map
@@ -4837,6 +5801,10 @@ hu_HU Térkép
 tr_TR Harita
 ko_KR 맵
 zh_CN 地图
+zh_TW 地圖
+vn_VN Bản đồ
+th_TH แผนที่
+ja_JP マップ
 
 en_US CLASSIC
 en_GB CLASSIC
@@ -4857,6 +5825,10 @@ hu_HU KLASZSZIKUS
 tr_TR KLASİK
 ko_KR 클래식
 zh_CN 经典
+zh_TW 經典
+vn_VN CỔ ĐIỂN
+th_TH คลาสสิก
+ja_JP クラシック
 
 en_US The commit (version) of the remote server does not match the commit (version) of your local server
 en_GB The commit (version) of the remote server does not match the commit (version) of your local server
@@ -4877,6 +5849,10 @@ hu_HU A távoli szerver commitja (verziója) nem egyezik meg a helyi szerver com
 tr_TR Uzak sunucunun commit'i (sürümü) yerel sunucunuzun commit'i (sürümü) ile eşleşmiyor
 ko_KR 원격 서버의 커밋(버전)이 로컬 서버의 커밋(버전)과 일치하지 않습니다
 zh_CN 远程服务器的提交（版本）与您的本地服务器的提交（版本）不匹配
+zh_TW 遠端伺服器的提交 (版本) 與本機伺服器的提交 (版本) 不相符
+vn_VN Phiên bản commit của máy chủ từ xa không khớp với phiên bản commit của máy chủ cục bộ
+th_TH คอมมิท (เวอร์ชัน) ของเซิร์ฟเวอร์ระยะไกลไม่ตรงกับคอมมิท (เวอร์ชัน) ของเซิร์ฟเวอร์ท้องถิ่นของคุณ
+ja_JP リモートサーバーのコミット(バージョン)がローカルサーバーのコミット(バージョン)と一致しません
 
 en_US Waiting for the servers to appear on the local network...
 en_GB Waiting for the servers to appear on the local network...
@@ -4897,6 +5873,10 @@ hu_HU Várakozás a szerverek megjelenésére a helyi hálózaton...
 tr_TR Sunucuların yerel ağda görünmesi bekleniyor...
 ko_KR 로컬 네트워크에 서버가 나타날 때까지 기다리는 중...
 zh_CN 正在等待本地网络中出现服务器……
+zh_TW 正在等待伺服器出現在區域網路上...
+vn_VN Đang chờ máy chủ xuất hiện trên mạng cục bộ...
+th_TH กำลังรอให้เซิร์ฟเวอร์ปรากฏบนเครือข่ายท้องถิ่น...
+ja_JP ローカルネットワーク上にサーバーが表示されるのを待機中...
 
 en_US Quit
 en_GB Quit
@@ -4917,6 +5897,10 @@ hu_HU Kilépés
 tr_TR Çık
 ko_KR 종료
 zh_CN 退出
+zh_TW 結束
+vn_VN Thoát
+th_TH ออก
+ja_JP 終了
 
 en_US Host Game
 en_GB Host Game
@@ -4937,6 +5921,10 @@ hu_HU Játék Indítása
 tr_TR Oyun Oluştur
 ko_KR 게임 호스팅
 zh_CN 主持游戏
+zh_TW 建立遊戲
+vn_VN Tạo trò chơi
+th_TH สร้างเกม
+ja_JP ゲームをホスト
 
 en_US Game Map
 en_GB Game Map
@@ -4957,6 +5945,10 @@ hu_HU Játék Térkép
 tr_TR Oyun Haritası
 ko_KR 게임 맵
 zh_CN 游戏地图
+zh_TW 遊戲地圖
+vn_VN Bản đồ trò chơi
+th_TH แผนที่เกม
+ja_JP ゲームマップ
 
 en_US Summoner's Rift
 en_GB Summoner's Rift
@@ -4977,6 +5969,10 @@ hu_HU Idézők Hasadéka
 tr_TR Sihirdar Vadisi
 ko_KR 소환사의 협곡
 zh_CN 召唤师峡谷
+zh_TW 召喚峽谷
+vn_VN Rift Triệu Hồi
+th_TH ช่องเขาผู้เรียก
+ja_JP サモナーズリフト
 
 en_US Game Mode
 en_GB Game Mode
@@ -4997,6 +5993,10 @@ hu_HU Játék mód
 tr_TR Oyun Modu
 ko_KR 게임 모드
 zh_CN 游戏模式
+zh_TW 遊戲模式
+vn_VN Chế độ chơi
+th_TH โหมดเกม
+ja_JP ゲームモード
 
 en_US Classic
 en_GB Classic
@@ -5017,6 +6017,10 @@ hu_HU Klasszikus
 tr_TR Klasik
 ko_KR 클래식
 zh_CN 经典
+zh_TW 經典
+vn_VN Cổ điển
+th_TH คลาสสิก
+ja_JP クラシック
 
 en_US Game Type
 en_GB Game Type
@@ -5037,6 +6041,10 @@ hu_HU Játék típusa
 tr_TR Oyun Türü
 ko_KR 게임 유형
 zh_CN 游戏类型
+zh_TW 遊戲類型
+vn_VN Loại trò chơi
+th_TH ประเภทเกม
+ja_JP ゲームタイプ
 
 en_US Blind Pick
 en_GB Blind Pick
@@ -5057,6 +6065,10 @@ hu_HU Vak választás
 tr_TR Kör Seçim
 ko_KR 무작위 선택
 zh_CN 盲选
+zh_TW 盲選
+vn_VN Chọn ẩn
+th_TH เลือกแบบสุ่มไม่เห็นฝ่ายตรงข้าม
+ja_JP ブラインドピック
 
 en_US Tick Rate
 en_GB Tick Rate
@@ -5077,6 +6089,10 @@ hu_HU Tick sebesség
 tr_TR Tick Oranı
 ko_KR 틱 레이트
 zh_CN 刷新率
+zh_TW 更新頻率
+vn_VN Tần suất cập nhật
+th_TH อัตราการอัปเดต
+ja_JP ティックレート
 
 en_US Team Size
 en_GB Team Size
@@ -5097,6 +6113,10 @@ hu_HU Csapat mérete
 tr_TR Takım Boyutu
 ko_KR 팀 크기
 zh_CN 队伍规模
+zh_TW 隊伍規模
+vn_VN Quy mô đội
+th_TH ขนาดทีม
+ja_JP チームサイズ
 
 en_US Password (Optional)
 en_GB Password (Optional)
@@ -5117,6 +6137,10 @@ hu_HU Jelszó (Opcionális)
 tr_TR Şifre (İsteğe Bağlı)
 ko_KR 비밀번호 (선택 사항)
 zh_CN 密码（可选）
+zh_TW 密碼 (選用)
+vn_VN Mật khẩu (Tùy chọn)
+th_TH รหัสผ่าน (ไม่บังคับ)
+ja_JP パスワード (任意)
 
 en_US password
 en_GB password
@@ -5137,6 +6161,10 @@ hu_HU jelszó
 tr_TR şifre
 ko_KR 비밀번호
 zh_CN 密码
+zh_TW 密碼
+vn_VN mật khẩu
+th_TH รหัสผ่าน
+ja_JP パスワード
 
 en_US Champions
 en_GB Champions
@@ -5157,6 +6185,10 @@ hu_HU Bajnokok
 tr_TR Şampiyonlar
 ko_KR 챔피언
 zh_CN 英雄
+zh_TW 英雄
+vn_VN Tướng
+th_TH แชมเปี้ยน
+ja_JP チャンピオン
 
 en_US Click to select
 en_GB Click to select
@@ -5177,6 +6209,10 @@ hu_HU Kattints a kiválasztáshoz
 tr_TR Seçmek için tıklayın
 ko_KR 클릭하여 선택
 zh_CN 点击选择
+zh_TW 點擊以選擇
+vn_VN Nhấn để chọn
+th_TH คลิกเพื่อเลือก
+ja_JP クリックして選択
 
 en_US Summoner Spells
 en_GB Summoner Spells
@@ -5197,6 +6233,10 @@ hu_HU Idéző Varázsok
 tr_TR Sihirdar Büyüleri
 ko_KR 소환사 주문
 zh_CN 召唤师技能
+zh_TW 召喚師技能
+vn_VN Phép bổ trợ
+th_TH เวทมนตร์ผู้เรียก
+ja_JP サモナースペル
 
 en_US Features
 en_GB Features
@@ -5217,6 +6257,10 @@ hu_HU Funkciók
 tr_TR Özellikler
 ko_KR 기능
 zh_CN 功能
+zh_TW 功能
+vn_VN Tính năng
+th_TH ฟีเจอร์
+ja_JP 機能
 
 en_US Summoner's Name
 en_GB Summoner's Name
@@ -5237,6 +6281,10 @@ hu_HU Idéző Neve
 tr_TR Sihirdar Adı
 ko_KR 소환사 이름
 zh_CN 召唤师名称
+zh_TW 召喚師名稱
+vn_VN Tên triệu hồi sư
+th_TH ชื่อผู้เรียก
+ja_JP サモナー名
 
 en_US Join
 en_GB Join
@@ -5257,6 +6305,10 @@ hu_HU Csatlakozás
 tr_TR Katıl
 ko_KR 참여
 zh_CN 加入
+zh_TW 加入
+vn_VN Tham gia
+th_TH เข้าร่วม
+ja_JP 参加
 
 en_US Add Bot
 en_GB Add Bot
@@ -5277,6 +6329,10 @@ hu_HU Bot Hozzáadása
 tr_TR Bot Ekle
 ko_KR 봇 추가
 zh_CN 添加机器人
+zh_TW 新增機器人
+vn_VN Thêm bot
+th_TH เพิ่มบอท
+ja_JP ボットを追加
 
 en_US Autofill
 en_GB Autofill
@@ -5297,6 +6353,10 @@ hu_HU Automatikus kitöltés
 tr_TR Otomatik Doldurma
 ko_KR 자동 채우기
 zh_CN 自动填充
+zh_TW 自動填入
+vn_VN Tự động điền
+th_TH เติมอัตโนมัติ
+ja_JP 自動入力
 
 en_US Start Game
 en_GB Start Game
@@ -5317,6 +6377,10 @@ hu_HU Játék Indítása
 tr_TR Oyunu Başlat
 ko_KR 게임 시작
 zh_CN 开始游戏
+zh_TW 開始遊戲
+vn_VN Bắt đầu trò chơi
+th_TH เริ่มเกม
+ja_JP ゲーム開始
 
 en_US You cannot start the game until all players are fully connected (☑)
 en_GB You cannot start the game until all players are fully connected (☑)
@@ -5337,6 +6401,10 @@ hu_HU Nem indíthatod a játékot, amíg minden játékos teljesen csatlakozott 
 tr_TR Tüm oyuncular tamamen bağlanana kadar oyunu başlatamazsınız (☑)
 ko_KR 모든 플레이어가 완전히 연결될 때까지 게임을 시작할 수 없습니다 (☑)
 zh_CN 在所有玩家完全连接（☑）之前，您无法开始游戏
+zh_TW 在所有玩家完全連線 (☑) 之前，無法開始遊戲
+vn_VN Bạn không thể bắt đầu trò chơi cho đến khi tất cả người chơi đã kết nối đầy đủ (☑)
+th_TH คุณไม่สามารถเริ่มเกมได้จนกว่าผู้เล่นทุกคนจะเชื่อมต่อครบถ้วน (☑)
+ja_JP すべてのプレイヤーが完全に接続されるまでゲームを開始できません (☑)
 
 en_US You cannot start the game until all players are fully connected and marked by ✅
 en_GB You cannot start the game until all players are fully connected and marked by ✅
@@ -5357,6 +6425,10 @@ hu_HU Nem indíthatod a játékot, amíg minden játékos teljesen csatlakozott 
 tr_TR Tüm oyuncular tamamen bağlanıp ✅ ile işaretlenene kadar oyunu başlatamazsınız
 ko_KR 모든 플레이어가 완전히 연결되고 ✅로 표시될 때까지 게임을 시작할 수 없습니다
 zh_CN 在所有玩家完全连接并显示✅标记之前，您无法开始游戏
+zh_TW 在所有玩家完全連線並標示 ✅ 之前，無法開始遊戲
+vn_VN Bạn không thể bắt đầu trò chơi cho đến khi tất cả người chơi đã kết nối đầy đủ và được đánh dấu ✅
+th_TH คุณไม่สามารถเริ่มเกมได้จนกว่าผู้เล่นทุกคนจะเชื่อมต่อครบถ้วนและทำเครื่องหมาย ✅
+ja_JP すべてのプレイヤーが完全に接続され、✅でマークされるまでゲームを開始できません
 
 en_US Offline
 en_GB Offline
@@ -5377,6 +6449,10 @@ hu_HU Offline
 tr_TR Çevrimdışı
 ko_KR 오프라인
 zh_CN 离线
+zh_TW 離線
+vn_VN Ngoại tuyến
+th_TH ออฟไลน์
+ja_JP オフライン
 
 en_US Edit Masteries
 en_GB Edit Masteries
@@ -5397,6 +6473,10 @@ hu_HU Mesteriségek szerkesztése
 tr_TR Ustalık Düzenle
 ko_KR 숙련도 편집
 zh_CN 编辑天赋
+zh_TW 編輯天賦
+vn_VN Chỉnh sửa bảng bổ trợ
+th_TH แก้ไขความชำนาญ
+ja_JP マスタリーを編集
 
 en_US Connections
 en_GB Connections
@@ -5417,6 +6497,10 @@ hu_HU Kapcsolatok
 tr_TR Bağlantılar
 ko_KR 연결
 zh_CN 连接
+zh_TW 連線
+vn_VN Kết nối
+th_TH การเชื่อมต่อ
+ja_JP 接続
 
 en_US Invite / Connect
 en_GB Invite / Connect
@@ -5437,6 +6521,10 @@ hu_HU Meghívás / Csatlakozás
 tr_TR Davet Et / Bağlan
 ko_KR 초대 / 연결
 zh_CN 邀请/连接
+zh_TW 邀請 / 連線
+vn_VN Mời / Kết nối
+th_TH เชิญ / เชื่อมต่อ
+ja_JP 招待 / 接続
 
 en_US No connections
 en_GB No connections
@@ -5457,6 +6545,10 @@ hu_HU Nincsenek kapcsolatok
 tr_TR Bağlantı yok
 ko_KR 연결 없음
 zh_CN 无连接
+zh_TW 無連線
+vn_VN Không có kết nối nào
+th_TH ไม่มีการเชื่อมต่อ
+ja_JP 接続なし
 
 en_US Mastery Page 1
 en_GB Mastery Page 1
@@ -5477,6 +6569,10 @@ hu_HU Mesteriség Lap 1
 tr_TR Ustalık Sayfası 1
 ko_KR 숙련도 페이지 1
 zh_CN 天赋第1页
+zh_TW 天賦第 1 頁
+vn_VN Trang bổ trợ 1
+th_TH หน้าความชำนาญ 1
+ja_JP マスタリーページ 1
 
 en_US Lock In
 en_GB Lock In
@@ -5497,6 +6593,10 @@ hu_HU Rögzítés
 tr_TR Kilitle
 ko_KR 확정
 zh_CN 锁定
+zh_TW 鎖定
+vn_VN Khóa lựa chọn
+th_TH ล็อกอิน
+ja_JP ロックイン
 
 en_US Loading data...
 en_GB Loading data...
@@ -5517,6 +6617,10 @@ hu_HU Adatok betöltése...
 tr_TR Veriler yükleniyor...
 ko_KR 데이터 로딩 중...
 zh_CN 加载数据……
+zh_TW 正在載入資料...
+vn_VN Đang tải dữ liệu...
+th_TH กำลังโหลดข้อมูล...
+ja_JP データを読み込み中...
 
 en_US There are no merge requests for testing
 en_GB There are no merge requests for testing
@@ -5537,6 +6641,10 @@ hu_HU Nincsenek egyesítési kérelmek tesztelésre
 tr_TR Test edilecek birleştirme isteği yok
 ko_KR 테스트할 병합 요청이 없습니다
 zh_CN 没有待测试的合并请求
+zh_TW 沒有可供測試的合併請求
+vn_VN Không có yêu cầu hợp nhất nào để thử nghiệm
+th_TH ไม่มีคำขอรวมสำหรับการทดสอบ
+ja_JP テスト用のマージリクエストはありません
 
 en_US !36 · created 20 hours ago by Jinx
 en_GB !36 · created 20 hours ago by Jinx
@@ -5557,6 +6665,10 @@ hu_HU !36 · létrehozva 20 órával ezelőtt Jinx által
 tr_TR !36 · Jinx tarafından 20 saat önce oluşturuldu
 ko_KR !36 · Jinx가 20시간 전에 생성함
 zh_CN !36 · 20小时前由Jinx创建
+zh_TW !36 · 20 小時前由 Jinx 建立
+vn_VN !36 · được tạo 20 giờ trước bởi Jinx
+th_TH !36 · สร้างเมื่อ 20 ชั่วโมงที่แล้วโดย Jinx
+ja_JP !36 · 20時間前に Jinx によって作成
 
 en_US Don't change the branch
 en_GB Don't change the branch
@@ -5577,6 +6689,10 @@ hu_HU Ne változtasd meg az ágat
 tr_TR Dalı değiştirmeyin
 ko_KR 브랜치를 변경하지 마세요
 zh_CN 请勿更改分支
+zh_TW 請勿變更分支
+vn_VN Đừng thay đổi nhánh
+th_TH อย่าเปลี่ยนสาขา
+ja_JP ブランチを変更しないでください
 
 en_US Play
 en_GB Play
@@ -5597,6 +6713,10 @@ hu_HU Játék
 tr_TR Oyna
 ko_KR 플레이
 zh_CN 开始游戏
+zh_TW 開始遊戲
+vn_VN Chơi
+th_TH เล่น
+ja_JP プレイ
 
 en_US Delete
 en_GB Delete
@@ -5617,6 +6737,10 @@ hu_HU Törlés
 tr_TR Sil
 ko_KR 삭제
 zh_CN 删除
+zh_TW 刪除
+vn_VN Xóa
+th_TH ลบ
+ja_JP 削除
 
 en_US Revert
 en_GB Revert
@@ -5637,6 +6761,10 @@ hu_HU Visszaállítás
 tr_TR Geri Al
 ko_KR 되돌리기
 zh_CN 回滚
+zh_TW 還原
+vn_VN Hoàn nguyên
+th_TH ย้อนกลับ
+ja_JP 元に戻す
 
 en_US Save
 en_GB Save
@@ -5657,6 +6785,10 @@ hu_HU Mentés
 tr_TR Kaydet
 ko_KR 저장
 zh_CN 保存
+zh_TW 儲存
+vn_VN Lưu
+th_TH บันทึก
+ja_JP 保存
 
 en_US Offense
 en_GB Offense
@@ -5677,6 +6809,10 @@ hu_HU Támadás
 tr_TR Saldırı
 ko_KR 공격
 zh_CN 进攻
+zh_TW 攻擊
+vn_VN Tấn công
+th_TH โจมตี
+ja_JP 攻撃
 
 en_US Points Available:
 en_GB Points Available:
@@ -5697,6 +6833,10 @@ hu_HU Elérhető pontok:
 tr_TR Mevcut Puanlar:
 ko_KR 사용 가능한 포인트:
 zh_CN 可用点数
+zh_TW 可用點數：
+vn_VN Điểm khả dụng:
+th_TH คะแนนที่มี:
+ja_JP 利用可能ポイント：
 
 en_US Enter your message here
 en_GB Enter your message here
@@ -5717,6 +6857,10 @@ hu_HU Írd ide az üzenetedet
 tr_TR Mesajınızı buraya girin
 ko_KR 여기에 메시지를 입력하세요
 zh_CN 在此输入您的消息
+zh_TW 在此輸入訊息
+vn_VN Nhập tin nhắn của bạn tại đây
+th_TH กรอกข้อความของคุณที่นี่
+ja_JP ここにメッセージを入力
 
 en_US Discord
 en_GB Discord
@@ -5737,6 +6881,10 @@ hu_HU Discord
 tr_TR Discord
 ko_KR 디스코드
 zh_CN Discord
+zh_TW Discord
+vn_VN Discord
+th_TH Discord
+ja_JP Discord
 
 en_US New game found!
 en_GB New game found!
@@ -5757,6 +6905,10 @@ hu_HU Új játék található!
 tr_TR Yeni oyun bulundu!
 ko_KR 새 게임 발견됨!
 zh_CN 找到新游戏！
+zh_TW 發現新遊戲！
+vn_VN Tìm thấy trò chơi mới!
+th_TH พบเกมใหม่!
+ja_JP 新しいゲームが見つかりました！
 
 en_US Copy the text below and send it to players you trust so they can connect
 en_GB Copy the text below and send it to players you trust so they can connect
@@ -5777,6 +6929,10 @@ hu_HU Másolja ki az alábbi szöveget, és küldje el azoknak a játékosoknak,
 tr_TR Aşağıdaki metni kopyalayın ve bağlanabilmeleri için güvendiğiniz oyunculara gönderin
 ko_KR 아래 텍스트를 복사하여 신뢰하는 플레이어에게 보내 연결할 수 있도록 하세요
 zh_CN 复制下方文本并发送给您信任的玩家，以便他们连接
+zh_TW 複製下方文字並傳送給您信任的玩家，以便他們連線
+vn_VN Sao chép văn bản bên dưới và gửi cho những người chơi bạn tin tưởng để họ có thể kết nối
+th_TH คัดลอกข้อความด้านล่างและส่งให้ผู้เล่นที่คุณไว้วางใจเพื่อให้พวกเขาเชื่อมต่อได้
+ja_JP 下のテキストをコピーして、信頼できるプレイヤーに送信し、接続できるようにしてください
 
 en_US Paste the text you received from someone you trust and click connect
 en_GB Paste the text you received from someone you trust and click connect
@@ -5797,6 +6953,10 @@ hu_HU Illessze be a szöveget, amelyet egy megbízható személytől kapott, és
 tr_TR Güvendiğiniz birinden aldığınız metni yapıştırın ve bağlan'a tıklayın
 ko_KR 신뢰하는 사람에게서 받은 텍스트를 붙여넣고 연결을 클릭하세요
 zh_CN 粘贴您从可信联系人处收到的文本，然后点击“连接”
+zh_TW 貼上您從信任對象收到的文字，然後點擊「連線」
+vn_VN Dán văn bản bạn nhận được từ người bạn tin tưởng và nhấn kết nối
+th_TH วางข้อความที่คุณได้รับจากคนที่ไว้ใจแล้วคลิกเชื่อมต่อ
+ja_JP 信頼できる人から受け取ったテキストを貼り付けて、接続をクリックしてください
 
 en_US Continue
 en_GB Continue
@@ -5817,6 +6977,10 @@ hu_HU Folytatás
 tr_TR Devam
 ko_KR 계속
 zh_CN 继续
+zh_TW 繼續
+vn_VN Tiếp tục
+th_TH ดำเนินการต่อ
+ja_JP 続行
 
 en_US {i}v{i}
 en_GB {i}v{i}
@@ -5837,6 +7001,10 @@ hu_HU {i} a {i} ellen
 tr_TR {i}'ya karşı {i}
 ko_KR {i}대 {i}
 zh_CN {i}v{i}
+zh_TW {i}v{i}
+vn_VN {i}v{i}
+th_TH {i}v{i}
+ja_JP {i}v{i}
 
 en_US {v} fps
 en_GB {v} fps
@@ -5857,26 +7025,10 @@ hu_HU {v} fps
 tr_TR {v} fps
 ko_KR {v} fps
 zh_CN {v} fps
-
-en_US Force the use of English, ignoring the system settings
-en_GB Force the use of English, ignoring the system settings
-en_AU Force the use of English, ignoring the system settings
-es_ES Forzar el uso del inglés, ignorando la configuración del sistema
-es_AR Forzar el uso del inglés, ignorando la configuración del sistema
-es_MX Forzar el uso del inglés, ignorando la configuración del sistema
-pt_BR Force the use of English, ignoring the system settings
-fr_FR Forcer l'utilisation de l'anglais, en ignorant les paramètres du système
-it_IT Force the use of English, ignoring the system settings
-ro_RO Forțează utilizarea limbii engleze, ignorând setările sistemului
-cs_CZ Vynutit použití angličtiny, ignorovat nastavení systému
-pl_PL Wymuś użycie języka angielskiego, ignorując ustawienia systemowe
-ru_RU Force the use of English, ignoring the system settings
-de_DE Erzwingen Sie die Verwendung von Englisch, indem Sie die Systemeinstellungen ignorieren
-el_GR Επιβολή χρήσης αγγλικών, αγνοώντας τις ρυθμίσεις συστήματος
-hu_HU Angol nyelv kényszerítése, rendszerbeállítások figyelmen kívül hagyása
-tr_TR Sistem ayarlarını yok sayarak İngilizce kullanımını zorla
-ko_KR 시스템 설정을 무시하고 영어 사용 강제
-zh_CN Force the use of English, ignoring the system settings
+zh_TW {v} fps
+vn_VN {v} fps
+th_TH {v} fps
+ja_JP {v} fps
 
 en_US Draft Pick
 en_GB Draft Pick
@@ -5897,6 +7049,10 @@ hu_HU Draft Választás
 tr_TR Taslak Seçimi
 ko_KR 드래프트 픽
 zh_CN 选人模式
+zh_TW 徵召模式
+vn_VN Chọn theo lượt
+th_TH ดราฟท์พิก
+ja_JP ドラフトピック
 
 en_US All Random
 en_GB All Random
@@ -5917,6 +7073,10 @@ hu_HU Teljesen Véletlenszerű
 tr_TR Tamamen Rastgele
 ko_KR 모두 무작위
 zh_CN 全随机
+zh_TW 全部隨機
+vn_VN Ngẫu nhiên hoàn toàn
+th_TH สุ่มทั้งหมด
+ja_JP オールランダム
 
 en_US Enable Firewall Mode
 en_GB Enable Firewall Mode
@@ -5937,6 +7097,10 @@ hu_HU Tűzfal mód engedélyezése
 tr_TR Güvenlik Duvarı Modunu Etkinleştir
 ko_KR 방화벽 모드 활성화
 zh_CN 启用防火墙模式
+zh_TW 啟用防火牆模式
+vn_VN Bật chế độ tường lửa
+th_TH เปิดใช้งานโหมดไฟร์วอลล์
+ja_JP ファイアウォールモードを有効にする
 
 en_US Enable Bypass Mode
 en_GB Enable Bypass Mode
@@ -5957,6 +7121,10 @@ hu_HU Megkerülő mód engedélyezése
 tr_TR Atlama Modunu Etkinleştir
 ko_KR 바이패스 모드 활성화
 zh_CN 启用绕过模式
+zh_TW 啟用繞過模式
+vn_VN Bật chế độ bỏ qua
+th_TH เปิดใช้งานโหมดบายพาส
+ja_JP バイパスモードを有効にする
 
 en_US Perform a free disk space check
 en_GB Perform a free disk space check
@@ -5977,6 +7145,10 @@ hu_HU Szabad lemezterület ellenőrzése
 tr_TR Boş disk alanı kontrolü yap
 ko_KR 빈 디스크 공간 확인 수행
 zh_CN 检查可用磁盘空间
+zh_TW 執行可用磁碟空間檢查
+vn_VN Thực hiện kiểm tra dung lượng đĩa trống
+th_TH ดำเนินการตรวจสอบพื้นที่ดิสก์ว่าง
+ja_JP 空きディスク容量をチェック
 
 en_US (Internal) Specify the auto-suggested locale to use
 en_GB (Internal) Specify the auto-suggested locale to use
@@ -5997,6 +7169,10 @@ hu_HU (Belső) Az automatikusan javasolt területi beállítás megadása
 tr_TR (Dahili) Kullanılacak otomatik önerilen yerel ayarı belirt
 ko_KR (내부) 자동 제안된 로케일 지정
 zh_CN (内部) 指定要使用的自动建议区域设置
+zh_TW (內部) 指定要使用的自動建議地區設定
+vn_VN (Nội bộ) Chỉ định ngôn ngữ được đề xuất tự động để sử dụng
+th_TH (ภายใน) ระบุตำแหน่งที่ตั้งที่แนะนำอัตโนมัติเพื่อใช้งาน
+ja_JP (内部) 使用する自動提案ロケールを指定
 
 en_US (Internal) Specify the locale to use
 en_GB (Internal) Specify the locale to use
@@ -6017,6 +7193,10 @@ hu_HU (Belső) A használandó területi beállítás megadása
 tr_TR (Dahili) Kullanılacak yerel ayarı belirt
 ko_KR (내부) 사용할 로케일 지정
 zh_CN (内部) 指定要使用的区域设置
+zh_TW (內部) 指定要使用的地區設定
+vn_VN (Nội bộ) Chỉ định ngôn ngữ để sử dụng
+th_TH (ภายใน) ระบุตำแหน่งที่ตั้งเพื่อใช้งาน
+ja_JP (内部) 使用するロケールを指定
 
 en_US An unexpected exception occurred:
 en_GB An unexpected exception occurred:
@@ -6037,6 +7217,10 @@ hu_HU Váratlan kivétel történt:
 tr_TR Beklenmeyen bir istisna oluştu:
 ko_KR 예상치 못한 예외가 발생했습니다:
 zh_CN 发生意外异常
+zh_TW 發生意外例外狀況：
+vn_VN Đã xảy ra ngoại lệ không mong muốn:
+th_TH เกิดข้อยกเว้นที่ไม่คาดคิด:
+ja_JP 予期しない例外が発生しました：
 
 en_US Reading filesystem stats failed
 en_GB Reading filesystem stats failed
@@ -6057,6 +7241,10 @@ hu_HU Fájlrendszer statisztikák olvasása sikertelen
 tr_TR Dosya sistemi istatistikleri okuma başarısız
 ko_KR 파일 시스템 통계 읽기 실패
 zh_CN 读取文件系统统计信息失败
+zh_TW 讀取檔案系統統計資訊失敗
+vn_VN Đọc thống kê hệ thống tệp thất bại
+th_TH การอ่านสถิติระบบไฟล์ล้มเหลว
+ja_JP ファイルシステム統計の読み取りに失敗しました
 
 en_US {size} more disk space required on {path}
 en_GB {size} more disk space required on {path}
@@ -6077,6 +7265,10 @@ hu_HU {size} több lemezterület szükséges a {path} helyen
 tr_TR {path} konumunda {size} daha fazla disk alanı gerekli
 ko_KR {path}에 {size}의 디스크 공간이 추가로 필요합니다
 zh_CN {path} 路径下需要 {size} 更多磁盘空间
+zh_TW {path} 路徑下還需要 {size} 磁碟空間
+vn_VN Cần thêm {size} dung lượng đĩa trên {path}
+th_TH ต้องการพื้นที่ดิสก์เพิ่มอีก {size} บน {path}
+ja_JP {path} に {size} の追加ディスク容量が必要です
 
 en_US Restoring launcher package failed:
 en_GB Restoring launcher package failed:
@@ -6097,6 +7289,10 @@ hu_HU Indítóprogram csomag visszaállítása sikertelen:
 tr_TR Başlatıcı paketi geri yükleme başarısız:
 ko_KR 런처 패키지 복원 실패:
 zh_CN 恢复启动器包失败
+zh_TW 還原啟動器套件失敗：
+vn_VN Khôi phục gói trình khởi chạy thất bại:
+th_TH การกู้คืนแพ็กเกจตัวเรียกใช้งานล้มเหลว:
+ja_JP ランチャーパッケージの復元に失敗しました：
 
 en_US Moving "{foundPkgDir}" to "{pkg_dir}"...
 en_GB Moving "{foundPkgDir}" to "{pkg_dir}"...
@@ -6117,6 +7313,10 @@ hu_HU „{foundPkgDir}” áthelyezése ide: „{pkg_dir}”...
 tr_TR "{foundPkgDir}" "{pkg_dir}" konumuna taşınıyor...
 ko_KR "{foundPkgDir}"을 "{pkg_dir}"(으)로 이동 중...
 zh_CN 将 “{foundPkgDir}” 移动到 “{pkg_dir}”...
+zh_TW 正在將 "{foundPkgDir}" 移動至 "{pkg_dir}"...
+vn_VN Đang di chuyển "{foundPkgDir}" đến "{pkg_dir}"...
+th_TH กำลังย้าย "{foundPkgDir}" ไปยัง "{pkg_dir}"...
+ja_JP "{foundPkgDir}" を "{pkg_dir}" に移動中...
 
 en_US Moving files from "{foundPkgDir}" to "{pkg_dir}"...
 en_GB Moving files from "{foundPkgDir}" to "{pkg_dir}"...
@@ -6137,6 +7337,10 @@ hu_HU Fájlok áthelyezése innen: „{foundPkgDir}” ide: „{pkg_dir}”...
 tr_TR Dosyalar "{foundPkgDir}" konumundan "{pkg_dir}" konumuna taşınıyor...
 ko_KR 파일을 "{foundPkgDir}"에서 "{pkg_dir}"(으)로 이동 중...
 zh_CN 将文件从 “{foundPkgDir}” 移动到 “{pkg_dir}”...
+zh_TW 正在將檔案從 "{foundPkgDir}" 移動至 "{pkg_dir}"...
+vn_VN Đang di chuyển tệp từ "{foundPkgDir}" đến "{pkg_dir}"...
+th_TH กำลังย้ายไฟล์จาก "{foundPkgDir}" ไปยัง "{pkg_dir}"...
+ja_JP ファイルを "{foundPkgDir}" から "{pkg_dir}" に移動中...
 
 en_US Skipping "{foundPkgDir}" because it does not contain some files: {missingEntries}
 en_GB Skipping "{foundPkgDir}" because it does not contain some files: {missingEntries}
@@ -6157,6 +7361,10 @@ hu_HU „{foundPkgDir}” kihagyása, mert hiányoznak belőle fájlok: {missing
 tr_TR Bazı dosyaları içermediği için "{foundPkgDir}" atlanıyor: {missingEntries}
 ko_KR 일부 파일이 없으므로 "{foundPkgDir}" 건너뜀: {missingEntries}
 zh_CN 跳过 “{foundPkgDir}”，因为它缺少以下文件：{missingEntries}
+zh_TW 略過 "{foundPkgDir}"，因為缺少部分檔案：{missingEntries}
+vn_VN Bỏ qua "{foundPkgDir}" vì thiếu một số tệp: {missingEntries}
+th_TH ข้าม "{foundPkgDir}" เนื่องจากไม่มีไฟล์บางรายการ: {missingEntries}
+ja_JP 一部のファイルが含まれていないため、"{foundPkgDir}" をスキップします：{missingEntries}
 
 en_US Moving "{foundPkgZip}" to "{pkg_zip}"
 en_GB Moving "{foundPkgZip}" to "{pkg_zip}"
@@ -6177,6 +7385,10 @@ hu_HU „{foundPkgZip}” áthelyezése ide: „{pkg_zip}”
 tr_TR "{foundPkgZip}" "{pkg_zip}" konumuna taşınıyor
 ko_KR "{foundPkgZip}"을 "{pkg_zip}"(으)로 이동 중
 zh_CN 将 “{foundPkgZip}” 移动到 “{pkg_zip}”
+zh_TW 正在將 "{foundPkgZip}" 移動至 "{pkg_zip}"
+vn_VN Đang di chuyển "{foundPkgZip}" đến "{pkg_zip}"
+th_TH กำลังย้าย "{foundPkgZip}" ไปยัง "{pkg_zip}"
+ja_JP "{foundPkgZip}" を "{pkg_zip}" に移動中
 
 en_US Running
 en_GB Running
@@ -6197,6 +7409,10 @@ hu_HU Fut
 tr_TR Çalışıyor
 ko_KR 실행 중
 zh_CN 正在运行
+zh_TW 執行中
+vn_VN Đang chạy
+th_TH กำลังทำงาน
+ja_JP 実行中
 
 en_US Out-of-date data cleanup failed.
 en_GB Out-of-date data cleanup failed.
@@ -6217,6 +7433,10 @@ hu_HU Elavult adatok tisztítása sikertelen.
 tr_TR Güncel olmayan veri temizleme başarısız.
 ko_KR 오래된 데이터 정리 실패.
 zh_CN 过期数据清理失败
+zh_TW 過期資料清理失敗。
+vn_VN Dọn dẹp dữ liệu lỗi thời thất bại.
+th_TH การล้างข้อมูลเก่าล้มเหลว
+ja_JP 古いデータのクリーンアップに失敗しました。
 
 en_US Enter player name
 en_GB Enter player name
@@ -6237,6 +7457,10 @@ hu_HU Írd be a játékos nevét
 tr_TR Oyuncu adını girin
 ko_KR 플레이어 이름 입력
 zh_CN 输入玩家名称
+zh_TW 輸入玩家名稱
+vn_VN Nhập tên người chơi
+th_TH กรอกชื่อผู้เล่น
+ja_JP プレイヤー名を入力
 
 en_US Checkbox
 en_GB Checkbox
@@ -6257,6 +7481,10 @@ hu_HU Jelölőnégyzet
 tr_TR Onay Kutusu
 ko_KR 체크박스
 zh_CN 复选框
+zh_TW 核取方塊
+vn_VN Hộp kiểm
+th_TH กล่องกาเครื่องหมาย
+ja_JP チェックボックス
 
 en_US Check Features Enabled
 en_GB Check Features Enabled
@@ -6277,6 +7505,10 @@ hu_HU Ellenőrizze az engedélyezett funkciókat
 tr_TR Etkin Özellikleri Kontrol Et
 ko_KR 활성화된 기능 확인
 zh_CN 勾选已启用功能
+zh_TW 勾選已啟用功能
+vn_VN Kiểm tra tính năng đã bật
+th_TH ตรวจสอบฟีเจอร์ที่เปิดใช้งาน
+ja_JP 有効な機能を確認
 
 en_US Select a custom game lobby
 en_GB Select a custom game lobby
@@ -6297,6 +7529,10 @@ hu_HU Válasszon egyéni játék lobbýt
 tr_TR Özel oyun lobisi seç
 ko_KR 사용자 지정 게임 로비 선택
 zh_CN 选择自定义游戏大厅
+zh_TW 選擇自訂遊戲大廳
+vn_VN Chọn sảnh trò chơi tùy chỉnh
+th_TH เลือกล็อบบี้เกมแบบกำหนดเอง
+ja_JP カスタムゲームロビーを選択
 
 en_US Insufficient disk space
 en_GB Insufficient disk space
@@ -6317,6 +7553,10 @@ hu_HU Elégtelen lemezterület
 tr_TR Yetersiz disk alanı
 ko_KR 디스크 공간 부족
 zh_CN 磁盘空间不足
+zh_TW 磁碟空間不足
+vn_VN Không đủ dung lượng đĩa
+th_TH พื้นที่ดิสก์ไม่เพียงพอ
+ja_JP ディスク容量不足
 
 en_US Retry ↻
 en_GB Retry ↻
@@ -6337,6 +7577,10 @@ hu_HU Újrapróbálkozás ↻
 tr_TR Yeniden Dene ↻
 ko_KR 재시도 ↻
 zh_CN 重试 ↻
+zh_TW 重試 ↻
+vn_VN Thử lại ↻
+th_TH ลองอีกครั้ง ↻
+ja_JP 再試行 ↻
 
 en_US Experiments
 en_GB Experiments
@@ -6357,6 +7601,10 @@ hu_HU Kísérletek
 tr_TR Deneyler
 ko_KR 실험
 zh_CN 实验功能
+zh_TW 實驗性功能
+vn_VN Thử nghiệm
+th_TH การทดลอง
+ja_JP 実験機能
 
 en_US HALF-PING: Trying to lower the ping and equalize it for everyone. Causes desynchronization!
 en_GB HALF-PING: Trying to lower the ping and equalize it for everyone. Causes desynchronization!
@@ -6377,6 +7625,10 @@ hu_HU HALF-PING: Próbálja csökkenteni a pinget és kiegyenlíteni mindenki sz
 tr_TR HALF-PING: Ping'i düşürmeye ve herkes için eşitlemeye çalışıyor. Eşzamanlama kaybına neden olur!
 ko_KR HALF-PING: 핑을 낮추고 모두에게 동일하게 맞추려고 합니다. 동기화 불일치를 유발합니다!
 zh_CN HALF-PING：尝试降低延迟并使其对所有人保持一致会导致不同步！
+zh_TW HALF-PING：嘗試降低延遲並讓所有人保持一致。會導致不同步！
+vn_VN HALF-PING: Cố gắng giảm độ trễ và cân bằng cho mọi người. Gây mất đồng bộ!
+th_TH HALF-PING: พยายามลดปิงและทำให้เท่ากันสำหรับทุกคน ทำให้เกิดการไม่ซิงค์กัน!
+ja_JP ハーフピング：ピングを下げて全員で均等化しようとします。同期ずれの原因となります！
 
 en_US BYPASS: Connect the client to the local server directly.
 en_GB BYPASS: Connect the client to the local server directly.
@@ -6397,6 +7649,10 @@ hu_HU BYPASS: Csatlakoztassa a klienst közvetlenül a helyi szerverhez.
 tr_TR BYPASS: İstemciyi doğrudan yerel sunucuya bağlayın.
 ko_KR BYPASS: 클라이언트를 로컬 서버에 직접 연결합니다.
 zh_CN BYPASS：将客户端直接连接到本地服务器
+zh_TW BYPASS：將用戶端直接連線至本機伺服器。
+vn_VN BYPASS: Kết nối máy khách trực tiếp với máy chủ cục bộ.
+th_TH BYPASS: เชื่อมต่อไคลเอนต์กับเซิร์ฟเวอร์ท้องถิ่นโดยตรง
+ja_JP バイパス：クライアントをローカルサーバーに直接接続します。
 
 en_US Play Alone
 en_GB Play Alone
@@ -6417,6 +7673,10 @@ hu_HU Játék Egyedül
 tr_TR Tek Başına Oyna
 ko_KR 혼자 플레이
 zh_CN 单人游玩
+zh_TW 單人遊玩
+vn_VN Chơi một mình
+th_TH เล่นคนเดียว
+ja_JP 一人でプレイ
 
 en_US Publish Game
 en_GB Publish Game
@@ -6437,6 +7697,10 @@ hu_HU Játék Közzététele
 tr_TR Oyunu Yayınla
 ko_KR 게임 게시
 zh_CN 发布游戏
+zh_TW 發佈遊戲
+vn_VN Xuất bản trò chơi
+th_TH เผยแพร่เกม
+ja_JP ゲームを公開
 
 en_US Building
 en_GB Building
@@ -6457,6 +7721,10 @@ hu_HU Építés
 tr_TR İnşa Ediliyor
 ko_KR 빌딩 중
 zh_CN 建筑
+zh_TW 建置中
+vn_VN Đang xây dựng
+th_TH กำลังสร้าง
+ja_JP ビルド中
 
 en_US automatic command
 en_GB automatic command
@@ -6477,6 +7745,10 @@ hu_HU automatikus parancs
 tr_TR otomatik komut
 ko_KR 자동 명령
 zh_CN 自动命令
+zh_TW 自動指令
+vn_VN Lệnh tự động
+th_TH คำสั่งอัตโนมัติ
+ja_JP 自動コマンド
 
 en_US custom command
 en_GB custom command
@@ -6497,6 +7769,10 @@ hu_HU egyéni parancs
 tr_TR özel komut
 ko_KR 사용자 지정 명령
 zh_CN 自定义命令
+zh_TW 自訂指令
+vn_VN Lệnh tùy chỉnh
+th_TH คำสั่งที่กำหนดเอง
+ja_JP カスタムコマンド
 
 en_US automatic location
 en_GB automatic location
@@ -6517,6 +7793,10 @@ hu_HU automatikus hely
 tr_TR otomatik konum
 ko_KR 자동 위치
 zh_CN 自动位置
+zh_TW 自動位置
+vn_VN Vị trí tự động
+th_TH ตำแหน่งอัตโนมัติ
+ja_JP 自動場所
 
 en_US C drive
 en_GB C drive
@@ -6537,6 +7817,10 @@ hu_HU C meghajtó
 tr_TR C sürücüsü
 ko_KR C 드라이브
 zh_CN C 盘
+zh_TW C 槽
+vn_VN Ổ đĩa C
+th_TH ไดรฟ์ C
+ja_JP Cドライブ
 
 en_US Fishbones_Data folder
 en_GB Fishbones_Data folder
@@ -6557,6 +7841,10 @@ hu_HU Fishbones_Data mappa
 tr_TR Fishbones_Data klasörü
 ko_KR Fishbones_Data 폴더
 zh_CN Fishbones_Data 文件夹
+zh_TW Fishbones_Data 資料夾
+vn_VN Thư mục Fishbones_Data
+th_TH โฟลเดอร์ Fishbones_Data
+ja_JP Fishbones_Dataフォルダ
 
 en_US custom location
 en_GB custom location
@@ -6577,6 +7865,10 @@ hu_HU egyéni hely
 tr_TR özel konum
 ko_KR 사용자 지정 위치
 zh_CN 自定义位置
+zh_TW 自訂位置
+vn_VN Vị trí tùy chỉnh
+th_TH ตำแหน่งที่กำหนดเอง
+ja_JP カスタム場所
 
 en_US The file is unavailable, please try updating at least once.
 en_GB The file is unavailable, please try updating at least once.
@@ -6597,6 +7889,10 @@ hu_HU A fájl nem érhető el, próbáljon meg legalább egyszer frissíteni.
 tr_TR Dosya kullanılamıyor, lütfen en az bir kez güncellemeyi deneyin.
 ko_KR 파일을 사용할 수 없습니다. 적어도 한 번은 업데이트해 보세요.
 zh_CN 文件不可用，请至少尝试更新一次。
+zh_TW 檔案無法使用，請至少嘗試更新一次。
+vn_VN Tệp không khả dụng, vui lòng thử cập nhật ít nhất một lần.
+th_TH ไฟล์ไม่พร้อมใช้งาน โปรดลองอัปเดตอย่างน้อยหนึ่งครั้ง
+ja_JP ファイルが利用できません。少なくとも1回はアップデートを試してください。
 
 en_US No servers with suitable clients are installed
 en_GB No servers with suitable clients are installed
@@ -6617,6 +7913,10 @@ hu_HU Nincsenek telepítve szerverek megfelelő kliensekkel
 tr_TR Uygun istemcilere sahip hiçbir sunucu yüklü değil
 ko_KR 적합한 클라이언트가 있는 서버가 설치되어 있지 않습니다
 zh_CN 未安装具有合适客户端的服务器
+zh_TW 未安裝具有合適用戶端的伺服器
+vn_VN Chưa cài đặt máy chủ nào có máy khách phù hợp
+th_TH ไม่ได้ติดตั้งเซิร์ฟเวอร์ที่มีไคลเอนต์ที่เหมาะสม
+ja_JP 適切なクライアントを持つサーバーがインストールされていません
 
 en_US You do not have the client version required to play on this server
 en_GB You do not have the client version required to play on this server
@@ -6637,6 +7937,10 @@ hu_HU Nincs meg a szükséges kliens verzió ehhez a szerverhez
 tr_TR Bu sunucuda oynamak için gereken istemci sürümüne sahip değilsiniz
 ko_KR 이 서버에서 플레이하는 데 필요한 클라이언트 버전이 없습니다
 zh_CN 您没有在此服务器上玩游戏所需的客户端版本
+zh_TW 您沒有在此伺服器上遊玩所需的用戶端版本
+vn_VN Bạn không có phiên bản máy khách cần thiết để chơi trên máy chủ này
+th_TH คุณไม่มีเวอร์ชันไคลเอนต์ที่จำเป็นในการเล่นบนเซิร์ฟเวอร์นี้
+ja_JP このサーバーでプレイするために必要なクライアントバージョンを持っていません
 
 en_US The game client will crash at the beginning of the game
 en_GB The game client will crash at the beginning of the game
@@ -6657,6 +7961,10 @@ hu_HU A játék kliens összeomlik a játék elején
 tr_TR Oyun istemcisi oyunun başında çökecek
 ko_KR 게임 클라이언트가 게임 시작 시 충돌할 것입니다
 zh_CN 游戏客户端将在游戏开始时崩溃
+zh_TW 遊戲用戶端將在遊戲開始時當機
+vn_VN Máy khách trò chơi sẽ gặp sự cố khi bắt đầu trò chơi
+th_TH ไคลเอนต์เกมจะขัดข้องเมื่อเริ่มเกม
+ja_JP ゲーム開始時にゲームクライアントがクラッシュします
 
 en_US Unknown #UNK
 en_GB Unknown #UNK
@@ -6677,6 +7985,10 @@ hu_HU Ismeretlen #UNK
 tr_TR Bilinmiyor #UNK
 ko_KR 알 수 없음 #UNK
 zh_CN 未知 #UNK
+zh_TW 不明 #UNK
+vn_VN Không xác định #UNK
+th_TH ไม่รู้จัก #UNK
+ja_JP 不明 #UNK
 
 en_US Anonymous {champion}
 en_GB Anonymous {champion}
@@ -6697,6 +8009,10 @@ hu_HU Névtelen {champion}
 tr_TR Anonim {champion}
 ko_KR 익명 {champion}
 zh_CN 匿名 {champion}
+zh_TW 匿名 {champion}
+vn_VN Ẩn danh {champion}
+th_TH ไม่ระบุชื่อ {champion}
+ja_JP 匿名 {champion}
 
 en_US Install the package with additional locales
 en_GB Install the package with additional locales
@@ -6717,6 +8033,10 @@ hu_HU Csomag telepítése további területi beállításokkal
 tr_TR Ek yerel ayarlar içeren paketi yükle
 ko_KR 추가 로케일이 포함된 패키지 설치
 zh_CN 安装包含额外区域设置的包
+zh_TW 安裝包含額外地區設定的套件
+vn_VN Cài đặt gói chứa các ngôn ngữ bổ sung
+th_TH ติดตั้งแพ็กเกจที่มีตำแหน่งที่ตั้งเพิ่มเติม
+ja_JP 追加ロケールを含むパッケージをインストール
 
 en_US (Debug) Update git repositories
 en_GB (Debug) Update git repositories
@@ -6737,6 +8057,10 @@ hu_HU (Hibakeresés) Git tárolók frissítése
 tr_TR (Hata Ayıklama) Git depolarını güncelle
 ko_KR (디버그) git 저장소 업데이트
 zh_CN (调试) 更新 git 仓库
+zh_TW (偵錯) 更新 Git 存放庫
+vn_VN (Gỡ lỗi) Cập nhật kho lưu trữ git
+th_TH (ดีบัก) อัปเดตที่เก็บ git
+ja_JP (デバッグ) gitリポジトリを更新
 
 en_US Disable Summoner Spells
 en_GB Disable Summoner Spells
@@ -6757,6 +8081,10 @@ hu_HU Idéző Varázsok kikapcsolása
 tr_TR Sihirdar Büyülerini Devre Dışı Bırak
 ko_KR 소환사 주문 비활성화
 zh_CN 禁用召唤师技能
+zh_TW 停用召喚師技能
+vn_VN Tắt phép bổ trợ
+th_TH ปิดการใช้งานเวทมนตร์ผู้เรียก
+ja_JP サモナースペルを無効にする
 
 en_US Enable All Champions
 en_GB Enable All Champions
@@ -6777,6 +8105,10 @@ hu_HU Minden Bajnok engedélyezése
 tr_TR Tüm Şampiyonları Etkinleştir
 ko_KR 모든 챔피언 활성화
 zh_CN 启用所有英雄
+zh_TW 啟用所有英雄
+vn_VN Bật tất cả tướng
+th_TH เปิดใช้งานแชมเปี้ยนทั้งหมด
+ja_JP すべてのチャンピオンを有効にする
 
 en_US Latest version on releases page:
 en_GB Latest version on releases page:
@@ -6797,6 +8129,10 @@ hu_HU Legújabb verzió a kiadások oldalon:
 tr_TR Sürümler sayfasındaki en son sürüm:
 ko_KR 릴리스 페이지의 최신 버전:
 zh_CN 发布页面上的最新版本：
+zh_TW 發佈頁面上的最新版本：
+vn_VN Phiên bản mới nhất trên trang phát hành:
+th_TH เวอร์ชันล่าสุดบนหน้ารีลีส:
+ja_JP リリースページの最新バージョン：
 
 en_US The public key is not the official one that is hardcoded in the program.
 en_GB The public key is not the official one that is hardcoded in the program.
@@ -6817,6 +8153,10 @@ hu_HU A nyilvános kulcs nem a hivatalos, amely a programban van beépítve.
 tr_TR Genel anahtar, programda sabit kodlanmış resmi anahtar değildir.
 ko_KR 공개 키가 프로그램에 하드코딩된 공식 키가 아닙니다.
 zh_CN 公钥不是程序中硬编码的官方公钥。
+zh_TW 公開金鑰並非程式中硬編碼的官方金鑰。
+vn_VN Khóa công khai không phải là khóa chính thức được mã hóa cứng trong chương trình.
+th_TH คีย์สาธารณะไม่ใช่คีย์ทางการที่ฮาร์ดโค้ดไว้ในโปรแกรม
+ja_JP 公開鍵はプログラムにハードコードされた公式のものではありません。
 
 en_US The file version is not newer than the latest known version file.
 en_GB The file version is not newer than the latest known version file.
@@ -6837,6 +8177,10 @@ hu_HU A fájl verziója nem újabb, mint a legújabb ismert verziófájl.
 tr_TR Dosya sürümü, bilinen en son sürüm dosyasından daha yeni değil.
 ko_KR 파일 버전이 알려진 최신 버전 파일보다 새롭지 않습니다.
 zh_CN 文件版本不晚于最新的已知版本文件。
+zh_TW 檔案版本並未比最新的已知版本檔案更新。
+vn_VN Phiên bản tệp không mới hơn phiên bản tệp mới nhất đã biết.
+th_TH เวอร์ชันไฟล์ไม่ใหม่กว่าไฟล์เวอร์ชันล่าสุดที่รู้จัก
+ja_JP ファイルバージョンは最新の既知バージョンファイルより新しくありません。
 
 en_US The file does not contain a current platform.
 en_GB The file does not contain a current platform.
@@ -6857,6 +8201,10 @@ hu_HU A fájl nem tartalmaz jelenlegi platformot.
 tr_TR Dosya mevcut bir platform içermiyor.
 ko_KR 파일에 현재 플랫폼이 포함되어 있지 않습니다.
 zh_CN 文件不包含当前平台。
+zh_TW 檔案不包含目前的平台。
+vn_VN Tệp không chứa nền tảng hiện tại.
+th_TH ไฟล์ไม่มีแพลตฟอร์มปัจจุบัน
+ja_JP ファイルに現在のプラットフォームが含まれていません。
 
 en_US Code:
 en_GB Code:
@@ -6877,6 +8225,10 @@ hu_HU Kód:
 tr_TR Kod:
 ko_KR 코드:
 zh_CN 代码：
+zh_TW 代碼：
+vn_VN Mã:
+th_TH รหัส:
+ja_JP コード：
 
 en_US BrokenWings (Season 1)
 en_GB BrokenWings (Season 1)
@@ -6897,6 +8249,10 @@ hu_HU BrokenWings (1. Évad)
 tr_TR BrokenWings (1. Sezon)
 ko_KR BrokenWings (시즌 1)
 zh_CN BrokenWings（第1赛季）
+zh_TW BrokenWings (第 1 季)
+vn_VN BrokenWings (Mùa 1)
+th_TH BrokenWings (ซีซั่น 1)
+ja_JP BrokenWings (シーズン1)
 
 en_US Repairing failed
 en_GB Repairing failed
@@ -6917,6 +8273,10 @@ hu_HU Javítás sikertelen
 tr_TR Onarım başarısız
 ko_KR 복구 실패
 zh_CN 修复失败
+zh_TW 修復失敗
+vn_VN Sửa chữa thất bại
+th_TH การซ่อมแซมล้มเหลว
+ja_JP 修復に失敗しました
 
 en_US Updating game server package failed:
 en_GB Updating game server package failed:
@@ -6937,6 +8297,10 @@ hu_HU Játékszerver csomag frissítése sikertelen:
 tr_TR Oyun sunucusu paketi güncelleme başarısız:
 ko_KR 게임 서버 패키지 업데이트 실패:
 zh_CN 更新游戏服务器包失败：
+zh_TW 更新遊戲伺服器套件失敗：
+vn_VN Cập nhật gói máy chủ trò chơi thất bại:
+th_TH การอัปเดตแพ็กเกจเซิร์ฟเวอร์เกมล้มเหลว:
+ja_JP ゲームサーバーパッケージの更新に失敗しました：
 
 en_US Chronobreak (Season 1)
 en_GB Chronobreak (Season 1)
@@ -6957,6 +8321,10 @@ hu_HU Chronobreak (1. Évad)
 tr_TR Chronobreak (1. Sezon)
 ko_KR Chronobreak (시즌 1)
 zh_CN Chronobreak（第1赛季）
+zh_TW Chronobreak (第 1 季)
+vn_VN Chronobreak (Mùa 1)
+th_TH Chronobreak (ซีซั่น 1)
+ja_JP Chronobreak (シーズン1)
 
 en_US TestGrounds (Season 4)
 en_GB TestGrounds (Season 4)
@@ -6977,6 +8345,10 @@ hu_HU TestGrounds (4. Évad)
 tr_TR TestGrounds (4. Sezon)
 ko_KR TestGrounds (시즌 4)
 zh_CN TestGrounds（第4赛季）
+zh_TW TestGrounds (第 4 季)
+vn_VN TestGrounds (Mùa 4)
+th_TH TestGrounds (ซีซั่น 4)
+ja_JP TestGrounds (シーズン4)
 
 en_US LoLSrv (Pre Season 1)
 en_GB LoLSrv (Pre Season 1)
@@ -6997,6 +8369,10 @@ hu_HU LoLSrv (1. Évad előtt)
 tr_TR LoLSrv (1. Sezon Öncesi)
 ko_KR LoLSrv (시즌 1 이전)
 zh_CN LoLSrv（第1赛季前）
+zh_TW LoLSrv (第 1 季前)
+vn_VN LoLSrv (Trước Mùa 1)
+th_TH LoLSrv (ก่อนซีซั่น 1)
+ja_JP LoLSrv (シーズン1以前)
 
 en_US SDK installation is probably corrupted
 en_GB SDK installation is probably corrupted
@@ -7017,6 +8393,10 @@ hu_HU Az SDK telepítése valószínűleg sérült
 tr_TR SDK kurulumu muhtemelen bozuk
 ko_KR SDK 설치가 손상되었을 수 있습니다
 zh_CN SDK 安装可能已损坏
+zh_TW SDK 安裝可能已損毀
+vn_VN Cài đặt SDK có thể bị hỏng
+th_TH การติดตั้ง SDK อาจเสียหาย
+ja_JP SDKインストールが破損している可能性があります
 
 en_US exit code is {exitCode}
 en_GB exit code is {exitCode}
@@ -7037,6 +8417,10 @@ hu_HU kilépési kód: {exitCode}
 tr_TR çıkış kodu {exitCode}
 ko_KR 종료 코드는 {exitCode}입니다
 zh_CN 退出代码为 {exitCode}
+zh_TW 結束代碼為 {exitCode}
+vn_VN Mã thoát là {exitCode}
+th_TH รหัสออกคือ {exitCode}
+ja_JP 終了コードは {exitCode} です
 
 en_US TestGrounds
 en_GB TestGrounds
@@ -7057,6 +8441,10 @@ hu_HU TestGrounds
 tr_TR TestGrounds
 ko_KR TestGrounds
 zh_CN TestGrounds
+zh_TW TestGrounds
+vn_VN TestGrounds
+th_TH TestGrounds
+ja_JP TestGrounds
 
 en_US Additional Locales For 1.0.0.126
 en_GB Additional Locales For 1.0.0.126
@@ -7077,6 +8465,10 @@ hu_HU További területi beállítások a 1.0.0.126-hoz
 tr_TR 1.0.0.126 için ek yerel ayarlar
 ko_KR 1.0.0.126용 추가 로케일
 zh_CN 1.0.0.126 的额外区域设置
+zh_TW 1.0.0.126 的額外地區設定
+vn_VN Ngôn ngữ bổ sung cho 1.0.0.126
+th_TH ตำแหน่งที่ตั้งเพิ่มเติมสำหรับ 1.0.0.126
+ja_JP 1.0.0.126用の追加ロケール
 
 en_US Wine
 en_GB Wine
@@ -7097,6 +8489,10 @@ hu_HU Wine
 tr_TR Wine
 ko_KR Wine
 zh_CN Wine
+zh_TW Wine
+vn_VN Wine
+th_TH Wine
+ja_JP Wine
 
 en_US The update failed, see the log for details.
 en_GB The update failed, see the log for details.
@@ -7117,6 +8513,10 @@ hu_HU A frissítés sikertelen, részletekért lásd a naplót.
 tr_TR Güncelleme başarısız, ayrıntılar için günlüğe bakın.
 ko_KR 업데이트 실패, 자세한 내용은 로그를 참조하세요.
 zh_CN 更新失败，请参阅日志了解详情。
+zh_TW 更新失敗，請檢視記錄檔以了解詳細資訊。
+vn_VN Cập nhật thất bại, xem nhật ký để biết chi tiết.
+th_TH การอัปเดตล้มเหลว โปรดดูบันทึกสำหรับรายละเอียด
+ja_JP 更新に失敗しました。詳細はログをご覧ください。
 
 en_US Skin {i}
 en_GB Skin {i}
@@ -7137,6 +8537,10 @@ hu_HU Kinézet {i}
 tr_TR Kostüm {i}
 ko_KR 스킨 {i}
 zh_CN 皮肤 {i}
+zh_TW 造型 {i}
+vn_VN Trang phục {i}
+th_TH สกิน {i}
+ja_JP スキン {i}
 
 en_US First Blood
 en_GB First Blood
@@ -7157,6 +8561,10 @@ hu_HU Első Vér
 tr_TR İlk Kan
 ko_KR 퍼스트 블러드
 zh_CN 第一滴血
+zh_TW 第一滴血
+vn_VN Chiến công đầu
+th_TH เฟิร์สบลัด
+ja_JP ファーストブラッド
 
 en_US Ascension
 en_GB Ascension
@@ -7177,6 +8585,10 @@ hu_HU Felemelkedés
 tr_TR Yükseliş
 ko_KR 승천
 zh_CN 飞升
+zh_TW 飛昇
+vn_VN Thăng hoa
+th_TH การเลื่อนสถานะ
+ja_JP アセンション
 
 en_US BrokenWings
 en_GB BrokenWings
@@ -7197,6 +8609,10 @@ hu_HU BrokenWings
 tr_TR BrokenWings
 ko_KR BrokenWings
 zh_CN BrokenWings
+zh_TW BrokenWings
+vn_VN BrokenWings
+th_TH BrokenWings
+ja_JP BrokenWings
 
 en_US Chronobreak
 en_GB Chronobreak
@@ -7217,6 +8633,10 @@ hu_HU Chronobreak
 tr_TR Chronobreak
 ko_KR Chronobreak
 zh_CN Chronobreak
+zh_TW Chronobreak
+vn_VN Chronobreak
+th_TH Chronobreak
+ja_JP Chronobreak
 
 en_US Minor rework of character data.
 en_GB Minor rework of character data.
@@ -7237,6 +8657,10 @@ hu_HU Karakteradatok kisebb átdolgozása.
 tr_TR Karakter verilerinin küçük revizyonu.
 ko_KR 캐릭터 데이터의 작은 수정.
 zh_CN 角色数据的微小重做。
+zh_TW 角色資料小幅重製。
+vn_VN Làm lại nhỏ dữ liệu nhân vật.
+th_TH ปรับปรุงข้อมูลตัวละครเล็กน้อย
+ja_JP キャラクターデータの小幅な修正。
 
 en_US Enable online updates
 en_GB Enable online updates
@@ -7257,6 +8681,10 @@ hu_HU Online frissítések engedélyezése
 tr_TR Çevrimiçi güncellemeleri etkinleştir
 ko_KR 온라인 업데이트 활성화
 zh_CN 启用在线更新
+zh_TW 啟用線上更新
+vn_VN Bật cập nhật trực tuyến
+th_TH เปิดใช้งานการอัปเดตออนไลน์
+ja_JP オンラインアップデートを有効にする
 
 en_US Search for players online
 en_GB Search for players online
@@ -7277,6 +8705,10 @@ hu_HU Játékosok keresése online
 tr_TR Çevrimiçi oyuncuları ara
 ko_KR 온라인 플레이어 검색
 zh_CN 在线搜索玩家
+zh_TW 線上搜尋玩家
+vn_VN Tìm kiếm người chơi trực tuyến
+th_TH ค้นหาผู้เล่นออนไลน์
+ja_JP オンラインでプレイヤーを検索
 
 en_US Enable Season 1 (Recommended)
 en_GB Enable Season 1 (Recommended)
@@ -7297,6 +8729,10 @@ hu_HU 1. Évad engedélyezése (Ajánlott)
 tr_TR 1. Sezonu Etkinleştir (Önerilen)
 ko_KR 시즌 1 활성화 (권장)
 zh_CN 启用第1赛季（推荐）
+zh_TW 啟用第 1 季 (推薦)
+vn_VN Bật Mùa 1 (Khuyến nghị)
+th_TH เปิดใช้งานซีซั่น 1 (แนะนำ)
+ja_JP シーズン1を有効にする (推奨)
 
 en_US Enable Season 4 (Experimental)
 en_GB Enable Season 4 (Experimental)
@@ -7317,26 +8753,10 @@ hu_HU 4. Évad engedélyezése (Kísérleti)
 tr_TR 4. Sezonu Etkinleştir (Deneysel)
 ko_KR 시즌 4 활성화 (실험적)
 zh_CN 启用第4赛季（实验性）
-
-en_US Force the use of English, ignoring the system settings
-en_GB Force the use of English, ignoring the system settings
-en_AU Force the use of English, ignoring the system settings
-es_ES Force the use of English, ignoring the system settings
-es_AR Force the use of English, ignoring the system settings
-es_MX Force the use of English, ignoring the system settings
-pt_BR Force the use of English, ignoring the system settings
-fr_FR Force the use of English, ignoring the system settings
-it_IT Force the use of English, ignoring the system settings
-ro_RO Force the use of English, ignoring the system settings
-cs_CZ Force the use of English, ignoring the system settings
-pl_PL Force the use of English, ignoring the system settings
-ru_RU Force the use of English, ignoring the system settings
-de_DE Force the use of English, ignoring the system settings
-el_GR Force the use of English, ignoring the system settings
-hu_HU Force the use of English, ignoring the system settings
-tr_TR Force the use of English, ignoring the system settings
-ko_KR Force the use of English, ignoring the system settings
-zh_CN 强制使用英语，忽略系统设置
+zh_TW 啟用第 4 季 (實驗性)
+vn_VN Bật Mùa 4 (Thử nghiệm)
+th_TH เปิดใช้งานซีซั่น 4 (ทดลอง)
+ja_JP シーズン4を有効にする (実験的)
 
 en_US Install 1st season game client to
 en_GB Install 1st season game client to
@@ -7357,6 +8777,10 @@ hu_HU 1. évad játék kliens telepítése ide
 tr_TR 1. sezon oyun istemcisini şuraya yükle
 ko_KR 1시즌 게임 클라이언트 설치 위치
 zh_CN 安装第1赛季游戏客户端到
+zh_TW 安裝第 1 季遊戲用戶端至
+vn_VN Cài đặt máy khách trò chơi mùa 1 vào
+th_TH ติดตั้งไคลเอนต์เกมซีซั่น 1 ไปยัง
+ja_JP シーズン1ゲームクライアントをインストール先：
 
 en_US Install the additional languages package
 en_GB Install the additional languages package
@@ -7377,6 +8801,10 @@ hu_HU További nyelvek csomagjának telepítése
 tr_TR Ek dil paketini yükle
 ko_KR 추가 언어 패키지 설치
 zh_CN 安装额外语言包
+zh_TW 安裝額外語言套件
+vn_VN Cài đặt gói ngôn ngữ bổ sung
+th_TH ติดตั้งแพ็กเกจภาษาเพิ่มเติม
+ja_JP 追加言語パッケージをインストール
 
 en_US Install ChildrenOfTheGrave game server
 en_GB Install ChildrenOfTheGrave game server
@@ -7397,6 +8825,10 @@ hu_HU ChildrenOfTheGrave játék szerver telepítése
 tr_TR ChildrenOfTheGrave oyun sunucusunu yükle
 ko_KR ChildrenOfTheGrave 게임 서버 설치
 zh_CN 安装 ChildrenOfTheGrave 游戏服务器
+zh_TW 安裝 ChildrenOfTheGrave 遊戲伺服器
+vn_VN Cài đặt máy chủ trò chơi ChildrenOfTheGrave
+th_TH ติดตั้งเซิร์ฟเวอร์เกม ChildrenOfTheGrave
+ja_JP ChildrenOfTheGraveゲームサーバーをインストール
 
 en_US Install 4th season game client to
 en_GB Install 4th season game client to
@@ -7417,6 +8849,10 @@ hu_HU 4. évad játék kliens telepítése ide
 tr_TR 4. sezon oyun istemcisini şuraya yükle
 ko_KR 4시즌 게임 클라이언트 설치 위치
 zh_CN 安装第4赛季游戏客户端到
+zh_TW 安裝第 4 季遊戲用戶端至
+vn_VN Cài đặt máy khách trò chơi mùa 4 vào
+th_TH ติดตั้งไคลเอนต์เกมซีซั่น 4 ไปยัง
+ja_JP シーズン4ゲームクライアントをインストール先：
 
 en_US Install Chronobreak game server
 en_GB Install Chronobreak game server
@@ -7437,6 +8873,10 @@ hu_HU Chronobreak játék szerver telepítése
 tr_TR Chronobreak oyun sunucusunu yükle
 ko_KR Chronobreak 게임 서버 설치
 zh_CN 安装 Chronobreak 游戏服务器
+zh_TW 安裝 Chronobreak 遊戲伺服器
+vn_VN Cài đặt máy chủ trò chơi Chronobreak
+th_TH ติดตั้งเซิร์ฟเวอร์เกม Chronobreak
+ja_JP Chronobreakゲームサーバーをインストール
 
 en_US Install TestGrounds game server
 en_GB Install TestGrounds game server
@@ -7457,6 +8897,10 @@ hu_HU TestGrounds játék szerver telepítése
 tr_TR TestGrounds oyun sunucusunu yükle
 ko_KR TestGrounds 게임 서버 설치
 zh_CN 安装 TestGrounds 游戏服务器
+zh_TW 安裝 TestGrounds 遊戲伺服器
+vn_VN Cài đặt máy chủ trò chơi TestGrounds
+th_TH ติดตั้งเซิร์ฟเวอร์เกม TestGrounds
+ja_JP TestGroundsゲームサーバーをインストール
 
 en_US Update TestGrounds game server
 en_GB Update TestGrounds game server
@@ -7477,6 +8921,10 @@ hu_HU TestGrounds játék szerver frissítése
 tr_TR TestGrounds oyun sunucusunu güncelle
 ko_KR TestGrounds 게임 서버 업데이트
 zh_CN 更新 TestGrounds 游戏服务器
+zh_TW 更新 TestGrounds 遊戲伺服器
+vn_VN Cập nhật máy chủ trò chơi TestGrounds
+th_TH อัปเดตเซิร์ฟเวอร์เกม TestGrounds
+ja_JP TestGroundsゲームサーバーを更新
 
 en_US Install closed beta 1 game client to
 en_GB Install closed beta 1 game client to
@@ -7497,6 +8945,10 @@ hu_HU Zárt béta 1 játék kliens telepítése ide
 tr_TR Kapalı beta 1 oyun istemcisini şuraya yükle
 ko_KR 클로즈 베타 1 게임 클라이언트 설치 위치
 zh_CN 安装封闭测试版1游戏客户端到
+zh_TW 安裝封閉測試版 1 遊戲用戶端至
+vn_VN Cài đặt máy khách trò chơi beta đóng 1 vào
+th_TH ติดตั้งไคลเอนต์เกมเบต้าปิด 1 ไปยัง
+ja_JP クローズドベータ1ゲームクライアントをインストール先：
 
 en_US Install closed beta 3 game client to
 en_GB Install closed beta 3 game client to
@@ -7517,6 +8969,10 @@ hu_HU Zárt béta 3 játék kliens telepítése ide
 tr_TR Kapalı beta 3 oyun istemcisini şuraya yükle
 ko_KR 클로즈 베타 3 게임 클라이언트 설치 위치
 zh_CN 安装封闭测试版3游戏客户端到
+zh_TW 安裝封閉測試版 3 遊戲用戶端至
+vn_VN Cài đặt máy khách trò chơi beta đóng 3 vào
+th_TH ติดตั้งไคลเอนต์เกมเบต้าปิด 3 ไปยัง
+ja_JP クローズドベータ3ゲームクライアントをインストール先：
 
 en_US Install LoLSrv game server
 en_GB Install LoLSrv game server
@@ -7537,6 +8993,10 @@ hu_HU LoLSrv játék szerver telepítése
 tr_TR LoLSrv oyun sunucusunu yükle
 ko_KR LoLSrv 게임 서버 설치
 zh_CN 安装 LoLSrv 游戏服务器
+zh_TW 安裝 LoLSrv 遊戲伺服器
+vn_VN Cài đặt máy chủ trò chơi LoLSrv
+th_TH ติดตั้งเซิร์ฟเวอร์เกม LoLSrv
+ja_JP LoLSrvゲームサーバーをインストール
 
 en_US Use WINE to run game client with an
 en_GB Use WINE to run game client with an
@@ -7557,6 +9017,10 @@ hu_HU WINE használata a játék kliens futtatásához egy
 tr_TR Oyun istemcisini çalıştırmak için WINE kullan
 ko_KR 게임 클라이언트를 실행하기 위해 WINE 사용
 zh_CN 使用 WINE 运行游戏客户端，带有
+zh_TW 使用 WINE 執行遊戲用戶端，搭配
+vn_VN Sử dụng WINE để chạy máy khách trò chơi với
+th_TH ใช้ WINE เพื่อเรียกใช้ไคลเอนต์เกมด้วย
+ja_JP WINEを使用してゲームクライアントを実行
 
 en_US Share or apply launcher update code
 en_GB Share or apply launcher update code
@@ -7577,6 +9041,10 @@ hu_HU Indítóprogram frissítési kód megosztása vagy alkalmazása
 tr_TR Başlatıcı güncelleme kodunu paylaş veya uygula
 ko_KR 런처 업데이트 코드 공유 또는 적용
 zh_CN 分享或应用启动器更新代码
+zh_TW 分享或套用啟動器更新代碼
+vn_VN Chia sẻ hoặc áp dụng mã cập nhật trình khởi chạy
+th_TH แชร์หรือใช้รหัสอัปเดตตัวเรียกใช้งาน
+ja_JP ランチャー更新コードを共有または適用
 
 en_US Show decoded
 en_GB Show decoded
@@ -7597,6 +9065,10 @@ hu_HU Dekódolt megjelenítése
 tr_TR Kodu çözülmüşü göster
 ko_KR 디코딩된 내용 표시
 zh_CN 显示解码后内容
+zh_TW 顯示解碼後內容
+vn_VN Hiển thị nội dung đã giải mã
+th_TH แสดงเนื้อหาที่ถอดรหัสแล้ว
+ja_JP デコードされた内容を表示
 
 en_US Select the [server + client] combination to use
 en_GB Select the [server + client] combination to use
@@ -7617,6 +9089,10 @@ hu_HU Válassza ki a használandó [szerver + kliens] kombinációt
 tr_TR Kullanılacak [sunucu + istemci] kombinasyonunu seçin
 ko_KR 사용할 [서버 + 클라이언트] 조합 선택
 zh_CN 选择要使用的 [服务器 + 客户端] 组合
+zh_TW 選擇要使用的 [伺服器 + 用戶端] 組合
+vn_VN Chọn tổ hợp [máy chủ + máy khách] để sử dụng
+th_TH เลือกชุดค่าผสม [เซิร์ฟเวอร์ + ไคลเอนต์] ที่จะใช้งาน
+ja_JP 使用する [サーバー + クライアント] の組み合わせを選択
 
 en_US Broken Wings (Season 1) + v1.0.0.126 (Season 1)
 en_GB Broken Wings (Season 1) + v1.0.0.126 (Season 1)
@@ -7637,6 +9113,10 @@ hu_HU Broken Wings (1. Évad) + v1.0.0.126 (1. Évad)
 tr_TR Broken Wings (1. Sezon) + v1.0.0.126 (1. Sezon)
 ko_KR Broken Wings (시즌 1) + v1.0.0.126 (시즌 1)
 zh_CN Broken Wings（第1赛季）+ v1.0.0.126（第1赛季）
+zh_TW Broken Wings (第 1 季) + v1.0.0.126 (第 1 季)
+vn_VN Broken Wings (Mùa 1) + v1.0.0.126 (Mùa 1)
+th_TH Broken Wings (ซีซั่น 1) + v1.0.0.126 (ซีซั่น 1)
+ja_JP Broken Wings (シーズン1) + v1.0.0.126 (シーズン1)
 
 en_US Chronobreak (Season 1) + v4.20 (Season 4)
 en_GB Chronobreak (Season 1) + v4.20 (Season 4)
@@ -7657,6 +9137,10 @@ hu_HU Chronobreak (1. Évad) + v4.20 (4. Évad)
 tr_TR Chronobreak (1. Sezon) + v4.20 (4. Sezon)
 ko_KR Chronobreak (시즌 1) + v4.20 (시즌 4)
 zh_CN Chronobreak（第1赛季）+ v4.20（第4赛季）
+zh_TW Chronobreak (第 1 季) + v4.20 (第 4 季)
+vn_VN Chronobreak (Mùa 1) + v4.20 (Mùa 4)
+th_TH Chronobreak (ซีซั่น 1) + v4.20 (ซีซั่น 4)
+ja_JP Chronobreak (シーズン1) + v4.20 (シーズン4)
 
 en_US Reduce the amount of transmitted traffic. Causes crash and wired behaviours!
 en_GB Reduce the amount of transmitted traffic. Causes crash and wired behaviours!
@@ -7677,6 +9161,10 @@ hu_HU Csökkentse az átvitt forgalom mennyiségét. Összeomlást és furcsa vi
 tr_TR İletilen trafik miktarını azaltın. Çökmelere ve garip davranışlara neden olur!
 ko_KR 전송되는 트래픽 양을 줄입니다. 충돌과 이상한 동작을 유발합니다!
 zh_CN 减少传输流量。会导致崩溃和奇怪的行为！
+zh_TW 減少傳輸流量。會導致當機和異常行為！
+vn_VN Giảm lượng lưu lượng truyền tải. Gây treo và hành vi kỳ lạ!
+th_TH ลดปริมาณการรับส่งข้อมูล ทำให้เกิดการขัดข้องและพฤติกรรมแปลกประหลาด!
+ja_JP 送信トラフィック量を削減します。クラッシュや異常な動作の原因となります！
 
 en_US Allow to choose any champion. Causes missing spells and passives!
 en_GB Allow to choose any champion. Causes missing spells and passives!
@@ -7697,6 +9185,10 @@ hu_HU Lehetővé teszi bármely bajnok kiválasztását. Hiányzó varázsokat �
 tr_TR Herhangi bir şampiyonu seçmeye izin ver. Eksik büyülere ve pasiflere neden olur!
 ko_KR 어떤 챔피언이든 선택할 수 있게 합니다. 주문과 패시브가 누락됩니다!
 zh_CN 允许选择任何英雄。会导致缺失技能和被动效果！
+zh_TW 允許選擇任何英雄。會導致缺少技能和被動效果！
+vn_VN Cho phép chọn bất kỳ tướng nào. Gây thiếu kỹ năng và nội tại!
+th_TH อนุญาตให้เลือกแชมเปี้ยนใดก็ได้ ทำให้ขาดสกิลและแพสซีฟ!
+ja_JP 任意のチャンピオンを選択できます。スペルやパッシブが欠落する原因となります！
 
 en_US Warning
 en_GB Warning
@@ -7717,6 +9209,10 @@ hu_HU Figyelmeztetés
 tr_TR Uyarı
 ko_KR 경고
 zh_CN 警告
+zh_TW 警告
+vn_VN Cảnh báo
+th_TH คำเตือน
+ja_JP 警告
 
 en_US Search
 en_GB Search
@@ -7737,6 +9233,10 @@ hu_HU Keresés
 tr_TR Ara
 ko_KR 검색
 zh_CN 搜索
+zh_TW 搜尋
+vn_VN Tìm kiếm
+th_TH ค้นหา
+ja_JP 検索
 
 en_US Copy the launcher update code below and share it
 en_GB Copy the launcher update code below and share it
@@ -7757,6 +9257,10 @@ hu_HU Másolja ki az alábbi indítóprogram frissítési kódot és ossza meg
 tr_TR Aşağıdaki başlatıcı güncelleme kodunu kopyalayın ve paylaşın
 ko_KR 아래 런처 업데이트 코드를 복사하여 공유하세요
 zh_CN 复制下面的启动器更新代码并分享
+zh_TW 複製下方的啟動器更新代碼並分享
+vn_VN Sao chép mã cập nhật trình khởi chạy bên dưới và chia sẻ
+th_TH คัดลอกรหัสอัปเดตตัวเรียกใช้งานด้านล่างและแชร์
+ja_JP 下のランチャー更新コードをコピーして共有
 
 en_US Find and paste the launcher update code below
 en_GB Find and paste the launcher update code below
@@ -7777,6 +9281,10 @@ hu_HU Keresse meg és illessze be az alábbi indítóprogram frissítési kódot
 tr_TR Aşağıdaki başlatıcı güncelleme kodunu bulun ve yapıştırın
 ko_KR 아래 런처 업데이트 코드를 찾아 붙여넣으세요
 zh_CN 找到并粘贴下面的启动器更新代码
+zh_TW 尋找並貼上下方的啟動器更新代碼
+vn_VN Tìm và dán mã cập nhật trình khởi chạy bên dưới
+th_TH ค้นหาและวางรหัสอัปเดตตัวเรียกใช้งานด้านล่าง
+ja_JP 下のランチャー更新コードを見つけて貼り付け
 
 en_US The launcher update code will appear here for copying and sharing
 en_GB The launcher update code will appear here for copying and sharing
@@ -7797,6 +9305,10 @@ hu_HU Az indítóprogram frissítési kódja itt jelenik meg másoláshoz és me
 tr_TR Başlatıcı güncelleme kodu kopyalanıp paylaşılmak üzere burada görünecek
 ko_KR 런처 업데이트 코드가 여기에 나타나 복사 및 공유할 수 있습니다
 zh_CN 启动器更新代码将显示在此处以供复制和分享
+zh_TW 啟動器更新代碼將顯示於此處以供複製及分享
+vn_VN Mã cập nhật trình khởi chạy sẽ xuất hiện ở đây để sao chép và chia sẻ
+th_TH รหัสอัปเดตตัวเรียกใช้งานจะปรากฏที่นี่สำหรับการคัดลอกและแชร์
+ja_JP ランチャー更新コードがここに表示され、コピーして共有できます
 
 en_US Paste the found launcher update code here
 en_GB Paste the found launcher update code here
@@ -7817,6 +9329,10 @@ hu_HU Illessze be ide a talált indítóprogram frissítési kódot
 tr_TR Bulunan başlatıcı güncelleme kodunu buraya yapıştırın
 ko_KR 찾은 런처 업데이트 코드를 여기에 붙여넣으세요
 zh_CN 将找到的启动器更新代码粘贴到这里
+zh_TW 將找到的啟動器更新代碼貼到此處
+vn_VN Dán mã cập nhật trình khởi chạy đã tìm thấy vào đây
+th_TH วางรหัสอัปเดตตัวเรียกใช้งานที่พบที่นี่
+ja_JP 見つけたランチャー更新コードをここに貼り付け
 
 en_US Apply
 en_GB Apply
@@ -7837,3 +9353,7 @@ hu_HU Alkalmaz
 tr_TR Uygula
 ko_KR 적용
 zh_CN 应用
+zh_TW 套用
+vn_VN Áp dụng
+th_TH นำไปใช้
+ja_JP 適用

@@ -1,12 +1,12 @@
 import fs from 'node:fs/promises'
 
 const locales = [
-    'en_US', 'en_GB', 'en_AU',
-    'es_ES', 'es_AR', 'es_MX', 'pt_BR',
-    'fr_FR', 'it_IT', 'ro_RO',
-    'cs_CZ', 'pl_PL', 'ru_RU',
-    'de_DE', 'el_GR',  'hu_HU', 'tr_TR',
-    'ko_KR', 'zh_CN',
+    'en_US', 'en_GB', 'en_AU', // Base
+    'es_ES', 'es_AR', 'es_MX', 'pt_BR', // Romanian 1
+    'fr_FR', 'it_IT', 'ro_RO', // Romanian 2
+    'cs_CZ', 'pl_PL', 'ru_RU', // Slavic
+    'de_DE', 'el_GR',  'hu_HU', 'tr_TR', // Other
+    'ko_KR', 'zh_CN', 'zh_TW', 'vn_VN', 'th_TH', 'ja_JP', // Asian
 ]
 
 // This code is extracted from utils/translation.ts

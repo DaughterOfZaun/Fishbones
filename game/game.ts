@@ -664,6 +664,7 @@ export abstract class Game extends EventEmitter<GameEvents> {
         
         let configPath = path.join(client.exeDir, 'DATA', cfgDirName, configName)
         let config = await fs_readFile(configPath, { ...opts, encoding: 'utf8' }) ?? ''
+            config = config.trim()
         
         const localeLine = `LanguageLocaleRegion=${locale}`
         const generalLocaleLine = `[General]\n${localeLine}`
@@ -671,14 +672,15 @@ export abstract class Game extends EventEmitter<GameEvents> {
         if(config.includes(localeLine))
             return
         else if(config.includes('LanguageLocaleRegion='))
-            config = config.replace(/^LanguageLocaleRegion=.*/, localeLine)
+            config = config.replace(/LanguageLocaleRegion=.*/, localeLine)
         else if(config.includes('[General]'))
             config = config.replace('[General]', generalLocaleLine)
         else {
-            //config = config.trim()
-            if(config != '') config += '\n'
-            config += generalLocaleLine + '\n'
+            if (config != '')
+                config += '\n\n'
+            config += generalLocaleLine
         }
+        config += '\n'
 
         await fs_writeFile(configPath, config, { ...opts, encoding: 'utf8' })
     }

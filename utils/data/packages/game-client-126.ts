@@ -113,7 +113,7 @@ export const gc126Pkg = new class extends GCPkgCommon {
 
 export class ClientDataInfoCommon {
 
-    locales = [ 'en_US' ]
+    locales = [ 'en_US', 'pl_PL', 'fr_FR', 'es_ES', 'en_GB', 'de_DE' ]
 
     protected appyDir(this_dir: string){
         const info = this as unknown as ClientDataInfo

@@ -2,7 +2,7 @@ import { build } from "./build"
 import { download, appendPartialDownloadFileExt, repairAria2, seed } from "./download/download"
 import { gitPkg, type PkgInfo, repairTorrents, sdkPkg, type PkgInfoCSProj, packages } from "./packages"
 import { console_log, createBar, currentExe, extractFile } from "../../ui/remote/remote"
-import { console_log_fs_err, cwd, downloads, fs_chmod, fs_copyFile, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_overwrite, fs_readFile, fs_removeFile, fs_stat, fs_statfs, fs_truncate, fs_writeFile, rwx_rx_rx } from './fs'
+import { console_log_fs_err, cwd, downloads, fs_chmod, fs_copyFile, fs_ensureDir, fs_exists, fs_exists_and_size_eq, fs_moveFile, fs_overwrite, fs_readFile, fs_removeFile, fs_stat, fs_statfs, fs_writeFile, rwx_rx_rx } from './fs'
 import { readTrackersTxt } from "./download/trackers"
 import { appendPartialUnpackFileExt, DataError, repair7z, unpack } from "./unpack"
 import { TerminationError, unwrapAbortError } from "../process/process"
@@ -19,7 +19,6 @@ import { tr } from "../translation"
 import { DeferredView, render } from "../../ui/remote/view"
 import { button, form, label } from "../../ui/remote/types"
 import { VERSION_STRING } from "../constants-build"
-import type { StatsFs } from "node:fs"
 import { clients_push, combinations_merge, combinations_push, KnownClients, KnownServers, servers_push, superServer, type ClientInfo, type ServerInfo } from "./constants/client-server-combinations"
 import { gcCB2Pkg, ClientDataInfoVCB2 } from "./packages/game-client-cb2"
 import { gcCB3Pkg, ClientDataInfoVCB3 } from "./packages/game-client-cb3"
@@ -176,13 +175,24 @@ async function checkFreeSpaceAndGetErrorMsg(opts: Required<AbortOptions>){
             checkFileSize(path.join(downloads, 'aria2.dht.dat'), 10080, opts),
             
             ...(
+                (args.installTGServer.value) ? (
+                    (args.updateTGServer.value) ? [
+                        checkDirSize(tgPkg.checkUnpackBy, tgPkg.zip, tgPkg.size, opts),
+                    ] : [
+                        checkDirSize(tgPkg.checkUnpackBy, tgPkg.zip, tgPkg.size, opts),
+                        checkFileSize(tgPkg.zip, tgPkg.zipSize, opts),
+                        //checkFileSize(tgPkg.zipTorrent, 14564, opts),
+                    ]
+                ) : []
+            ),
+            ...(
                 (args.installBWServer.value) ? (
                     (args.updateBWServer.value) ? [
                         checkDirSize(bwPkg.checkUnpackBy, bwPkg.zip, bwPkg.size, opts),
                     ] : [
                         checkDirSize(bwPkg.checkUnpackBy, bwPkg.zip, bwPkg.size, opts),
                         checkFileSize(bwPkg.zip, bwPkg.zipSize, opts),
-                        checkFileSize(bwPkg.zipTorrent, 14564, opts),
+                        //checkFileSize(bwPkg.zipTorrent, 14564, opts),
                     ]
                 ) : []
             ),
@@ -434,11 +444,15 @@ async function repairOrThrow(opts: Required<AbortOptions>){
         Promise.allSettled([
             repairSDK(opts),
             (async () => {
-                if(args.updateTGServer.value || !await fs_exists(tgPkg.checkUnpackBy, opts)){
+                //if(args.updateTGServer.value || !await fs_exists(tgPkg.checkUnpackBy, opts)){
+                if(args.updateTGServer.value) try {
                     await repairGit(opts)
                     tgUpdated = await update(tgPkg, opts)
                     return
+                } catch(err) {
+                    console_log(tr('Updating game server package failed:', {}), inspect(err))
                 }
+                await repairArchived(tgPkg, opts)
             })(),
         ]).then(async (results) => {
             throwAnyRejection(results)

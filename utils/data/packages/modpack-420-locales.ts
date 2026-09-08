@@ -18,6 +18,9 @@ interface Archive {
     torrent: string
     zipSize: number
     size: number
+    partial?: boolean
+    mkdir?: boolean
+    root?: boolean
 }
 const archives: Archive[] = [
     {
@@ -54,15 +57,18 @@ const archives: Archive[] = [
         size: 931402642,
     },
     {
-        name: 'asian',
-        dirs: [ 'ko_KR' ],
-        locales: [ 'ko_KR' ],
-        gdrive: '1xqSs8QqtOATGdoPxnNMQeo7Gdo0ztLl_',
-        mega: 'https://mega.nz/file/aqZwgaRY#0jmCyuUjFIYDL8nh9GySClYinCsutYt1uH_bkKxd-8c',
-        ihv1: 'd1db354654a781fc3e3c0e71ec43092ff0d13e77',
+        name: 'asian.v2',
+        dirs: [ 'ko_KR', 'zh_CN', 'zh_TW', 'vn_VN', 'th_TH' ],
+        locales: [ 'ko_KR', 'zh_CN', 'zh_TW', 'vn_VN', 'th_TH' ],
+        gdrive: '1rX99zpU_3JZjWBoDTpBfNvD7Xbb7nsJz',
+        mega: 'https://mega.nz/file/mnJRxJKI#7W1dE8KF6iJ1VGdvDBDjDAitmfiQV6zJj2k1VqWLP7A',
+        ihv1: '076ddb5bf685069d6f904e4ca0d6e09c6448ec44',
         torrent: embedded.modPck6ZipTorrent,
-        zipSize: 304781591,
-        size: 319353868,
+        zipSize: 602935387,
+        size: 663091540,
+        partial: true,
+        mkdir: false,
+        root: true,
     },
     {
         name: 'other',
@@ -94,10 +100,24 @@ const archivesByLocale = Object.fromEntries(archives.flatMap(archive => archive.
 args.usedLocale.on('change', () => modPck3.setLocale(usedLocale))
 gc420Pkg.onDirSet.push(dir => modPck3.setDir(dir))
 
+// List of files that exist in all locales.
+const sharedFiles = [
+    'Shared/Announcer_Global_Female1_VO_audio.bnk',
+    'Shared/Announcer_Global_Female1_VO_audio.wpk',
+    'Shared/Announcer_Global_Female1_VO_events.bnk',
+    'Shared/Announcer_Tutorial_audio.bnk',
+    'Shared/Announcer_Tutorial_audio.wpk',
+    'Shared/Announcer_Tutorial_events.bnk',
+    'Shared/Announcer_Tutorial2_audio.bnk',
+    'Shared/Announcer_Tutorial2_audio.wpk',
+    'Shared/Announcer_Tutorial2_events.bnk',
+]
+
 export const modPck3 = new class ModPackThree extends PkgInfo {
 
     private gcPkg!: { dir: string }
-    private archive: Archive = emptyArchive
+    private locale!: string
+    private archive!: Archive
     
     get isSupported(){ return this.archive != emptyArchive }
 
@@ -105,7 +125,7 @@ export const modPck3 = new class ModPackThree extends PkgInfo {
     get id(){ return `additional_locales_${this.archive.name.replaceAll('.', '_')}` } 
 
     get zipExt(){ return '7z' }
-    get makeDir(){ return true }
+    get makeDir(){ return this.archive.mkdir !== false }
     get dirName(){ return `additional_locales_for_420.${this.archive.name}` }
     get zipName(){ return `additional_locales_for_420.${this.archive.name}.7z` }
     get zipInfoHashV1(){ return this.archive.ihv1 }
@@ -115,7 +135,7 @@ export const modPck3 = new class ModPackThree extends PkgInfo {
 
     get zip(){ return path.join(downloads, this.zipName) }
     get dir(){ return path.join(path.dirname(this.gcPkg.dir), this.dirName) }
-    get moveTo(){ return path.join(this.gcPkg.dir, 'DATA', 'Sounds', 'Wwise', 'VO') }
+    get moveTo(){ return this.archive.root ? this.gcPkg.dir : path.join(this.gcPkg.dir, 'DATA', 'Sounds', 'Wwise', 'VO') }
 
     get zipTorrentEmbedded(){ return this.isSupported ? this.archive.torrent : '' }
     get zipTorrentName(){ return this.isSupported ? `${this.zipName}.torrent` : '' }
@@ -124,15 +144,23 @@ export const modPck3 = new class ModPackThree extends PkgInfo {
 
     get checkUnpackBy(){
         //TODO: Set meaningful value.
-        const locale = pickRandom(this.archive.dirs)
-        const champion = pickRandom([ 'Jinx', 'LeeSin', 'Ahri', 'Ezreal', 'Caitlyn' ])
-        return path.join(this.dir, locale, 'Characters', champion, 'Skins', 'Base', `${champion}_Base_VO_audio.wpk`)
+        const locale = this.locale
+        //const locale = pickRandom(this.archive.dirs)
+        const root = this.archive.root ? path.join(this.dir, 'DATA', 'Sounds', 'Wwise', 'VO') : this.dir
+        if(this.archive.partial){
+            const filepath = pickRandom(sharedFiles).split('/')
+            return path.join(root, locale, ...filepath)
+        } else {
+            const champion = pickRandom([ 'Jinx', 'LeeSin', 'Ahri', 'Ezreal', 'Caitlyn' ])
+            return path.join(root, locale, 'Characters', champion, 'Skins', 'Base', `${champion}_Base_VO_audio.wpk`)
+        }
     }
     get lockFile(){ return path.join(this.gcPkg.dir, 'MODS', `${this.id}.installed`) }
 
-    get locales(){ return this.archive.locales }
-    get topLevelEntries(){ return this.archive.dirs }
+    get topLevelEntries(){ return [] }
     get topLevelEntriesOptional(){ return [] }
+    
+    get locales(){ return this.archive.locales }
 
     constructor(){
         super()
@@ -147,6 +175,7 @@ export const modPck3 = new class ModPackThree extends PkgInfo {
 
     setLocale(locale: string){
         
+        this.locale = locale
         this.archive = archivesByLocale[locale] ?? emptyArchive
         if(!this.isSupported) return
 

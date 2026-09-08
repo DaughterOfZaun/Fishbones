@@ -21,6 +21,7 @@ export const config = {
 
     gc420ZipTorrent: './torrents/League of Legends_UNPACKED.7z.torrent',
     cbPkgZipTorrent: './torrents/Chronobreak.GameServer.7z.torrent',
+    tgPkgZip: './dist/Fishbones_Data/TestGrounds-master-35cf3aba.7z',
 
     gc126ZipTorrent: './torrents/playable_client_126.7z.torrent',
     bwPkgZipTorrent: './torrents/ChildrenOfTheGrave-Gameserver.7z.torrent',
@@ -67,7 +68,7 @@ export const config = {
     modPck3ZipTorrent: './torrents/additional_locales_for_420.romance.1.7z.torrent',
     modPck4ZipTorrent: './torrents/additional_locales_for_420.romance.2.7z.torrent',
     modPck5ZipTorrent: './torrents/additional_locales_for_420.slavic.7z.torrent',
-    modPck6ZipTorrent: './torrents/additional_locales_for_420.asian.7z.torrent',
+    modPck6ZipTorrent: './torrents/additional_locales_for_420.asian.v2.7z.torrent',
     modPck7ZipTorrent: './torrents/additional_locales_for_420.other.7z.torrent',
 
     gcCB2ZipTorrent: './torrents/playable_client_cb2.7z.torrent',

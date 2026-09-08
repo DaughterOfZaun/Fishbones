@@ -6,35 +6,44 @@ import { gdrive, magnet, PkgInfoCSProj, type PkgInfoGit } from './shared'
 //import { HARDCODED_HTTP_SERVER_URL } from '../../constants-build'
 import { tr } from '../../translation'
 import { sdkPkg } from './sdk'
+import embedded from '../embedded/embedded'
 
 export const tgPkg = new class extends PkgInfoCSProj implements PkgInfoGit {
+
     name = tr('TestGrounds') + ' ' + tr('Game Server')
+
+    gitRevision = '35cf3aba0de48d1afad6dfeb7c15f706ff05d643'
+    gitOriginURL = 'https://github.com/PatateslerinAdami/TestGrounds.git'
+    gitBranchName = 'master'
+    gitRemoteName = 'origin'
+
     dirName = 'TestGrounds-GameServer'
-    size = 0
-    
     makeDir = false
-    zipExt = '' //'7z'
-    zipName = '' //`${this.dirName}.${this.zipExt}`
-    zipInfoHashV1 = ''
-    zipInfoHashV2 = ''
-    zipSize = 0
+    
+    zipExt = '7z'
+    zipRootDirName = 'TestGrounds-master'
+    zipName = `${this.zipRootDirName}-${this.gitRevision.slice(0, 8)}.${this.zipExt}`
+    zipRoot = [ this.zipRootDirName ]
+    zipHasSingleRootEntry = true
+    zipSize = 7729508
+    size = 236270130
+
     dir = path.join(downloads, this.dirName)
-    zip = '' //path.join(downloads, this.zipName)
+    zip = path.join(downloads, this.zipName)
+
+    zipEmbded = embedded.tgPkgZip
+    
     zipTorrentEmbedded = ''
     zipTorrentName = '' //`${this.zipName}.torrent`
     zipTorrent = '' //`${this.zip}.torrent`
+    zipInfoHashV1 = ''
+    zipInfoHashV2 = ''
     zipMagnet = '' //magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
     zipMega = ''
     zipWebSeeds = [
         //gdrive(``),
         //`${HARDCODED_HTTP_SERVER_URL}/${this.zipName}`,
     ]
-    zipEmbded = '' //embedded.tgPkgZip
-
-    gitRevision = ''
-    gitOriginURL = 'https://github.com/PatateslerinAdami/TestGrounds.git'
-    gitBranchName = 'master'
-    gitRemoteName = 'origin'
 
     projName = 'GameServerConsole'
     csProjDir = path.join(this.dir, this.projName)
