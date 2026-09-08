@@ -86,60 +86,87 @@ export async function unpack(pkg: UnpackablePkgInfo, opts: Required<AbortOptions
         console.log(`Pretending to unpack ${pkg.zipName}...`)
         return
     }
+
+    if(pkg.zipExt === 'none'){
+        return
+    }
+
+    const pkgDir = pkg.dir
+    const zipHasSingleRootEntry = pkg.zipHasSingleRootEntry ?? !pkg.makeDir
+    const zipRoot = pkg.zipRoot ?? ((pkg.dirName && !pkg.makeDir) ? [ pkg.dirName! ] : [])
+
+    const TEMP_POSTFIX = '_temp'
+
+    let dirToUnpackTo: string, dirToMove: string, dirToRemove: string | undefined
+    if(zipRoot.length == 0){
+        dirToUnpackTo = pkgDir
+    } else if(zipHasSingleRootEntry && zipRoot.length == 1){
+        dirToUnpackTo = path.dirname(pkgDir)
+    } else if(zipHasSingleRootEntry && zipRoot.length >= 2 && zipRoot[0] != path.basename(pkgDir)){
+        dirToUnpackTo = path.dirname(pkgDir)
+        dirToRemove = path.join(dirToUnpackTo, zipRoot[0]!)
+    } else {
+        dirToUnpackTo = pkgDir + TEMP_POSTFIX
+        dirToRemove = dirToUnpackTo
+    }
+    dirToMove = path.join(dirToUnpackTo, ...zipRoot)
+
+    // logger.log(`
+    //     EXTRACTION
+    //         pkgDir: ${pkgDir}
+    //         zipHasSingleRootEntry: ${zipHasSingleRootEntry}
+    //         zipRoot: ${zipRoot}
+    //         tmpDir: ${tmpDir}
+    //         rootDir: ${rootDir}
+    //         tmpDirShouldBeRemoved: ${tmpDirShouldBeRemoved}
+    // `.trim())
+
+    await fs_ensureDir(dirToUnpackTo, opts)
+
+    const lockfile = appendPartialUnpackFileExt(pkg.zip)
+    await fs_writeFile(lockfile, '', { ...opts, encoding: 'utf8' })
     
+    switch(pkg.zipExt){
+        case 'appimage': await useAppImage(pkg, dirToUnpackTo, opts); break
+        default: await use7zUnpacker(pkg, dirToUnpackTo, opts); break
+    }
+    
+    if(dirToMove != pkgDir){
+        await fs_removeFile(pkgDir, opts_rf, false) //TODO: Be less destructive.
+        await fs_moveFile(dirToMove, pkgDir, opts)
+    }
+    if(dirToRemove){
+        await fs_removeFile(dirToRemove, opts_rf, false)
+    }
+    await fs_removeFile(lockfile, opts)
+    
+    if(!await fs_exists(pkg.checkUnpackBy, opts))
+        throw new DataError(`Unable to unpack ${pkg.zipName}`)
+}
+
+async function use7zUnpacker(
+    pkg: { zip: string, zipName: string, zipExt: string },
+    dirToUnpackTo: string,
+    opts: Required<AbortOptions>,
+){
     //console.log(`Unpacking ${pkg.zipName}...`)
     const bar = createBar(tr('Unpacking'), pkg.zipName, 100)
     
     const s7zs: ChildProcessWithLogPrefix[] = []
 
+    const controller = new AbortController()
+    //const signal = AbortSignal.any([ controller.signal, opts.signal ])
+    const { signal } = controller
+
+    const args = ['-aoa', `-o${dirToUnpackTo}`, '-bsp1']
+    const spawnOpts = {
+        cwd: downloads,
+        log: false,
+        signal,
+    }
+
     try {
-    
-        const pkgDir = pkg.dir
-        const zipHasSingleRootEntry = pkg.zipHasSingleRootEntry ?? !pkg.makeDir
-        const zipRoot = pkg.zipRoot ?? ((pkg.dirName && !pkg.makeDir) ? [ pkg.dirName! ] : [])
-
-        const TEMP_POSTFIX = '_temp'
-
-        let dirToUnpackTo: string, dirToMove: string, dirToRemove: string | undefined
-        if(zipRoot.length == 0){
-            dirToUnpackTo = pkgDir
-        } else if(zipHasSingleRootEntry && zipRoot.length == 1){
-            dirToUnpackTo = path.dirname(pkgDir)
-        } else if(zipHasSingleRootEntry && zipRoot.length >= 2 && zipRoot[0] != path.basename(pkgDir)){
-            dirToUnpackTo = path.dirname(pkgDir)
-            dirToRemove = path.join(dirToUnpackTo, zipRoot[0]!)
-        } else {
-            dirToUnpackTo = pkgDir + TEMP_POSTFIX
-            dirToRemove = dirToUnpackTo
-        }
-        dirToMove = path.join(dirToUnpackTo, ...zipRoot)
-
-        // logger.log(`
-        //     EXTRACTION
-        //         pkgDir: ${pkgDir}
-        //         zipHasSingleRootEntry: ${zipHasSingleRootEntry}
-        //         zipRoot: ${zipRoot}
-        //         tmpDir: ${tmpDir}
-        //         rootDir: ${rootDir}
-        //         tmpDirShouldBeRemoved: ${tmpDirShouldBeRemoved}
-        // `.trim())
-
-        await fs_ensureDir(dirToUnpackTo, opts)
-    
-        const lockfile = appendPartialUnpackFileExt(pkg.zip)
-        await fs_writeFile(lockfile, '', { ...opts, encoding: 'utf8' })
         
-        const controller = new AbortController()
-        //const signal = AbortSignal.any([ controller.signal, opts.signal ])
-        const { signal } = controller
-
-        const args = ['-aoa', `-o${dirToUnpackTo}`, '-bsp1']
-        
-        const spawnOpts = {
-            cwd: downloads,
-            log: false,
-            signal,
-        }
         if(pkg.zipExt == 'tar.gz'){
             s7zs[0] = spawn(s7zExe, ['x', '-so', '-tgzip', pkg.zip], {
                 stdio: [ null, 'pipe', 'pipe' ],
@@ -164,55 +191,66 @@ export async function unpack(pkg: UnpackablePkgInfo, opts: Required<AbortOptions
         for(let i = 0; i < s7zs.length; i++)
             connect(i, 'stderr')
 
-        function connect(i: number, streamName: 'stdout' | 'stderr'){
-            const proc = s7zs[i]!
-            const logPrefix = `${proc.logPrefix} [${streamName.toUpperCase()}]`
-            proc[streamName].setEncoding('utf8').on('data', (chunk: string) => {
-                onData(logPrefix, streamName, chunk)
-            })
-        }
-
-        function onData(loggerPrefix: string, src: 'stdout' | 'stderr', chunk: string){
-            chunk = chunk.replace(/[\b]/g, '').trim()
-            let m
-            if(src === 'stdout' && (m = s7zProgressMsg.exec(chunk)) && m && m[1]){
-                bar.update(parseInt(m[1]))
-            } else if(chunk){
-                logger.log(loggerPrefix, chunk)
-            }
-            if(src === 'stderr' && !signal.aborted){
-                const isSystemError = s7zSystemErrorMsg.test(chunk)
-                const isDataError = s7zDataErrorMsgs.test(chunk)
-                if(isSystemError || isDataError){
-                    //s7zs.at(i)![src]!.removeAllListeners('data')
-                    const UnpackingError = isDataError ? DataError : SystemError
-                    controller.abort(new UnpackingError(`Unpacking of "${pkg.zipName}" failed.`))
-                    logger.log(loggerPrefix, 'ABORTED')
-                }
-            }
-        }
-
         await Promise.all(s7zs.map(async (proc) => successfulTermination(
             proc.logPrefix, proc, opts, [ 0, s7zExitCodes.Warning ]
         )))
-        
-        if(dirToMove != pkgDir){
-            await fs_removeFile(pkgDir, opts_rf, false) //TODO: Be less destructive.
-            await fs_moveFile(dirToMove, pkgDir, opts)
-        }
-        if(dirToRemove){
-            await fs_removeFile(dirToRemove, opts_rf, false)
-        }
-        await fs_removeFile(lockfile, opts)
-    
+
     } finally {
         for(const proc of s7zs) killIfActive(proc)
         bar.update(bar.getTotal())
         bar.stop()
     }
-    
-    if(!await fs_exists(pkg.checkUnpackBy, opts))
-        throw new DataError(`Unable to unpack ${pkg.zipName}`)
+
+    function connect(i: number, streamName: 'stdout' | 'stderr'){
+        const proc = s7zs[i]!
+        const logPrefix = `${proc.logPrefix} [${streamName.toUpperCase()}]`
+        proc[streamName].setEncoding('utf8').on('data', (chunk: string) => {
+            onData(logPrefix, streamName, chunk)
+        })
+    }
+
+    function onData(loggerPrefix: string, src: 'stdout' | 'stderr', chunk: string){
+        chunk = chunk.replace(/[\b]/g, '').trim()
+        let m
+        if(src === 'stdout' && (m = s7zProgressMsg.exec(chunk)) && m && m[1]){
+            bar.update(parseInt(m[1]))
+        } else if(chunk){
+            logger.log(loggerPrefix, chunk)
+        }
+        if(src === 'stderr' && !signal.aborted){
+            const isSystemError = s7zSystemErrorMsg.test(chunk)
+            const isDataError = s7zDataErrorMsgs.test(chunk)
+            if(isSystemError || isDataError){
+                //s7zs.at(i)![src]!.removeAllListeners('data')
+                const UnpackingError = isDataError ? DataError : SystemError
+                controller.abort(new UnpackingError(`Unpacking of "${pkg.zipName}" failed.`))
+                logger.log(loggerPrefix, 'ABORTED')
+            }
+        }
+    }
+}
+
+async function useAppImage(
+    pkg: { zip: string, zipName: string, zipExt: string },
+    dirToUnpackTo: string,
+    opts: Required<AbortOptions>,
+){
+    const bar = createBar(tr('Unpacking'), pkg.zipName)
+    let proc: ChildProcessWithLogPrefix | undefined
+    try {
+        const spawnArgs = [ '--appimage-extract' ]
+        const spawnOptions = {
+            logPrefix: 'APP-IMAGE',
+            signal: opts.signal,
+            cwd: dirToUnpackTo,
+            log: true,
+        }
+        proc = spawn(pkg.zip, spawnArgs, spawnOptions)
+        await successfulTermination(proc.logPrefix, proc, opts)
+    } finally {
+        killIfActive(proc)
+        bar.stop()
+    }
 }
 
 export function appendPartialPackFileExt(path: string){

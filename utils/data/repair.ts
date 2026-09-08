@@ -36,6 +36,7 @@ import { inspect } from 'node:util'
 import { logger } from "../log"
 //@ts-expect-error Cannot find module or its corresponding type declarations.
 import upgradeHelperJS from '../../dist/upgrade-helper.js' with { type: 'text' }
+import { WINE_CMD_DOWNLOAD, winePkg } from "./packages/wine.js"
 
 const DOTNET_INSTALL_CORRUPT_EXIT_CODES = [ 130, 131, 142, ]
 
@@ -100,6 +101,7 @@ async function repairArchived_gitPkg(opts: Required<AbortOptions>){
         await runPostInstall(opts)
 }
 
+let args_installModPack1_value: boolean
 let args_installModPack2_value: boolean
 let args_installModPack3_value: boolean
 async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>){
@@ -107,8 +109,9 @@ async function repairImpl(view: DeferredView<void>, opts: Required<AbortOptions>
 
     await fs_ensureDir(downloads, opts)
 
-    args_installModPack2_value = args.installModPack2.value && modPck2.isSupported
-    args_installModPack3_value = args.installModPack3.value && modPck3.isSupported
+    args_installModPack1_value = args.installS1Client.value && args.installModPack1.value //&& modPck1.isSupported
+    args_installModPack2_value = args.installS1Client.value && args.installModPack2.value && modPck2.isSupported
+    args_installModPack3_value = args.installS4Client.value && args.installModPack3.value && modPck3.isSupported
 
     while(args.spaceCheck.value){
         const msg = await checkFreeSpaceAndGetErrorMsg(opts)
@@ -219,7 +222,7 @@ async function checkFreeSpaceAndGetErrorMsg(opts: Required<AbortOptions>){
             checkFileSize(path.join(downloads, 'mastery-pages.json'), 1494, opts),
             checkFileSize(path.join(downloads, 'log.txt'), 1834, opts),
             
-            ...((args.installModPack1.value) ? [
+            ...((args_installModPack1_value) ? [
                 //checkDirSize(modPck1.checkUnpackBy, modPck1.zip, modPck1.size, opts),
                 checkFileSize(modPck1.zip, modPck1.zipSize, opts),
                 checkFileSize(modPck1.zipTorrent, 37085, opts),
@@ -274,7 +277,7 @@ async function checkFreeSpaceAndGetErrorMsg(opts: Required<AbortOptions>){
             ...((args.installS1Client.value) ? [
                 checkDirSize(gc126Pkg.checkUnpackBy, gc126Pkg.zip, gc126Pkg.size, opts),
             ] :[]),
-            ...((args.installModPack1.value) ? [
+            ...((args_installModPack1_value) ? [
                 checkDirSize(modPck1.lockFile, modPck1.zip, modPck1.size, opts),
             ] :[]),
             ...((args_installModPack2_value) ? [
@@ -369,6 +372,11 @@ async function repairOrThrow(opts: Required<AbortOptions>){
         console_log(tr(`Restoring launcher package failed:`), inspect(err))
     }
 
+    let args_installAnyClient_value =
+        args.installB2Client.value ||
+        args.installB3Client.value ||
+        args.installS1Client.value ||
+        args.installS4Client.value
     let modPack1IsMissing = !await fs_exists(modPck1.lockFile, opts, false)
     let modPack2IsMissing = !modPck2.isSupported || !await fs_exists(modPck2.lockFile, opts, false)
     let modPack3IsMissing = !modPck3.isSupported || !await fs_exists(modPck3.lockFile, opts, false)
@@ -503,7 +511,7 @@ async function repairOrThrow(opts: Required<AbortOptions>){
                 })
             }),
             
-            !(args.installModPack1.value && modPack1IsMissing) ? Promise.resolve() :
+            !(args_installModPack1_value && modPack1IsMissing) ? Promise.resolve() :
             repairArchived(modPck1, { ...opts, ignoreUnpacked: true }),
 
             !(args_installModPack2_value && modPack2IsMissing) ? Promise.resolve() :
@@ -513,7 +521,7 @@ async function repairOrThrow(opts: Required<AbortOptions>){
 
             throwAnyRejection(results)
 
-            if (args.installModPack1.value && modPack1IsMissing){
+            if (args_installModPack1_value && modPack1IsMissing){
                 await moveModPack(modPck1, gc126Pkg, opts)
                 modPack1IsMissing = false
             }
@@ -524,10 +532,11 @@ async function repairOrThrow(opts: Required<AbortOptions>){
             }
         }),
 
+        !(args.installS4Client.value) ? Promise.resolve() :
         Promise.allSettled([
              
-            !(args.installS4Client.value) ? Promise.resolve() :
             repairArchived(gc420Pkg, opts).then(async () => {
+                
                 gc420ExeIsMissing = false
 
                 return Promise.allSettled([
@@ -549,6 +558,11 @@ async function repairOrThrow(opts: Required<AbortOptions>){
                 modPack3IsMissing = false
             }
         }),
+
+        !(args_installAnyClient_value && os.platform() === 'linux' && args.wineCommand.value === WINE_CMD_DOWNLOAD) ? Promise.resolve() :
+        repairArchived(winePkg, opts).then(async () => {
+            
+        })
     ])
     throwAnyRejection(results)
 

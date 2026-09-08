@@ -77,4 +77,9 @@ export const config = {
         windows: './thirdparty/lolsrv/bin/lolsrv.exe',
         linux: './thirdparty/lolsrv/bin/lolsrv',
     },
+
+    wineZipTorrent: {
+        linux: '',
+        windows: '',
+    }
 }
