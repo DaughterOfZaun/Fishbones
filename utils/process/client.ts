@@ -1,7 +1,7 @@
 import { sanitize_bfkey } from "../constants"
 import { killSubprocess, spawn, startProcess, type ChildProcess, type SpawnOptions } from "../process/process"
 import { clients, type ClientVersion } from "../data/constants/client-server-combinations"
-import { WINE_CMD_AUTO, WINE_CMD_AUTO_TEMPLATE } from "../data/packages/wine"
+import { WineCMD } from "../data/packages/wine"
 import type { AbortOptions } from "@libp2p/interface"
 import { args } from "../args"
 import path from 'node:path'
@@ -48,7 +48,7 @@ export async function relaunchClient(clientSubprocess: ChildProcess | undefined,
 
         process.env['WINEDEBUG'] = '-all'
         
-        const template = args.wineCommand.value == WINE_CMD_AUTO ? WINE_CMD_AUTO_TEMPLATE : args.wineCommand.value
+        const template = WineCMD.template(args.wineCommand.value)
         const tempArgs = [ ...template.matchAll(/(['"])(?:\\\1|.)*?\1|(?:\\ |[^ ])+/g).map(m => m[0]) ]
         const [ wineExe, ...wineArgs ] = tempArgs.flatMap(arg => {
             if(arg == '{exe}') return [ exe ]

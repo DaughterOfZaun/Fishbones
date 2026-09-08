@@ -26,17 +26,17 @@ import { gc126Pkg, ClientDataInfoV126 } from "./packages/game-client-126"
 import { gc420Pkg, ClientDataInfoV420 } from "./packages/game-client-420"
 import { bwPkg, BrokenWingsDataInfo } from "./packages/game-server-bw"
 import { cbPkg, ChronobreakDataInfo } from "./packages/game-server-cb"
+import { tgPkg, TestGroundsDataInfo } from "./packages/game-server-tg"
 import { lsPkg, LoLSrverDataInfo } from "./packages/game-server-ls"
 import { modPck1 } from "./packages/modpack-126-levels"
 import { modPck2 } from "./packages/modpack-126-locales"
 import { modPck3 } from "./packages/modpack-420-locales"
+import { winePkg, WineCMD } from "./packages/wine"
 import { champions } from "./constants/champions"
-import { TestGroundsDataInfo, tgPkg } from "./packages/game-server-tg"
 import { inspect } from 'node:util'
 import { logger } from "../log"
 //@ts-expect-error Cannot find module or its corresponding type declarations.
 import upgradeHelperJS from '../../dist/upgrade-helper.js' with { type: 'text' }
-import { WINE_CMD_DOWNLOAD, winePkg } from "./packages/wine.js"
 
 const DOTNET_INSTALL_CORRUPT_EXIT_CODES = [ 130, 131, 142, ]
 
@@ -377,6 +377,12 @@ async function repairOrThrow(opts: Required<AbortOptions>){
         args.installB3Client.value ||
         args.installS1Client.value ||
         args.installS4Client.value
+    
+    let args_installWine_value =
+        os.platform() === 'linux' &&
+        args_installAnyClient_value &&
+        WineCMD.resolve(args.wineCommand.value) === WineCMD.Download
+    
     let modPack1IsMissing = !await fs_exists(modPck1.lockFile, opts, false)
     let modPack2IsMissing = !modPck2.isSupported || !await fs_exists(modPck2.lockFile, opts, false)
     let modPack3IsMissing = !modPck3.isSupported || !await fs_exists(modPck3.lockFile, opts, false)
@@ -559,9 +565,9 @@ async function repairOrThrow(opts: Required<AbortOptions>){
             }
         }),
 
-        !(args_installAnyClient_value && os.platform() === 'linux' && args.wineCommand.value === WINE_CMD_DOWNLOAD) ? Promise.resolve() :
+        !(args_installWine_value) ? Promise.resolve() :
         repairArchived(winePkg, opts).then(async () => {
-            
+            await fs_chmod(winePkg.exe, rwx_rx_rx, opts)
         })
     ])
     throwAnyRejection(results)

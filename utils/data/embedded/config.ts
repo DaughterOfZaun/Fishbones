@@ -79,7 +79,6 @@ export const config = {
     },
 
     wineZipTorrent: {
-        linux: '',
-        windows: '',
+        linux: './torrents/wine-11.9-1-anylinux-x86_64.AppImage.torrent',
     }
 }

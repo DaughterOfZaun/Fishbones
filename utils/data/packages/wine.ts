@@ -1,27 +1,60 @@
 import path from 'node:path'
-import { downloads } from "../fs"
-import { gdrive, magnet, PkgInfoExe } from "./shared"
-import { tr } from "../../translation"
-import embedded from "../embedded/embedded"
+import { downloads } from '../../log'
 import { HARDCODED_HTTP_SERVER_URL } from '../../constants-build'
+import { gdrive, magnet, PkgInfoExe } from "./shared"
+import embedded from "../embedded/embedded"
+import { tr } from "../../translation"
 
-export const WINE_CMD_AUTO_IDX = 0
-export const WINE_CMD_AUTO = 'auto'
-export const WINE_CMD_CUSTOM_IDX = 1
-export const WINE_CMD_CUSTOM = 'auto'
-export const WINE_CMD_SYSTEM_IDX = 2
-export const WINE_CMD_SYSTEM = 'system'
-export const WINE_CMD_SYSTEM_TEMPLATE = 'wine {exe} {args}'
-export const WINE_CMD_DOWNLOAD_IDX = 3
-export const WINE_CMD_DOWNLOAD = 'download'
+export enum WineCMD {
+    Download = 1,
+    System = 2,
+    Custom = 3,
+    Auto = 0,
+}
+export namespace WineCMD {
+    export function classify(cmd: WineCMD | string): WineCMD {
+        if(typeof cmd === 'number') return cmd
+        switch(cmd){
+            case 'download': return WineCMD.Download
+            case 'system': return WineCMD.System
+            case 'auto': return WineCMD.Auto
+            default: return WineCMD.Custom
+        }
+    }
+    export function stringify(cmd: WineCMD | string): string {
+        if(typeof cmd === 'string') return cmd
+        switch(cmd){
+            case WineCMD.Download: return 'download'
+            case WineCMD.System: return 'system'
+            default: return 'auto'
+        }
+    }
+    export function resolve(arg: WineCMD | string): WineCMD {
+        const cmd = classify(arg)
+        switch(cmd){
+            case WineCMD.Auto: return WineCMD.Download
+            default: return cmd
+        }
+    }
+    export function template(arg: string): string
+    export function template(arg: WineCMD): string | undefined
+    export function template(arg: WineCMD | string): string | undefined {
+        const cmd = resolve(arg)
+        switch(cmd){
+            case WineCMD.System: return 'wine {exe} {args}'
+            case WineCMD.Download: return `${winePkg.exe} {exe} {args}`
+            default: return (typeof arg === 'string') ? arg : undefined
+        }
+    }
+}
 
 export const winePkg = new class WinePkg extends PkgInfoExe {
 
     name = tr('Wine')
     
-    exeName = 'wine-stable_11.0-x86_64.appimage'
+    exeName = 'wine-11.9-1-anylinux-x86_64.AppImage'
     exeDir = downloads
-    size = 0
+    size = 146564893
     
     zipName = this.exeName
     zipSize = this.size
@@ -34,17 +67,18 @@ export const winePkg = new class WinePkg extends PkgInfoExe {
     zip = path.join(this.dir, this.zipName)
     exe = path.join(this.dir, this.exeName)
     
-    zipInfoHashV1 = ''
+    zipInfoHashV1 = '9a7e382d6a9fc1926d080300af26eafdf0607d67'
     zipInfoHashV2 = ''
     zipMagnet = magnet(this.zipInfoHashV1, this.zipInfoHashV2, this.zipName, this.zipSize)
     zipTorrentEmbedded = embedded.wineZipTorrent
     zipTorrentName = `${this.zipName}.torrent`
     zipTorrent = `${this.zip}.torrent`
 
-    zipMega = ''
+    //zipMega = ''
     zipWebSeeds = [
-        gdrive(``),
+        `https://github.com/pkgforge-dev/wine-AppImage/releases/download/11.9-1%402026-05-22_1779458719/${this.zipName}`,
         `${HARDCODED_HTTP_SERVER_URL}/${this.zipName}`,
+        //gdrive(``),
     ]
     
     topLevelEntries = []

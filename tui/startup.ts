@@ -7,7 +7,7 @@ import { args } from "../utils/args";
 import { bwPkg } from "../utils/data/packages/game-server-bw";
 import { AUTO_LOCALE, DEFAULT_LOCALE, systemLocale, systemLocaleSupported, tr, usedLocale } from "../utils/translation";
 import { GC_LOCATION_AUTO, GC_LOCATION_C_DRIVE, GC_LOCATION_CUSTOM, GC_LOCATION_DOWNLOADS, gcLocationFromIndexToString, gcLocationFromStringToIndex, gc126Pkg } from "../utils/data/packages/game-client-126";
-import { WINE_CMD_AUTO, WINE_CMD_AUTO_IDX, WINE_CMD_AUTO_TEMPLATE, WINE_CMD_CUSTOM_IDX } from "../utils/data/packages/wine";
+import { WineCMD } from "../utils/data/packages/wine";
 import { profileIcons, profileIconsCount } from "../utils/data/constants/profile-icons";
 import { gc420Pkg } from "../utils/data/packages/game-client-420";
 import { gcCB3Pkg } from "../utils/data/packages/game-client-cb3";
@@ -26,7 +26,8 @@ enum DownloadSource {
 
 export async function startup(mrs: MRs, opts: Required<AbortOptions>){
 
-    const isAuto = args.wineCommand.value == WINE_CMD_AUTO
+    const index = WineCMD.classify(args.wineCommand.value)
+    const isCustom = index == WineCMD.Custom
 
     const areAnyUpdatesEnabled = () => {
         return args.selfUpgrade.value
@@ -130,24 +131,26 @@ export async function startup(mrs: MRs, opts: Required<AbortOptions>){
         LinuxSpecificOptions: base(process.platform == 'linux'),
         WineCommandType: option(
             [
-                { id: WINE_CMD_AUTO_IDX, text: tr("automatic command") },
-                { id: WINE_CMD_CUSTOM_IDX, text: tr("custom command") },
+                { id: WineCMD.Auto, text: tr("automatic command") },
+                { id: WineCMD.Download, text: tr("download command") },
+                { id: WineCMD.System, text: tr("system command") },
+                { id: WineCMD.Custom, text: tr("custom command") },
             ],
-            isAuto ? WINE_CMD_AUTO_IDX : WINE_CMD_CUSTOM_IDX,
+            WineCMD.classify(args.wineCommand.value),
             (index) => {
-                const isAuto = index == WINE_CMD_AUTO_IDX
-                if(isAuto) args.wineCommand.save(WINE_CMD_AUTO)
+                const isCustom = index == WineCMD.Custom
+                if(!isCustom) args.wineCommand.save(WineCMD.stringify(index))
                 view.get('WineCustomCommand').update(line(
-                    isAuto ? WINE_CMD_AUTO_TEMPLATE : undefined,
+                    WineCMD.template(index),
                     undefined,
-                    !isAuto,
+                    isCustom,
                 ))
             }
         ),
         WineCustomCommand: line(
-            isAuto ? WINE_CMD_AUTO_TEMPLATE : args.wineCommand.value,
+            WineCMD.template(index) ?? args.wineCommand.value,
             (template) => args.wineCommand.set(template),
-            !isAuto,
+            isCustom,
         ),
 
         ProfilePanel: form({
